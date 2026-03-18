@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import CommentSection from '../components/CommentSection/CommentSection';
 import SearchBar from '../components/SearchBar/SearchBar';
 import VideoList from '../components/VideoList/VideoList';
 import VideoPlayer from '../components/VideoPlayer/VideoPlayer';
@@ -46,6 +47,7 @@ function App() {
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const shouldScrollToPlayerRef = useRef(false);
   const { data, isLoading, isError, error } = usePopularVideos(selectedRegionCode);
+  const selectedVideo = data?.items.find((item) => item.id === selectedVideoId);
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
 
@@ -126,6 +128,17 @@ function App() {
             <h2 className="app-shell__section-title">{selectedCountryName} 인기 영상</h2>
           </div>
           <VideoPlayer selectedVideoId={selectedVideoId} />
+        </section>
+
+        <section className="app-shell__panel">
+          <div className="app-shell__section-heading">
+            <p className="app-shell__section-eyebrow">Community</p>
+            <h2 className="app-shell__section-title">실시간 익명 채팅</h2>
+          </div>
+          <CommentSection
+            videoId={selectedVideoId}
+            videoTitle={selectedVideo?.snippet.title}
+          />
         </section>
 
         <section className="app-shell__panel">
