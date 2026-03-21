@@ -4,10 +4,13 @@ import SearchBar from '../components/SearchBar/SearchBar';
 import VideoList from '../components/VideoList/VideoList';
 import VideoPlayer from '../components/VideoPlayer/VideoPlayer';
 import countryCodes from '../constants/countryCodes';
+import { videoCategories } from '../constants/videoCategories';
+import { YouTubeCategorySection } from '../features/youtube/types';
 import { usePopularVideosByCategory } from '../features/youtube/queries';
 import '../styles/app.css';
 
 const DEFAULT_REGION_CODE = 'US';
+const DEFAULT_CATEGORY_ID = videoCategories[0]?.id ?? '10';
 const STORAGE_KEY = 'youtube-atlas-region-code';
 type RegionCode = (typeof countryCodes)[number]['code'];
 
@@ -41,24 +44,39 @@ function getInitialRegionCode(): RegionCode {
   return DEFAULT_REGION_CODE;
 }
 
+function mergeSections(pages: YouTubeCategorySection[] | undefined) {
+  if (!pages?.length) {
+    return undefined;
+  }
+
+  const [firstPage, ...restPages] = pages;
+
+  return {
+    ...firstPage,
+    items: [firstPage, ...restPages].flatMap((page) => page.items),
+    nextPageToken: pages[pages.length - 1]?.nextPageToken,
+  };
+}
+
 function App() {
   const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const shouldScrollToPlayerRef = useRef(false);
-  const { data = [], isLoading, isError, error } = usePopularVideosByCategory(selectedRegionCode);
-  const selectedVideoEntry = data
-    .flatMap((section) =>
-      section.items.map((item) => ({
-        categoryLabel: section.label,
-        item,
-      })),
-    )
-    .find((entry) => entry.item.id === selectedVideoId);
-  const selectedVideo = selectedVideoEntry?.item;
-  const selectedSection = data.find((section) =>
-    section.items.some((item) => item.id === selectedVideoId),
-  );
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage = false,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+  } = usePopularVideosByCategory(selectedRegionCode, selectedCategoryId);
+  const selectedSection = mergeSections(data?.pages);
+  const selectedVideo = selectedSection?.items.find((item) => item.id === selectedVideoId);
+  const selectedCategory =
+    videoCategories.find((category) => category.id === selectedCategoryId) ?? videoCategories[0];
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
 
@@ -66,6 +84,30 @@ function App() {
     shouldScrollToPlayerRef.current = true;
     setSelectedVideoId(videoId);
     triggerElement?.blur();
+  }
+
+  function handleSelectCategory(categoryId: string, triggerElement?: HTMLButtonElement) {
+    if (categoryId === selectedCategoryId) {
+      const firstVideoId = selectedSection?.items[0]?.id;
+
+      if (firstVideoId) {
+        shouldScrollToPlayerRef.current = true;
+        setSelectedVideoId(firstVideoId);
+      }
+
+      triggerElement?.blur();
+      return;
+    }
+
+    shouldScrollToPlayerRef.current = true;
+    setSelectedCategoryId(categoryId);
+    setSelectedVideoId(undefined);
+    triggerElement?.blur();
+  }
+
+  function handleSelectRegion(regionCode: RegionCode) {
+    setSelectedRegionCode(regionCode);
+    setSelectedVideoId(undefined);
   }
 
   function handleVideoEnd() {
@@ -83,20 +125,19 @@ function App() {
   }
 
   useEffect(() => {
-    const videos = data.flatMap((section) => section.items);
-    const firstVideoId = videos[0]?.id;
+    const firstVideoId = selectedSection?.items[0]?.id;
 
     if (!firstVideoId) {
       setSelectedVideoId(undefined);
       return;
     }
 
-    const hasSelectedVideo = videos.some((item) => item.id === selectedVideoId);
+    const hasSelectedVideo = selectedSection.items.some((item) => item.id === selectedVideoId);
 
     if (!hasSelectedVideo) {
       setSelectedVideoId(firstVideoId);
     }
-  }, [data, selectedVideoId]);
+  }, [selectedSection, selectedVideoId]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, selectedRegionCode);
@@ -141,8 +182,29 @@ function App() {
           </div>
           <SearchBar
             selectedRegionCode={selectedRegionCode}
-            onSelectRegion={setSelectedRegionCode}
+            onSelectRegion={handleSelectRegion}
           />
+        </section>
+
+        <section className="app-shell__panel">
+          <div className="app-shell__section-heading">
+            <p className="app-shell__section-eyebrow">Category</p>
+            <h2 className="app-shell__section-title">카테고리 선택</h2>
+          </div>
+          <div className="category-picker" aria-label="영상 카테고리 선택">
+            {videoCategories.map((category) => (
+              <button
+                key={category.id}
+                className="category-picker__button"
+                data-active={selectedCategoryId === category.id}
+                onClick={(event) => handleSelectCategory(category.id, event.currentTarget)}
+                type="button"
+              >
+                <span className="category-picker__label">{category.label}</span>
+                <span className="category-picker__description">{category.description}</span>
+              </button>
+            ))}
+          </div>
         </section>
 
         <section
@@ -153,10 +215,11 @@ function App() {
             <p className="app-shell__section-eyebrow">Now Playing</p>
             <h2 className="app-shell__section-title">
               {selectedCountryName} 인기 영상
-              {selectedVideoEntry ? ` · ${selectedVideoEntry.categoryLabel}` : ''}
+              {selectedCategory ? ` · ${selectedCategory.label}` : ''}
             </h2>
           </div>
           <VideoPlayer
+            isLoading={isLoading}
             selectedVideoId={selectedVideoId}
             onVideoEnd={handleVideoEnd}
           />
@@ -176,13 +239,18 @@ function App() {
         <section className="app-shell__panel">
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Chart</p>
-            <h2 className="app-shell__section-title">카테고리별 인기 영상</h2>
+            <h2 className="app-shell__section-title">
+              {selectedCategory?.label ?? '선택한 카테고리'} 인기 영상
+            </h2>
           </div>
           <VideoList
             errorMessage={error instanceof Error ? error.message : undefined}
+            hasNextPage={hasNextPage}
             isError={isError}
+            isFetchingNextPage={isFetchingNextPage}
             isLoading={isLoading}
-            sections={data}
+            onLoadMore={() => void fetchNextPage()}
+            section={selectedSection}
             onSelectVideo={handleSelectVideo}
             selectedVideoId={selectedVideoId}
           />

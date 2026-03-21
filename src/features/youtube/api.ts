@@ -1,26 +1,25 @@
 import { videoCategories } from '../../constants/videoCategories';
 import { YouTubeCategorySection, YouTubeVideoListResponse } from './types';
 
-const MAX_RESULTS_PER_CATEGORY = '12';
+const MAX_RESULTS_PER_CATEGORY = 50;
 
 async function fetchMostPopularVideos(
   regionCode: string,
   categoryId: string,
+  pageToken?: string,
 ): Promise<YouTubeVideoListResponse> {
-  const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
-
-  if (!apiKey) {
-    throw new Error('VITE_YOUTUBE_API_KEY is not configured.');
-  }
-
   const params = new URLSearchParams({
     part: 'snippet,contentDetails,statistics',
     chart: 'mostPopular',
     regionCode,
     videoCategoryId: categoryId,
-    maxResults: MAX_RESULTS_PER_CATEGORY,
-    key: apiKey,
+    maxResults: String(MAX_RESULTS_PER_CATEGORY),
+    key: getApiKey(),
   });
+
+  if (pageToken) {
+    params.set('pageToken', pageToken);
+  }
 
   const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params.toString()}`);
 
@@ -39,21 +38,34 @@ async function fetchMostPopularVideos(
   return result;
 }
 
+function getApiKey() {
+  const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('VITE_YOUTUBE_API_KEY is not configured.');
+  }
+
+  return apiKey;
+}
+
 export async function fetchPopularVideosByCategory(
   regionCode: string,
-): Promise<YouTubeCategorySection[]> {
-  const responses = await Promise.all(
-    videoCategories.map(async (category) => {
-      const result = await fetchMostPopularVideos(regionCode, category.id);
+  categoryId: string,
+  pageToken?: string,
+): Promise<YouTubeCategorySection> {
+  const category = videoCategories.find((item) => item.id === categoryId);
 
-      return {
-        categoryId: category.id,
-        label: category.label,
-        description: category.description,
-        items: result.items,
-      };
-    }),
-  );
+  if (!category) {
+    throw new Error('지원하지 않는 카테고리입니다.');
+  }
 
-  return responses.filter((section) => section.items.length > 0);
+  const result = await fetchMostPopularVideos(regionCode, category.id, pageToken);
+
+  return {
+    categoryId: category.id,
+    label: category.label,
+    description: category.description,
+    items: result.items,
+    nextPageToken: result.nextPageToken,
+  };
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import './VideoPlayer.css';
 
-const DEFAULT_VIDEO_ID = '61JHONRXhjs';
 let youtubeIframeApiPromise: Promise<void> | undefined;
 
 function loadYouTubeIframeApi() {
@@ -41,11 +40,12 @@ function loadYouTubeIframeApi() {
 
 interface VideoPlayerProps {
   selectedVideoId?: string;
+  isLoading?: boolean;
   onVideoEnd?: () => void;
 }
 
-function VideoPlayer({ selectedVideoId, onVideoEnd }: VideoPlayerProps) {
-  const videoId = selectedVideoId ?? DEFAULT_VIDEO_ID;
+function VideoPlayer({ selectedVideoId, isLoading = false, onVideoEnd }: VideoPlayerProps) {
+  const videoId = selectedVideoId;
   const playerHostRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YT.Player | null>(null);
   const onVideoEndRef = useRef(onVideoEnd);
@@ -56,6 +56,14 @@ function VideoPlayer({ selectedVideoId, onVideoEnd }: VideoPlayerProps) {
 
   useEffect(() => {
     let isCancelled = false;
+
+    if (!videoId) {
+      playerRef.current?.destroy();
+      playerRef.current = null;
+      return () => {
+        isCancelled = true;
+      };
+    }
 
     async function initializePlayer() {
       await loadYouTubeIframeApi();
@@ -95,10 +103,16 @@ function VideoPlayer({ selectedVideoId, onVideoEnd }: VideoPlayerProps) {
   return (
     <section className="video-player">
       <div className="video-player__frame">
-        <div
-          ref={playerHostRef}
-          className="video-player__embed"
-        />
+        {videoId ? (
+          <div
+            ref={playerHostRef}
+            className="video-player__embed"
+          />
+        ) : (
+          <div className="video-player__placeholder">
+            {isLoading ? '선택한 카테고리 영상을 불러오는 중입니다.' : '재생할 영상을 선택해 주세요.'}
+          </div>
+        )}
       </div>
     </section>
   );

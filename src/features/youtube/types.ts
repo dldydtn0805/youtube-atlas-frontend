@@ -3,10 +3,12 @@ export interface YouTubeCategorySection {
   label: string;
   description: string;
   items: YouTubeVideoItem[];
+  nextPageToken?: string;
 }
 
 export interface YouTubeVideoListResponse {
   items: YouTubeVideoItem[];
+  nextPageToken?: string;
 }
 
 export interface YouTubeVideoItem {

@@ -34,6 +34,22 @@
   transform: scale(1.003);
 }
 
+.video-player__placeholder {
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  background:
+    radial-gradient(circle at top, rgba(0, 113, 227, 0.14), transparent 44%),
+    #0f172a;
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.82);
+  display: flex;
+  font-size: 1rem;
+  font-weight: 600;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .video-player__frame {
     border-radius: 20px;
