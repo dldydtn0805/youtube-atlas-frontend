@@ -63,22 +63,19 @@ function VideoPlayer({
   useEffect(() => {
     let isCancelled = false;
 
-    if (!videoId) {
-      playerRef.current?.destroy();
-      playerRef.current = null;
-      return () => {
-        isCancelled = true;
-      };
-    }
-
     async function initializePlayer() {
       await loadYouTubeIframeApi();
 
-      if (isCancelled || !playerHostRef.current || !window.YT?.Player) {
+      if (
+        isCancelled ||
+        !videoId ||
+        !playerHostRef.current ||
+        !window.YT?.Player ||
+        playerRef.current
+      ) {
         return;
       }
 
-      playerRef.current?.destroy();
       playerRef.current = new window.YT.Player(playerHostRef.current, {
         height: '100%',
         width: '100%',
@@ -97,14 +94,34 @@ function VideoPlayer({
       });
     }
 
-    initializePlayer();
+    void initializePlayer();
 
     return () => {
       isCancelled = true;
+    };
+  }, [videoId]);
+
+  useEffect(() => {
+    const player = playerRef.current;
+
+    if (!player) {
+      return;
+    }
+
+    if (!videoId) {
+      player.stopVideo();
+      return;
+    }
+
+    player.loadVideoById(videoId);
+  }, [videoId]);
+
+  useEffect(() => {
+    return () => {
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, [videoId]);
+  }, []);
 
   return (
     <section
@@ -112,16 +129,16 @@ function VideoPlayer({
       data-cinematic={isCinematic}
     >
       <div className="video-player__frame">
-        {videoId ? (
-          <div
-            ref={playerHostRef}
-            className="video-player__embed"
-          />
-        ) : (
+        <div
+          ref={playerHostRef}
+          className="video-player__embed"
+          data-visible={Boolean(videoId)}
+        />
+        {!videoId ? (
           <div className="video-player__placeholder">
             {isLoading ? '선택한 카테고리 영상을 불러오는 중입니다.' : '재생할 영상을 선택해 주세요.'}
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );

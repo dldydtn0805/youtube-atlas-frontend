@@ -11,11 +11,16 @@ interface ImportMeta {
 }
 
 declare namespace YT {
+  interface OnReadyEvent {
+    target: Player;
+  }
+
   interface OnStateChangeEvent {
     data: number;
   }
 
   interface PlayerEvents {
+    onReady?: (event: OnReadyEvent) => void;
     onStateChange?: (event: OnStateChangeEvent) => void;
   }
 
@@ -29,6 +34,8 @@ declare namespace YT {
 
   interface Player {
     destroy: () => void;
+    loadVideoById: (videoId: string) => void;
+    stopVideo: () => void;
   }
 
   interface PlayerStateStatic {
