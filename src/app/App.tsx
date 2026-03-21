@@ -118,12 +118,37 @@ function CinemaIcon() {
   );
 }
 
+function PortraitIcon() {
+  return (
+    <svg aria-hidden="true" className="app-shell__button-icon" viewBox="0 0 24 24">
+      <rect
+        x="7.5"
+        y="3.5"
+        width="9"
+        height="17"
+        rx="2.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M10 7.5h4M10 16.5h4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
 function App() {
   const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
+  const [isPortraitFitMode, setIsPortraitFitMode] = useState(true);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chart');
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const shouldScrollToPlayerRef = useRef(false);
@@ -302,7 +327,7 @@ function App() {
   }
 
   const isMobileCinematicMode = isMobileLayout && isCinematicMode;
-  const shouldUsePortraitFit = isMobileCinematicMode;
+  const shouldUsePortraitFit = isMobileCinematicMode && isPortraitFitMode;
   const canPlayNextVideo = (selectedSection?.items.length ?? 0) > 1;
   const showNextButton = isMobileLayout ? canPlayNextVideo : isCinematicMode;
   const cinematicToggleLabel = isCinematicMode
@@ -312,6 +337,7 @@ function App() {
     : isMobileLayout
       ? '시네마'
       : '시네마틱 모드';
+  const portraitFitToggleLabel = isPortraitFitMode ? '가로 보기' : '세로 맞춤';
 
   const filtersContent = (
     <div className="app-shell__mobile-stack">
@@ -365,6 +391,19 @@ function App() {
             </h2>
           </div>
           <div className="app-shell__player-actions">
+            {isMobileCinematicMode ? (
+              <button
+                aria-label={portraitFitToggleLabel}
+                className="app-shell__fit-toggle"
+                data-active={isPortraitFitMode}
+                data-icon-only="true"
+                onClick={() => setIsPortraitFitMode((current) => !current)}
+                title={portraitFitToggleLabel}
+                type="button"
+              >
+                <PortraitIcon />
+              </button>
+            ) : null}
             <button
               aria-label={cinematicToggleLabel}
               className="app-shell__mode-toggle"
