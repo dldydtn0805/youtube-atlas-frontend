@@ -84,6 +84,15 @@
   width: min(100%, calc(var(--cinematic-player-max-height) * 16 / 9));
 }
 
+.video-player[data-cinematic='true'][data-orientation='portrait'] .video-player__embed,
+.video-player[data-cinematic='true'][data-orientation='portrait'] .video-player__placeholder {
+  height: var(--cinematic-player-portrait-max-height, var(--cinematic-player-max-height));
+  width: min(
+    100%,
+    calc(var(--cinematic-player-portrait-max-height, var(--cinematic-player-max-height)) * 9 / 16)
+  );
+}
+
 .video-player[data-cinematic='true'] .video-player__placeholder {
   inset: auto;
   left: 50%;

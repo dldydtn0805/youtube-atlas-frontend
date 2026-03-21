@@ -77,12 +77,78 @@ function mergeSections(pages: YouTubeCategorySection[] | undefined) {
   };
 }
 
+function NextIcon() {
+  return (
+    <svg aria-hidden="true" className="app-shell__button-icon" viewBox="0 0 24 24">
+      <path
+        d="M8 6.5 15 12l-7 5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path
+        d="M17 6.5v11"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function CinemaIcon() {
+  return (
+    <svg aria-hidden="true" className="app-shell__button-icon" viewBox="0 0 24 24">
+      <path
+        d="M4.5 6.5h15a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16V8a1.5 1.5 0 0 1 1.5-1.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M7.5 6.5v11M16.5 6.5v11M3 10h18M3 14h18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
+    </svg>
+  );
+}
+
+function PortraitIcon() {
+  return (
+    <svg aria-hidden="true" className="app-shell__button-icon" viewBox="0 0 24 24">
+      <rect
+        x="7.5"
+        y="3.5"
+        width="9"
+        height="17"
+        rx="2.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M10 7.5h4M10 16.5h4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
 function App() {
   const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
+  const [isPortraitFitMode, setIsPortraitFitMode] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chart');
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const shouldScrollToPlayerRef = useRef(false);
@@ -206,14 +272,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isMobileLayout || !isCinematicMode) {
-      return;
-    }
-
-    setIsCinematicMode(false);
-  }, [isMobileLayout, isCinematicMode]);
-
-  useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, selectedRegionCode);
   }, [selectedRegionCode]);
 
@@ -268,8 +326,38 @@ function App() {
     setIsCinematicMode((current) => !current);
   }
 
+  const isMobileCinematicMode = isMobileLayout && isCinematicMode;
+  const shouldUsePortraitFit = isMobileCinematicMode && isPortraitFitMode;
   const canPlayNextVideo = (selectedSection?.items.length ?? 0) > 1;
   const showNextButton = isMobileLayout ? canPlayNextVideo : isCinematicMode;
+  const cinematicToggleLabel = isCinematicMode
+    ? isMobileLayout
+      ? '일반'
+      : '기본 보기'
+    : isMobileLayout
+      ? '시네마'
+      : '시네마틱 모드';
+  const portraitFitToggleLabel = isPortraitFitMode ? '기본 비율' : '세로 맞춤';
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    if (!shouldUsePortraitFit) {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+      return;
+    }
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [shouldUsePortraitFit]);
 
   const filtersContent = (
     <div className="app-shell__mobile-stack">
@@ -318,29 +406,46 @@ function App() {
           <div className="app-shell__section-heading-copy">
             <p className="app-shell__section-eyebrow">Now Playing</p>
             <h2 className="app-shell__section-title">
-              {selectedCountryName} 인기 영상
+              {selectedCountryName}
               {selectedCategory ? ` · ${selectedCategory.label}` : ''}
             </h2>
           </div>
           <div className="app-shell__player-actions">
-            {showNextButton ? (
+            {isMobileCinematicMode ? (
               <button
-                className="app-shell__next-button"
-                disabled={!canPlayNextVideo}
-                onClick={handlePlayNextVideo}
+                aria-label={portraitFitToggleLabel}
+                className="app-shell__fit-toggle"
+                data-active={isPortraitFitMode}
+                data-icon-only="true"
+                onClick={() => setIsPortraitFitMode((current) => !current)}
+                title={portraitFitToggleLabel}
                 type="button"
               >
-                다음 영상
+                <PortraitIcon />
               </button>
             ) : null}
-            {!isMobileLayout ? (
+            <button
+              aria-label={cinematicToggleLabel}
+              className="app-shell__mode-toggle"
+              data-active={isCinematicMode}
+              data-icon-only={isMobileLayout}
+              onClick={handleToggleCinematicMode}
+              title={cinematicToggleLabel}
+              type="button"
+            >
+              {isMobileLayout ? <CinemaIcon /> : cinematicToggleLabel}
+            </button>
+            {showNextButton ? (
               <button
-                className="app-shell__mode-toggle"
-                data-active={isCinematicMode}
-                onClick={handleToggleCinematicMode}
+                aria-label="다음 영상"
+                className="app-shell__next-button"
+                data-icon-only={isMobileLayout}
+                disabled={!canPlayNextVideo}
+                onClick={handlePlayNextVideo}
+                title="다음 영상"
                 type="button"
               >
-                {isCinematicMode ? '기본 보기' : '시네마틱 모드'}
+                {isMobileLayout ? <NextIcon /> : '다음 영상'}
               </button>
             ) : null}
           </div>
@@ -348,6 +453,7 @@ function App() {
         <VideoPlayer
           isLoading={isLoading}
           isCinematic={isCinematicMode}
+          isPortrait={shouldUsePortraitFit}
           selectedVideoId={selectedVideoId}
           onVideoEnd={handleVideoEnd}
         />
@@ -357,12 +463,16 @@ function App() {
               <h3 className="app-shell__stage-title">{selectedVideo.snippet.title}</h3>
               <p className="app-shell__stage-channel">{selectedVideo.snippet.channelTitle}</p>
             </div>
-            <div className="app-shell__stage-tags" aria-label="현재 재생 정보">
-              <span className="app-shell__stage-tag">{selectedCountryName}</span>
-              {selectedCategory ? (
-                <span className="app-shell__stage-tag">{selectedCategory.label}</span>
-              ) : null}
-            </div>
+            {!isMobileCinematicMode ? (
+              <div className="app-shell__stage-side">
+                <div className="app-shell__stage-tags" aria-label="현재 재생 정보">
+                  <span className="app-shell__stage-tag">{selectedCountryName}</span>
+                  {selectedCategory ? (
+                    <span className="app-shell__stage-tag">{selectedCategory.label}</span>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </section>
@@ -405,7 +515,11 @@ function App() {
   );
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      data-mobile-cinematic={isMobileCinematicMode}
+      data-portrait-fit={shouldUsePortraitFit}
+    >
       <header className="app-shell__header">
         <p className="app-shell__eyebrow">Global Trending Video Curation</p>
         <h1 className="app-shell__title">YouTube Atlas</h1>
@@ -418,35 +532,39 @@ function App() {
         {isMobileLayout ? (
           <>
             {playerContent}
-            <nav className="app-shell__mobile-tabs" aria-label="모바일 화면 전환">
-              <button
-                className="app-shell__mobile-tab"
-                data-active={mobileTab === 'chart'}
-                onClick={() => setMobileTab('chart')}
-                type="button"
-              >
-                목록
-              </button>
-              <button
-                className="app-shell__mobile-tab"
-                data-active={mobileTab === 'browse'}
-                onClick={() => setMobileTab('browse')}
-                type="button"
-              >
-                탐색
-              </button>
-              <button
-                className="app-shell__mobile-tab"
-                data-active={mobileTab === 'chat'}
-                onClick={() => setMobileTab('chat')}
-                type="button"
-              >
-                채팅
-              </button>
-            </nav>
-            {mobileTab === 'chart' ? chartContent : null}
-            {mobileTab === 'browse' ? filtersContent : null}
-            {mobileTab === 'chat' ? communityContent : null}
+            {!isMobileCinematicMode ? (
+              <>
+                <nav className="app-shell__mobile-tabs" aria-label="모바일 화면 전환">
+                  <button
+                    className="app-shell__mobile-tab"
+                    data-active={mobileTab === 'chart'}
+                    onClick={() => setMobileTab('chart')}
+                    type="button"
+                  >
+                    목록
+                  </button>
+                  <button
+                    className="app-shell__mobile-tab"
+                    data-active={mobileTab === 'browse'}
+                    onClick={() => setMobileTab('browse')}
+                    type="button"
+                  >
+                    탐색
+                  </button>
+                  <button
+                    className="app-shell__mobile-tab"
+                    data-active={mobileTab === 'chat'}
+                    onClick={() => setMobileTab('chat')}
+                    type="button"
+                  >
+                    채팅
+                  </button>
+                </nav>
+                {mobileTab === 'chart' ? chartContent : null}
+                {mobileTab === 'browse' ? filtersContent : null}
+                {mobileTab === 'chat' ? communityContent : null}
+              </>
+            ) : null}
           </>
         ) : (
           <>
@@ -492,7 +610,7 @@ function App() {
                   <div className="app-shell__section-heading-copy">
                     <p className="app-shell__section-eyebrow">Now Playing</p>
                     <h2 className="app-shell__section-title">
-                      {selectedCountryName} 인기 영상
+                      {selectedCountryName}
                       {selectedCategory ? ` · ${selectedCategory.label}` : ''}
                     </h2>
                   </div>
@@ -520,6 +638,7 @@ function App() {
                 <VideoPlayer
                   isLoading={isLoading}
                   isCinematic={isCinematicMode}
+                  isPortrait={shouldUsePortraitFit}
                   selectedVideoId={selectedVideoId}
                   onVideoEnd={handleVideoEnd}
                 />

@@ -42,6 +42,7 @@ interface VideoPlayerProps {
   selectedVideoId?: string;
   isLoading?: boolean;
   isCinematic?: boolean;
+  isPortrait?: boolean;
   onVideoEnd?: () => void;
 }
 
@@ -49,6 +50,7 @@ function VideoPlayer({
   selectedVideoId,
   isLoading = false,
   isCinematic = false,
+  isPortrait = false,
   onVideoEnd,
 }: VideoPlayerProps) {
   const videoId = selectedVideoId;
@@ -127,6 +129,7 @@ function VideoPlayer({
     <section
       className="video-player"
       data-cinematic={isCinematic}
+      data-orientation={isPortrait ? 'portrait' : 'landscape'}
     >
       <div className="video-player__frame">
         <div
