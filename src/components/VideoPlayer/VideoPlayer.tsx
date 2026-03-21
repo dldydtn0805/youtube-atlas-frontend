@@ -45,6 +45,7 @@ interface VideoPlayerProps {
   isLoading?: boolean;
   isCinematic?: boolean;
   isMobileCinematic?: boolean;
+  showOverlayNavigation?: boolean;
   isPortrait?: boolean;
   onVideoEnd?: () => void;
   canNavigateVideos?: boolean;
@@ -57,6 +58,7 @@ function VideoPlayer({
   isLoading = false,
   isCinematic = false,
   isMobileCinematic = false,
+  showOverlayNavigation = false,
   isPortrait = false,
   onVideoEnd,
   canNavigateVideos = false,
@@ -252,6 +254,26 @@ function VideoPlayer({
           className="video-player__embed"
           data-visible={Boolean(videoId)}
         />
+        {showOverlayNavigation && canNavigateVideos && videoId ? (
+          <div className="video-player__overlay-nav">
+            <button
+              aria-label="이전 영상"
+              className="video-player__overlay-button video-player__overlay-button--previous"
+              onClick={onPreviousVideo}
+              type="button"
+            >
+              <span className="video-player__overlay-icon">‹</span>
+            </button>
+            <button
+              aria-label="다음 영상"
+              className="video-player__overlay-button video-player__overlay-button--next"
+              onClick={onNextVideo}
+              type="button"
+            >
+              <span className="video-player__overlay-icon">›</span>
+            </button>
+          </div>
+        ) : null}
         {isMobileCinematic && canNavigateVideos && videoId ? (
           <div className="video-player__edge-controls">
             <button

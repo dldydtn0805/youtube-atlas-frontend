@@ -3,6 +3,10 @@ import './SearchBar.css';
 
 type RegionCode = (typeof countryCodes)[number]['code'];
 
+const sortedCountryCodes = [...countryCodes].sort((left, right) =>
+  left.name.localeCompare(right.name, 'ko'),
+);
+
 interface SearchBarProps {
   selectedRegionCode: RegionCode;
   onSelectRegion: (regionCode: RegionCode) => void;
@@ -11,7 +15,7 @@ interface SearchBarProps {
 function SearchBar({ selectedRegionCode, onSelectRegion }: SearchBarProps) {
   return (
     <section className="search-bar" aria-label="국가 선택">
-      {countryCodes.map((country) => (
+      {sortedCountryCodes.map((country) => (
         <button
           key={country.code}
           className="search-bar__button"
