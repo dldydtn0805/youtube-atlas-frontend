@@ -206,18 +206,27 @@ function App() {
     }
   }
 
-  function handlePlayNextVideo() {
+  function handleSelectAdjacentVideo(step: number) {
     if (!selectedSection || selectedSection.items.length === 0) {
       return;
     }
 
     const currentIndex = selectedSection.items.findIndex((item) => item.id === selectedVideoId);
+    const fallbackIndex = step >= 0 ? 0 : selectedSection.items.length - 1;
     const nextIndex =
       currentIndex >= 0
-        ? (currentIndex + 1) % selectedSection.items.length
-        : 0;
+        ? (currentIndex + step + selectedSection.items.length) % selectedSection.items.length
+        : fallbackIndex;
 
     setSelectedVideoId(selectedSection.items[nextIndex]?.id);
+  }
+
+  function handlePlayNextVideo() {
+    handleSelectAdjacentVideo(1);
+  }
+
+  function handlePlayPreviousVideo() {
+    handleSelectAdjacentVideo(-1);
   }
 
   function handleVideoEnd() {
@@ -433,9 +442,13 @@ function App() {
         <VideoPlayer
           isLoading={isLoading}
           isCinematic={isCinematicMode}
+          isMobileCinematic={isMobileCinematicMode}
           isPortrait={shouldUsePortraitFit}
+          onPreviousVideo={handlePlayPreviousVideo}
+          onNextVideo={handlePlayNextVideo}
           selectedVideoId={selectedVideoId}
           onVideoEnd={handleVideoEnd}
+          canNavigateVideos={canPlayNextVideo}
         />
         {selectedVideo && !isMobileCinematicMode ? (
           <div className="app-shell__stage-meta">
@@ -616,9 +629,13 @@ function App() {
                 <VideoPlayer
                   isLoading={isLoading}
                   isCinematic={isCinematicMode}
+                  isMobileCinematic={false}
                   isPortrait={shouldUsePortraitFit}
+                  onPreviousVideo={handlePlayPreviousVideo}
+                  onNextVideo={handlePlayNextVideo}
                   selectedVideoId={selectedVideoId}
                   onVideoEnd={handleVideoEnd}
+                  canNavigateVideos={canPlayNextVideo}
                 />
                 {selectedVideo ? (
                   <div className="app-shell__stage-meta">

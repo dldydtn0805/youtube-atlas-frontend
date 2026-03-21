@@ -654,10 +654,12 @@
     --cinematic-player-max-height: min(calc(100dvh - 190px), calc(100vw * 9 / 16));
     --cinematic-player-portrait-max-height: min(calc(100dvh - 140px), calc(100vw * 1.4));
     min-height: 100dvh;
+    overscroll-behavior-x: contain;
     padding:
       calc(14px + env(safe-area-inset-top, 0px))
       0
       calc(24px + env(safe-area-inset-bottom, 0px));
+    touch-action: pan-y pinch-zoom;
   }
 
   .app-shell[data-mobile-cinematic='true'][data-portrait-fit='true'] .app-shell__stage[data-cinematic='true'] {
