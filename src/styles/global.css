@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -30,8 +28,7 @@ body {
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.92), transparent 30%),
     linear-gradient(180deg, #fbfbfd 0%, var(--bg) 38%, #eef2f7 100%);
   color: var(--text);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', sans-serif;
+  font-family: 'Neo둥근모', monospace;
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
