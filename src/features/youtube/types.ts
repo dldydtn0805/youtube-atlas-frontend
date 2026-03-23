@@ -6,6 +6,18 @@ export interface YouTubeCategorySection {
   nextPageToken?: string;
 }
 
+export interface YouTubeVideoCategoryListResponse {
+  items: YouTubeVideoCategoryItem[];
+}
+
+export interface YouTubeVideoCategoryItem {
+  id: string;
+  snippet: {
+    assignable: boolean;
+    title: string;
+  };
+}
+
 export interface YouTubeVideoListResponse {
   items: YouTubeVideoItem[];
   nextPageToken?: string;
@@ -13,6 +25,9 @@ export interface YouTubeVideoListResponse {
 
 export interface YouTubeVideoItem {
   id: string;
+  contentDetails: {
+    duration: string;
+  };
   snippet: {
     title: string;
     channelTitle: string;

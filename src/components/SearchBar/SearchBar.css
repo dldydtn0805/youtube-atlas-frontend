@@ -1,69 +1,45 @@
 .search-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  max-width: 100%;
+  display: block;
   min-width: 0;
-  padding: 0;
 }
 
-.search-bar__button {
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+.search-bar__field {
+  position: relative;
+}
+
+.search-bar__select {
+  appearance: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    rgba(6, 10, 18, 0.98);
+  border: 1px solid rgba(103, 129, 183, 0.24);
+  border-radius: 18px;
   color: var(--text);
   cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  padding: 0.82rem 1.15rem;
-  position: relative;
+  min-height: 62px;
+  padding: 0 52px 0 16px;
   transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    color 0.2s ease;
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+  width: 100%;
 }
 
-.search-bar__button:hover,
-.search-bar__button[data-active='true'] {
-  background: linear-gradient(180deg, #0a84ff 0%, var(--accent) 100%);
-  border-color: transparent;
-  box-shadow: 0 14px 28px rgba(0, 113, 227, 0.24);
-  color: #fff;
-  transform: translateY(-1px);
+.search-bar__select:hover,
+.search-bar__select:focus {
+  background:
+    linear-gradient(180deg, rgba(89, 208, 255, 0.12), transparent 52%),
+    rgba(7, 12, 21, 0.98);
+  border-color: rgba(89, 208, 255, 0.46);
+  box-shadow: 0 0 0 4px rgba(89, 208, 255, 0.08);
+  outline: none;
 }
 
-.search-bar__button:active {
-  transform: translateY(0);
-}
-
-@media (max-width: 768px) {
-  .search-bar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 2px 0 4px;
-    scroll-snap-type: x proximity;
-    width: 100%;
-  }
-
-  .search-bar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .search-bar__button {
-    flex: 0 0 auto;
-    font-size: 0.92rem;
-    padding: 0.78rem 1.05rem;
-    scroll-snap-align: start;
-    white-space: nowrap;
-  }
-}
-
-@media (max-width: 480px) {
-  .search-bar__button {
-    font-size: 0.88rem;
-    padding: 0.74rem 0.95rem;
-  }
+.search-bar__chevron {
+  color: var(--accent-cool);
+  pointer-events: none;
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
 }

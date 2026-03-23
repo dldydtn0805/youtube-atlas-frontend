@@ -14,19 +14,24 @@ interface SearchBarProps {
 
 function SearchBar({ selectedRegionCode, onSelectRegion }: SearchBarProps) {
   return (
-    <section className="search-bar" aria-label="국가 선택">
-      {sortedCountryCodes.map((country) => (
-        <button
-          key={country.code}
-          className="search-bar__button"
-          data-active={selectedRegionCode === country.code}
-          onClick={() => onSelectRegion(country.code)}
-          type="button"
+    <label className="search-bar" aria-label="국가 선택">
+      <div className="search-bar__field">
+        <select
+          className="search-bar__select"
+          onChange={(event) => onSelectRegion(event.target.value as RegionCode)}
+          value={selectedRegionCode}
         >
-          {country.name}
-        </button>
-      ))}
-    </section>
+          {sortedCountryCodes.map((country) => (
+            <option key={country.code} value={country.code}>
+              {`${country.code} · ${country.name}`}
+            </option>
+          ))}
+        </select>
+        <span aria-hidden="true" className="search-bar__chevron">
+          ▾
+        </span>
+      </div>
+    </label>
   );
 }
 
