@@ -6,7 +6,6 @@ import VideoPlayer from '../components/VideoPlayer/VideoPlayer';
 import countryCodes from '../constants/countryCodes';
 import { YouTubeCategorySection } from '../features/youtube/types';
 import { usePopularVideosByCategory, useVideoCategories } from '../features/youtube/queries';
-import { isSupabaseConfigured } from '../lib/supabase';
 import '../styles/app.css';
 
 const DEFAULT_REGION_CODE = 'US';
@@ -15,9 +14,10 @@ const MOBILE_BREAKPOINT = 768;
 const STORAGE_KEY = 'youtube-atlas-region-code';
 const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
 type RegionCode = (typeof countryCodes)[number]['code'];
-type MobileTab = 'browse' | 'chart' | 'chat';
+type MobileTab = 'chart' | 'chat';
 
 const SUPPORTED_REGION_CODES = new Set<string>(countryCodes.map((country) => country.code));
+const sortedCountryCodes = [...countryCodes].sort((left, right) => left.name.localeCompare(right.name, 'ko'));
 
 function isSupportedRegionCode(regionCode: string): regionCode is RegionCode {
   return SUPPORTED_REGION_CODES.has(regionCode);
@@ -93,6 +93,7 @@ function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chart');
   const playerSectionRef = useRef<HTMLElement | null>(null);
@@ -107,6 +108,21 @@ function App() {
   } = useVideoCategories(selectedRegionCode);
   const selectedCategory =
     videoCategories.find((category) => category.id === selectedCategoryId) ?? videoCategories[0];
+  const sortedVideoCategories = [...videoCategories].sort((left, right) =>
+    left.id === DEFAULT_CATEGORY_ID
+      ? -1
+      : right.id === DEFAULT_CATEGORY_ID
+        ? 1
+        : left.label.localeCompare(right.label, 'ko'),
+  );
+  const regionOptions = sortedCountryCodes.map((country) => ({
+    value: country.code,
+    label: `${country.code} · ${country.name}`,
+  }));
+  const categoryOptions = sortedVideoCategories.map((category) => ({
+    value: category.id,
+    label: category.label,
+  }));
   const {
     data,
     fetchNextPage,
@@ -123,11 +139,6 @@ function App() {
   const isDesktopCinematicMode = !isMobileLayout && isCinematicMode;
   const canPlayNextVideo = (selectedSection?.items.length ?? 0) > 1;
   const cinematicToggleLabel = isDesktopCinematicMode ? '기본 보기' : '시네마틱 모드';
-  const queueSize = selectedSection?.items.length ?? 0;
-  const selectedVideoOrder = selectedSection?.items.findIndex((item) => item.id === selectedVideoId) ?? -1;
-  const selectedVideoSlot = selectedVideoOrder >= 0 ? String(selectedVideoOrder + 1).padStart(2, '0') : '--';
-  const broadcastModeLabel = isDesktopCinematicMode ? 'FOCUS MODE' : 'CONTROL DECK';
-  const liveStatusLabel = isSupabaseConfigured ? 'REALTIME LINK' : 'CHAT OFFLINE';
   const isChartLoading =
     isVideoCategoriesLoading || (!selectedCategory && !isVideoCategoriesError) || isLoading;
   const isChartError = isVideoCategoriesError || isError;
@@ -138,12 +149,11 @@ function App() {
     : error instanceof Error
       ? error.message
       : undefined;
-  const categoryHint = isVideoCategoriesLoading
+  const categoryFilterHelperText = isVideoCategoriesLoading
     ? '카테고리를 불러오는 중입니다.'
     : isVideoCategoriesError
-      ? chartErrorMessage
-      : selectedCategory?.description ?? '선택 가능한 카테고리를 찾고 있습니다.';
-  const selectedCategoryValue = selectedCategory?.id ?? (isVideoCategoriesLoading ? selectedCategoryId : '');
+      ? `불러오기에 실패했습니다. ${chartErrorMessage}`
+      : selectedCategory?.description ?? '표시할 카테고리가 없습니다.';
 
   function handleSelectVideo(videoId: string, triggerElement?: HTMLButtonElement) {
     shouldScrollToPlayerRef.current = true;
@@ -287,6 +297,28 @@ function App() {
   }, [isCinematicMode]);
 
   useEffect(() => {
+    if (!isFilterModalOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFilterModalOpen(false);
+      }
+    };
+
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFilterModalOpen]);
+
+  useEffect(() => {
     if (!isDesktopCinematicMode || !shouldScrollOnModeChangeRef.current) {
       return;
     }
@@ -342,61 +374,135 @@ function App() {
     setIsCinematicMode((current) => !current);
   }
 
-  const filterDeckContent = (
-    <section className="app-shell__panel app-shell__panel--filters app-shell__panel--filter-deck">
-      <div className="app-shell__section-heading">
-        <p className="app-shell__section-eyebrow">Signal Routing</p>
-        <h2 className="app-shell__section-title">국가와 카테고리 라우팅</h2>
-      </div>
-      <div className="filter-deck" aria-label="영상 라우팅 선택">
-        <div className="filter-deck__field">
-          <div className="filter-deck__meta">
-            <span className="filter-deck__label">Region</span>
-            <strong className="filter-deck__value">{selectedCountryName}</strong>
-          </div>
-          <SearchBar
-            selectedRegionCode={selectedRegionCode}
-            onSelectRegion={handleSelectRegion}
-          />
+  function openFilterModal() {
+    setIsFilterModalOpen(true);
+  }
+
+  function closeFilterModal() {
+    setIsFilterModalOpen(false);
+  }
+
+  function handleCompleteFilterSelection() {
+    setIsFilterModalOpen(false);
+
+    if (isMobileLayout) {
+      setMobileTab('chart');
+    }
+  }
+
+  const filterSummaryContent = (
+    <section className="app-shell__panel app-shell__panel--filters">
+      <div className="app-shell__section-heading app-shell__section-heading--filters">
+        <div className="app-shell__section-heading-copy">
+          <p className="app-shell__section-eyebrow">Filters</p>
+          <h2 className="app-shell__section-title">국가와 카테고리 선택</h2>
         </div>
-        <label className="filter-deck__field filter-deck__field--select">
-          <div className="filter-deck__meta">
-            <span className="filter-deck__label">Channel</span>
-            <strong className="filter-deck__value">{selectedCategory?.label ?? '선택'}</strong>
-          </div>
-          <div className="filter-deck__select-wrap">
-            <select
-              aria-label="영상 카테고리 선택"
-              className="filter-deck__select"
-              disabled={isVideoCategoriesLoading || isVideoCategoriesError || videoCategories.length === 0}
-              onChange={(event) => handleSelectCategory(event.target.value)}
-              value={selectedCategoryValue}
-            >
-              {isVideoCategoriesLoading ? (
-                <option value={selectedCategoryValue}>카테고리 불러오는 중...</option>
-              ) : null}
-              {!isVideoCategoriesLoading && videoCategories.length === 0 ? (
-                <option value="">표시할 카테고리가 없습니다.</option>
-              ) : null}
-              {videoCategories.map((category, index) => (
-                <option key={category.id} value={category.id}>
-                  {`CH ${String(index + 1).padStart(2, '0')} · ${category.label}`}
-                </option>
-              ))}
-            </select>
-            <span aria-hidden="true" className="filter-deck__chevron">
-              ▾
-            </span>
-          </div>
-          <span className="filter-deck__hint">{categoryHint}</span>
-        </label>
+        <button className="app-shell__filter-trigger" onClick={openFilterModal} type="button">
+          필터 열기
+        </button>
+      </div>
+      <div className="app-shell__filter-summary" aria-label="현재 필터">
+        <div className="app-shell__filter-pill-group">
+          <span className="app-shell__filter-pill">
+            <strong>국가</strong>
+            {selectedCountryName}
+          </span>
+          <span className="app-shell__filter-pill">
+            <strong>카테고리</strong>
+            {selectedCategory?.label ?? '선택 중'}
+          </span>
+        </div>
+        <p className="app-shell__filter-summary-text">
+          한 번의 모달에서 국가와 카테고리를 같이 바꾸고 바로 차트에 반영할 수 있습니다.
+        </p>
       </div>
     </section>
   );
 
-  const filtersContent = (
-    <div className="app-shell__mobile-stack">{filterDeckContent}</div>
-  );
+  const filterModalContent = isFilterModalOpen ? (
+    <div className="app-shell__modal-backdrop" onClick={closeFilterModal} role="presentation">
+      <section
+        aria-labelledby="filter-modal-title"
+        aria-modal="true"
+        className="app-shell__modal"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <div className="app-shell__modal-header">
+          <div className="app-shell__section-heading">
+            <p className="app-shell__section-eyebrow">Filters</p>
+            <h2 className="app-shell__section-title" id="filter-modal-title">
+              국가와 카테고리 선택
+            </h2>
+          </div>
+          <button
+            aria-label="필터 모달 닫기"
+            className="app-shell__modal-close"
+            onClick={closeFilterModal}
+            type="button"
+          >
+            닫기
+          </button>
+        </div>
+
+        <div className="app-shell__modal-body">
+          <div className="app-shell__filter-pill-group">
+            <span className="app-shell__filter-pill">
+              <strong>현재 국가</strong>
+              {selectedCountryName}
+            </span>
+            <span className="app-shell__filter-pill">
+              <strong>현재 카테고리</strong>
+              {selectedCategory?.label ?? '선택 중'}
+            </span>
+          </div>
+
+          <div className="app-shell__modal-fields">
+            <div className="app-shell__modal-field">
+              <div className="app-shell__section-heading">
+                <p className="app-shell__section-eyebrow">Region</p>
+                <h3 className="app-shell__modal-field-title">국가</h3>
+              </div>
+              <SearchBar
+                ariaLabel="국가 선택"
+                onChange={(regionCode) => handleSelectRegion(regionCode as RegionCode)}
+                options={regionOptions}
+                value={selectedRegionCode}
+              />
+            </div>
+
+            <div className="app-shell__modal-field">
+              <div className="app-shell__section-heading">
+                <p className="app-shell__section-eyebrow">Category</p>
+                <h3 className="app-shell__modal-field-title">카테고리</h3>
+              </div>
+              <SearchBar
+                ariaLabel="카테고리 선택"
+                disabled={isVideoCategoriesLoading || isVideoCategoriesError || categoryOptions.length === 0}
+                emptyLabel={
+                  isVideoCategoriesLoading
+                    ? '카테고리를 불러오는 중입니다.'
+                    : isVideoCategoriesError
+                      ? '카테고리를 불러오지 못했습니다.'
+                      : '표시할 카테고리가 없습니다.'
+                }
+                helperText={categoryFilterHelperText}
+                onChange={handleSelectCategory}
+                options={categoryOptions}
+                value={selectedCategory?.id ?? ''}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="app-shell__modal-footer">
+          <button className="app-shell__modal-action" onClick={handleCompleteFilterSelection} type="button">
+            선택 완료
+          </button>
+        </div>
+      </section>
+    </div>
+  ) : null;
 
   const playerContent = (
     <div className="app-shell__stage" data-cinematic={isDesktopCinematicMode}>
@@ -447,22 +553,11 @@ function App() {
               <p className="app-shell__stage-channel">{selectedVideo.snippet.channelTitle}</p>
             </div>
             <div className="app-shell__stage-side">
-              <div className="app-shell__stage-readouts" aria-label="재생 현황">
-                <div className="app-shell__stage-readout">
-                  <span className="app-shell__stage-readout-label">QUEUE</span>
-                  <strong className="app-shell__stage-readout-value">{String(queueSize).padStart(2, '0')}</strong>
-                </div>
-                <div className="app-shell__stage-readout">
-                  <span className="app-shell__stage-readout-label">SLOT</span>
-                  <strong className="app-shell__stage-readout-value">{selectedVideoSlot}</strong>
-                </div>
-              </div>
               <div className="app-shell__stage-tags" aria-label="현재 재생 정보">
                 <span className="app-shell__stage-tag">{selectedCountryName}</span>
                 {selectedCategory ? (
                   <span className="app-shell__stage-tag">{selectedCategory.label}</span>
                 ) : null}
-                <span className="app-shell__stage-tag">{broadcastModeLabel}</span>
               </div>
             </div>
           </div>
@@ -509,46 +604,17 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-shell__header">
-        <div className="app-shell__hero-panel">
-          <div className="app-shell__hero-copy">
-            <p className="app-shell__eyebrow">Broadcast Control Room / Global Trending Feed</p>
-            <h1 className="app-shell__title">YOUTUBE ATLAS</h1>
-            <p className="app-shell__subtitle">
-              {selectedCountryName} 트렌딩 피드를 관제실 화면처럼 탐색하고, 바로 재생하고, 같은
-              영상을 보는 사람들과 실시간으로 대화할 수 있는 브로드캐스트 데크입니다.
-            </p>
-          </div>
-          <div className="app-shell__hero-readouts" aria-label="현재 방송 상태">
-            <article className="app-shell__hero-readout">
-              <span className="app-shell__hero-readout-label">REGION</span>
-              <strong className="app-shell__hero-readout-value">{selectedCountryName}</strong>
-              <span className="app-shell__hero-readout-meta">{selectedRegionCode}</span>
-            </article>
-            <article className="app-shell__hero-readout">
-              <span className="app-shell__hero-readout-label">CHANNEL</span>
-              <strong className="app-shell__hero-readout-value">
-                {selectedCategory?.label ?? 'UNSET'}
-              </strong>
-              <span className="app-shell__hero-readout-meta">QUEUE {String(queueSize).padStart(2, '0')}</span>
-            </article>
-            <article className="app-shell__hero-readout">
-              <span className="app-shell__hero-readout-label">STATUS</span>
-              <strong className="app-shell__hero-readout-value">{liveStatusLabel}</strong>
-              <span className="app-shell__hero-readout-meta">SUPABASE</span>
-            </article>
-            <article className="app-shell__hero-readout">
-              <span className="app-shell__hero-readout-label">MODE</span>
-              <strong className="app-shell__hero-readout-value">{broadcastModeLabel}</strong>
-              <span className="app-shell__hero-readout-meta">
-                {selectedVideo ? `SLOT ${selectedVideoSlot}` : 'NO SIGNAL'}
-              </span>
-            </article>
-          </div>
-        </div>
+        <p className="app-shell__eyebrow">Global Trending Video Curation</p>
+        <h1 className="app-shell__title">YouTube Atlas</h1>
+        <p className="app-shell__subtitle">
+          지금은 <strong>{selectedCountryName}</strong> 인기 영상을 보고 있습니다. 군더더기 없이
+          탐색하고, 바로 재생하고, 빠르게 전환할 수 있게 정리했습니다.
+        </p>
       </header>
       <main className="app-shell__main">
         {isMobileLayout ? (
           <>
+            {filterSummaryContent}
             {playerContent}
             <nav className="app-shell__mobile-tabs" aria-label="모바일 화면 전환">
               <button
@@ -561,8 +627,8 @@ function App() {
               </button>
               <button
                 className="app-shell__mobile-tab"
-                data-active={mobileTab === 'browse'}
-                onClick={() => setMobileTab('browse')}
+                data-active={isFilterModalOpen}
+                onClick={openFilterModal}
                 type="button"
               >
                 필터
@@ -577,22 +643,18 @@ function App() {
               </button>
             </nav>
             {mobileTab === 'chart' ? chartContent : null}
-            {mobileTab === 'browse' ? filtersContent : null}
             {mobileTab === 'chat' ? communityContent : null}
           </>
         ) : (
           <>
-            {filterDeckContent}
-
+            {filterSummaryContent}
             {playerContent}
-
-            <div className="app-shell__content-grid">
-              {chartContent}
-              {communityContent}
-            </div>
+            {chartContent}
+            {communityContent}
           </>
         )}
       </main>
+      {filterModalContent}
     </div>
   );
 }

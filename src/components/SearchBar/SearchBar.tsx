@@ -1,36 +1,61 @@
-import countryCodes from '../../constants/countryCodes';
 import './SearchBar.css';
 
-type RegionCode = (typeof countryCodes)[number]['code'];
-
-const sortedCountryCodes = [...countryCodes].sort((left, right) =>
-  left.name.localeCompare(right.name, 'ko'),
-);
-
-interface SearchBarProps {
-  selectedRegionCode: RegionCode;
-  onSelectRegion: (regionCode: RegionCode) => void;
+export interface SearchBarOption {
+  value: string;
+  label: string;
 }
 
-function SearchBar({ selectedRegionCode, onSelectRegion }: SearchBarProps) {
+interface SearchBarProps {
+  ariaLabel: string;
+  emptyLabel?: string;
+  helperText?: string;
+  onChange: (value: string) => void;
+  options: SearchBarOption[];
+  value: string;
+  disabled?: boolean;
+}
+
+function SearchBar({
+  ariaLabel,
+  emptyLabel = '선택 가능한 항목이 없습니다.',
+  helperText,
+  onChange,
+  options,
+  value,
+  disabled = false,
+}: SearchBarProps) {
+  const hasOptions = options.length > 0;
+
   return (
-    <label className="search-bar" aria-label="국가 선택">
+    <label className="search-bar" aria-label={ariaLabel}>
       <div className="search-bar__field">
         <select
           className="search-bar__select"
-          onChange={(event) => onSelectRegion(event.target.value as RegionCode)}
-          value={selectedRegionCode}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+          value={hasOptions ? value : ''}
         >
-          {sortedCountryCodes.map((country) => (
-            <option key={country.code} value={country.code}>
-              {`${country.code} · ${country.name}`}
+          {hasOptions ? (
+            options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))
+          ) : (
+            <option value="">
+              {emptyLabel}
             </option>
-          ))}
+          )}
         </select>
         <span aria-hidden="true" className="search-bar__chevron">
           ▾
         </span>
       </div>
+      {helperText ? (
+        <span className="search-bar__helper">
+          {helperText}
+        </span>
+      ) : null}
     </label>
   );
 }
