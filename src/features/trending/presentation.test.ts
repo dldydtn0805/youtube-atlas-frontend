@@ -54,6 +54,30 @@ describe('trend presentation helpers', () => {
     ]);
   });
 
+  it('shows a view badge starting from a 5만 increase', () => {
+    expect(
+      getVideoTrendBadges({
+        categoryId: '0',
+        categoryLabel: '전체',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 8,
+        currentViewCount: 850_000,
+        isNew: false,
+        previousRank: 8,
+        previousViewCount: 800_000,
+        rankChange: 0,
+        regionCode: 'KR',
+        videoId: 'video-3',
+        viewCountDelta: 50_000,
+      }),
+    ).toEqual([
+      {
+        label: '조회수 +5만',
+        tone: 'views',
+      },
+    ]);
+  });
+
   it('formats compact counts for Korean labels', () => {
     expect(formatCompactCount(950)).toBe('950');
     expect(formatCompactCount(8_500)).toBe('8.5천');

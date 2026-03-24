@@ -1,5 +1,7 @@
 import type { VideoTrendSignal } from './types';
 
+const VIEW_COUNT_DELTA_BADGE_THRESHOLD = 50_000;
+
 export interface VideoTrendBadge {
   label: string;
   tone: 'new' | 'up' | 'views';
@@ -42,7 +44,7 @@ export function getVideoTrendBadges(signal?: VideoTrendSignal | null): VideoTren
     });
   }
 
-  if ((signal.viewCountDelta ?? 0) >= 100_000) {
+  if ((signal.viewCountDelta ?? 0) >= VIEW_COUNT_DELTA_BADGE_THRESHOLD) {
     badges.push({
       label: `조회수 +${formatCompactCount(signal.viewCountDelta as number)}`,
       tone: 'views',
