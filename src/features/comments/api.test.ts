@@ -1,48 +1,39 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createComment } from './api';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { from, insert, single } = vi.hoisted(() => {
-  const single = vi.fn();
-  const select = vi.fn(() => ({
-    single,
-  }));
-  const insert = vi.fn(() => ({
-    select,
-  }));
-  const from = vi.fn(() => ({
-    insert,
-  }));
-
+function createMockResponse(body: unknown, status = 200) {
   return {
-    from,
-    insert,
-    single,
-  };
-});
-
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from,
-  },
-}));
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => JSON.stringify(body),
+  } as Response;
+}
 
 describe('createComment', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetModules();
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com');
   });
 
-  it('normalizes message content before inserting it', async () => {
-    single.mockResolvedValueOnce({
-      data: {
+  afterEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('normalizes message content before posting it to the backend', async () => {
+    const { createComment } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
         author: '익명',
         client_id: 'client-1',
         content: 'hello world',
         created_at: '2026-03-22T00:00:00.000Z',
         id: 1,
         video_id: 'video-1',
-      },
-      error: null,
-    });
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
 
     await createComment({
       author: ' ',
@@ -51,23 +42,36 @@ describe('createComment', () => {
       videoId: 'video-1',
     });
 
-    expect(from).toHaveBeenCalledWith('comments');
-    expect(insert).toHaveBeenCalledWith({
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/videos/video-1/comments',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    );
+    expect(
+      JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string),
+    ).toEqual({
       author: '익명',
-      client_id: 'client-1',
+      clientId: 'client-1',
       content: 'hello world',
-      video_id: 'video-1',
     });
   });
 
-  it('maps cooldown database errors into a typed submission error', async () => {
-    single.mockResolvedValueOnce({
-      data: null,
-      error: {
-        details: 'retry_after_seconds=4',
-        message: 'comment_spam_cooldown',
-      },
-    });
+  it('maps cooldown API errors into a typed submission error', async () => {
+    const { createComment } = await import('./api');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        createMockResponse(
+          {
+            code: 'cooldown',
+            message: '채팅 흐름을 위해 4초 후에 다시 보낼 수 있어요.',
+            retryAfterSeconds: 4,
+          },
+          409,
+        ),
+      ),
+    );
 
     await expect(
       createComment({
@@ -83,14 +87,21 @@ describe('createComment', () => {
     });
   });
 
-  it('maps duplicate database errors into a typed submission error', async () => {
-    single.mockResolvedValueOnce({
-      data: null,
-      error: {
-        details: null,
-        message: 'comment_spam_duplicate',
-      },
-    });
+  it('maps duplicate API errors into a typed submission error', async () => {
+    const { createComment } = await import('./api');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        createMockResponse(
+          {
+            code: 'duplicate',
+            message: '같은 메시지는 30초 후에 다시 보낼 수 있어요.',
+            retryAfterSeconds: null,
+          },
+          409,
+        ),
+      ),
+    );
 
     await expect(
       createComment({

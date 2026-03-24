@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
+import { Client } from '@stomp/stompjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
-import { COMMENTS_TABLE, createComment, fetchComments } from './api';
+import { getWebSocketUrl } from '../../lib/api';
+import { COMMENTS_TOPIC_PREFIX, createComment, fetchComments } from './api';
 import type { ChatMessage, SendMessageInput } from './types';
 
 function commentsQueryKey(videoId?: string) {
@@ -28,31 +29,34 @@ export function useComments(videoId?: string, enabled = true) {
   });
 
   useEffect(() => {
-    if (!videoId || !enabled || !supabase) {
+    if (!videoId || !enabled) {
       return;
     }
 
-    const client = supabase;
-    const channel = client
-      .channel(`comments:${videoId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          filter: `video_id=eq.${videoId}`,
-          schema: 'public',
-          table: COMMENTS_TABLE,
-        },
-        (payload) => {
+    const client = new Client({
+      brokerURL: getWebSocketUrl(),
+      debug: () => {},
+      reconnectDelay: 5_000,
+    });
+
+    client.onConnect = () => {
+      client.subscribe(`${COMMENTS_TOPIC_PREFIX}/${videoId}/comments`, (message) => {
+        try {
+          const nextComment = JSON.parse(message.body) as ChatMessage;
+
           queryClient.setQueryData<ChatMessage[]>(commentsQueryKey(videoId), (current = []) =>
-            mergeComment(current, payload.new as ChatMessage),
+            mergeComment(current, nextComment),
           );
-        },
-      )
-      .subscribe();
+        } catch {
+          // Ignore malformed messages so the existing list stays usable.
+        }
+      });
+    };
+
+    client.activate();
 
     return () => {
-      void client.removeChannel(channel);
+      void client.deactivate();
     };
   }, [enabled, queryClient, videoId]);
 

@@ -1,5 +1,5 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { isApiConfigured } from '../../lib/api';
 import { useComments, useCreateComment } from '../../features/comments/queries';
 import {
   COMMENT_COOLDOWN_SECONDS,
@@ -66,7 +66,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
   const commentListRef = useRef<HTMLDivElement | null>(null);
   const cooldownDeadlineByVideoRef = useRef<Record<string, number>>({});
   const recentMessagesByVideoRef = useRef<Record<string, RecentCommentSnapshot[]>>({});
-  const commentsQuery = useComments(videoId, isSupabaseConfigured);
+  const commentsQuery = useComments(videoId, isApiConfigured);
   const createCommentMutation = useCreateComment();
   const remainingCooldownMs = getRemainingDurationMs(cooldownEndsAt);
   const remainingCooldownSeconds = Math.ceil(remainingCooldownMs / 1000);
@@ -227,14 +227,14 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
     return <p className="comment-section__status">채팅에 참여하려면 영상을 먼저 선택해 주세요.</p>;
   }
 
-  if (!isSupabaseConfigured) {
+  if (!isApiConfigured) {
     return (
       <div className="comment-section__empty">
         <p className="comment-section__status">
-          Supabase 연결 정보가 없어서 실시간 채팅이 비활성화되어 있습니다.
+          백엔드 연결 정보가 없어서 실시간 채팅이 비활성화되어 있습니다.
         </p>
         <p className="comment-section__hint">
-          `.env.local`에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`를 추가하면 바로 활성화됩니다.
+          `.env.local`에 `VITE_API_BASE_URL`을 추가하면 바로 활성화됩니다.
         </p>
       </div>
     );

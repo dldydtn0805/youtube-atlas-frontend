@@ -1,3 +1,5 @@
+import { ApiRequestError } from '../../lib/api';
+
 export const COMMENT_COOLDOWN_MS = 5_000;
 export const COMMENT_DUPLICATE_WINDOW_MS = 30_000;
 export const COMMENT_COOLDOWN_SECONDS = COMMENT_COOLDOWN_MS / 1_000;
@@ -132,6 +134,25 @@ export function getLocalSpamViolation(
 export function toCommentSubmissionError(error: unknown) {
   if (error instanceof CommentSubmissionError) {
     return error;
+  }
+
+  if (error instanceof ApiRequestError) {
+    switch (error.code) {
+      case 'cooldown':
+        return new CommentSubmissionError('cooldown', {
+          retryAfterSeconds: error.retryAfterSeconds,
+        });
+      case 'duplicate':
+        return new CommentSubmissionError('duplicate');
+      case 'bad_request':
+        return new CommentSubmissionError('validation', {
+          message: error.message,
+        });
+      default:
+        return new CommentSubmissionError('unknown', {
+          message: error.message || undefined,
+        });
+    }
   }
 
   const errorMessage =

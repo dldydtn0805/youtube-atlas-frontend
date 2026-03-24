@@ -7,7 +7,7 @@ import countryCodes from '../constants/countryCodes';
 import { useVideoTrendSignals } from '../features/trending/queries';
 import { YouTubeCategorySection } from '../features/youtube/types';
 import { usePopularVideosByCategory, useVideoCategories } from '../features/youtube/queries';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { isApiConfigured } from '../lib/api';
 import '../styles/app.css';
 
 const DEFAULT_REGION_CODE = 'US';
@@ -161,7 +161,7 @@ function App() {
     selectedRegionCode,
     selectedCategory?.id,
     selectedSectionVideoIds,
-    isSupabaseConfigured,
+    isApiConfigured,
   );
 
   function handleSelectVideo(videoId: string, triggerElement?: HTMLButtonElement) {

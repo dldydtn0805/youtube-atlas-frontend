@@ -7,8 +7,8 @@ import CommentSection from './CommentSection';
 const useCommentsMock = vi.fn();
 const useCreateCommentMock = vi.fn();
 
-vi.mock('../../lib/supabase', () => ({
-  isSupabaseConfigured: true,
+vi.mock('../../lib/api', () => ({
+  isApiConfigured: true,
 }));
 
 vi.mock('../../features/comments/queries', () => ({
