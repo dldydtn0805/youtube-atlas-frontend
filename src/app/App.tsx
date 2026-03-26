@@ -21,6 +21,7 @@ const DEFAULT_REGION_CODE = 'US';
 const DEFAULT_CATEGORY_ID = ALL_VIDEO_CATEGORY_ID;
 const MOBILE_BREAKPOINT = 768;
 const STORAGE_KEY = 'youtube-atlas-region-code';
+const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
 type RegionCode = (typeof countryCodes)[number]['code'];
 type MobileTab = 'chart' | 'chat';
 
@@ -55,59 +56,20 @@ function getInitialRegionCode(): RegionCode {
   return DEFAULT_REGION_CODE;
 }
 
+function getInitialCinematicMode() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.localStorage.getItem(CINEMATIC_MODE_STORAGE_KEY) === 'true';
+}
+
 function getInitialIsMobileLayout() {
   if (typeof window === 'undefined') {
     return false;
   }
 
   return window.innerWidth <= MOBILE_BREAKPOINT;
-}
-
-type FullscreenCapableElement = HTMLElement & {
-  webkitRequestFullscreen?: () => Promise<void> | void;
-};
-
-type FullscreenCapableDocument = Document & {
-  webkitExitFullscreen?: () => Promise<void> | void;
-  webkitFullscreenElement?: Element | null;
-};
-
-function getFullscreenElement() {
-  const fullscreenDocument = document as FullscreenCapableDocument;
-
-  return document.fullscreenElement ?? fullscreenDocument.webkitFullscreenElement ?? null;
-}
-
-async function requestElementFullscreen(element: HTMLElement) {
-  const fullscreenElement = element as FullscreenCapableElement;
-
-  if (typeof fullscreenElement.requestFullscreen === 'function') {
-    await fullscreenElement.requestFullscreen();
-    return true;
-  }
-
-  if (typeof fullscreenElement.webkitRequestFullscreen === 'function') {
-    await fullscreenElement.webkitRequestFullscreen();
-    return true;
-  }
-
-  return false;
-}
-
-async function exitElementFullscreen() {
-  const fullscreenDocument = document as FullscreenCapableDocument;
-
-  if (typeof document.exitFullscreen === 'function') {
-    await document.exitFullscreen();
-    return true;
-  }
-
-  if (typeof fullscreenDocument.webkitExitFullscreen === 'function') {
-    await fullscreenDocument.webkitExitFullscreen();
-    return true;
-  }
-
-  return false;
 }
 
 function scrollElementToViewportCenter(element: HTMLElement) {
@@ -139,13 +101,14 @@ function App() {
   const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chart');
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const playerViewportRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollToPlayerRef = useRef(false);
+  const shouldScrollOnModeChangeRef = useRef(false);
   const {
     data: videoCategories = [],
     isLoading: isVideoCategoriesLoading,
@@ -179,8 +142,9 @@ function App() {
   const selectedSectionVideoIds = selectedSection?.items.map((item) => item.id) ?? [];
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
+  const isDesktopCinematicMode = !isMobileLayout && isCinematicMode;
   const canPlayNextVideo = (selectedSection?.items.length ?? 0) > 1;
-  const fullscreenToggleLabel = isFullscreen ? '전체화면 종료' : '전체화면 보기';
+  const cinematicToggleLabel = isDesktopCinematicMode ? '기본 보기' : '시네마틱 모드';
   const isChartLoading =
     isVideoCategoriesLoading || (!selectedCategory && !isVideoCategoriesError) || isLoading;
   const isChartError = isVideoCategoriesError || isError;
@@ -381,20 +345,8 @@ function App() {
   }, [selectedRegionCode]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(getFullscreenElement()));
-    };
-
-    handleFullscreenChange();
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
-    };
-  }, []);
+    window.localStorage.setItem(CINEMATIC_MODE_STORAGE_KEY, String(isCinematicMode));
+  }, [isCinematicMode]);
 
   useEffect(() => {
     if (!isFilterModalOpen) {
@@ -417,6 +369,27 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isFilterModalOpen]);
+
+  useEffect(() => {
+    if (!isDesktopCinematicMode || !shouldScrollOnModeChangeRef.current) {
+      return;
+    }
+
+    shouldScrollOnModeChangeRef.current = false;
+
+    window.setTimeout(() => {
+      const playerSection = playerSectionRef.current;
+
+      if (!playerSection) {
+        return;
+      }
+
+      playerSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 0);
+  }, [isDesktopCinematicMode]);
 
   useEffect(() => {
     if (!selectedVideoId || !shouldScrollToPlayerRef.current) {
@@ -444,29 +417,13 @@ function App() {
     }, 0);
   }, [isMobileLayout, selectedVideoId]);
 
-  async function handleToggleFullscreen() {
-    if (isFullscreen) {
-      try {
-        await exitElementFullscreen();
-      } catch {
-        setIsFullscreen(false);
-      }
-
+  function handleToggleCinematicMode() {
+    if (isMobileLayout) {
       return;
     }
 
-    const fullscreenTarget = playerViewportRef.current ?? playerSectionRef.current;
-
-    if (!fullscreenTarget) {
-      return;
-    }
-
-    try {
-      await requestElementFullscreen(fullscreenTarget);
-      setIsFullscreen(true);
-    } catch {
-      setIsFullscreen(false);
-    }
+    shouldScrollOnModeChangeRef.current = !isDesktopCinematicMode;
+    setIsCinematicMode((current) => !current);
   }
 
   function openFilterModal() {
@@ -528,11 +485,7 @@ function App() {
   );
 
   const filterModalContent = isFilterModalOpen ? (
-    <div
-      className="app-shell__modal-backdrop"
-      onClick={closeFilterModal}
-      role="presentation"
-    >
+    <div className="app-shell__modal-backdrop" onClick={closeFilterModal} role="presentation">
       <section
         aria-labelledby="filter-modal-title"
         aria-modal="true"
@@ -641,10 +594,11 @@ function App() {
   ) : null;
 
   const playerContent = (
-    <div className="app-shell__stage">
+    <div className="app-shell__stage" data-cinematic={isDesktopCinematicMode}>
       <section
         ref={playerSectionRef}
         className="app-shell__panel app-shell__panel--player"
+        data-cinematic={isDesktopCinematicMode}
       >
         <div className="app-shell__section-heading app-shell__section-heading--player">
           <div className="app-shell__section-heading-copy">
@@ -655,21 +609,24 @@ function App() {
             </h2>
           </div>
           <div className="app-shell__player-actions">
-            <button
-              aria-label={fullscreenToggleLabel}
-              className="app-shell__mode-toggle"
-              data-active={isFullscreen}
-              onClick={() => void handleToggleFullscreen()}
-              title={fullscreenToggleLabel}
-              type="button"
-            >
-              {fullscreenToggleLabel}
-            </button>
+            {!isMobileLayout ? (
+              <button
+                aria-label={cinematicToggleLabel}
+                className="app-shell__mode-toggle"
+                data-active={isDesktopCinematicMode}
+                onClick={handleToggleCinematicMode}
+                title={cinematicToggleLabel}
+                type="button"
+              >
+                {cinematicToggleLabel}
+              </button>
+            ) : null}
           </div>
         </div>
         <div ref={playerViewportRef} className="app-shell__player-viewport">
           <VideoPlayer
             isLoading={isChartLoading}
+            isCinematic={isDesktopCinematicMode}
             showOverlayNavigation
             onPreviousVideo={handlePlayPreviousVideo}
             onNextVideo={handlePlayNextVideo}

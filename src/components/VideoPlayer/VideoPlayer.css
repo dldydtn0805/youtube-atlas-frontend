@@ -108,37 +108,46 @@
   text-align: center;
 }
 
-.app-shell__player-viewport:fullscreen .video-player,
-.app-shell__player-viewport:-webkit-full-screen .video-player {
-  margin: 0;
-}
-
-.app-shell__player-viewport:fullscreen .video-player__frame,
-.app-shell__player-viewport:-webkit-full-screen .video-player__frame {
-  border-radius: 0;
-  height: 100%;
-  min-height: 100%;
+.video-player[data-cinematic='true'] .video-player__frame {
+  align-items: center;
+  background: #000;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: none;
+  display: flex;
+  justify-content: center;
+  min-height: var(--cinematic-player-max-height);
+  padding: 0;
   width: 100%;
 }
 
-.app-shell__player-viewport:fullscreen .video-player__embed,
-.app-shell__player-viewport:fullscreen .video-player__embed iframe,
-.app-shell__player-viewport:fullscreen .video-player__placeholder,
-.app-shell__player-viewport:-webkit-full-screen .video-player__embed,
-.app-shell__player-viewport:-webkit-full-screen .video-player__embed iframe,
-.app-shell__player-viewport:-webkit-full-screen .video-player__placeholder {
-  border-radius: 0;
-  height: 100%;
+.video-player[data-cinematic='true'] .video-player__embed,
+.video-player[data-cinematic='true'] .video-player__placeholder {
+  aspect-ratio: auto;
+  flex: none;
+  height: var(--cinematic-player-max-height);
+  width: min(100%, calc(var(--cinematic-player-max-height) * 16 / 9));
+}
+
+.video-player[data-cinematic='true'] .video-player__placeholder {
   inset: auto;
-  max-width: 100%;
-  width: 100%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
-.app-shell__player-viewport:fullscreen .video-player__placeholder,
-.app-shell__player-viewport:-webkit-full-screen .video-player__placeholder {
-  left: 0;
-  top: 0;
-  transform: none;
+.video-player[data-cinematic='true'] .video-player__overlay-nav {
+  inset: 0;
+}
+
+.video-player[data-cinematic='true'] .video-player__embed iframe {
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: 14px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -153,6 +162,10 @@
 
   .video-player__placeholder {
     inset: 10px;
+  }
+
+  .video-player[data-cinematic='true'] .video-player__frame {
+    padding: 0;
   }
 
   .video-player__overlay-button {
