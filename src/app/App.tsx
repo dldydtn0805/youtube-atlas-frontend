@@ -10,7 +10,7 @@ import {
   sortVideoCategories,
 } from '../constants/videoCategories';
 import countryCodes from '../constants/countryCodes';
-import { isRealtimeSurgingSignal } from '../features/trending/presentation';
+import { formatCompactCount, isRealtimeSurgingSignal } from '../features/trending/presentation';
 import { useVideoTrendSignals } from '../features/trending/queries';
 import { YouTubeCategorySection } from '../features/youtube/types';
 import { usePopularVideosByCategory, useVideoCategories } from '../features/youtube/queries';
@@ -144,6 +144,20 @@ function mergeSections(pages: YouTubeCategorySection[] | undefined) {
   };
 }
 
+function formatVideoViewCount(viewCount?: string) {
+  if (!viewCount) {
+    return undefined;
+  }
+
+  const parsedViewCount = Number(viewCount);
+
+  if (!Number.isFinite(parsedViewCount) || parsedViewCount < 0) {
+    return undefined;
+  }
+
+  return formatCompactCount(parsedViewCount);
+}
+
 function App() {
   const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
@@ -187,6 +201,7 @@ function App() {
   } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
   const selectedSection = mergeSections(data?.pages);
   const selectedVideo = selectedSection?.items.find((item) => item.id === selectedVideoId);
+  const selectedVideoViewCount = formatVideoViewCount(selectedVideo?.statistics?.viewCount);
   const selectedSectionVideoIds = selectedSection?.items.map((item) => item.id) ?? [];
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
@@ -254,6 +269,7 @@ function App() {
     isAllCategorySelected && selectedSection && !isChartLoading && !isTrendSignalsLoading && !isTrendSignalsError
       ? '아직 +5 이상 급상승한 영상이 없습니다.'
       : undefined;
+  const selectedVideoStatLabel = selectedVideoViewCount;
 
   function handleSelectVideo(videoId: string, triggerElement?: HTMLButtonElement) {
     shouldScrollToPlayerRef.current = true;
@@ -427,13 +443,16 @@ function App() {
       }
     };
 
-    const { body } = document;
+    const { body, documentElement } = document;
     const previousOverflow = body.style.overflow;
+    const previousDocumentOverflow = documentElement.style.overflow;
     body.style.overflow = 'hidden';
+    documentElement.style.overflow = 'hidden';
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       body.style.overflow = previousOverflow;
+      documentElement.style.overflow = previousDocumentOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isFilterModalOpen]);
@@ -575,6 +594,30 @@ function App() {
     </section>
   );
 
+  const cinematicQuickFiltersContent = isDesktopCinematicMode ? (
+    <section className="app-shell__cinematic-filters" aria-label="시네마틱 메인 필터">
+      <div className="app-shell__section-heading">
+        <div className="app-shell__section-heading-copy">
+          <p className="app-shell__section-eyebrow">Main Filters</p>
+          <h2 className="app-shell__section-title">메인 카테고리 빠른 전환</h2>
+        </div>
+      </div>
+      <div className="app-shell__quick-category-group" aria-label="시네마틱 메인 카테고리 빠른 선택">
+        {mainVideoCategories.map((category) => (
+          <button
+            key={category.id}
+            className="app-shell__quick-category"
+            data-active={category.id === selectedCategoryId}
+            onClick={(event) => handleSelectCategory(category.id, event.currentTarget)}
+            type="button"
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  ) : null;
+
   const filterModalContent = isFilterModalOpen ? (
     <div className="app-shell__modal-backdrop" onClick={closeFilterModal} role="presentation">
       <section
@@ -684,65 +727,100 @@ function App() {
     </div>
   ) : null;
 
+  function renderChartPanel(className?: string) {
+    return (
+      <section className={className ? `app-shell__panel app-shell__panel--chart ${className}` : 'app-shell__panel app-shell__panel--chart'}>
+        <div className="app-shell__section-heading">
+          <p className="app-shell__section-eyebrow">Program Queue</p>
+          <h2 className="app-shell__section-title">
+            {selectedCategory?.label ?? '선택한 카테고리'} 인기 영상
+          </h2>
+        </div>
+        <VideoList
+          errorMessage={chartErrorMessage}
+          featuredSection={realtimeSurgingSection}
+          featuredSectionEmptyMessage={realtimeSurgingEmptyMessage}
+          featuredSectionEyebrow="Realtime Movers"
+          getFeaturedRankLabel={(item) => {
+            const signal = trendSignalsByVideoId[item.id];
+            return signal?.rankChange
+              ? `전체 ${signal.currentRank}위 · +${signal.rankChange}`
+              : '실시간 급상승';
+          }}
+          hasNextPage={hasNextPage}
+          isError={isChartError}
+          isFetchingNextPage={isFetchingNextPage}
+          isLoading={isChartLoading}
+          onLoadMore={() => void fetchNextPage()}
+          section={selectedSection}
+          onSelectVideo={handleSelectVideo}
+          selectedVideoId={selectedVideoId}
+          trendSignalsByVideoId={trendSignalsByVideoId}
+        />
+      </section>
+    );
+  }
+
   const playerContent = (
     <div ref={playerStageRef} className="app-shell__stage" data-cinematic={isDesktopCinematicMode}>
-      <section
-        ref={playerSectionRef}
-        className="app-shell__panel app-shell__panel--player"
-        data-cinematic={isDesktopCinematicMode}
-      >
-        <div className="app-shell__section-heading app-shell__section-heading--player">
-          <div className="app-shell__section-heading-copy">
-            <p className="app-shell__section-eyebrow">Now Playing</p>
-            <h2 className="app-shell__section-title">
-              {selectedCountryName}
-              {selectedCategory ? ` · ${selectedCategory.label}` : ''}
-            </h2>
-          </div>
-          <div className="app-shell__player-actions">
-            {!isMobileLayout ? (
-              <button
-                aria-label={cinematicToggleLabel}
-                className="app-shell__mode-toggle"
-                data-active={isDesktopCinematicMode}
-                onClick={() => void handleToggleCinematicMode()}
-                title={cinematicToggleLabel}
-                type="button"
-              >
-                {cinematicToggleLabel}
-              </button>
-            ) : null}
-          </div>
-        </div>
-        <div ref={playerViewportRef} className="app-shell__player-viewport">
-          <VideoPlayer
-            isLoading={isChartLoading}
-            isCinematic={isDesktopCinematicMode}
-            showOverlayNavigation
-            onPreviousVideo={handlePlayPreviousVideo}
-            onNextVideo={handlePlayNextVideo}
-            selectedVideoId={selectedVideoId}
-            onVideoEnd={handleVideoEnd}
-            canNavigateVideos={canPlayNextVideo}
-          />
-        </div>
-        {selectedVideo ? (
-          <div className="app-shell__stage-meta">
-            <div className="app-shell__stage-copy">
-              <h3 className="app-shell__stage-title">{selectedVideo.snippet.title}</h3>
-              <p className="app-shell__stage-channel">{selectedVideo.snippet.channelTitle}</p>
+      <div className="app-shell__stage-stack" data-cinematic={isDesktopCinematicMode}>
+        <section
+          ref={playerSectionRef}
+          className="app-shell__panel app-shell__panel--player"
+          data-cinematic={isDesktopCinematicMode}
+        >
+          <div className="app-shell__section-heading app-shell__section-heading--player">
+            <div className="app-shell__section-heading-copy">
+              <p className="app-shell__section-eyebrow">Now Playing</p>
+              <h2 className="app-shell__section-title">
+                {selectedCountryName}
+                {selectedCategory ? ` · ${selectedCategory.label}` : ''}
+              </h2>
             </div>
-            <div className="app-shell__stage-side">
-              <div className="app-shell__stage-tags" aria-label="현재 재생 정보">
-                <span className="app-shell__stage-tag">{selectedCountryName}</span>
-                {selectedCategory ? (
-                  <span className="app-shell__stage-tag">{selectedCategory.label}</span>
-                ) : null}
+            <div className="app-shell__player-actions">
+              {!isMobileLayout ? (
+                <button
+                  aria-label={cinematicToggleLabel}
+                  className="app-shell__mode-toggle"
+                  data-active={isDesktopCinematicMode}
+                  onClick={() => void handleToggleCinematicMode()}
+                  title={cinematicToggleLabel}
+                  type="button"
+                >
+                  {cinematicToggleLabel}
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div ref={playerViewportRef} className="app-shell__player-viewport">
+            <VideoPlayer
+              isLoading={isChartLoading}
+              isCinematic={isDesktopCinematicMode}
+              showOverlayNavigation
+              onPreviousVideo={handlePlayPreviousVideo}
+              onNextVideo={handlePlayNextVideo}
+              selectedVideoId={selectedVideoId}
+              onVideoEnd={handleVideoEnd}
+              canNavigateVideos={canPlayNextVideo}
+            />
+          </div>
+          {selectedVideo ? (
+            <div className="app-shell__stage-meta">
+              <div className="app-shell__stage-copy">
+                <div className="app-shell__stage-headline">
+                  <h3 className="app-shell__stage-title">{selectedVideo.snippet.title}</h3>
+                  {selectedVideoStatLabel ? (
+                    <span className="app-shell__stage-stat">{selectedVideoStatLabel}</span>
+                  ) : null}
+                </div>
+                <p className="app-shell__stage-channel">{selectedVideo.snippet.channelTitle}</p>
               </div>
             </div>
-          </div>
-        ) : null}
-      </section>
+          ) : null}
+        </section>
+        {cinematicQuickFiltersContent}
+        {isDesktopCinematicMode ? renderChartPanel('app-shell__panel--chart-cinematic') : null}
+      </div>
     </div>
   );
 
@@ -759,37 +837,7 @@ function App() {
     </section>
   );
 
-  const chartContent = (
-    <section className="app-shell__panel app-shell__panel--chart">
-      <div className="app-shell__section-heading">
-        <p className="app-shell__section-eyebrow">Program Queue</p>
-        <h2 className="app-shell__section-title">
-          {selectedCategory?.label ?? '선택한 카테고리'} 인기 영상
-        </h2>
-      </div>
-      <VideoList
-        errorMessage={chartErrorMessage}
-        featuredSection={realtimeSurgingSection}
-        featuredSectionEmptyMessage={realtimeSurgingEmptyMessage}
-        featuredSectionEyebrow="Realtime Movers"
-        getFeaturedRankLabel={(item) => {
-          const signal = trendSignalsByVideoId[item.id];
-          return signal?.rankChange
-            ? `전체 ${signal.currentRank}위 · +${signal.rankChange}`
-            : '실시간 급상승';
-        }}
-        hasNextPage={hasNextPage}
-        isError={isChartError}
-        isFetchingNextPage={isFetchingNextPage}
-        isLoading={isChartLoading}
-        onLoadMore={() => void fetchNextPage()}
-        section={selectedSection}
-        onSelectVideo={handleSelectVideo}
-        selectedVideoId={selectedVideoId}
-        trendSignalsByVideoId={trendSignalsByVideoId}
-      />
-    </section>
-  );
+  const chartContent = renderChartPanel();
 
   return (
     <div className="app-shell">
@@ -804,8 +852,8 @@ function App() {
       <main className="app-shell__main">
         {isMobileLayout ? (
           <>
-            {filterSummaryContent}
             {playerContent}
+            {filterSummaryContent}
             <nav className="app-shell__mobile-tabs" aria-label="모바일 화면 전환">
               <button
                 className="app-shell__mobile-tab"
@@ -837,9 +885,9 @@ function App() {
           </>
         ) : (
           <>
-            {filterSummaryContent}
             {playerContent}
-            {chartContent}
+            {!isDesktopCinematicMode ? filterSummaryContent : null}
+            {!isDesktopCinematicMode ? chartContent : null}
             {communityContent}
           </>
         )}

@@ -28,6 +28,9 @@ export interface YouTubeVideoItem {
   contentDetails: {
     duration: string;
   };
+  statistics?: {
+    viewCount?: string;
+  };
   snippet: {
     title: string;
     channelTitle: string;

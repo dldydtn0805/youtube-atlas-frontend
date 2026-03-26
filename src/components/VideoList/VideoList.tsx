@@ -1,5 +1,5 @@
 import { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
-import { getVideoTrendBadges } from '../../features/trending/presentation';
+import { formatCompactCount, getVideoTrendBadges } from '../../features/trending/presentation';
 import type { VideoTrendSignal } from '../../features/trending/types';
 import './VideoList.css';
 
@@ -18,6 +18,20 @@ interface VideoListProps {
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
   onSelectVideo: (videoId: string, triggerElement?: HTMLButtonElement) => void;
+}
+
+function formatViewCount(viewCount?: string) {
+  if (!viewCount) {
+    return undefined;
+  }
+
+  const parsedViewCount = Number(viewCount);
+
+  if (!Number.isFinite(parsedViewCount) || parsedViewCount < 0) {
+    return undefined;
+  }
+
+  return `조회수 ${formatCompactCount(parsedViewCount)}`;
 }
 
 function VideoList({
@@ -84,6 +98,7 @@ function VideoList({
             {currentSection.items.map((item, index) => {
               const trendBadges = getVideoTrendBadges(trendSignalsByVideoId?.[item.id]);
               const rankLabel = getRankLabel?.(item, index) ?? `${currentSection.label} #${index + 1}`;
+              const viewCountLabel = formatViewCount(item.statistics?.viewCount);
 
               return (
                 <button
@@ -115,7 +130,10 @@ function VideoList({
                     alt={item.snippet.title}
                   />
                   <strong className="video-card__title">{item.snippet.title}</strong>
-                  <span className="video-card__channel">{item.snippet.channelTitle}</span>
+                  <div className="video-card__footer">
+                    <span className="video-card__channel">{item.snippet.channelTitle}</span>
+                    {viewCountLabel ? <span className="video-card__views">{viewCountLabel}</span> : null}
+                  </div>
                 </button>
               );
             })}

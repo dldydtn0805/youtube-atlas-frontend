@@ -77,6 +77,9 @@ describe('fetchPopularVideosByCategory', () => {
             contentDetails: {
               duration: 'PT5M12S',
             },
+            statistics: {
+              viewCount: '125000',
+            },
             snippet: {
               title: 'full review',
               channelTitle: 'beta',
