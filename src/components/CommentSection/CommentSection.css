@@ -1,7 +1,5 @@
 .comment-section {
-  background:
-    radial-gradient(circle at top left, rgba(36, 144, 255, 0.18), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.92));
+  background: var(--surface-comment-section);
   border: 1px solid var(--border);
   border-radius: 28px;
   box-shadow: var(--shadow-card);
@@ -50,8 +48,8 @@
 
 .comment-section__badge,
 .comment-section__presence {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--surface-chip);
+  border: 1px solid var(--surface-stat-border);
   border-radius: 999px;
   color: var(--text-muted);
   font-size: 0.8rem;
@@ -85,8 +83,8 @@
 }
 
 .comment-list {
-  background: linear-gradient(180deg, rgba(243, 247, 255, 0.96), rgba(237, 243, 252, 0.92));
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--surface-comment-list);
+  border: 1px solid var(--surface-stat-border);
   border-radius: 24px;
   display: grid;
   gap: 12px;
@@ -124,8 +122,8 @@
 }
 
 .comment-message__bubble {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--surface-message);
+  border: 1px solid var(--surface-stat-border);
   border-radius: 20px 20px 20px 8px;
   color: var(--text);
   line-height: 1.65;
@@ -143,8 +141,8 @@
 }
 
 .comment-composer {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--surface-composer);
+  border: 1px solid var(--surface-stat-border);
   border-radius: 24px;
   display: grid;
   gap: 12px;
@@ -161,8 +159,8 @@
 
 .comment-composer__name,
 .comment-composer__textarea {
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: var(--surface-input);
+  border: 1px solid var(--border-strong);
   color: var(--text);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -186,7 +184,7 @@
 .comment-composer__name:focus,
 .comment-composer__textarea:focus {
   border-color: rgba(0, 113, 227, 0.42);
-  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+  box-shadow: var(--focus-ring);
 }
 
 .comment-composer__bottom {

@@ -22,8 +22,10 @@ const DEFAULT_CATEGORY_ID = ALL_VIDEO_CATEGORY_ID;
 const MOBILE_BREAKPOINT = 768;
 const STORAGE_KEY = 'youtube-atlas-region-code';
 const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
+const THEME_MODE_STORAGE_KEY = 'youtube-atlas-theme-mode';
 type RegionCode = (typeof countryCodes)[number]['code'];
 type MobileTab = 'chart' | 'chat';
+type ThemeMode = 'light' | 'dark';
 
 const SUPPORTED_REGION_CODES = new Set<string>(countryCodes.map((country) => country.code));
 const sortedCountryCodes = [...countryCodes].sort((left, right) => left.name.localeCompare(right.name, 'ko'));
@@ -62,6 +64,20 @@ function getInitialCinematicMode() {
   }
 
   return window.localStorage.getItem(CINEMATIC_MODE_STORAGE_KEY) === 'true';
+}
+
+function getInitialThemeMode(): ThemeMode {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const storedThemeMode = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
+
+  if (storedThemeMode === 'light' || storedThemeMode === 'dark') {
+    return storedThemeMode;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function getInitialIsMobileLayout() {
@@ -163,6 +179,7 @@ function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
   const [mobileTab, setMobileTab] = useState<MobileTab>('chart');
@@ -206,8 +223,10 @@ function App() {
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
   const isDesktopCinematicMode = !isMobileLayout && isCinematicMode;
+  const isDarkMode = themeMode === 'dark';
   const canPlayNextVideo = (selectedSection?.items.length ?? 0) > 1;
   const cinematicToggleLabel = isDesktopCinematicMode ? '기본 보기' : '시네마틱 모드';
+  const themeToggleLabel = isDarkMode ? '라이트 모드' : '다크 모드';
   const isChartLoading =
     isVideoCategoriesLoading || (!selectedCategory && !isVideoCategoriesError) || isLoading;
   const isChartError = isVideoCategoriesError || isError;
@@ -413,6 +432,15 @@ function App() {
   }, [isCinematicMode]);
 
   useEffect(() => {
+    window.localStorage.setItem(THEME_MODE_STORAGE_KEY, themeMode);
+  }, [themeMode]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    document.documentElement.style.colorScheme = themeMode;
+  }, [themeMode]);
+
+  useEffect(() => {
     if (isMobileLayout) {
       return;
     }
@@ -542,6 +570,10 @@ function App() {
 
   function closeFilterModal() {
     setIsFilterModalOpen(false);
+  }
+
+  function handleToggleThemeMode() {
+    setThemeMode((currentThemeMode) => (currentThemeMode === 'dark' ? 'light' : 'dark'));
   }
 
   function handleCompleteFilterSelection() {
@@ -842,7 +874,21 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-shell__header">
-        <p className="app-shell__eyebrow">Global Trending Video Curation</p>
+        <div className="app-shell__header-top">
+          <p className="app-shell__eyebrow">Global Trending Video Curation</p>
+          <div className="app-shell__header-actions">
+            <button
+              aria-label={themeToggleLabel}
+              aria-pressed={isDarkMode}
+              className="app-shell__theme-toggle"
+              data-active={isDarkMode}
+              onClick={handleToggleThemeMode}
+              type="button"
+            >
+              {themeToggleLabel}
+            </button>
+          </div>
+        </div>
         <h1 className="app-shell__title">YouTube Atlas</h1>
         <p className="app-shell__subtitle">
           지금은 <strong>{selectedCountryName}</strong> 인기 영상을 보고 있습니다. 군더더기 없이

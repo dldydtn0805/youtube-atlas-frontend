@@ -20,26 +20,168 @@
   --radius-xl: 32px;
   --radius-lg: 24px;
   --radius-md: 18px;
-}
-
-body {
-  background:
+  --text-inverse: #fff;
+  --page-bg:
     radial-gradient(circle at top left, rgba(0, 113, 227, 0.12), transparent 28%),
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.92), transparent 30%),
     linear-gradient(180deg, #fbfbfd 0%, var(--bg) 38%, #eef2f7 100%);
+  --page-overlay-top:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.08)),
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.9), transparent 22%);
+  --page-overlay-bottom:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.7), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 65%);
+  --surface-interactive: rgba(255, 255, 255, 0.82);
+  --surface-interactive-hover: #fff;
+  --surface-emphasis: linear-gradient(135deg, #0f172a, #1f355d);
+  --surface-emphasis-hover: linear-gradient(135deg, #111b30, #264271);
+  --surface-emphasis-shadow: 0 16px 30px rgba(15, 23, 42, 0.14);
+  --surface-emphasis-shadow-hover: 0 18px 36px rgba(15, 23, 42, 0.16);
+  --surface-panel-highlight:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.92)),
+    rgba(255, 255, 255, 0.9);
+  --surface-panel-highlight-alt:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.9)),
+    rgba(255, 255, 255, 0.86);
+  --surface-control:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.72)),
+    var(--surface-strong);
+  --surface-control-hover:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(246, 250, 255, 0.96)),
+    #fff;
+  --surface-chip: rgba(255, 255, 255, 0.72);
+  --surface-chip-muted: rgba(15, 23, 42, 0.04);
+  --surface-input: #fff;
+  --surface-input-strong: rgba(255, 255, 255, 0.96);
+  --surface-player-frame:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.28)),
+    rgba(255, 255, 255, 0.42);
+  --surface-player-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --surface-stage-bg:
+    radial-gradient(circle at top, rgba(0, 113, 227, 0.14), transparent 28%),
+    linear-gradient(180deg, #fbfbfd 0%, #f4f7fb 54%, #eef3f8 100%);
+  --surface-stage-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.04);
+  --surface-stat: rgba(15, 23, 42, 0.06);
+  --surface-stat-border: rgba(15, 23, 42, 0.08);
+  --surface-card-hover: #fff;
+  --surface-card-hover-border: rgba(0, 113, 227, 0.18);
+  --shadow-card-hover: 0 22px 50px rgba(15, 23, 42, 0.12);
+  --surface-thumbnail-border: rgba(15, 23, 42, 0.08);
+  --surface-comment-section:
+    radial-gradient(circle at top left, rgba(36, 144, 255, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.92));
+  --surface-comment-list: linear-gradient(180deg, rgba(243, 247, 255, 0.96), rgba(237, 243, 252, 0.92));
+  --surface-message: rgba(255, 255, 255, 0.96);
+  --surface-composer: rgba(255, 255, 255, 0.82);
+  --surface-modal:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(247, 250, 255, 0.96)),
+    var(--surface);
+  --surface-modal-field: rgba(255, 255, 255, 0.72);
+  --modal-backdrop:
+    radial-gradient(circle at top, rgba(46, 118, 255, 0.2), transparent 26%),
+    rgba(15, 23, 42, 0.42);
+  --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.1);
+  --accent-border: rgba(0, 113, 227, 0.22);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #08111f;
+  --surface: rgba(10, 18, 32, 0.78);
+  --surface-strong: rgba(12, 21, 36, 0.92);
+  --surface-muted: rgba(15, 24, 40, 0.76);
+  --border: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(148, 163, 184, 0.28);
+  --text: #edf4ff;
+  --text-muted: #9eb0cb;
+  --accent: #7cc4ff;
+  --accent-soft: rgba(124, 196, 255, 0.18);
+  --shadow-soft: 0 24px 72px rgba(2, 6, 23, 0.5);
+  --shadow-card: 0 16px 40px rgba(2, 6, 23, 0.42);
+  --page-bg:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 28%),
+    linear-gradient(180deg, #020817 0%, #08111f 42%, #0f172a 100%);
+  --page-overlay-top:
+    linear-gradient(120deg, rgba(125, 211, 252, 0.08), rgba(15, 23, 42, 0.02)),
+    radial-gradient(circle at 20% 20%, rgba(125, 211, 252, 0.12), transparent 24%);
+  --page-overlay-bottom:
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.08), transparent 65%);
+  --surface-interactive: rgba(9, 18, 31, 0.88);
+  --surface-interactive-hover: rgba(16, 28, 47, 0.98);
+  --surface-emphasis: linear-gradient(135deg, #38bdf8, #2563eb);
+  --surface-emphasis-hover: linear-gradient(135deg, #4cc9ff, #2c6fff);
+  --surface-emphasis-shadow: 0 18px 38px rgba(37, 99, 235, 0.32);
+  --surface-emphasis-shadow-hover: 0 20px 42px rgba(37, 99, 235, 0.36);
+  --surface-panel-highlight:
+    linear-gradient(180deg, rgba(8, 17, 31, 0.97), rgba(11, 23, 40, 0.94)),
+    rgba(9, 18, 31, 0.92);
+  --surface-panel-highlight-alt:
+    linear-gradient(180deg, rgba(9, 18, 31, 0.96), rgba(13, 26, 45, 0.92)),
+    rgba(9, 18, 31, 0.88);
+  --surface-control:
+    linear-gradient(180deg, rgba(17, 30, 50, 0.96), rgba(10, 18, 32, 0.84)),
+    var(--surface-strong);
+  --surface-control-hover:
+    linear-gradient(180deg, rgba(22, 37, 61, 0.98), rgba(14, 24, 40, 0.92)),
+    rgba(12, 22, 38, 0.98);
+  --surface-chip: rgba(15, 24, 40, 0.92);
+  --surface-chip-muted: rgba(148, 163, 184, 0.1);
+  --surface-input: rgba(7, 14, 26, 0.92);
+  --surface-input-strong: rgba(9, 17, 30, 0.96);
+  --surface-player-frame:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.62), rgba(2, 6, 23, 0.88)),
+    rgba(7, 13, 24, 0.9);
+  --surface-player-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --surface-stage-bg:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.16), transparent 30%),
+    linear-gradient(180deg, #040b18 0%, #091321 48%, #0f172a 100%);
+  --surface-stage-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    inset 0 -1px 0 rgba(148, 163, 184, 0.08);
+  --surface-stat: rgba(148, 163, 184, 0.12);
+  --surface-stat-border: rgba(148, 163, 184, 0.16);
+  --surface-card-hover: rgba(17, 30, 49, 0.98);
+  --surface-card-hover-border: rgba(124, 196, 255, 0.32);
+  --shadow-card-hover: 0 24px 54px rgba(2, 6, 23, 0.52);
+  --surface-thumbnail-border: rgba(148, 163, 184, 0.16);
+  --surface-comment-section:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(8, 17, 31, 0.96), rgba(10, 20, 36, 0.92));
+  --surface-comment-list: linear-gradient(180deg, rgba(8, 17, 31, 0.96), rgba(11, 22, 38, 0.9));
+  --surface-message: rgba(16, 28, 47, 0.92);
+  --surface-composer: rgba(10, 18, 32, 0.88);
+  --surface-modal:
+    linear-gradient(180deg, rgba(8, 17, 31, 0.98), rgba(11, 23, 40, 0.95)),
+    var(--surface);
+  --surface-modal-field: rgba(12, 22, 38, 0.9);
+  --modal-backdrop:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.14), transparent 26%),
+    rgba(2, 6, 23, 0.72);
+  --focus-ring: 0 0 0 4px rgba(124, 196, 255, 0.16);
+  --accent-border: rgba(124, 196, 255, 0.28);
+  color-scheme: dark;
+}
+
+body {
+  background: var(--page-bg);
   color: var(--text);
   font-family: 'Neo둥근모', monospace;
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
   text-rendering: optimizeLegibility;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
   -webkit-font-smoothing: antialiased;
 }
 
 body::before {
-  background:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.08)),
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.9), transparent 22%);
+  background: var(--page-overlay-top);
   content: '';
   height: 100%;
   left: 0;
@@ -51,9 +193,7 @@ body::before {
 }
 
 body::after {
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.7), transparent 40%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 65%);
+  background: var(--page-overlay-bottom);
   content: '';
   height: 100%;
   left: 0;
