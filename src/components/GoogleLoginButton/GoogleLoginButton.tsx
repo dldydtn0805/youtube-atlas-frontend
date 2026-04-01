@@ -4,8 +4,10 @@ import { useAuth } from '../../features/auth/useAuth';
 
 const GOOGLE_IDENTITY_SCRIPT_SELECTOR = 'script[data-google-identity-script="true"]';
 const GOOGLE_IDENTITY_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
+const GOOGLE_BUTTON_RENDER_TIMEOUT_MS = 1_500;
 
 let googleIdentityScriptPromise: Promise<void> | null = null;
+type GoogleButtonStatus = 'idle' | 'rendering' | 'ready' | 'failed';
 
 function GoogleBrandmark() {
   return (
@@ -83,8 +85,10 @@ export default function GoogleLoginButton() {
   const buttonContainerRef = useRef<HTMLDivElement | null>(null);
   const loginWithGoogleIdTokenRef = useRef(loginWithGoogleIdToken);
   const [buttonError, setButtonError] = useState<string | null>(null);
+  const [buttonStatus, setButtonStatus] = useState<GoogleButtonStatus>('idle');
   const isLoginReady = isApiConfigured && isGoogleAuthAvailable && Boolean(googleClientId);
   const shouldRenderButton = status !== 'authenticated' && !isGoogleAuthLoading && isLoginReady;
+  const isButtonReady = buttonStatus === 'ready';
 
   useEffect(() => {
     loginWithGoogleIdTokenRef.current = loginWithGoogleIdToken;
@@ -92,11 +96,48 @@ export default function GoogleLoginButton() {
 
   useEffect(() => {
     if (!shouldRenderButton || !buttonContainerRef.current) {
+      setButtonStatus('idle');
       return;
     }
 
     let isCancelled = false;
     const buttonContainer = buttonContainerRef.current;
+    let renderTimeoutId: number | null = null;
+    let renderObserver: MutationObserver | null = null;
+
+    setButtonStatus('rendering');
+    setButtonError(null);
+
+    const clearRenderState = () => {
+      if (renderTimeoutId !== null) {
+        window.clearTimeout(renderTimeoutId);
+        renderTimeoutId = null;
+      }
+
+      renderObserver?.disconnect();
+      renderObserver = null;
+    };
+
+    const markButtonReady = () => {
+      if (isCancelled || buttonContainer.childElementCount === 0) {
+        return;
+      }
+
+      clearRenderState();
+      setButtonStatus('ready');
+      setButtonError(null);
+    };
+
+    const markButtonFailure = (message: string) => {
+      if (isCancelled) {
+        return;
+      }
+
+      clearRenderState();
+      buttonContainer.innerHTML = '';
+      setButtonStatus('failed');
+      setButtonError(message);
+    };
 
     void loadGoogleIdentityScript()
       .then(() => {
@@ -107,7 +148,7 @@ export default function GoogleLoginButton() {
         const googleIdentity = window.google?.accounts?.id;
 
         if (!googleIdentity) {
-          setButtonError('구글 로그인 스크립트를 초기화하지 못했습니다.');
+          markButtonFailure('구글 로그인 스크립트를 초기화하지 못했습니다.');
           return;
         }
 
@@ -131,6 +172,13 @@ export default function GoogleLoginButton() {
         });
 
         buttonContainer.innerHTML = '';
+        renderObserver = new MutationObserver(() => {
+          markButtonReady();
+        });
+        renderObserver.observe(buttonContainer, {
+          childList: true,
+          subtree: true,
+        });
         googleIdentity.renderButton(buttonContainer, {
           logo_alignment: 'left',
           type: 'icon',
@@ -140,15 +188,23 @@ export default function GoogleLoginButton() {
           theme: 'outline',
           width: 40,
         });
+        markButtonReady();
+
+        renderTimeoutId = window.setTimeout(() => {
+          if (buttonContainer.childElementCount === 0) {
+            markButtonFailure(
+              '구글 로그인 버튼을 표시하지 못했습니다. 현재 접속 주소가 Google OAuth 허용 출처에 등록되어 있는지 확인해 주세요.',
+            );
+          }
+        }, GOOGLE_BUTTON_RENDER_TIMEOUT_MS);
       })
       .catch(() => {
-        if (!isCancelled) {
-          setButtonError('구글 로그인 스크립트를 불러오지 못했습니다.');
-        }
+        markButtonFailure('구글 로그인 스크립트를 불러오지 못했습니다.');
       });
 
     return () => {
       isCancelled = true;
+      clearRenderState();
 
       buttonContainer.innerHTML = '';
     };
@@ -172,16 +228,23 @@ export default function GoogleLoginButton() {
 
   return (
     <div className="app-shell__google-login">
-      <div className="app-shell__google-login-button-shell">
-        <div
-          ref={buttonContainerRef}
-          aria-busy={isLoggingIn}
-          className="app-shell__google-login-button"
-        />
-        <span aria-hidden="true" className="app-shell__google-login-brandmark">
-          <GoogleBrandmark />
-        </span>
-      </div>
+      {isButtonReady ? (
+        <div className="app-shell__google-login-button-shell">
+          <div
+            ref={buttonContainerRef}
+            aria-busy={isLoggingIn}
+            className="app-shell__google-login-button"
+          />
+          <span aria-hidden="true" className="app-shell__google-login-brandmark">
+            <GoogleBrandmark />
+          </span>
+        </div>
+      ) : (
+        <div ref={buttonContainerRef} className="app-shell__google-login-button" />
+      )}
+      {buttonStatus === 'rendering' ? (
+        <p className="app-shell__auth-status">구글 로그인 버튼을 불러오는 중입니다.</p>
+      ) : null}
       {isLoggingIn ? <p className="app-shell__auth-status">구글 계정을 확인하고 있습니다.</p> : null}
       {buttonError || authError ? (
         <p className="app-shell__auth-status app-shell__auth-status--error">
