@@ -49,6 +49,32 @@ declare namespace YT {
 }
 
 interface Window {
+  google?: {
+    accounts?: {
+      id: {
+        disableAutoSelect?: () => void;
+        initialize: (configuration: {
+          auto_select?: boolean;
+          callback: (response: { credential?: string }) => void;
+          cancel_on_tap_outside?: boolean;
+          client_id: string;
+          ux_mode?: 'popup' | 'redirect';
+        }) => void;
+        renderButton: (
+          element: HTMLElement,
+          options: {
+            logo_alignment?: 'left' | 'center';
+            shape?: 'pill' | 'rectangular';
+            size?: 'large' | 'medium' | 'small';
+            type?: 'standard' | 'icon';
+            text?: 'continue_with' | 'signin_with';
+            theme?: 'filled_black' | 'filled_blue' | 'outline';
+            width?: number;
+          },
+        ) => void;
+      };
+    };
+  };
   onYouTubeIframeAPIReady?: () => void;
   YT?: {
     Player: YT.PlayerConstructor;

@@ -11,6 +11,7 @@ export interface VideoTrendSignal {
   regionCode: string;
   title?: string;
   channelTitle?: string;
+  channelId?: string;
   thumbnailUrl?: string;
   videoId: string;
   viewCountDelta: number | null;

@@ -34,6 +34,7 @@ export interface YouTubeVideoItem {
   snippet: {
     title: string;
     channelTitle: string;
+    channelId: string;
     categoryId: string;
     thumbnails: YouTubeThumbnails;
   };

@@ -83,6 +83,7 @@ describe('fetchPopularVideosByCategory', () => {
             snippet: {
               title: 'full review',
               channelTitle: 'beta',
+              channelId: 'channel-1',
               categoryId: '20',
               thumbnails: {
                 default: { url: 'https://example.com/1.jpg', width: 120, height: 90 },

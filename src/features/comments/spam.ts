@@ -10,7 +10,7 @@ export const COMMENT_SPAM_DB_MESSAGES = {
   duplicate: 'comment_spam_duplicate',
 } as const;
 
-export type CommentSubmissionErrorCode = 'cooldown' | 'duplicate' | 'validation' | 'unknown';
+export type CommentSubmissionErrorCode = 'cooldown' | 'duplicate' | 'validation' | 'auth' | 'unknown';
 
 export interface RecentCommentSnapshot {
   normalizedContent: string;
@@ -56,6 +56,8 @@ export function getCommentSubmissionErrorMessage(
       return '같은 메시지는 30초 후에 다시 보낼 수 있어요.';
     case 'validation':
       return '메시지 내용을 입력해 주세요.';
+    case 'auth':
+      return '로그인이 필요하거나 세션이 만료되었습니다. 다시 로그인해 주세요.';
     case 'unknown':
     default:
       return '메시지 전송에 실패했습니다.';
@@ -146,6 +148,11 @@ export function toCommentSubmissionError(error: unknown) {
         return new CommentSubmissionError('duplicate');
       case 'bad_request':
         return new CommentSubmissionError('validation', {
+          message: error.message,
+        });
+      case 'unauthorized':
+      case 'session_expired':
+        return new CommentSubmissionError('auth', {
           message: error.message,
         });
       default:

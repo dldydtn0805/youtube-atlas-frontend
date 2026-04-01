@@ -6,6 +6,7 @@ import CommentSection from './CommentSection';
 
 const useCommentsMock = vi.fn();
 const useCreateCommentMock = vi.fn();
+const useAuthMock = vi.fn();
 
 vi.mock('../../lib/api', () => ({
   isApiConfigured: true,
@@ -14,6 +15,10 @@ vi.mock('../../lib/api', () => ({
 vi.mock('../../features/comments/queries', () => ({
   useComments: (...args: unknown[]) => useCommentsMock(...args),
   useCreateComment: () => useCreateCommentMock(),
+}));
+
+vi.mock('../../features/auth/useAuth', () => ({
+  useAuth: () => useAuthMock(),
 }));
 
 async function flushPromises() {
@@ -31,6 +36,11 @@ describe('CommentSection', () => {
       error: null,
       isError: false,
       isLoading: false,
+    });
+    useAuthMock.mockReturnValue({
+      logout: vi.fn(),
+      status: 'anonymous',
+      user: null,
     });
   });
 

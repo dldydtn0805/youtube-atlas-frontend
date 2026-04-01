@@ -1,4 +1,5 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../features/auth/useAuth';
 import { isApiConfigured } from '../../lib/api';
 import { useComments, useCreateComment } from '../../features/comments/queries';
 import {
@@ -58,6 +59,7 @@ function formatCooldownFeedback(seconds: number) {
 }
 
 function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
+  const { logout, status, user } = useAuth();
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
@@ -72,6 +74,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
   const remainingCooldownSeconds = Math.ceil(remainingCooldownMs / 1000);
   const isCooldownActive = remainingCooldownMs > 0;
   const isSubmitDisabled = createCommentMutation.isPending || isCooldownActive;
+  const isAuthenticated = status === 'authenticated' && Boolean(user);
   const feedbackMessage = isCooldownActive
     ? formatCooldownFeedback(remainingCooldownSeconds)
     : submissionError?.message;
@@ -164,7 +167,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
 
     try {
       await createCommentMutation.mutateAsync({
-        author,
+        author: isAuthenticated ? user?.displayName ?? '' : author,
         content,
         clientId: participantId,
         videoId,
@@ -181,6 +184,10 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
       const nextError = toCommentSubmissionError(error);
 
       setSubmissionError(nextError);
+
+      if (nextError.code === 'auth') {
+        void logout();
+      }
 
       if (nextError.code === 'cooldown') {
         beginCooldown(nextError.retryAfterSeconds ?? COMMENT_COOLDOWN_SECONDS);
@@ -249,7 +256,9 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
           <p className="comment-section__hint">같은 영상을 보고 있는 사람들과 바로 대화하세요.</p>
         </div>
         <div className="comment-section__meta">
-          <span className="comment-section__badge">익명 채팅</span>
+          <span className="comment-section__badge">
+            {isAuthenticated ? 'Google 로그인' : '익명 채팅'}
+          </span>
           <span className="comment-section__presence">
             <span className="comment-section__presence-dot" />
             실시간 연결
@@ -295,14 +304,37 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
 
       <form className="comment-composer" onSubmit={handleSubmit}>
         <div className="comment-composer__top">
-          <input
-            className="comment-composer__name"
-            maxLength={30}
-            onChange={(event) => handleAuthorChange(event.target.value)}
-            placeholder="닉네임 (비워두면 익명)"
-            type="text"
-            value={author}
-          />
+          {isAuthenticated && user ? (
+            <div className="comment-composer__identity">
+              {user.pictureUrl ? (
+                <img
+                  alt={`${user.displayName} 프로필`}
+                  className="comment-composer__avatar"
+                  src={user.pictureUrl}
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="comment-composer__avatar comment-composer__avatar--fallback"
+                >
+                  {(user.displayName || user.email).slice(0, 1).toUpperCase()}
+                </span>
+              )}
+              <div className="comment-composer__identity-copy">
+                <strong>{user.displayName || user.email}</strong>
+                <span>로그인 상태로 보내면 구글 프로필 이름으로 표시됩니다.</span>
+              </div>
+            </div>
+          ) : (
+            <input
+              className="comment-composer__name"
+              maxLength={30}
+              onChange={(event) => handleAuthorChange(event.target.value)}
+              placeholder="닉네임 (비워두면 익명)"
+              type="text"
+              value={author}
+            />
+          )}
           <span className="comment-composer__guide">Enter 전송 · Shift+Enter 줄바꿈</span>
         </div>
         <div className="comment-composer__bottom">

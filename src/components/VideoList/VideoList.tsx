@@ -8,6 +8,7 @@ interface VideoListProps {
   isError: boolean;
   errorMessage?: string;
   section?: YouTubeCategorySection;
+  getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
   featuredSection?: YouTubeCategorySection;
   featuredSectionEyebrow?: string;
   featuredSectionEmptyMessage?: string;
@@ -40,6 +41,7 @@ function VideoList({
   isError,
   errorMessage,
   section,
+  getRankLabel,
   featuredSection,
   featuredSectionEyebrow = 'Realtime Movers',
   featuredSectionEmptyMessage,
@@ -177,6 +179,7 @@ function VideoList({
         : null}
       {renderSection(section, {
         eyebrow: 'Category Ranking',
+        getRankLabel,
         showLoadMore: true,
       })}
     </div>

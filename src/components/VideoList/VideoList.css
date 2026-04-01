@@ -56,11 +56,11 @@
 }
 
 .video-list__load-more {
-  background: var(--surface-emphasis);
-  border: 0;
+  background: var(--surface-control);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  box-shadow: var(--surface-emphasis-shadow);
-  color: var(--text-inverse);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 700;
@@ -74,7 +74,9 @@
 }
 
 .video-list__load-more:hover:not(:disabled) {
-  box-shadow: var(--surface-emphasis-shadow-hover);
+  background: var(--surface-control-hover);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-soft);
   transform: translateY(-2px);
 }
 
