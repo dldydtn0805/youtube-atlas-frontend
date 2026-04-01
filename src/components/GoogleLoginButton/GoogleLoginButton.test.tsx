@@ -67,6 +67,14 @@ describe('GoogleLoginButton', () => {
     expect(container.querySelector('.app-shell__google-login-button-shell')).toBeInTheDocument();
     expect(container.querySelector('.app-shell__google-login-button-shell--hidden')).not.toBeInTheDocument();
     expect(screen.queryByText('구글 로그인 버튼을 불러오는 중입니다.')).not.toBeInTheDocument();
+    expect(renderButtonMock).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({
+        shape: 'pill',
+        type: 'icon',
+        width: 40,
+      }),
+    );
   });
 
   it('shows a clear error when the SDK does not mount a clickable button', async () => {

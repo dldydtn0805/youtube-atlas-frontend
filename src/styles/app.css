@@ -801,9 +801,11 @@
 
 .app-shell__google-login-button-shell {
   align-items: center;
+  border-radius: 999px;
   display: inline-flex;
   height: 40px;
   justify-content: center;
+  overflow: hidden;
   position: relative;
   width: 40px;
 }
@@ -815,10 +817,17 @@
 
 .app-shell__google-login-button {
   align-items: center;
+  border-radius: inherit;
   display: inline-flex;
   justify-content: center;
   min-height: 40px;
   min-width: 40px;
+  overflow: hidden;
+}
+
+.app-shell__google-login-button > div,
+.app-shell__google-login-button iframe {
+  border-radius: inherit;
 }
 
 .app-shell__auth-status {
