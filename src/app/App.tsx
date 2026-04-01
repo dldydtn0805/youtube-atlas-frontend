@@ -10,9 +10,10 @@ import {
   sortVideoCategories,
 } from '../constants/videoCategories';
 import countryCodes from '../constants/countryCodes';
-import { formatCompactCount, isRealtimeSurgingSignal } from '../features/trending/presentation';
-import { useVideoTrendSignals } from '../features/trending/queries';
-import { YouTubeCategorySection } from '../features/youtube/types';
+import { formatCompactCount } from '../features/trending/presentation';
+import { useRealtimeSurging, useVideoTrendSignals } from '../features/trending/queries';
+import type { VideoTrendSignal } from '../features/trending/types';
+import { YouTubeCategorySection, YouTubeVideoItem } from '../features/youtube/types';
 import { usePopularVideosByCategory, useVideoCategories } from '../features/youtube/queries';
 import { isApiConfigured } from '../lib/api';
 import '../styles/app.css';
@@ -160,6 +161,48 @@ function mergeSections(pages: YouTubeCategorySection[] | undefined) {
   };
 }
 
+function createFallbackThumbnails(url: string) {
+  return {
+    default: { url, width: 120, height: 90 },
+    medium: { url, width: 320, height: 180 },
+    high: { url, width: 480, height: 360 },
+  };
+}
+
+function mapTrendSignalToVideoItem(signal: VideoTrendSignal): YouTubeVideoItem {
+  return {
+    id: signal.videoId,
+    contentDetails: {
+      duration: '',
+    },
+    statistics: signal.currentViewCount === null ? undefined : { viewCount: String(signal.currentViewCount) },
+    snippet: {
+      title: signal.title ?? '',
+      channelTitle: signal.channelTitle ?? '',
+      categoryId: signal.categoryId,
+      thumbnails: createFallbackThumbnails(signal.thumbnailUrl ?? ''),
+    },
+  };
+}
+
+function mergeUniqueVideoItems(...groups: Array<YouTubeVideoItem[] | undefined>) {
+  const mergedItems: YouTubeVideoItem[] = [];
+  const seenVideoIds = new Set<string>();
+
+  for (const items of groups) {
+    for (const item of items ?? []) {
+      if (seenVideoIds.has(item.id)) {
+        continue;
+      }
+
+      seenVideoIds.add(item.id);
+      mergedItems.push(item);
+    }
+  }
+
+  return mergedItems;
+}
+
 function formatVideoViewCount(viewCount?: string) {
   if (!viewCount) {
     return undefined;
@@ -217,14 +260,11 @@ function App() {
     error,
   } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
   const selectedSection = mergeSections(data?.pages);
-  const selectedVideo = selectedSection?.items.find((item) => item.id === selectedVideoId);
-  const selectedVideoViewCount = formatVideoViewCount(selectedVideo?.statistics?.viewCount);
   const selectedSectionVideoIds = selectedSection?.items.map((item) => item.id) ?? [];
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
   const isDesktopCinematicMode = !isMobileLayout && isCinematicMode;
   const isDarkMode = themeMode === 'dark';
-  const canPlayNextVideo = (selectedSection?.items.length ?? 0) > 1;
   const cinematicToggleLabel = isDesktopCinematicMode ? '기본 보기' : '시네마틱 모드';
   const themeToggleLabel = isDarkMode ? '라이트 모드' : '다크 모드';
   const isChartLoading =
@@ -255,40 +295,37 @@ function App() {
     selectedSectionVideoIds,
     isApiConfigured,
   );
+  const {
+    data: realtimeSurgingData,
+    isLoading: isRealtimeSurgingLoading,
+    isError: isRealtimeSurgingError,
+  } = useRealtimeSurging(selectedRegionCode, isApiConfigured && isAllCategorySelected);
+  const realtimeSurgingSignalsByVideoId = Object.fromEntries(
+    (realtimeSurgingData?.items ?? []).map((signal) => [signal.videoId, signal]),
+  );
+  const combinedTrendSignalsByVideoId = {
+    ...trendSignalsByVideoId,
+    ...realtimeSurgingSignalsByVideoId,
+  };
   const realtimeSurgingSection =
-    isAllCategorySelected && selectedSection
+    isAllCategorySelected && realtimeSurgingData
       ? {
-          categoryId: 'realtime-surging',
+          categoryId: realtimeSurgingData.categoryId,
           label: '실시간 급상승',
-          description: '전체 차트에서 직전 집계 대비 순위가 5계단 이상 오른 영상만 따로 모았습니다.',
-          items: [...selectedSection.items]
-            .filter((item) => isRealtimeSurgingSignal(trendSignalsByVideoId[item.id]))
-            .sort((left, right) => {
-              const leftSignal = trendSignalsByVideoId[left.id];
-              const rightSignal = trendSignalsByVideoId[right.id];
-              const rankChangeDiff = (rightSignal?.rankChange ?? 0) - (leftSignal?.rankChange ?? 0);
-
-              if (rankChangeDiff !== 0) {
-                return rankChangeDiff;
-              }
-
-              const currentRankDiff =
-                (leftSignal?.currentRank ?? Number.MAX_SAFE_INTEGER) -
-                (rightSignal?.currentRank ?? Number.MAX_SAFE_INTEGER);
-
-              if (currentRankDiff !== 0) {
-                return currentRankDiff;
-              }
-
-              return left.snippet.title.localeCompare(right.snippet.title, 'ko');
-            }),
+          description: `전체 차트에서 직전 집계 대비 순위가 ${realtimeSurgingData.rankChangeThreshold}계단 이상 오른 영상을 모았습니다.`,
+          items: realtimeSurgingData.items.map(mapTrendSignalToVideoItem),
         }
       : undefined;
   const realtimeSurgingEmptyMessage =
-    isAllCategorySelected && selectedSection && !isChartLoading && !isTrendSignalsLoading && !isTrendSignalsError
-      ? '아직 +5 이상 급상승한 영상이 없습니다.'
+    isAllCategorySelected && !isChartLoading && !isRealtimeSurgingLoading && !isRealtimeSurgingError
+      ? `아직 +${realtimeSurgingData?.rankChangeThreshold ?? 5} 이상 급상승한 영상이 없습니다.`
       : undefined;
+  const featuredItems = realtimeSurgingSection?.items ?? [];
+  const combinedPlayableItems = mergeUniqueVideoItems(featuredItems, selectedSection?.items);
+  const selectedVideo = combinedPlayableItems.find((item) => item.id === selectedVideoId);
+  const selectedVideoViewCount = formatVideoViewCount(selectedVideo?.statistics?.viewCount);
   const selectedVideoStatLabel = selectedVideoViewCount;
+  const canPlayNextVideo = combinedPlayableItems.length > 1;
 
   function handleSelectVideo(videoId: string, triggerElement?: HTMLButtonElement) {
     shouldScrollToPlayerRef.current = true;
@@ -341,14 +378,17 @@ function App() {
       shouldScrollToPlayerRef.current = true;
     }
 
-    const currentIndex = selectedSection.items.findIndex((item) => item.id === selectedVideoId);
-    const fallbackIndex = step >= 0 ? 0 : selectedSection.items.length - 1;
+    const activeItems = selectedSection.items.some((item) => item.id === selectedVideoId)
+      ? selectedSection.items
+      : combinedPlayableItems;
+    const currentIndex = activeItems.findIndex((item) => item.id === selectedVideoId);
+    const fallbackIndex = step >= 0 ? 0 : activeItems.length - 1;
     const nextIndex =
       currentIndex >= 0
-        ? (currentIndex + step + selectedSection.items.length) % selectedSection.items.length
+        ? (currentIndex + step + activeItems.length) % activeItems.length
         : fallbackIndex;
 
-    setSelectedVideoId(selectedSection.items[nextIndex]?.id);
+    setSelectedVideoId(activeItems[nextIndex]?.id);
   }
 
   function handlePlayNextVideo() {
@@ -371,12 +411,12 @@ function App() {
       return;
     }
 
-    const hasSelectedVideo = selectedSection.items.some((item) => item.id === selectedVideoId);
+    const hasSelectedVideo = combinedPlayableItems.some((item) => item.id === selectedVideoId);
 
     if (!hasSelectedVideo) {
       setSelectedVideoId(firstVideoId);
     }
-  }, [selectedSection, selectedVideoId]);
+  }, [combinedPlayableItems, selectedSection, selectedVideoId]);
 
   useEffect(() => {
     if (!sortedVideoCategories.length) {
@@ -774,12 +814,15 @@ function App() {
           featuredSectionEmptyMessage={realtimeSurgingEmptyMessage}
           featuredSectionEyebrow="Realtime Movers"
           getFeaturedRankLabel={(item) => {
-            const signal = trendSignalsByVideoId[item.id];
-            return signal?.rankChange
-              ? `전체 ${signal.currentRank}위 · +${signal.rankChange}`
-              : '실시간 급상승';
+            const signal = realtimeSurgingSignalsByVideoId[item.id];
+            if (!signal?.rankChange) {
+              return '실시간 급상승';
+            }
+
+            return `전체 ${signal.currentRank}위 · ${signal.rankChange > 0 ? '+' : ''}${signal.rankChange}`;
           }}
           hasNextPage={hasNextPage}
+          hasResolvedTrendSignals={isApiConfigured && !isTrendSignalsLoading && !isTrendSignalsError}
           isError={isChartError}
           isFetchingNextPage={isFetchingNextPage}
           isLoading={isChartLoading}
@@ -787,7 +830,7 @@ function App() {
           section={selectedSection}
           onSelectVideo={handleSelectVideo}
           selectedVideoId={selectedVideoId}
-          trendSignalsByVideoId={trendSignalsByVideoId}
+          trendSignalsByVideoId={combinedTrendSignalsByVideoId}
         />
       </section>
     );

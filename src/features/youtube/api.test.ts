@@ -117,3 +117,41 @@ describe('fetchPopularVideosByCategory', () => {
     expect(section.items.map((item) => item.id)).toEqual(['video-1']);
   });
 });
+
+describe('fetchRealtimeSurging', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com');
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the realtime surging feed from the backend', async () => {
+    const { fetchRealtimeSurging } = await import('../trending/api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        regionCode: 'KR',
+        categoryId: '0',
+        categoryLabel: '전체',
+        rankChangeThreshold: 5,
+        totalCount: 1,
+        capturedAt: '2026-04-01T05:30:00Z',
+        items: [],
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await fetchRealtimeSurging('KR');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/trending/realtime-surging?regionCode=KR',
+      undefined,
+    );
+    expect(response.totalCount).toBe(1);
+  });
+});

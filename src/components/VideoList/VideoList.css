@@ -163,13 +163,18 @@
 }
 
 .video-card__trend-badge[data-tone='up'] {
-  background: rgba(249, 115, 22, 0.14);
-  color: #c2410c;
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
 }
 
-.video-card__trend-badge[data-tone='views'] {
+.video-card__trend-badge[data-tone='down'] {
   background: rgba(59, 130, 246, 0.12);
   color: #1d4ed8;
+}
+
+.video-card__trend-badge[data-tone='steady'] {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
 }
 
 .video-card__thumbnail {

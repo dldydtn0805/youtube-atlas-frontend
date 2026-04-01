@@ -3,9 +3,11 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { PropsWithChildren } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const fetchRealtimeSurging = vi.fn();
 const fetchVideoTrendSignals = vi.fn();
 
 vi.mock('./api', () => ({
+  fetchRealtimeSurging,
   fetchVideoTrendSignals,
 }));
 
@@ -26,10 +28,17 @@ function createWrapper() {
 
 describe('useVideoTrendSignals', () => {
   afterEach(() => {
+    fetchRealtimeSurging.mockReset();
     fetchVideoTrendSignals.mockReset();
   });
 
-  it('does not request trend signals for non-all categories', async () => {
+  it('requests trend signals for non-all categories too', async () => {
+    fetchVideoTrendSignals.mockResolvedValue({
+      'video-1': {
+        categoryId: '10',
+      },
+    });
+
     const { useVideoTrendSignals } = await import('./queries');
 
     renderHook(() => useVideoTrendSignals('KR', '10', ['video-1']), {
@@ -37,7 +46,7 @@ describe('useVideoTrendSignals', () => {
     });
 
     await waitFor(() => {
-      expect(fetchVideoTrendSignals).not.toHaveBeenCalled();
+      expect(fetchVideoTrendSignals).toHaveBeenCalledWith('KR', '10', ['video-1']);
     });
   });
 
@@ -56,6 +65,23 @@ describe('useVideoTrendSignals', () => {
 
     await waitFor(() => {
       expect(fetchVideoTrendSignals).toHaveBeenCalledWith('KR', '0', ['video-1']);
+    });
+  });
+
+  it('requests realtime surging feed for the selected region', async () => {
+    fetchRealtimeSurging.mockResolvedValue({
+      items: [],
+      regionCode: 'KR',
+    });
+
+    const { useRealtimeSurging } = await import('./queries');
+
+    renderHook(() => useRealtimeSurging('KR'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(fetchRealtimeSurging).toHaveBeenCalledWith('KR');
     });
   });
 });

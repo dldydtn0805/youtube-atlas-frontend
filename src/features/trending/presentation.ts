@@ -1,11 +1,10 @@
 import type { VideoTrendSignal } from './types';
 
-const VIEW_COUNT_DELTA_BADGE_THRESHOLD = 50_000;
 export const REALTIME_SURGING_RANK_CHANGE_THRESHOLD = 5;
 
 export interface VideoTrendBadge {
   label: string;
-  tone: 'new' | 'up' | 'views';
+  tone: 'new' | 'up' | 'down' | 'steady';
 }
 
 function trimTrailingZeroes(value: string) {
@@ -30,6 +29,7 @@ export function getVideoTrendBadges(signal?: VideoTrendSignal | null): VideoTren
   }
 
   const badges: VideoTrendBadge[] = [];
+  const rankChange = signal.rankChange ?? 0;
 
   if (signal.isNew) {
     badges.push({
@@ -38,23 +38,37 @@ export function getVideoTrendBadges(signal?: VideoTrendSignal | null): VideoTren
     });
   }
 
-  if ((signal.rankChange ?? 0) > 0) {
+  if (rankChange > 0) {
     badges.push({
-      label: `+${signal.rankChange}`,
+      label: `▲ ${rankChange}`,
       tone: 'up',
     });
   }
 
-  if ((signal.viewCountDelta ?? 0) >= VIEW_COUNT_DELTA_BADGE_THRESHOLD) {
+  if (signal.rankChange === 0 && signal.previousRank !== null) {
     badges.push({
-      label: `조회수 +${formatCompactCount(signal.viewCountDelta as number)}`,
-      tone: 'views',
+      label: '• 유지',
+      tone: 'steady',
     });
   }
 
-  return badges.slice(0, 2);
+  if (rankChange < 0) {
+    badges.push({
+      label: `▼ ${Math.abs(rankChange)}`,
+      tone: 'down',
+    });
+  }
+
+  return badges;
 }
 
 export function isRealtimeSurgingSignal(signal?: VideoTrendSignal | null) {
   return (signal?.rankChange ?? 0) >= REALTIME_SURGING_RANK_CHANGE_THRESHOLD;
+}
+
+export function getFallbackNewBadge() {
+  return {
+    label: 'NEW',
+    tone: 'new',
+  } satisfies VideoTrendBadge;
 }

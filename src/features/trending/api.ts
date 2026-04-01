@@ -1,5 +1,5 @@
 import { fetchApi } from '../../lib/api';
-import type { VideoTrendSignal } from './types';
+import type { RealtimeSurgingResponse, VideoTrendSignal } from './types';
 
 export async function fetchVideoTrendSignals(
   regionCode: string,
@@ -24,4 +24,12 @@ export async function fetchVideoTrendSignals(
   return Object.fromEntries(
     data.map((signal) => [signal.videoId, signal]),
   );
+}
+
+export async function fetchRealtimeSurging(regionCode: string): Promise<RealtimeSurgingResponse> {
+  const params = new URLSearchParams({
+    regionCode,
+  });
+
+  return fetchApi<RealtimeSurgingResponse>(`/api/trending/realtime-surging?${params.toString()}`);
 }

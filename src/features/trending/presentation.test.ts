@@ -31,7 +31,7 @@ describe('trend presentation helpers', () => {
     ]);
   });
 
-  it('shows rank gain and large view delta badges together', () => {
+  it('shows an up badge when the rank rises', () => {
     expect(
       getVideoTrendBadges({
         categoryId: 'gaming',
@@ -49,36 +49,108 @@ describe('trend presentation helpers', () => {
       }),
     ).toEqual([
       {
-        label: '+8',
+        label: '▲ 8',
         tone: 'up',
-      },
-      {
-        label: '조회수 +20만',
-        tone: 'views',
       },
     ]);
   });
 
-  it('shows a view badge starting from a 5만 increase', () => {
+  it('shows only new when there is no previous rank to compare', () => {
     expect(
       getVideoTrendBadges({
         categoryId: '0',
         categoryLabel: '전체',
         capturedAt: '2026-03-24T00:00:00.000Z',
         currentRank: 8,
-        currentViewCount: 850_000,
+        currentViewCount: 801_000,
+        isNew: true,
+        previousRank: null,
+        previousViewCount: 800_000,
+        rankChange: null,
+        regionCode: 'KR',
+        videoId: 'video-3',
+        viewCountDelta: 1_000,
+      }),
+    ).toEqual([
+      {
+        label: 'NEW',
+        tone: 'new',
+      },
+    ]);
+  });
+
+  it('shows a steady badge when the rank did not change', () => {
+    expect(
+      getVideoTrendBadges({
+        categoryId: '0',
+        categoryLabel: '전체',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 8,
+        currentViewCount: 801_000,
         isNew: false,
         previousRank: 8,
         previousViewCount: 800_000,
         rankChange: 0,
         regionCode: 'KR',
-        videoId: 'video-3',
-        viewCountDelta: 50_000,
+        videoId: 'video-steady',
+        viewCountDelta: 1_000,
       }),
     ).toEqual([
       {
-        label: '조회수 +5만',
-        tone: 'views',
+        label: '• 유지',
+        tone: 'steady',
+      },
+    ]);
+  });
+
+  it('shows a rank drop badge when a video falls in the chart', () => {
+    expect(
+      getVideoTrendBadges({
+        categoryId: 'music',
+        categoryLabel: '음악',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 15,
+        currentViewCount: 420_000,
+        isNew: false,
+        previousRank: 9,
+        previousViewCount: 415_000,
+        rankChange: -6,
+        regionCode: 'KR',
+        videoId: 'video-drop',
+        viewCountDelta: 5_000,
+      }),
+    ).toEqual([
+      {
+        label: '▼ 6',
+        tone: 'down',
+      },
+    ]);
+  });
+
+  it('keeps new and rank badges together', () => {
+    expect(
+      getVideoTrendBadges({
+        categoryId: '0',
+        categoryLabel: '전체',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 4,
+        currentViewCount: 250_000,
+        isNew: true,
+        previousRank: 7,
+        previousViewCount: 245_000,
+        rankChange: 3,
+        regionCode: 'KR',
+        videoId: 'video-6',
+        viewCountDelta: 5_000,
+      }),
+    ).toEqual([
+      {
+        label: 'NEW',
+        tone: 'new',
+      },
+      {
+        label: '▲ 3',
+        tone: 'up',
       },
     ]);
   });

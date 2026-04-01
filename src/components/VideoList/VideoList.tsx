@@ -1,5 +1,5 @@
 import { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
-import { formatCompactCount, getVideoTrendBadges } from '../../features/trending/presentation';
+import { formatCompactCount, getFallbackNewBadge, getVideoTrendBadges } from '../../features/trending/presentation';
 import type { VideoTrendSignal } from '../../features/trending/types';
 import './VideoList.css';
 
@@ -12,6 +12,7 @@ interface VideoListProps {
   featuredSectionEyebrow?: string;
   featuredSectionEmptyMessage?: string;
   getFeaturedRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+  hasResolvedTrendSignals?: boolean;
   selectedVideoId?: string;
   trendSignalsByVideoId?: Record<string, VideoTrendSignal>;
   hasNextPage: boolean;
@@ -43,6 +44,7 @@ function VideoList({
   featuredSectionEyebrow = 'Realtime Movers',
   featuredSectionEmptyMessage,
   getFeaturedRankLabel,
+  hasResolvedTrendSignals = false,
   selectedVideoId,
   trendSignalsByVideoId,
   hasNextPage,
@@ -96,7 +98,13 @@ function VideoList({
         {currentSection.items.length > 0 ? (
           <div className="video-list__grid">
             {currentSection.items.map((item, index) => {
-              const trendBadges = getVideoTrendBadges(trendSignalsByVideoId?.[item.id]);
+              const trendSignal = trendSignalsByVideoId?.[item.id];
+              const trendBadges =
+                trendSignal
+                  ? getVideoTrendBadges(trendSignal)
+                  : hasResolvedTrendSignals
+                    ? [getFallbackNewBadge()]
+                    : [];
               const rankLabel = getRankLabel?.(item, index) ?? `${currentSection.label} #${index + 1}`;
               const viewCountLabel = formatViewCount(item.statistics?.viewCount);
 
