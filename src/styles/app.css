@@ -774,6 +774,14 @@
   padding: 0;
 }
 
+.app-shell__auth-session {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
 .app-shell__auth-avatar {
   border: 1px solid var(--surface-stat-border);
   border-radius: 999px;
@@ -797,6 +805,8 @@
   align-items: center;
   display: inline-flex;
   gap: 6px;
+  position: relative;
+  z-index: 999;
 }
 
 .app-shell__google-login-button-shell {
@@ -808,6 +818,7 @@
   overflow: hidden;
   position: relative;
   width: 40px;
+  z-index: 999;
 }
 
 .app-shell__google-login-button-shell--hidden {
@@ -828,7 +839,7 @@
   position: absolute;
   right: 0;
   top: 0;
-  z-index: 2;
+  z-index: 999;
 }
 
 .app-shell__google-login-visual {
@@ -887,7 +898,7 @@
   opacity: 0;
   position: absolute;
   width: 100%;
-  z-index: 2;
+  z-index: 1000;
 }
 
 .app-shell__auth-status {
