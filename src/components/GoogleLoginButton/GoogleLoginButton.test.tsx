@@ -71,8 +71,32 @@ describe('GoogleLoginButton', () => {
       expect.any(HTMLElement),
       expect.objectContaining({
         shape: 'pill',
+        theme: 'filled_blue',
         type: 'icon',
         width: 40,
+      }),
+    );
+  });
+
+  it('uses a filled theme in dark mode to avoid the visible outer outline', async () => {
+    renderButtonMock.mockImplementation((element: HTMLElement) => {
+      const child = document.createElement('div');
+
+      child.dataset.googleButton = 'true';
+      element.appendChild(child);
+    });
+
+    render(<GoogleLoginButton isDarkMode />);
+
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(renderButtonMock).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({
+        theme: 'filled_black',
+        type: 'icon',
       }),
     );
   });

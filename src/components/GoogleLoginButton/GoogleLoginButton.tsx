@@ -9,6 +9,10 @@ const GOOGLE_BUTTON_RENDER_TIMEOUT_MS = 1_500;
 let googleIdentityScriptPromise: Promise<void> | null = null;
 type GoogleButtonStatus = 'idle' | 'rendering' | 'ready' | 'failed';
 
+type GoogleLoginButtonProps = {
+  isDarkMode?: boolean;
+};
+
 function loadGoogleIdentityScript() {
   if (typeof window === 'undefined') {
     return Promise.resolve();
@@ -48,7 +52,7 @@ function loadGoogleIdentityScript() {
   return googleIdentityScriptPromise;
 }
 
-export default function GoogleLoginButton() {
+export default function GoogleLoginButton({ isDarkMode = false }: GoogleLoginButtonProps) {
   const {
     authError,
     clearAuthError,
@@ -168,7 +172,7 @@ export default function GoogleLoginButton() {
           shape: 'pill',
           size: 'medium',
           text: 'signin_with',
-          theme: 'outline',
+          theme: isDarkMode ? 'filled_black' : 'filled_blue',
           width: 40,
         });
         markButtonReady();
@@ -191,7 +195,7 @@ export default function GoogleLoginButton() {
 
       buttonContainer.innerHTML = '';
     };
-  }, [clearAuthError, googleClientId, shouldRenderButton]);
+  }, [clearAuthError, googleClientId, isDarkMode, shouldRenderButton]);
 
   if (!isApiConfigured) {
     return <p className="app-shell__auth-status">백엔드 연결 후 로그인 기능을 사용할 수 있습니다.</p>;
