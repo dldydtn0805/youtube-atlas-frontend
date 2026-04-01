@@ -510,14 +510,17 @@
 
 .app-shell__filter-summary {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .app-shell__filter-summary-text {
   color: var(--text-muted);
-  font-size: 0.95rem;
-  line-height: 1.55;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
   margin: 0;
+  text-transform: uppercase;
 }
 
 .app-shell__favorites-list {
@@ -545,10 +548,10 @@
   box-shadow: var(--shadow-card);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 800;
-  min-height: 42px;
-  padding: 0 16px;
+  min-height: 38px;
+  padding: 0 14px;
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -588,24 +591,35 @@
 }
 
 .app-shell__filter-pill {
-  align-items: flex-start;
+  align-items: center;
   background: var(--surface-chip-muted);
   border: 1px solid var(--surface-stat-border);
-  border-radius: 18px;
+  border-radius: 999px;
   color: var(--text);
   display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 170px;
-  padding: 14px 16px;
+  gap: 8px;
+  line-height: 1;
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 14px;
 }
 
 .app-shell__filter-pill strong {
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+}
+
+.app-shell__filter-pill span {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-shell__modal-backdrop {
@@ -653,14 +667,14 @@
 
 .app-shell__modal-fields {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .app-shell__modal-field {
   background: var(--surface-modal-field);
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 18px;
+  padding: 16px;
 }
 
 .app-shell__modal-field .app-shell__section-heading {
@@ -874,20 +888,26 @@
   }
 
   .app-shell__header-top {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: nowrap;
   }
 
   .app-shell__header-actions {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    margin-left: auto;
+    width: auto;
   }
 
   .app-shell__header-actions,
   .app-shell__auth-panel,
   .app-shell__auth-session {
     flex-direction: row;
+  }
+
+  .app-shell__title {
+    flex: 1;
+    min-width: 0;
   }
 
   .app-shell__auth-panel,
@@ -974,12 +994,13 @@
   }
 
   .app-shell__stage-side {
-    align-items: flex-start;
-    justify-items: start;
+    align-items: flex-end;
+    justify-items: end;
     width: 100%;
   }
 
   .app-shell__favorite-toggle {
+    margin-left: auto;
     width: auto;
   }
 
@@ -1003,8 +1024,9 @@
   }
 
   .app-shell__filter-pill {
-    flex: 1 1 100%;
+    flex: 1 1 calc(50% - 6px);
     min-width: 0;
+    padding: 0 12px;
   }
 
   .app-shell__modal-backdrop {

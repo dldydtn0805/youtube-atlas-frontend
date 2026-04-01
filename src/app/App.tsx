@@ -38,7 +38,6 @@ const FAVORITE_STREAMER_VIDEO_SECTION: YouTubeCategorySection = {
   label: '즐겨찾기 채널',
 };
 type RegionCode = (typeof countryCodes)[number]['code'];
-type MobileTab = 'chart' | 'chat';
 type ThemeMode = 'light' | 'dark';
 
 const SUPPORTED_REGION_CODES = new Set<string>(countryCodes.map((country) => country.code));
@@ -240,7 +239,6 @@ function App() {
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
-  const [mobileTab, setMobileTab] = useState<MobileTab>('chart');
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const playerViewportRef = useRef<HTMLDivElement | null>(null);
@@ -298,7 +296,7 @@ function App() {
     : isVideoCategoriesError
       ? `불러오기에 실패했습니다. ${chartErrorMessage}`
       : detailVideoCategories.length > 0
-        ? '메인 외 카테고리는 여기서 선택할 수 있습니다.'
+        ? '추가 카테고리는 여기서 선택할 수 있습니다.'
         : '현재 이 국가에는 추가 세부 카테고리가 없습니다.';
   const {
     data: favoriteStreamers = [],
@@ -456,19 +454,12 @@ function App() {
     shouldScrollToPlayerRef.current = true;
     setSelectedCategoryId(categoryId);
     setSelectedVideoId(undefined);
-    if (isMobileLayout) {
-      setMobileTab('chart');
-    }
     triggerElement?.blur();
   }
 
   function handleSelectRegion(regionCode: RegionCode) {
     setSelectedRegionCode(regionCode);
     setSelectedVideoId(undefined);
-
-    if (isMobileLayout) {
-      setMobileTab('chart');
-    }
   }
 
   function handleSelectAdjacentVideo(step: number) {
@@ -747,10 +738,6 @@ function App() {
 
   function handleCompleteFilterSelection() {
     setIsFilterModalOpen(false);
-
-    if (isMobileLayout) {
-      setMobileTab('chart');
-    }
   }
 
   const filterSummaryContent = (
@@ -758,26 +745,24 @@ function App() {
       <div className="app-shell__section-heading app-shell__section-heading--filters">
         <div className="app-shell__section-heading-copy">
           <p className="app-shell__section-eyebrow">Filters</p>
-          <h2 className="app-shell__section-title">국가와 카테고리 선택</h2>
+          <h2 className="app-shell__section-title">필터</h2>
         </div>
         <button className="app-shell__filter-trigger" onClick={openFilterModal} type="button">
-          필터 열기
+          변경
         </button>
       </div>
       <div className="app-shell__filter-summary" aria-label="현재 필터">
         <div className="app-shell__filter-pill-group">
           <span className="app-shell__filter-pill">
             <strong>국가</strong>
-            {selectedCountryName}
+            <span>{selectedCountryName}</span>
           </span>
           <span className="app-shell__filter-pill">
             <strong>카테고리</strong>
-            {selectedCategory?.label ?? '선택 중'}
+            <span>{selectedCategory?.label ?? '선택 중'}</span>
           </span>
         </div>
-        <p className="app-shell__filter-summary-text">
-          메인 카테고리는 바로 전환하고, 나머지 세부 카테고리는 필터 모달에서 고를 수 있습니다.
-        </p>
+        <p className="app-shell__filter-summary-text">빠른 카테고리</p>
         <div className="app-shell__quick-category-group" aria-label="메인 카테고리 빠른 선택">
           {mainVideoCategories.map((category) => (
             <button
@@ -832,7 +817,7 @@ function App() {
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Filters</p>
             <h2 className="app-shell__section-title" id="filter-modal-title">
-              국가와 카테고리 선택
+              필터
             </h2>
           </div>
           <button
@@ -849,11 +834,11 @@ function App() {
           <div className="app-shell__filter-pill-group">
             <span className="app-shell__filter-pill">
               <strong>현재 국가</strong>
-              {selectedCountryName}
+              <span>{selectedCountryName}</span>
             </span>
             <span className="app-shell__filter-pill">
               <strong>현재 카테고리</strong>
-              {selectedCategory?.label ?? '선택 중'}
+              <span>{selectedCategory?.label ?? '선택 중'}</span>
             </span>
           </div>
 
@@ -874,11 +859,8 @@ function App() {
             <div className="app-shell__modal-field">
               <div className="app-shell__section-heading">
                 <p className="app-shell__section-eyebrow">Main Categories</p>
-                <h3 className="app-shell__modal-field-title">메인 카테고리</h3>
+                <h3 className="app-shell__modal-field-title">빠른 카테고리</h3>
               </div>
-              <p className="app-shell__modal-field-copy">
-                자주 보는 카테고리는 여기서 바로 바꾸고, 나머지는 아래 세부 목록에서 고를 수 있습니다.
-              </p>
               <div className="app-shell__quick-category-group" aria-label="메인 카테고리 목록">
                 {mainVideoCategories.map((category) => (
                   <button
@@ -897,7 +879,7 @@ function App() {
             <div className="app-shell__modal-field">
               <div className="app-shell__section-heading">
                 <p className="app-shell__section-eyebrow">Detail Categories</p>
-                <h3 className="app-shell__modal-field-title">세부 카테고리</h3>
+                <h3 className="app-shell__modal-field-title">전체 카테고리</h3>
               </div>
               <SearchBar
                 ariaLabel="세부 카테고리 선택"
@@ -912,7 +894,7 @@ function App() {
                 helperText={detailCategoryHelperText}
                 onChange={handleSelectCategory}
                 options={detailCategoryOptions}
-                placeholderLabel="메인 카테고리에서 선택 중"
+                placeholderLabel="카테고리 선택"
                 value={selectedCategory?.id ?? ''}
               />
             </div>
@@ -921,7 +903,7 @@ function App() {
 
         <div className="app-shell__modal-footer">
           <button className="app-shell__modal-action" onClick={handleCompleteFilterSelection} type="button">
-            선택 완료
+            적용
           </button>
         </div>
       </section>
@@ -1021,6 +1003,21 @@ function App() {
     </section>
   );
 
+  function renderCommunityContent() {
+    return (
+      <section className="app-shell__panel app-shell__panel--community">
+        <div className="app-shell__section-heading">
+          <p className="app-shell__section-eyebrow">Live Chat</p>
+          <h2 className="app-shell__section-title">실시간 채팅</h2>
+        </div>
+        <CommentSection
+          videoId={selectedVideoId}
+          videoTitle={selectedVideo?.snippet.title}
+        />
+      </section>
+    );
+  }
+
   const playerContent = (
     <div ref={playerStageRef} className="app-shell__stage" data-cinematic={isDesktopCinematicMode}>
       <div className="app-shell__stage-stack" data-cinematic={isDesktopCinematicMode}>
@@ -1108,18 +1105,7 @@ function App() {
     </div>
   );
 
-  const communityContent = (
-    <section className="app-shell__panel app-shell__panel--community">
-      <div className="app-shell__section-heading">
-        <p className="app-shell__section-eyebrow">Live Room</p>
-        <h2 className="app-shell__section-title">실시간 관제 채팅</h2>
-      </div>
-      <CommentSection
-        videoId={selectedVideoId}
-        videoTitle={selectedVideo?.snippet.title}
-      />
-    </section>
-  );
+  const communityContent = renderCommunityContent();
 
   const chartContent = renderChartPanel();
   const userIdentityLabel = user?.displayName || user?.email || 'Google 계정';
@@ -1180,34 +1166,8 @@ function App() {
             {playerContent}
             {filterSummaryContent}
             {favoriteVideosContent}
-            <nav className="app-shell__mobile-tabs" aria-label="모바일 화면 전환">
-              <button
-                className="app-shell__mobile-tab"
-                data-active={mobileTab === 'chart'}
-                onClick={() => setMobileTab('chart')}
-                type="button"
-              >
-                차트
-              </button>
-              <button
-                className="app-shell__mobile-tab"
-                data-active={isFilterModalOpen}
-                onClick={openFilterModal}
-                type="button"
-              >
-                필터
-              </button>
-              <button
-                className="app-shell__mobile-tab"
-                data-active={mobileTab === 'chat'}
-                onClick={() => setMobileTab('chat')}
-                type="button"
-              >
-                채팅
-              </button>
-            </nav>
-            {mobileTab === 'chart' ? chartContent : null}
-            {mobileTab === 'chat' ? communityContent : null}
+            {chartContent}
+            {communityContent}
           </>
         ) : (
           <>

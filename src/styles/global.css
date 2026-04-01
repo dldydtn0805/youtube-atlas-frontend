@@ -98,10 +98,10 @@
   --page-overlay-bottom: transparent;
   --surface-interactive: rgba(9, 18, 31, 0.88);
   --surface-interactive-hover: rgba(16, 28, 47, 0.98);
-  --surface-emphasis: linear-gradient(135deg, #38bdf8, #2563eb);
-  --surface-emphasis-hover: linear-gradient(135deg, #4cc9ff, #2c6fff);
-  --surface-emphasis-shadow: 0 18px 38px rgba(37, 99, 235, 0.32);
-  --surface-emphasis-shadow-hover: 0 20px 42px rgba(37, 99, 235, 0.36);
+  --surface-emphasis: linear-gradient(135deg, #4f5c6f, #2a3442);
+  --surface-emphasis-hover: linear-gradient(135deg, #5d6a7d, #334050);
+  --surface-emphasis-shadow: 0 18px 38px rgba(15, 23, 42, 0.34);
+  --surface-emphasis-shadow-hover: 0 20px 42px rgba(15, 23, 42, 0.4);
   --surface-panel-highlight:
     linear-gradient(180deg, rgba(8, 17, 31, 0.97), rgba(11, 23, 40, 0.94)),
     rgba(9, 18, 31, 0.92);
