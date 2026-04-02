@@ -31,6 +31,7 @@ function usePlaybackQueue({
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const [activePlaybackQueueId, setActivePlaybackQueueId] = useState<string>(selectedCategoryId);
   const shouldScrollToPlayerRef = useRef(false);
+  const shouldAutoSelectNextAvailableRef = useRef(false);
 
   const activePlaybackItems = getPlaybackQueueItems(activePlaybackQueueId, {
     favoriteStreamerVideoSection,
@@ -46,6 +47,7 @@ function usePlaybackQueue({
     triggerElement?: HTMLButtonElement,
   ) {
     shouldScrollToPlayerRef.current = true;
+    shouldAutoSelectNextAvailableRef.current = false;
     setActivePlaybackQueueId(playbackQueueId);
     setSelectedVideoId(videoId);
     triggerElement?.blur();
@@ -71,6 +73,7 @@ function usePlaybackQueue({
     }
 
     shouldScrollToPlayerRef.current = true;
+    shouldAutoSelectNextAvailableRef.current = true;
     setActivePlaybackQueueId(categoryId);
     setSelectedCategoryId(categoryId);
     setSelectedVideoId(undefined);
@@ -78,12 +81,14 @@ function usePlaybackQueue({
   }
 
   function resetForRegionChange() {
+    shouldAutoSelectNextAvailableRef.current = false;
     setActivePlaybackQueueId(selectedCategoryId);
     setSelectedVideoId(undefined);
   }
 
   function restorePlaybackSelection(videoId: string, playbackQueueId: string) {
     shouldScrollToPlayerRef.current = true;
+    shouldAutoSelectNextAvailableRef.current = false;
     setActivePlaybackQueueId(playbackQueueId);
     setSelectedVideoId(videoId);
   }
@@ -150,16 +155,23 @@ function usePlaybackQueue({
     const hasSelectedVideoInQueue = queueItems.some((item) => item.id === selectedVideoId);
 
     if (fallbackItems.length === 0) {
+      shouldAutoSelectNextAvailableRef.current = false;
       setSelectedVideoId(undefined);
       return;
     }
 
     if (!hasSelectedVideoInQueue) {
+      const shouldAutoSelectFallback =
+        Boolean(selectedVideoId) || shouldAutoSelectNextAvailableRef.current;
+
       if (queueItems.length === 0 && fallbackQueueId && activePlaybackQueueId !== fallbackQueueId) {
         setActivePlaybackQueueId(fallbackQueueId);
       }
 
-      setSelectedVideoId(fallbackItems[0]?.id);
+      if (shouldAutoSelectFallback) {
+        shouldAutoSelectNextAvailableRef.current = false;
+        setSelectedVideoId(fallbackItems[0]?.id);
+      }
     }
   }, [
     activePlaybackQueueId,

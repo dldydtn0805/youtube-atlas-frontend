@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
 import AppHeader from './sections/AppHeader';
 import { ChartPanel, CommunityPanel, FavoriteVideosPanel } from './sections/ContentPanels';
 import { CinematicQuickFilters, FilterModal, FilterSummaryPanel } from './sections/FilterPanels';
@@ -40,10 +41,26 @@ import { usePopularVideosByCategory, useVideoCategories } from '../../features/y
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import '../../styles/app.css';
 
+function formatPlaybackSaveTimestamp(positionSeconds: number) {
+  const normalizedSeconds = Math.max(0, Math.floor(positionSeconds));
+  const hours = Math.floor(normalizedSeconds / 3600);
+  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
+  const seconds = normalizedSeconds % 60;
+
+  if (hours > 0) {
+    return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+  }
+
+  return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+}
+
 function HomePage() {
   const { accessToken, isLoggingOut, logout, status: authStatus, user } = useAuth();
   const [pendingPlaybackRestore, setPendingPlaybackRestore] = useState<PendingPlaybackRestore | null>(null);
+  const [isManualPlaybackSavePending, setIsManualPlaybackSavePending] = useState(false);
+  const [manualPlaybackSaveStatus, setManualPlaybackSaveStatus] = useState<string | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
+  const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
   const playerViewportRef = useRef<HTMLDivElement | null>(null);
   const nextPlaybackRestoreIdRef = useRef(0);
@@ -263,8 +280,28 @@ function HomePage() {
 
     handledPlaybackRestoreSignatureRef.current = null;
     lastPersistedPlaybackSecondsRef.current = {};
+    setIsManualPlaybackSavePending(false);
+    setManualPlaybackSaveStatus(null);
     setPendingPlaybackRestore(null);
   }, [authStatus]);
+
+  useEffect(() => {
+    setManualPlaybackSaveStatus(null);
+  }, [selectedVideoId]);
+
+  useEffect(() => {
+    if (!manualPlaybackSaveStatus || isManualPlaybackSavePending) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setManualPlaybackSaveStatus(null);
+    }, 3500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isManualPlaybackSavePending, manualPlaybackSaveStatus]);
 
   useEffect(() => {
     if (authStatus !== 'authenticated' || !user?.lastPlaybackProgress) {
@@ -341,23 +378,29 @@ function HomePage() {
     );
   }, []);
 
-  const handlePlaybackProgress = useCallback(
-    async (videoId: string, positionSeconds: number) => {
+  const persistPlaybackProgress = useCallback(
+    async (
+      videoId: string,
+      positionSeconds: number,
+      options?: {
+        force?: boolean;
+      },
+    ) => {
       if (authStatus !== 'authenticated' || !accessToken) {
-        return;
+        return null;
       }
 
       const playbackVideo = combinedPlayableItems.find((item) => item.id === videoId);
 
       if (!playbackVideo) {
-        return;
+        return null;
       }
 
       const normalizedPositionSeconds = Math.max(0, Math.floor(positionSeconds));
       const previousPositionSeconds = lastPersistedPlaybackSecondsRef.current[videoId];
 
-      if (previousPositionSeconds === normalizedPositionSeconds) {
-        return;
+      if (!options?.force && previousPositionSeconds === normalizedPositionSeconds) {
+        return normalizedPositionSeconds;
       }
 
       lastPersistedPlaybackSecondsRef.current[videoId] = normalizedPositionSeconds;
@@ -383,10 +426,52 @@ function HomePage() {
         ) {
           void logout();
         }
+
+        throw error;
       }
+
+      return normalizedPositionSeconds;
     },
     [accessToken, authStatus, combinedPlayableItems, logout],
   );
+
+  const handleManualPlaybackSave = useCallback(async () => {
+    if (authStatus !== 'authenticated' || !selectedVideoId) {
+      setManualPlaybackSaveStatus('로그인 후 스크랩할 수 있습니다.');
+      return;
+    }
+
+    const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
+
+    if (!snapshot) {
+      setManualPlaybackSaveStatus('플레이어 준비 후 다시 스크랩해 주세요.');
+      return;
+    }
+
+    setIsManualPlaybackSavePending(true);
+    setManualPlaybackSaveStatus(null);
+
+    try {
+      const savedPositionSeconds = await persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, {
+        force: true,
+      });
+
+      if (savedPositionSeconds === null) {
+        setManualPlaybackSaveStatus('스크랩할 재생 위치를 찾지 못했습니다.');
+        return;
+      }
+
+      setManualPlaybackSaveStatus(
+        `${formatPlaybackSaveTimestamp(savedPositionSeconds)} 지점까지 스크랩했습니다.`,
+      );
+    } catch (error) {
+      setManualPlaybackSaveStatus(
+        error instanceof Error ? error.message : '스크랩에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    } finally {
+      setIsManualPlaybackSavePending(false);
+    }
+  }, [authStatus, persistPlaybackProgress, selectedVideoId]);
 
   async function handleToggleFavoriteStreamer() {
     if (authStatus !== 'authenticated' || !selectedVideo || !selectedChannelId) {
@@ -519,15 +604,21 @@ function HomePage() {
           isChartLoading={isChartLoading}
           isDesktopCinematicMode={isDesktopCinematicMode}
           isFavoriteToggleDisabled={!selectedChannelId || toggleFavoriteStreamerMutation.isPending}
+          isManualPlaybackSaveDisabled={
+            authStatus !== 'authenticated' || !selectedVideoId || isManualPlaybackSavePending
+          }
           isMobileLayout={isMobileLayout}
           isSelectedChannelFavorited={isSelectedChannelFavorited}
+          manualPlaybackSaveButtonLabel={isManualPlaybackSavePending ? '스크랩 중...' : '스크랩'}
+          manualPlaybackSaveStatus={manualPlaybackSaveStatus ?? undefined}
+          onManualPlaybackSave={() => void handleManualPlaybackSave()}
           onNextVideo={handlePlayNextVideo}
-          onPlaybackProgress={handlePlaybackProgress}
           onPlaybackRestoreApplied={handlePlaybackRestoreApplied}
           onPreviousVideo={handlePlayPreviousVideo}
           onToggleCinematicMode={() => void handleToggleCinematicMode()}
           onToggleFavoriteStreamer={() => void handleToggleFavoriteStreamer()}
           playbackRestore={pendingPlaybackRestore}
+          playerRef={videoPlayerRef}
           playerSectionRef={playerSectionRef}
           playerStageRef={playerStageRef}
           playerViewportRef={playerViewportRef}

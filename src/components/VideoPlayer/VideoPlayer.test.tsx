@@ -1,6 +1,7 @@
-import { act, render, waitFor } from '@testing-library/react';
+import { act, createRef } from 'react';
+import { render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import VideoPlayer from './VideoPlayer';
+import VideoPlayer, { type VideoPlayerHandle } from './VideoPlayer';
 
 type MockPlayerApi = {
   destroy: ReturnType<typeof vi.fn>;
@@ -16,19 +17,16 @@ describe('VideoPlayer', () => {
   let currentTimeSeconds = 0;
   let currentPlaybackVideoId = 'video-a';
   let onReady: YT.PlayerEvents['onReady'];
-  let onStateChange: YT.PlayerEvents['onStateChange'];
   let playerApi: MockPlayerApi;
   let playerConstructorCallCount = 0;
 
   beforeEach(() => {
     playerConstructorCallCount = 0;
     onReady = undefined;
-    onStateChange = undefined;
 
     function Player(this: MockPlayerApi, _element: HTMLElement, configuration: YT.PlayerOptions) {
       playerConstructorCallCount += 1;
       onReady = configuration.events?.onReady;
-      onStateChange = configuration.events?.onStateChange;
 
       this.destroy = vi.fn();
       this.getCurrentTime = vi.fn(() => currentTimeSeconds);
@@ -65,11 +63,8 @@ describe('VideoPlayer', () => {
     delete (window as Window & { YT?: unknown }).YT;
   });
 
-  it('keeps reporting the player video id while a new selection is loading', async () => {
-    const onPlaybackProgress = vi.fn();
-    const { rerender } = render(
-      <VideoPlayer selectedVideoId="video-a" onPlaybackProgress={onPlaybackProgress} />,
-    );
+  it('loads the newly selected video without recreating the player', async () => {
+    const { rerender } = render(<VideoPlayer selectedVideoId="video-a" />);
 
     await waitFor(() => expect(playerConstructorCallCount).toBe(1));
 
@@ -80,15 +75,29 @@ describe('VideoPlayer', () => {
     currentTimeSeconds = 123;
     currentPlaybackVideoId = 'video-a';
 
-    rerender(<VideoPlayer selectedVideoId="video-b" onPlaybackProgress={onPlaybackProgress} />);
+    rerender(<VideoPlayer selectedVideoId="video-b" />);
 
     await waitFor(() => expect(playerApi.loadVideoById).toHaveBeenCalledWith('video-b'));
+    expect(playerConstructorCallCount).toBe(1);
+  });
+
+  it('returns the current playback snapshot from the forwarded ref', async () => {
+    const playerRef = createRef<VideoPlayerHandle>();
+
+    render(<VideoPlayer ref={playerRef} selectedVideoId="video-a" />);
+
+    await waitFor(() => expect(playerConstructorCallCount).toBe(1));
 
     act(() => {
-      onStateChange?.({ data: window.YT!.PlayerState.PAUSED });
+      onReady?.({ target: playerApi as unknown as YT.Player });
     });
 
-    expect(onPlaybackProgress).toHaveBeenCalledWith('video-a', 123);
-    expect(onPlaybackProgress).not.toHaveBeenCalledWith('video-b', 123);
+    currentTimeSeconds = 87;
+    currentPlaybackVideoId = 'video-a';
+
+    expect(playerRef.current?.readPlaybackSnapshot()).toEqual({
+      positionSeconds: 87,
+      videoId: 'video-a',
+    });
   });
 });

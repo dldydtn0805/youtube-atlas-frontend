@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import './VideoPlayer.css';
 
 let youtubeIframeApiPromise: Promise<void> | undefined;
@@ -47,7 +47,6 @@ interface VideoPlayerProps {
   canNavigateVideos?: boolean;
   onPreviousVideo?: () => void;
   onNextVideo?: () => void;
-  onPlaybackProgress?: (videoId: string, positionSeconds: number) => void;
   playbackRestore?: {
     restoreId: number;
     videoId: string;
@@ -56,7 +55,14 @@ interface VideoPlayerProps {
   onPlaybackRestoreApplied?: (restoreId: number) => void;
 }
 
-function VideoPlayer({
+export interface VideoPlayerHandle {
+  readPlaybackSnapshot: () => {
+    videoId: string;
+    positionSeconds: number;
+  } | null;
+}
+
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function VideoPlayer({
   selectedVideoId,
   isLoading = false,
   isCinematic = false,
@@ -65,16 +71,14 @@ function VideoPlayer({
   canNavigateVideos = false,
   onPreviousVideo,
   onNextVideo,
-  onPlaybackProgress,
   playbackRestore,
   onPlaybackRestoreApplied,
-}: VideoPlayerProps) {
+}, ref) {
   const videoId = selectedVideoId;
   const playerHostRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YT.Player | null>(null);
   const currentVideoIdRef = useRef(videoId);
   const onVideoEndRef = useRef(onVideoEnd);
-  const onPlaybackProgressRef = useRef(onPlaybackProgress);
   const onPlaybackRestoreAppliedRef = useRef(onPlaybackRestoreApplied);
   const playbackRestoreRef = useRef(playbackRestore);
   const lastAppliedRestoreIdRef = useRef<number | null>(null);
@@ -87,10 +91,6 @@ function VideoPlayer({
   useEffect(() => {
     currentVideoIdRef.current = videoId;
   }, [videoId]);
-
-  useEffect(() => {
-    onPlaybackProgressRef.current = onPlaybackProgress;
-  }, [onPlaybackProgress]);
 
   useEffect(() => {
     playbackRestoreRef.current = playbackRestore;
@@ -128,28 +128,23 @@ function VideoPlayer({
     return currentPlaybackVideoId ? currentPlaybackVideoId : undefined;
   }, []);
 
-  const reportPlaybackProgress = useCallback(
-    (progressVideoId?: string) => {
-      const currentPlaybackVideoId = readCurrentPlaybackVideoId();
+  useImperativeHandle(
+    ref,
+    () => ({
+      readPlaybackSnapshot() {
+        const snapshotVideoId = readCurrentPlaybackVideoId() ?? currentVideoIdRef.current;
+        const positionSeconds = readCurrentPlaybackPositionSeconds();
 
-      if (progressVideoId && currentPlaybackVideoId && progressVideoId !== currentPlaybackVideoId) {
-        return;
-      }
+        if (!snapshotVideoId || positionSeconds === null) {
+          return null;
+        }
 
-      const resolvedVideoId = currentPlaybackVideoId ?? progressVideoId;
-
-      if (!resolvedVideoId) {
-        return;
-      }
-
-      const currentTimeSeconds = readCurrentPlaybackPositionSeconds();
-
-      if (currentTimeSeconds === null) {
-        return;
-      }
-
-      onPlaybackProgressRef.current?.(resolvedVideoId, currentTimeSeconds);
-    },
+        return {
+          positionSeconds,
+          videoId: snapshotVideoId,
+        };
+      },
+    }),
     [readCurrentPlaybackPositionSeconds, readCurrentPlaybackVideoId],
   );
 
@@ -209,12 +204,7 @@ function VideoPlayer({
             }
           },
           onStateChange: (event) => {
-            if (event.data === window.YT?.PlayerState.PAUSED) {
-              reportPlaybackProgress();
-            }
-
             if (event.data === window.YT?.PlayerState.ENDED) {
-              reportPlaybackProgress();
               onVideoEndRef.current?.();
             }
           },
@@ -227,7 +217,7 @@ function VideoPlayer({
     return () => {
       isCancelled = true;
     };
-  }, [reportPlaybackProgress, videoId]);
+  }, [videoId]);
 
   useEffect(() => {
     const player = playerRef.current;
@@ -280,47 +270,12 @@ function VideoPlayer({
   }, [playbackRestore]);
 
   useEffect(() => {
-    if (!videoId) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      const player = playerRef.current;
-
-      if (
-        !player ||
-        !isPlayerReadyRef.current ||
-        typeof player.getPlayerState !== 'function'
-      ) {
-        return;
-      }
-
-      const playerState = player.getPlayerState();
-
-      if (
-        playerState !== window.YT?.PlayerState.PLAYING &&
-        playerState !== window.YT?.PlayerState.PAUSED
-      ) {
-        return;
-      }
-
-      reportPlaybackProgress(videoId);
-    }, 15000);
-
     return () => {
-      window.clearInterval(intervalId);
-      reportPlaybackProgress(videoId);
-    };
-  }, [reportPlaybackProgress, videoId]);
-
-  useEffect(() => {
-    return () => {
-      reportPlaybackProgress();
       isPlayerReadyRef.current = false;
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, [reportPlaybackProgress]);
+  }, []);
 
   return (
     <section className="video-player" data-cinematic={isCinematic}>
@@ -358,6 +313,8 @@ function VideoPlayer({
       </div>
     </section>
   );
-}
+});
+
+VideoPlayer.displayName = 'VideoPlayer';
 
 export default VideoPlayer;
