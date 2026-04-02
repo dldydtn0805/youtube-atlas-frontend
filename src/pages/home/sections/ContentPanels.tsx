@@ -37,7 +37,7 @@ interface FavoriteVideosPanelProps {
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   hasNextPage: boolean;
   hasResolvedTrendSignals: boolean;
-  isDesktopCinematicMode: boolean;
+  isCinematicModeActive: boolean;
   isFavoriteStreamerVideosError: boolean;
   isFavoriteStreamerVideosLoading: boolean;
   isFavoriteStreamersError: boolean;
@@ -125,7 +125,7 @@ export function FavoriteVideosPanel({
   favoriteTrendSignalsByVideoId,
   hasNextPage,
   hasResolvedTrendSignals,
-  isDesktopCinematicMode,
+  isCinematicModeActive,
   isFavoriteStreamerVideosError,
   isFavoriteStreamerVideosLoading,
   isFavoriteStreamersError,
@@ -137,7 +137,7 @@ export function FavoriteVideosPanel({
   selectedVideoId,
   trendSignalsByVideoId,
 }: FavoriteVideosPanelProps) {
-  const panelClassName = isDesktopCinematicMode
+  const panelClassName = isCinematicModeActive
     ? 'app-shell__panel app-shell__panel--favorites app-shell__panel--chart-cinematic'
     : 'app-shell__panel app-shell__panel--favorites app-shell__panel--chart';
 

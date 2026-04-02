@@ -441,8 +441,8 @@
   height: 42px;
   justify-content: center;
   line-height: 1;
-  min-width: 42px;
-  padding: 0 12px;
+  padding: 0;
+  width: 42px;
   transition:
     transform 0.22s ease,
     box-shadow 0.22s ease,
@@ -455,11 +455,16 @@
 .app-shell__favorite-toggle-icon {
   align-items: center;
   display: inline-flex;
-  font-size: 1.6rem;
+  height: 18px;
   justify-content: center;
   line-height: 1;
-  min-height: 1em;
-  transform: translateY(-0.02em);
+  width: 18px;
+}
+
+.app-shell__favorite-toggle-icon svg {
+  display: block;
+  height: 18px;
+  width: 18px;
 }
 
 .app-shell__favorite-toggle:hover,
@@ -1124,8 +1129,7 @@
     width: 100%;
   }
 
-  .app-shell__stage-action-button,
-  .app-shell__favorite-toggle {
+  .app-shell__stage-action-button {
     width: auto;
   }
 

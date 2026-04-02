@@ -72,8 +72,8 @@ function HomePage() {
     handleCompleteFilterSelection,
     handleToggleCinematicMode,
     handleToggleThemeMode,
+    isCinematicModeActive,
     isDarkMode,
-    isDesktopCinematicMode,
     isFilterModalOpen,
     isMobileLayout,
     openFilterModal,
@@ -546,7 +546,7 @@ function HomePage() {
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       hasNextPage={hasNextFavoriteStreamerVideosPage}
       hasResolvedTrendSignals={isApiConfigured && !isFavoriteTrendSignalsLoading && !isFavoriteTrendSignalsError}
-      isDesktopCinematicMode={isDesktopCinematicMode}
+      isCinematicModeActive={isCinematicModeActive}
       isFavoriteStreamerVideosError={isFavoriteStreamerVideosError}
       isFavoriteStreamerVideosLoading={isFavoriteStreamerVideosLoading}
       isFavoriteStreamersError={isFavoriteStreamersError}
@@ -571,7 +571,7 @@ function HomePage() {
     />
   );
 
-  const cinematicQuickFiltersContent = isDesktopCinematicMode ? (
+  const cinematicQuickFiltersContent = isCinematicModeActive ? (
     <CinematicQuickFilters
       mainVideoCategories={mainVideoCategories}
       onSelectCategory={handleSelectCategory}
@@ -602,7 +602,7 @@ function HomePage() {
           favoriteToggleLabel={favoriteToggleLabel}
           favoriteVideosContent={favoriteVideosContent}
           isChartLoading={isChartLoading}
-          isDesktopCinematicMode={isDesktopCinematicMode}
+          isCinematicModeActive={isCinematicModeActive}
           isFavoriteToggleDisabled={!selectedChannelId || toggleFavoriteStreamerMutation.isPending}
           isManualPlaybackSaveDisabled={
             authStatus !== 'authenticated' || !selectedVideoId || isManualPlaybackSavePending
@@ -632,9 +632,9 @@ function HomePage() {
         />
         {isMobileLayout ? (
           <>
-            {filterSummaryContent}
-            {favoriteVideosContent}
-            {chartContent}
+            {!isCinematicModeActive ? filterSummaryContent : null}
+            {!isCinematicModeActive ? favoriteVideosContent : null}
+            {!isCinematicModeActive ? chartContent : null}
             <CommunityPanel
               selectedVideoId={selectedVideoId}
               selectedVideoTitle={selectedVideo?.snippet.title}
@@ -642,9 +642,9 @@ function HomePage() {
           </>
         ) : (
           <>
-            {!isDesktopCinematicMode ? filterSummaryContent : null}
-            {!isDesktopCinematicMode ? favoriteVideosContent : null}
-            {!isDesktopCinematicMode ? chartContent : null}
+            {!isCinematicModeActive ? filterSummaryContent : null}
+            {!isCinematicModeActive ? favoriteVideosContent : null}
+            {!isCinematicModeActive ? chartContent : null}
             <CommunityPanel
               selectedVideoId={selectedVideoId}
               selectedVideoTitle={selectedVideo?.snippet.title}

@@ -13,7 +13,7 @@ interface PlayerStageProps {
   favoriteToggleLabel: string;
   favoriteVideosContent?: ReactNode;
   isChartLoading: boolean;
-  isDesktopCinematicMode: boolean;
+  isCinematicModeActive: boolean;
   isFavoriteToggleDisabled: boolean;
   isManualPlaybackSaveDisabled: boolean;
   isMobileLayout: boolean;
@@ -50,7 +50,7 @@ function PlayerStage({
   favoriteToggleLabel,
   favoriteVideosContent,
   isChartLoading,
-  isDesktopCinematicMode,
+  isCinematicModeActive,
   isFavoriteToggleDisabled,
   isManualPlaybackSaveDisabled,
   isMobileLayout,
@@ -79,12 +79,12 @@ function PlayerStage({
   const hasSelectedVideo = Boolean(selectedVideoId);
 
   return (
-    <div ref={playerStageRef} className="app-shell__stage" data-cinematic={isDesktopCinematicMode}>
-      <div className="app-shell__stage-stack" data-cinematic={isDesktopCinematicMode}>
+    <div ref={playerStageRef} className="app-shell__stage" data-cinematic={isCinematicModeActive}>
+      <div className="app-shell__stage-stack" data-cinematic={isCinematicModeActive}>
         <section
           ref={playerSectionRef}
           className="app-shell__panel app-shell__panel--player"
-          data-cinematic={isDesktopCinematicMode}
+          data-cinematic={isCinematicModeActive}
         >
           <div className="app-shell__section-heading app-shell__section-heading--player">
             <div className="app-shell__section-heading-copy">
@@ -95,24 +95,22 @@ function PlayerStage({
               </h2>
             </div>
             <div className="app-shell__player-actions">
-              {!isMobileLayout ? (
-                <button
-                  aria-label={cinematicToggleLabel}
-                  className="app-shell__mode-toggle"
-                  data-active={isDesktopCinematicMode}
-                  onClick={onToggleCinematicMode}
-                  title={cinematicToggleLabel}
-                  type="button"
-                >
-                  {cinematicToggleLabel}
-                </button>
-              ) : null}
+              <button
+                aria-label={cinematicToggleLabel}
+                className="app-shell__mode-toggle"
+                data-active={isCinematicModeActive}
+                onClick={onToggleCinematicMode}
+                title={cinematicToggleLabel}
+                type="button"
+              >
+                {cinematicToggleLabel}
+              </button>
             </div>
           </div>
           <div ref={playerViewportRef} className="app-shell__player-viewport">
             <VideoPlayer
               canNavigateVideos={canNavigateVideos}
-              isCinematic={isDesktopCinematicMode}
+              isCinematic={isCinematicModeActive}
               isLoading={isChartLoading}
               onNextVideo={onNextVideo}
               onPlaybackRestoreApplied={onPlaybackRestoreApplied}
@@ -176,7 +174,22 @@ function PlayerStage({
                     type="button"
                   >
                     <span className="app-shell__favorite-toggle-icon" aria-hidden="true">
-                      {toggleFavoriteStreamerPending ? '⋯' : isSelectedChannelFavorited ? '★' : '☆'}
+                      {toggleFavoriteStreamerPending ? (
+                        '⋯'
+                      ) : (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill={isSelectedChannelFavorited ? 'currentColor' : 'none'}
+                        >
+                          <path
+                            d="m12 3.75 2.55 5.17 5.7.83-4.13 4.03.97 5.68L12 16.78l-5.09 2.68.97-5.68-4.13-4.03 5.7-.83L12 3.75Z"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="1.7"
+                          />
+                        </svg>
+                      )}
                     </span>
                   </button>
                   {selectedVideoStatLabel ? (
@@ -197,8 +210,8 @@ function PlayerStage({
           ) : null}
         </section>
         {cinematicQuickFiltersContent}
-        {isDesktopCinematicMode ? favoriteVideosContent : null}
-        {isDesktopCinematicMode ? chartContent : null}
+        {isCinematicModeActive ? favoriteVideosContent : null}
+        {isCinematicModeActive ? chartContent : null}
       </div>
     </div>
   );

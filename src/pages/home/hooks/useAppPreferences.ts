@@ -27,9 +27,9 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
   const shouldScrollOnModeChangeRef = useRef(false);
-  const isDesktopCinematicMode = !isMobileLayout && isCinematicMode;
+  const isCinematicModeActive = isCinematicMode;
   const isDarkMode = themeMode === 'dark';
-  const cinematicToggleLabel = isDesktopCinematicMode ? '기본 보기' : '시네마틱 모드';
+  const cinematicToggleLabel = isCinematicModeActive ? '기본 보기' : '시네마틱 모드';
   const themeToggleLabel = isDarkMode ? '라이트 모드' : '다크 모드';
   const themeToggleDisplayLabel = isDarkMode ? '☀' : '☾';
 
@@ -128,7 +128,7 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   }, [isFilterModalOpen]);
 
   useEffect(() => {
-    if (!isDesktopCinematicMode || !shouldScrollOnModeChangeRef.current) {
+    if (!isCinematicModeActive || isMobileLayout || !shouldScrollOnModeChangeRef.current) {
       return;
     }
 
@@ -146,14 +146,15 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
         block: 'start',
       });
     }, 0);
-  }, [isDesktopCinematicMode, playerSectionRef]);
+  }, [isCinematicModeActive, isMobileLayout, playerSectionRef]);
 
   async function handleToggleCinematicMode() {
     if (isMobileLayout) {
+      setIsCinematicMode((currentMode) => !currentMode);
       return;
     }
 
-    if (isDesktopCinematicMode) {
+    if (isCinematicModeActive) {
       try {
         await exitElementFullscreen();
       } catch {
@@ -206,8 +207,8 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
     handleCompleteFilterSelection,
     handleToggleCinematicMode,
     handleToggleThemeMode,
+    isCinematicModeActive,
     isDarkMode,
-    isDesktopCinematicMode,
     isFilterModalOpen,
     isMobileLayout,
     openFilterModal,
