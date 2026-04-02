@@ -116,9 +116,29 @@ function VideoPlayer({
     return Math.floor(currentTimeSeconds);
   }, []);
 
+  const readCurrentPlaybackVideoId = useCallback(() => {
+    const player = playerRef.current;
+
+    if (!player || !isPlayerReadyRef.current || typeof player.getVideoData !== 'function') {
+      return undefined;
+    }
+
+    const currentPlaybackVideoId = player.getVideoData()?.video_id?.trim();
+
+    return currentPlaybackVideoId ? currentPlaybackVideoId : undefined;
+  }, []);
+
   const reportPlaybackProgress = useCallback(
     (progressVideoId?: string) => {
-      if (!progressVideoId) {
+      const currentPlaybackVideoId = readCurrentPlaybackVideoId();
+
+      if (progressVideoId && currentPlaybackVideoId && progressVideoId !== currentPlaybackVideoId) {
+        return;
+      }
+
+      const resolvedVideoId = currentPlaybackVideoId ?? progressVideoId;
+
+      if (!resolvedVideoId) {
         return;
       }
 
@@ -128,9 +148,9 @@ function VideoPlayer({
         return;
       }
 
-      onPlaybackProgressRef.current?.(progressVideoId, currentTimeSeconds);
+      onPlaybackProgressRef.current?.(resolvedVideoId, currentTimeSeconds);
     },
-    [readCurrentPlaybackPositionSeconds],
+    [readCurrentPlaybackPositionSeconds, readCurrentPlaybackVideoId],
   );
 
   function markPlaybackRestoreApplied(restoreId?: number) {
@@ -190,11 +210,11 @@ function VideoPlayer({
           },
           onStateChange: (event) => {
             if (event.data === window.YT?.PlayerState.PAUSED) {
-              reportPlaybackProgress(currentVideoIdRef.current);
+              reportPlaybackProgress();
             }
 
             if (event.data === window.YT?.PlayerState.ENDED) {
-              reportPlaybackProgress(currentVideoIdRef.current);
+              reportPlaybackProgress();
               onVideoEndRef.current?.();
             }
           },
@@ -295,7 +315,7 @@ function VideoPlayer({
 
   useEffect(() => {
     return () => {
-      reportPlaybackProgress(currentVideoIdRef.current);
+      reportPlaybackProgress();
       isPlayerReadyRef.current = false;
       playerRef.current?.destroy();
       playerRef.current = null;
