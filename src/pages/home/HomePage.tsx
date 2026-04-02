@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppHeader from './sections/AppHeader';
 import { ChartPanel, CommunityPanel, FavoriteVideosPanel } from './sections/ContentPanels';
 import { CinematicQuickFilters, FilterModal, FilterSummaryPanel } from './sections/FilterPanels';
@@ -101,6 +101,16 @@ function HomePage() {
     error,
   } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
   const selectedSection = mergeSections(data?.pages);
+  const selectedPlaybackSection = useMemo(
+    () =>
+      selectedSection
+        ? {
+            ...selectedSection,
+            categoryId: `category:${selectedCategory?.id ?? selectedSection.categoryId}`,
+          }
+        : undefined,
+    [selectedCategory?.id, selectedSection],
+  );
   const selectedSectionVideoIds = selectedSection?.items.map((item) => item.id) ?? [];
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
@@ -193,7 +203,7 @@ function HomePage() {
     : undefined;
   const combinedPlayableItems = mergeUniqueVideoItems(
     realtimeSurgingSection?.items,
-    selectedSection?.items,
+    selectedPlaybackSection?.items,
     favoriteStreamerVideoSection?.items,
     restoredPlaybackVideo ? [restoredPlaybackVideo] : undefined,
   );
@@ -216,7 +226,7 @@ function HomePage() {
     realtimeSurgingSection,
     restoredPlaybackVideo,
     selectedCategoryId,
-    selectedSection,
+    selectedSection: selectedPlaybackSection,
     setSelectedCategoryId,
     sortedVideoCategories,
   });
@@ -285,7 +295,7 @@ function HomePage() {
       findPlaybackQueueIdForVideo(playbackProgress.videoId, {
         favoriteStreamerVideoSection,
         realtimeSurgingSection,
-        selectedSection,
+        selectedSection: selectedPlaybackSection,
       }) ?? RESTORED_PLAYBACK_QUEUE_ID,
     );
   }, [
@@ -293,7 +303,7 @@ function HomePage() {
     favoriteStreamerVideoSection,
     realtimeSurgingSection,
     restorePlaybackSelection,
-    selectedSection,
+    selectedPlaybackSection,
     user,
   ]);
 
@@ -305,7 +315,7 @@ function HomePage() {
     const matchedQueueId = findPlaybackQueueIdForVideo(selectedVideoId, {
       favoriteStreamerVideoSection,
       realtimeSurgingSection,
-      selectedSection,
+      selectedSection: selectedPlaybackSection,
     });
 
     if (matchedQueueId) {
@@ -315,7 +325,7 @@ function HomePage() {
     activePlaybackQueueId,
     favoriteStreamerVideoSection,
     realtimeSurgingSection,
-    selectedSection,
+    selectedPlaybackSection,
     selectedVideoId,
     updateActivePlaybackQueueId,
   ]);
@@ -413,7 +423,7 @@ function HomePage() {
       onLoadMore={() => void fetchNextPage()}
       onSelectVideo={handleSelectVideo}
       realtimeSurgingSignalsByVideoId={realtimeSurgingSignalsByVideoId}
-      section={selectedSection}
+      section={selectedPlaybackSection}
       selectedCategoryLabel={selectedCategory?.label}
       selectedVideoId={selectedVideoId}
       trendSignalsByVideoId={combinedTrendSignalsByVideoId}
@@ -434,7 +444,7 @@ function HomePage() {
       onLoadMore={() => void fetchNextPage()}
       onSelectVideo={handleSelectVideo}
       realtimeSurgingSignalsByVideoId={realtimeSurgingSignalsByVideoId}
-      section={selectedSection}
+      section={selectedPlaybackSection}
       selectedCategoryLabel={selectedCategory?.label}
       selectedVideoId={selectedVideoId}
       trendSignalsByVideoId={combinedTrendSignalsByVideoId}

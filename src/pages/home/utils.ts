@@ -8,6 +8,7 @@ import type { YouTubeCategorySection, YouTubeVideoItem } from '../../features/yo
 export const DEFAULT_REGION_CODE = 'US';
 export const DEFAULT_CATEGORY_ID = ALL_VIDEO_CATEGORY_ID;
 export const MOBILE_BREAKPOINT = 768;
+export const REALTIME_SURGING_QUEUE_ID = 'realtime-surging';
 export const RESTORED_PLAYBACK_QUEUE_ID = 'last-playback-progress';
 const STORAGE_KEY = 'youtube-atlas-region-code';
 const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
@@ -225,7 +226,7 @@ export function buildRealtimeSurgingSection(
   }
 
   return {
-    categoryId: realtimeSurgingData.categoryId,
+    categoryId: REALTIME_SURGING_QUEUE_ID,
     label: '실시간 급상승',
     description: `전체 차트에서 직전 집계 대비 순위가 ${realtimeSurgingData.rankChangeThreshold}계단 이상 오른 영상을 모았습니다.`,
     items: realtimeSurgingData.items.map(mapTrendSignalToVideoItem),
