@@ -15,18 +15,20 @@ type MockPlayerApi = {
 describe('VideoPlayer', () => {
   let currentTimeSeconds = 0;
   let currentPlaybackVideoId = 'video-a';
-  let onReady: (() => void) | undefined;
-  let onStateChange: ((event: { data: number }) => void) | undefined;
+  let onReady: YT.PlayerEvents['onReady'];
+  let onStateChange: YT.PlayerEvents['onStateChange'];
   let playerApi: MockPlayerApi;
-  let playerConstructor: ReturnType<typeof vi.fn>;
+  let playerConstructorCallCount = 0;
 
   beforeEach(() => {
-    playerConstructor = vi.fn();
+    playerConstructorCallCount = 0;
+    onReady = undefined;
+    onStateChange = undefined;
 
     function Player(this: MockPlayerApi, _element: HTMLElement, configuration: YT.PlayerOptions) {
-      playerConstructor();
+      playerConstructorCallCount += 1;
       onReady = configuration.events?.onReady;
-      onStateChange = configuration.events?.onStateChange as ((event: { data: number }) => void) | undefined;
+      onStateChange = configuration.events?.onStateChange;
 
       this.destroy = vi.fn();
       this.getCurrentTime = vi.fn(() => currentTimeSeconds);
@@ -69,10 +71,10 @@ describe('VideoPlayer', () => {
       <VideoPlayer selectedVideoId="video-a" onPlaybackProgress={onPlaybackProgress} />,
     );
 
-    await waitFor(() => expect(playerConstructor).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(playerConstructorCallCount).toBe(1));
 
     act(() => {
-      onReady?.();
+      onReady?.({ target: playerApi as unknown as YT.Player });
     });
 
     currentTimeSeconds = 123;
@@ -83,7 +85,7 @@ describe('VideoPlayer', () => {
     await waitFor(() => expect(playerApi.loadVideoById).toHaveBeenCalledWith('video-b'));
 
     act(() => {
-      onStateChange?.({ data: window.YT.PlayerState.PAUSED });
+      onStateChange?.({ data: window.YT!.PlayerState.PAUSED });
     });
 
     expect(onPlaybackProgress).toHaveBeenCalledWith('video-a', 123);

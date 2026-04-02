@@ -37,6 +37,9 @@ declare namespace YT {
     destroy: () => void;
     getCurrentTime: () => number;
     getPlayerState: () => number;
+    getVideoData: () => {
+      video_id?: string;
+    };
     loadVideoById: (videoId: string | VideoByIdSettings) => void;
     seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
     stopVideo: () => void;
