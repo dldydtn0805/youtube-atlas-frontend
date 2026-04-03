@@ -4,7 +4,9 @@ import {
   getMainVideoCategories,
   isMainVideoCategoryId,
   sortVideoCategories,
+  supportsVideoGameActions,
   supportsVideoTrendSignals,
+  VIDEO_GAME_REGION_CODE,
 } from './videoCategories';
 
 describe('video category helpers', () => {
@@ -53,12 +55,24 @@ describe('video category helpers', () => {
     expect(isMainVideoCategoryId('24')).toBe(false);
   });
 
-  it('allows trend signals only for the all category', () => {
-    expect(supportsVideoTrendSignals('0')).toBe(true);
-    expect(supportsVideoTrendSignals('28')).toBe(false);
-    expect(supportsVideoTrendSignals('10')).toBe(false);
-    expect(supportsVideoTrendSignals('24')).toBe(false);
-    expect(supportsVideoTrendSignals(undefined)).toBe(false);
+  it('allows trend signals only for the all category in the game region', () => {
+    expect(supportsVideoTrendSignals('0', VIDEO_GAME_REGION_CODE)).toBe(true);
+    expect(supportsVideoTrendSignals('0', 'US')).toBe(false);
+    expect(supportsVideoTrendSignals('28', VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoTrendSignals('10', VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoTrendSignals('24', VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoTrendSignals(undefined, VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoTrendSignals('0', undefined)).toBe(false);
+  });
+
+  it('allows game actions only for the all category in the game region', () => {
+    expect(supportsVideoGameActions('0', VIDEO_GAME_REGION_CODE)).toBe(true);
+    expect(supportsVideoGameActions('0', 'US')).toBe(false);
+    expect(supportsVideoGameActions('28', VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoGameActions('10', VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoGameActions('24', VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoGameActions(undefined, VIDEO_GAME_REGION_CODE)).toBe(false);
+    expect(supportsVideoGameActions('0', undefined)).toBe(false);
   });
 
   it('sorts categories with the all category first', () => {

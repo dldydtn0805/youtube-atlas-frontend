@@ -9,7 +9,7 @@ export function useVideoTrendSignals(
   enabled = true,
 ) {
   const normalizedVideoIds = [...new Set(videoIds)].filter(Boolean).sort();
-  const isSupportedCategory = supportsVideoTrendSignals(categoryId);
+  const isSupportedCategory = supportsVideoTrendSignals(categoryId, regionCode);
 
   return useQuery({
     enabled: enabled && Boolean(regionCode) && isSupportedCategory && normalizedVideoIds.length > 0,

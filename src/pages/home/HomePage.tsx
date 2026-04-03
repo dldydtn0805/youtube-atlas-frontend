@@ -30,7 +30,9 @@ import {
   getDetailVideoCategories,
   getMainVideoCategories,
   sortVideoCategories,
+  supportsVideoGameActions,
   supportsVideoTrendSignals,
+  VIDEO_GAME_REGION_CODE,
 } from '../../constants/videoCategories';
 import { useAuth } from '../../features/auth/useAuth';
 import {
@@ -212,6 +214,8 @@ function HomePage() {
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
   const isAllCategorySelected = selectedCategory?.id === ALL_VIDEO_CATEGORY_ID;
+  const isGameRegionSelected = selectedRegionCode.toUpperCase() === VIDEO_GAME_REGION_CODE;
+  const canShowGameActions = supportsVideoGameActions(selectedCategory?.id, selectedRegionCode);
   const shouldLoadFavorites = isApiConfigured && authStatus === 'authenticated';
   const isChartLoading =
     isVideoCategoriesLoading || (!selectedCategory && !isVideoCategoriesError) || isLoading;
@@ -265,7 +269,14 @@ function HomePage() {
     [openGamePositions],
   );
   const favoriteStreamerVideoIds = favoriteStreamerVideoSection?.items.map((item) => item.id) ?? [];
-  const shouldShowSelectedCategoryTrendSignals = supportsVideoTrendSignals(selectedCategory?.id);
+  const shouldShowSelectedCategoryTrendSignals = supportsVideoTrendSignals(
+    selectedCategory?.id,
+    selectedRegionCode,
+  );
+  const shouldShowAllCategoryTrendSignals = supportsVideoTrendSignals(
+    ALL_VIDEO_CATEGORY_ID,
+    selectedRegionCode,
+  );
 
   const {
     data: trendSignalsByVideoId = {},
@@ -285,13 +296,15 @@ function HomePage() {
     selectedRegionCode,
     ALL_VIDEO_CATEGORY_ID,
     favoriteStreamerVideoIds,
-    shouldLoadFavorites && isAllCategorySelected && favoriteStreamerVideoIds.length > 0,
+    shouldLoadFavorites &&
+      shouldShowAllCategoryTrendSignals &&
+      favoriteStreamerVideoIds.length > 0,
   );
   const {
     data: realtimeSurgingData,
     isLoading: isRealtimeSurgingLoading,
     isError: isRealtimeSurgingError,
-  } = useRealtimeSurging(selectedRegionCode, isApiConfigured && isAllCategorySelected);
+  } = useRealtimeSurging(selectedRegionCode, isApiConfigured && shouldShowAllCategoryTrendSignals);
   const realtimeSurgingSignalsByVideoId = Object.fromEntries(
     (realtimeSurgingData?.items ?? []).map((signal) => [signal.videoId, signal]),
   );
@@ -301,9 +314,15 @@ function HomePage() {
         ...(isAllCategorySelected ? realtimeSurgingSignalsByVideoId : {}),
       }
     : {};
-  const realtimeSurgingSection = buildRealtimeSurgingSection(isAllCategorySelected, realtimeSurgingData);
+  const realtimeSurgingSection = buildRealtimeSurgingSection(
+    shouldShowAllCategoryTrendSignals,
+    realtimeSurgingData,
+  );
   const realtimeSurgingEmptyMessage =
-    isAllCategorySelected && !isChartLoading && !isRealtimeSurgingLoading && !isRealtimeSurgingError
+    shouldShowAllCategoryTrendSignals &&
+    !isChartLoading &&
+    !isRealtimeSurgingLoading &&
+    !isRealtimeSurgingError
       ? `아직 +${realtimeSurgingData?.rankChangeThreshold ?? 5} 이상 급상승한 영상이 없습니다.`
       : undefined;
   const hasResolvedChartTrendSignals =
@@ -737,7 +756,23 @@ function HomePage() {
   const myLeaderboardEntry = gameLeaderboard.find((entry) => entry.me);
   const topLeaderboardEntries = gameLeaderboard.slice(0, 10);
   const currentVideoGameHelperText =
-    authStatus !== 'authenticated'
+    !canShowGameActions
+      ? !isGameRegionSelected
+        ? selectedVideoOpenPosition
+          ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
+              selectedVideoOpenPosition.currentRank,
+            )} · 손익 ${formatSignedPoints(
+              selectedVideoOpenPosition.profitPoints,
+            )} · 랭킹 게임은 대한민국 전체 카테고리에서만 가능합니다.`
+          : '랭킹 게임은 대한민국 전체 카테고리에서만 가능합니다.'
+        : selectedVideoOpenPosition
+          ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
+              selectedVideoOpenPosition.currentRank,
+            )} · 손익 ${formatSignedPoints(
+              selectedVideoOpenPosition.profitPoints,
+            )} · 매수/매도는 전체 카테고리에서만 가능합니다.`
+          : '매수/매도는 전체 카테고리에서만 가능합니다.'
+      : authStatus !== 'authenticated'
       ? '로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다.'
       : selectedVideoOpenPosition
         ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
@@ -790,7 +825,7 @@ function HomePage() {
           ? `${formatPoints(GAME_STAKE_POINTS)}로 현재 영상을 매수합니다.`
           : selectedVideoMarketEntry?.buyBlockedReason ??
             (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
-  const gameActionContent = selectedVideoId && isApiConfigured ? (
+  const gameActionContent = selectedVideoId && isApiConfigured && canShowGameActions ? (
     <button
       aria-label={stageGameActionLabel}
       className="app-shell__stage-action-button app-shell__stage-action-button--game"
@@ -940,23 +975,31 @@ function HomePage() {
                 </div>
               </button>
               <div className="app-shell__game-position-side">
-                <button
-                  className="app-shell__game-position-sell"
-                  disabled={remainingHoldSeconds > 0 || isPendingSell}
-                  onClick={() => void handleSellPosition(position)}
-                  title={
-                    remainingHoldSeconds > 0
-                      ? `최소 보유 시간까지 ${formatRemainingHoldSeconds(remainingHoldSeconds)} 남았습니다.`
-                      : '포지션을 매도합니다.'
-                  }
-                  type="button"
-                >
-                  {isPendingSell ? '매도 중...' : '매도'}
-                </button>
+                {canShowGameActions ? (
+                  <button
+                    className="app-shell__game-position-sell"
+                    disabled={remainingHoldSeconds > 0 || isPendingSell}
+                    onClick={() => void handleSellPosition(position)}
+                    title={
+                      remainingHoldSeconds > 0
+                        ? `최소 보유 시간까지 ${formatRemainingHoldSeconds(remainingHoldSeconds)} 남았습니다.`
+                        : '포지션을 매도합니다.'
+                    }
+                    type="button"
+                  >
+                    {isPendingSell ? '매도 중...' : '매도'}
+                  </button>
+                ) : null}
                 <span className="app-shell__game-position-hold">
-                  {remainingHoldSeconds > 0
-                    ? `${formatRemainingHoldSeconds(remainingHoldSeconds)} 남음`
-                    : '지금 매도 가능'}
+                  {canShowGameActions
+                    ? remainingHoldSeconds > 0
+                      ? `${formatRemainingHoldSeconds(remainingHoldSeconds)} 남음`
+                      : '지금 매도 가능'
+                    : !isGameRegionSelected
+                      ? '대한민국 전체 카테고리에서 매도 가능'
+                      : remainingHoldSeconds > 0
+                        ? `${formatRemainingHoldSeconds(remainingHoldSeconds)} 후 전체에서 매도 가능`
+                        : '전체 카테고리에서 매도 가능'}
                 </span>
               </div>
             </li>
@@ -965,7 +1008,11 @@ function HomePage() {
       </ul>
     ) : currentGameSeason ? (
       <p className="app-shell__game-empty">
-        아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.
+        {!isGameRegionSelected
+          ? '랭킹 게임 참여와 포지션 정리는 대한민국 전체 카테고리에서만 가능합니다.'
+          : canShowGameActions
+          ? '아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.'
+          : '새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다.'}
       </p>
     ) : null;
   const portfolioContent =
@@ -1086,7 +1133,12 @@ function HomePage() {
       favoriteStreamers={favoriteStreamers}
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       hasNextPage={hasNextFavoriteStreamerVideosPage}
-      hasResolvedTrendSignals={isApiConfigured && !isFavoriteTrendSignalsLoading && !isFavoriteTrendSignalsError}
+      hasResolvedTrendSignals={
+        isApiConfigured &&
+        shouldShowAllCategoryTrendSignals &&
+        !isFavoriteTrendSignalsLoading &&
+        !isFavoriteTrendSignalsError
+      }
       isCinematicModeActive={isCinematicModeActive}
       isFavoriteStreamerVideosError={isFavoriteStreamerVideosError}
       isFavoriteStreamerVideosLoading={isFavoriteStreamerVideosLoading}

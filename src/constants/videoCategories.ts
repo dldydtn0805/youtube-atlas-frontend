@@ -6,6 +6,7 @@ export interface VideoCategory {
 }
 
 export const ALL_VIDEO_CATEGORY_ID = '0';
+export const VIDEO_GAME_REGION_CODE = 'KR';
 export const MAIN_VIDEO_CATEGORY_IDS = [
   ALL_VIDEO_CATEGORY_ID,
   '10',
@@ -38,8 +39,12 @@ export function isMainVideoCategoryId(categoryId: string) {
   return MAIN_VIDEO_CATEGORY_ORDER.has(categoryId);
 }
 
-export function supportsVideoTrendSignals(categoryId?: string) {
-  return categoryId === ALL_VIDEO_CATEGORY_ID;
+export function supportsVideoTrendSignals(categoryId?: string, regionCode?: string) {
+  return categoryId === ALL_VIDEO_CATEGORY_ID && regionCode?.toUpperCase() === VIDEO_GAME_REGION_CODE;
+}
+
+export function supportsVideoGameActions(categoryId?: string, regionCode?: string) {
+  return categoryId === ALL_VIDEO_CATEGORY_ID && regionCode?.toUpperCase() === VIDEO_GAME_REGION_CODE;
 }
 
 export function getMainVideoCategories(categories: VideoCategory[]) {
