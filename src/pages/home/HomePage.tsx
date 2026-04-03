@@ -1348,7 +1348,7 @@ function HomePage() {
       <p className="app-shell__game-empty">아직 현재 시즌 거래내역이 없습니다.</p>
     ) : null;
   const portfolioContent =
-    isApiConfigured && authStatus === 'authenticated' ? (
+    isGameRegionSelected && isApiConfigured && authStatus === 'authenticated' ? (
       <div className="app-shell__game-panel">
         <div className="app-shell__game-panel-header">
           <div className="app-shell__game-panel-copy">
