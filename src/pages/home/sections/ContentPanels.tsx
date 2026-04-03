@@ -6,7 +6,6 @@ import type { VideoTrendSignal } from '../../../features/trending/types';
 import type { YouTubeCategorySection } from '../../../features/youtube/types';
 
 interface ChartPanelProps {
-  buyableVideoCount?: number;
   buyableVideoSearchStatus?: string;
   chartErrorMessage?: string;
   className?: string;
@@ -65,7 +64,6 @@ interface CommunityPanelProps {
 }
 
 export function ChartPanel({
-  buyableVideoCount = 0,
   buyableVideoSearchStatus,
   chartErrorMessage,
   className,

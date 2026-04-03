@@ -449,10 +449,6 @@ function HomePage() {
         : realtimeSurgingSection,
     [buyableVideoIdSet, isBuyableOnlyFilterActive, realtimeSurgingSection],
   );
-  const buyableVideoCount = useMemo(
-    () => filteredSelectedPlaybackSection?.items.length ?? 0,
-    [filteredSelectedPlaybackSection],
-  );
   const shouldAutoPrefetchBuyableVideos = shouldPrefetchBuyableVideos({
     hasNextPage,
     isBuyableOnlyFilterActive,
@@ -1234,7 +1230,6 @@ function HomePage() {
 
   const chartContent = (
     <ChartPanel
-      buyableVideoCount={buyableVideoCount}
       buyableVideoSearchStatus={buyableVideoSearchStatus}
       chartErrorMessage={chartErrorMessage}
       featuredSection={filteredRealtimeSurgingSection}
@@ -1259,7 +1254,6 @@ function HomePage() {
 
   const cinematicChartContent = (
     <ChartPanel
-      buyableVideoCount={buyableVideoCount}
       buyableVideoSearchStatus={buyableVideoSearchStatus}
       chartErrorMessage={chartErrorMessage}
       className="app-shell__panel--chart-cinematic"
