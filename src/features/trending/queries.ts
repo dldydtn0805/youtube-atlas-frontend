@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supportsVideoTrendSignals } from '../../constants/videoCategories';
-import { fetchRealtimeSurging, fetchVideoTrendSignals } from './api';
+import { fetchRealtimeSurging, fetchVideoRankHistory, fetchVideoTrendSignals } from './api';
 
 export function useVideoTrendSignals(
   regionCode: string | undefined,
@@ -25,5 +25,18 @@ export function useRealtimeSurging(regionCode: string | undefined, enabled = tru
     queryKey: ['realtimeSurging', regionCode],
     queryFn: () => fetchRealtimeSurging(regionCode as string),
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useVideoRankHistory(
+  regionCode: string | undefined,
+  videoId: string | undefined,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: enabled && Boolean(regionCode) && Boolean(videoId),
+    queryKey: ['videoRankHistory', regionCode, videoId],
+    queryFn: () => fetchVideoRankHistory(regionCode as string, videoId as string),
+    staleTime: 1000 * 30,
   });
 }

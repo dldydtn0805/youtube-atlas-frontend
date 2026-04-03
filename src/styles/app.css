@@ -671,6 +671,100 @@
   color: #dc2626;
 }
 
+.app-shell__game-panel-actions {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.app-shell__game-panel-actions-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.app-shell__game-panel-actions-eyebrow,
+.app-shell__game-panel-actions-title {
+  margin: 0;
+}
+
+.app-shell__game-panel-actions-eyebrow {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-shell__game-panel-actions-title {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell__game-panel-actions-buttons {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.app-shell__game-panel-action {
+  align-items: center;
+  background: var(--surface-control);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  box-shadow: var(--shadow-card);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 72px;
+  padding: 0 14px;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.app-shell__game-panel-action:hover,
+.app-shell__game-panel-action:focus-visible {
+  background: var(--surface-control-hover);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-soft);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.app-shell__game-panel-action:disabled {
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+}
+
+.app-shell__game-panel-action--danger {
+  background: rgba(185, 28, 28, 0.1);
+  border-color: rgba(220, 38, 38, 0.24);
+  color: #b91c1c;
+}
+
+.app-shell__game-panel-action--danger:hover,
+.app-shell__game-panel-action--danger:focus-visible {
+  background: rgba(185, 28, 28, 0.16);
+}
+
 .app-shell__game-price-strip {
   display: flex;
   flex-wrap: wrap;
@@ -1174,6 +1268,42 @@
   border-color: rgba(148, 163, 184, 0.16);
 }
 
+:root[data-theme='dark'] .app-shell__game-panel-actions {
+  background:
+    linear-gradient(180deg, rgba(12, 22, 38, 0.94), rgba(10, 18, 32, 0.9)),
+    rgba(8, 17, 31, 0.82);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 16px 34px rgba(2, 6, 23, 0.28);
+}
+
+:root[data-theme='dark'] .app-shell__game-panel-action {
+  background:
+    linear-gradient(180deg, rgba(18, 31, 52, 0.96), rgba(10, 18, 32, 0.88)),
+    rgba(10, 18, 32, 0.9);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .app-shell__game-panel-action:hover,
+:root[data-theme='dark'] .app-shell__game-panel-action:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(24, 40, 66, 0.98), rgba(13, 24, 42, 0.94)),
+    rgba(12, 22, 38, 0.96);
+  border-color: rgba(124, 196, 255, 0.24);
+}
+
+:root[data-theme='dark'] .app-shell__game-panel-action--danger {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.24);
+  color: #fecaca;
+}
+
+:root[data-theme='dark'] .app-shell__game-panel-action--danger:hover,
+:root[data-theme='dark'] .app-shell__game-panel-action--danger:focus-visible {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
 :root[data-theme='dark'] .app-shell__game-panel-helper[data-tone='warning'] {
   color: #fca5a5;
 }
@@ -1238,6 +1368,36 @@
 
 :root[data-theme='dark'] .app-shell__game-leaderboard-item[data-me='true'] .app-shell__game-leaderboard-name {
   color: #f8fafc;
+}
+
+:root[data-theme='dark'] .app-shell__game-rank-history-axis {
+  stroke: rgba(148, 163, 184, 0.26);
+}
+
+:root[data-theme='dark'] .app-shell__game-rank-history-line,
+:root[data-theme='dark'] .app-shell__game-rank-history-point {
+  stroke: #67e8f9;
+  fill: #67e8f9;
+}
+
+:root[data-theme='dark'] .app-shell__game-rank-history-chartout {
+  fill: rgba(8, 17, 31, 0.96);
+  stroke: #fbbf24;
+}
+
+:root[data-theme='dark'] .app-shell__game-rank-history-event {
+  fill: rgba(237, 244, 255, 0.92);
+}
+
+:root[data-theme='dark'] .app-shell__game-rank-history-event-label {
+  fill: #08111f;
+}
+
+:root[data-theme='dark'] .app-shell__game-rank-history-sample {
+  background:
+    linear-gradient(180deg, rgba(14, 24, 41, 0.96), rgba(10, 18, 32, 0.9)),
+    rgba(8, 17, 31, 0.82);
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 .app-shell__panel--player[data-cinematic='true'] .app-shell__stage-meta {
@@ -2044,6 +2204,19 @@
 
   .app-shell__game-tabs {
     width: 100%;
+  }
+
+  .app-shell__game-panel-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .app-shell__game-panel-actions-buttons {
+    width: 100%;
+  }
+
+  .app-shell__game-panel-action {
+    flex: 1 1 0;
   }
 
   .app-shell__game-position {

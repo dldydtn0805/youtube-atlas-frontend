@@ -3,14 +3,22 @@ import type {
   GamePositionRankHistory,
   GamePositionRankHistoryPoint,
 } from '../../../features/game/types';
+import type { VideoRankHistory } from '../../../features/trending/types';
 
 interface GameRankHistoryModalProps {
   error?: Error | null;
-  history?: GamePositionRankHistory;
+  history?: GamePositionRankHistory | VideoRankHistory;
   isLoading: boolean;
   isOpen: boolean;
   onClose: () => void;
   position?: GamePosition | null;
+  videoFallback?: {
+    channelTitle?: string;
+    currentRank?: number | null;
+    chartOut?: boolean;
+    thumbnailUrl?: string | null;
+    title?: string;
+  } | null;
 }
 
 const chartDateFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -58,7 +66,19 @@ function buildLinePath(points: Array<{ rank: number | null; x: number; y: number
   return path.trim();
 }
 
-function createChartGeometry(points: GamePositionRankHistoryPoint[]) {
+function getEventLabel(point: GamePositionRankHistoryPoint | VideoRankHistory['points'][number]) {
+  if ('buyPoint' in point && point.buyPoint) {
+    return 'B';
+  }
+
+  if ('sellPoint' in point && point.sellPoint) {
+    return 'S';
+  }
+
+  return null;
+}
+
+function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoRankHistory['points'][number]>) {
   const width = 640;
   const height = 240;
   const padding = {
@@ -82,7 +102,7 @@ function createChartGeometry(points: GamePositionRankHistoryPoint[]) {
       height,
       markers: points.map((point, index) => ({
         chartOut: point.chartOut,
-        eventLabel: point.buyPoint ? 'B' : point.sellPoint ? 'S' : null,
+        eventLabel: getEventLabel(point),
         rank: point.rank,
         x: xForIndex(index),
         y: baselineY,
@@ -109,7 +129,7 @@ function createChartGeometry(points: GamePositionRankHistoryPoint[]) {
 
     return {
       chartOut: point.chartOut,
-      eventLabel: point.buyPoint ? 'B' : point.sellPoint ? 'S' : null,
+      eventLabel: getEventLabel(point),
       rank: point.rank,
       x,
       y,
@@ -141,6 +161,7 @@ export default function GameRankHistoryModal({
   isOpen,
   onClose,
   position,
+  videoFallback,
 }: GameRankHistoryModalProps) {
   if (!isOpen) {
     return null;
@@ -149,15 +170,20 @@ export default function GameRankHistoryModal({
   const points = history?.points ?? [];
   const chart = createChartGeometry(points);
   const rankedPoints = points.filter((point) => typeof point.rank === 'number');
+  const hasBuyRank = history && 'buyRank' in history;
   const bestRank =
-    rankedPoints.length > 0 ? Math.min(...rankedPoints.map((point) => point.rank as number)) : history?.buyRank;
+    rankedPoints.length > 0
+      ? Math.min(...rankedPoints.map((point) => point.rank as number))
+      : hasBuyRank
+        ? history.buyRank
+        : history?.latestRank;
   const chartOutCount = points.filter((point) => point.chartOut).length;
-  const title = history?.title ?? position?.title ?? '랭킹 기록';
-  const channelTitle = history?.channelTitle ?? position?.channelTitle ?? '';
-  const thumbnailUrl = history?.thumbnailUrl ?? position?.thumbnailUrl ?? '';
+  const title = history?.title ?? videoFallback?.title ?? position?.title ?? '랭킹 기록';
+  const channelTitle = history?.channelTitle ?? videoFallback?.channelTitle ?? position?.channelTitle ?? '';
+  const thumbnailUrl = history?.thumbnailUrl ?? videoFallback?.thumbnailUrl ?? position?.thumbnailUrl ?? '';
   const latestRankLabel = history
     ? formatRank(history.latestRank, history.latestChartOut)
-    : formatRank(position?.currentRank, position?.chartOut);
+    : formatRank(videoFallback?.currentRank ?? position?.currentRank, videoFallback?.chartOut ?? position?.chartOut);
 
   return (
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
@@ -199,10 +225,12 @@ export default function GameRankHistoryModal({
               <p className="app-shell__game-history-modal-title">{title}</p>
               <p className="app-shell__game-history-modal-channel">{channelTitle}</p>
               <div className="app-shell__filter-pill-group">
-                <span className="app-shell__filter-pill">
-                  <strong>매수</strong>
-                  <span>{formatRank(history?.buyRank ?? position?.buyRank)}</span>
-                </span>
+                {hasBuyRank ? (
+                  <span className="app-shell__filter-pill">
+                    <strong>매수</strong>
+                    <span>{formatRank(history.buyRank ?? position?.buyRank)}</span>
+                  </span>
+                ) : null}
                 <span className="app-shell__filter-pill">
                   <strong>현재</strong>
                   <span>{latestRankLabel}</span>
@@ -343,8 +371,12 @@ export default function GameRankHistoryModal({
                       </p>
                     </div>
                     <div className="app-shell__game-rank-history-sample-side">
-                      {point.buyPoint ? <span className="app-shell__game-history-status">매수</span> : null}
-                      {point.sellPoint ? <span className="app-shell__game-history-status">매도</span> : null}
+                      {'buyPoint' in point && point.buyPoint ? (
+                        <span className="app-shell__game-history-status">매수</span>
+                      ) : null}
+                      {'sellPoint' in point && point.sellPoint ? (
+                        <span className="app-shell__game-history-status">매도</span>
+                      ) : null}
                       <p className="app-shell__game-history-time">{formatTimestamp(point.capturedAt)}</p>
                     </div>
                   </li>

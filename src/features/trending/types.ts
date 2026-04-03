@@ -26,3 +26,25 @@ export interface RealtimeSurgingResponse {
   capturedAt: string | null;
   items: VideoTrendSignal[];
 }
+
+export interface VideoRankHistoryPoint {
+  runId: number;
+  capturedAt: string;
+  rank: number | null;
+  viewCount: number | null;
+  chartOut: boolean;
+}
+
+export interface VideoRankHistory {
+  regionCode: string;
+  categoryId: string;
+  categoryLabel: string;
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  latestRank: number | null;
+  latestChartOut: boolean;
+  latestCapturedAt: string;
+  points: VideoRankHistoryPoint[];
+}
