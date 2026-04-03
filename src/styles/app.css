@@ -1508,15 +1508,19 @@
   }
 
   .app-shell__stage-actions {
+    flex-wrap: wrap;
     width: 100%;
   }
 
   .app-shell__stage-action-button {
+    margin-left: 0;
     width: auto;
   }
 
-  .app-shell__stage-action-button {
-    margin-left: auto;
+  .app-shell__stage-action-button--game {
+    min-width: 56px;
+    padding: 0 14px;
+    width: auto;
   }
 
   .app-shell__stage-status {
@@ -1543,7 +1547,7 @@
   }
 
   .app-shell__game-position {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .app-shell__game-position-select {
@@ -1551,23 +1555,24 @@
   }
 
   .app-shell__game-position-side {
-    align-items: flex-start;
-    grid-column: 1;
-    justify-items: start;
+    align-items: flex-end;
+    grid-column: auto;
+    justify-items: end;
   }
 
   .app-shell__game-leaderboard-item {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto auto minmax(0, 1fr);
   }
 
   .app-shell__game-leaderboard-copy {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .app-shell__game-leaderboard-head {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
+    align-items: baseline;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 10px;
   }
 
   .app-shell__section-heading-copy {
