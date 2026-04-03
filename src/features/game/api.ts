@@ -5,6 +5,7 @@ import type {
   GameLeaderboardEntry,
   GameMarketVideo,
   GamePosition,
+  GamePositionRankHistory,
   SellGamePositionResponse,
 } from './types';
 
@@ -45,6 +46,12 @@ export async function fetchMyGamePositions(accessToken: string, status = 'OPEN')
       headers: createAuthorizationHeader(accessToken),
     },
   );
+}
+
+export async function fetchGamePositionRankHistory(accessToken: string, positionId: number) {
+  return fetchApi<GamePositionRankHistory>(`/api/game/positions/${positionId}/rank-history`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
 }
 
 export async function buyGamePosition(accessToken: string, input: CreateGamePositionInput) {

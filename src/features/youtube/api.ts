@@ -1,6 +1,6 @@
 import type { VideoCategory } from '../../constants/videoCategories';
 import { fetchApi } from '../../lib/api';
-import type { YouTubeCategorySection } from './types';
+import type { YouTubeCategorySection, YouTubeVideoItem } from './types';
 
 export async function fetchVideoCategories(regionCode: string): Promise<VideoCategory[]> {
   return fetchApi<VideoCategory[]>(
@@ -24,4 +24,8 @@ export async function fetchPopularVideosByCategory(
   return fetchApi<YouTubeCategorySection>(
     `/api/catalog/regions/${encodeURIComponent(regionCode)}/categories/${encodeURIComponent(category.id)}/videos${query}`,
   );
+}
+
+export async function fetchVideoById(videoId: string): Promise<YouTubeVideoItem> {
+  return fetchApi<YouTubeVideoItem>(`/api/catalog/videos/${encodeURIComponent(videoId)}`);
 }

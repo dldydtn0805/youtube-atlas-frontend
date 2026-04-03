@@ -23,6 +23,7 @@ export const FAVORITE_STREAMER_VIDEO_SECTION: YouTubeCategorySection = {
   label: '즐겨찾기 채널',
 };
 export const BUYABLE_ONLY_PREFETCH_LIMIT = 200;
+export const HISTORY_PLAYBACK_QUEUE_ID = 'history-playback';
 
 export type RegionCode = (typeof countryCodes)[number]['code'];
 export type ThemeMode = 'light' | 'dark';
@@ -326,12 +327,14 @@ export function getPlaybackQueueItems(
   {
     favoriteStreamerVideoSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,
     selectedSection,
   }: {
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
+    historyPlaybackSection?: YouTubeCategorySection;
     realtimeSurgingSection?: YouTubeCategorySection;
     restoredPlaybackVideo?: YouTubeVideoItem;
     selectedSection?: YouTubeCategorySection;
@@ -353,6 +356,10 @@ export function getPlaybackQueueItems(
     return gamePortfolioSection.items;
   }
 
+  if (queueId && historyPlaybackSection?.categoryId === queueId) {
+    return historyPlaybackSection.items;
+  }
+
   if (queueId && selectedSection?.categoryId === queueId) {
     return selectedSection.items;
   }
@@ -365,11 +372,13 @@ export function findPlaybackQueueIdForVideo(
   {
     favoriteStreamerVideoSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     realtimeSurgingSection,
     selectedSection,
   }: {
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
+    historyPlaybackSection?: YouTubeCategorySection;
     realtimeSurgingSection?: YouTubeCategorySection;
     selectedSection?: YouTubeCategorySection;
   },
@@ -388,6 +397,10 @@ export function findPlaybackQueueIdForVideo(
 
   if (gamePortfolioSection?.items.some((item) => item.id === videoId)) {
     return gamePortfolioSection.categoryId;
+  }
+
+  if (historyPlaybackSection?.items.some((item) => item.id === videoId)) {
+    return historyPlaybackSection.categoryId;
   }
 
   if (selectedSection?.items.some((item) => item.id === videoId)) {

@@ -3,6 +3,7 @@ import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer
 import AppHeader from './sections/AppHeader';
 import { ChartPanel, CommunityPanel, FavoriteVideosPanel } from './sections/ContentPanels';
 import { CinematicQuickFilters, FilterModal, FilterSummaryPanel } from './sections/FilterPanels';
+import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import PlayerStage from './sections/PlayerStage';
 import useAppPreferences from './hooks/useAppPreferences';
 import useLogoutOnUnauthorized from './hooks/useLogoutOnUnauthorized';
@@ -13,6 +14,7 @@ import {
   DEFAULT_CATEGORY_ID,
   FAVORITE_STREAMER_VIDEO_SECTION,
   GAME_PORTFOLIO_QUEUE_ID,
+  HISTORY_PLAYBACK_QUEUE_ID,
   RESTORED_PLAYBACK_QUEUE_ID,
   findPlaybackQueueIdForVideo,
   filterVideoSection,
@@ -44,6 +46,7 @@ import {
   useCurrentGameSeason,
   useGameLeaderboard,
   useGameMarket,
+  useGamePositionRankHistory,
   useMyGamePositions,
   useSellGamePosition,
 } from '../../features/game/queries';
@@ -55,7 +58,9 @@ import {
   useToggleFavoriteStreamer,
 } from '../../features/favorites/queries';
 import { useRealtimeSurging, useVideoTrendSignals } from '../../features/trending/queries';
+import { fetchVideoById } from '../../features/youtube/api';
 import { usePopularVideosByCategory, useVideoCategories } from '../../features/youtube/queries';
+import type { YouTubeVideoItem } from '../../features/youtube/types';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import '../../styles/app.css';
 
@@ -151,6 +156,9 @@ function HomePage() {
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
   const [gameActionStatus, setGameActionStatus] = useState<string | null>(null);
   const [gameClock, setGameClock] = useState(() => Date.now());
+  const [selectedRankHistoryPosition, setSelectedRankHistoryPosition] = useState<GamePosition | null>(null);
+  const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
+  const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
@@ -225,6 +233,15 @@ function HomePage() {
     error: gameHistoryPositionsError,
     isLoading: isGameHistoryLoading,
   } = useMyGamePositions(accessToken, '', shouldLoadGame && activeGameTab === 'history');
+  const {
+    data: selectedPositionRankHistory,
+    error: selectedPositionRankHistoryError,
+    isLoading: isPositionRankHistoryLoading,
+  } = useGamePositionRankHistory(
+    accessToken,
+    selectedRankHistoryPosition?.id ?? null,
+    shouldLoadGame && Boolean(selectedRankHistoryPosition),
+  );
   const buyGamePositionMutation = useBuyGamePosition(accessToken);
   const sellGamePositionMutation = useSellGamePosition(accessToken);
 
@@ -307,6 +324,18 @@ function HomePage() {
     }),
     [openGamePositions],
   );
+  const historyPlaybackSection = useMemo(
+    () =>
+      historyPlaybackVideo
+        ? {
+            categoryId: HISTORY_PLAYBACK_QUEUE_ID,
+            description: '거래내역에서 다시 연 영상입니다.',
+            items: [historyPlaybackVideo],
+            label: '거래내역 다시 보기',
+          }
+        : undefined,
+    [historyPlaybackVideo],
+  );
   const favoriteStreamerVideoIds = favoriteStreamerVideoSection?.items.map((item) => item.id) ?? [];
   const shouldShowSelectedCategoryTrendSignals = supportsVideoTrendSignals(
     selectedCategory?.id,
@@ -381,6 +410,7 @@ function HomePage() {
     selectedPlaybackSection?.items,
     favoriteStreamerVideoSection?.items,
     gamePortfolioSection.items,
+    historyPlaybackSection?.items,
     restoredPlaybackVideo ? [restoredPlaybackVideo] : undefined,
   );
   const {
@@ -397,6 +427,7 @@ function HomePage() {
   } = usePlaybackQueue({
     favoriteStreamerVideoSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     isMobileLayout,
     playerSectionRef,
     playerViewportRef,
@@ -490,6 +521,7 @@ function HomePage() {
   useLogoutOnUnauthorized(gameMarketError, logout);
   useLogoutOnUnauthorized(openGamePositionsError, logout);
   useLogoutOnUnauthorized(gameHistoryPositionsError, logout);
+  useLogoutOnUnauthorized(selectedPositionRankHistoryError, logout);
 
   useEffect(() => {
     if (authStatus === 'authenticated') {
@@ -503,6 +535,9 @@ function HomePage() {
     setActiveGameTab('positions');
     setGameActionStatus(null);
     setPendingPlaybackRestore(null);
+    setSelectedRankHistoryPosition(null);
+    setHistoryPlaybackLoadingVideoId(null);
+    setHistoryPlaybackVideo(null);
   }, [authStatus]);
 
   useEffect(() => {
@@ -583,6 +618,7 @@ function HomePage() {
       findPlaybackQueueIdForVideo(playbackProgress.videoId, {
         favoriteStreamerVideoSection,
         gamePortfolioSection,
+        historyPlaybackSection,
         realtimeSurgingSection,
         selectedSection: selectedPlaybackSection,
       }) ?? RESTORED_PLAYBACK_QUEUE_ID,
@@ -591,6 +627,7 @@ function HomePage() {
     authStatus,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     realtimeSurgingSection,
     restorePlaybackSelection,
     selectedPlaybackSection,
@@ -605,6 +642,7 @@ function HomePage() {
     const matchedQueueId = findPlaybackQueueIdForVideo(selectedVideoId, {
       favoriteStreamerVideoSection,
       gamePortfolioSection,
+      historyPlaybackSection,
       realtimeSurgingSection,
       selectedSection: selectedPlaybackSection,
     });
@@ -616,6 +654,7 @@ function HomePage() {
     activePlaybackQueueId,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     realtimeSurgingSection,
     selectedPlaybackSection,
     selectedVideoId,
@@ -859,8 +898,29 @@ function HomePage() {
     [gamePortfolioSection.categoryId, handleSelectVideo],
   );
   const handleSelectGameHistoryVideo = useCallback(
-    (position: GamePosition, playbackQueueId: string) => {
-      handleSelectVideo(position.videoId, playbackQueueId);
+    async (position: GamePosition, playbackQueueId?: string) => {
+      if (playbackQueueId) {
+        setGameActionStatus(null);
+        handleSelectVideo(position.videoId, playbackQueueId);
+        return;
+      }
+
+      setHistoryPlaybackLoadingVideoId(position.videoId);
+
+      try {
+        const video = await fetchVideoById(position.videoId);
+        setHistoryPlaybackVideo(video);
+        setGameActionStatus(null);
+        handleSelectVideo(video.id, HISTORY_PLAYBACK_QUEUE_ID);
+      } catch (error) {
+        setGameActionStatus(
+          error instanceof Error
+            ? error.message
+            : '이 거래 영상 정보를 다시 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+        );
+      } finally {
+        setHistoryPlaybackLoadingVideoId(null);
+      }
     },
     [handleSelectVideo],
   );
@@ -959,29 +1019,43 @@ function HomePage() {
           ? `${formatPoints(selectedVideoMarketEntry.currentPricePoints)}로 현재 영상을 매수합니다.`
           : selectedVideoMarketEntry?.buyBlockedReason ??
             (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
-  const gameActionContent = selectedVideoId && isApiConfigured && canShowGameActions ? (
-    <button
-      aria-label={stageGameActionLabel}
-      className="app-shell__stage-action-button app-shell__stage-action-button--game"
-      data-variant={selectedVideoOpenPosition ? 'sell' : 'buy'}
-      disabled={isStageGameActionDisabled}
-      onClick={() =>
-        selectedVideoOpenPosition
-          ? void handleSellPosition(selectedVideoOpenPosition)
-          : void handleBuyCurrentVideo()
-      }
-      title={gameActionTitle}
-      type="button"
-    >
-      {(selectedVideoOpenPosition
-        ? sellGamePositionMutation.isPending && sellGamePositionMutation.variables === selectedVideoOpenPosition.id
-        : buyGamePositionMutation.isPending)
-        ? '⋯'
-        : selectedVideoOpenPosition
-        ? '매도'
-        : '매수'}
-    </button>
-  ) : null;
+  const gameActionContent =
+    selectedVideoId && isApiConfigured && canShowGameActions ? (
+      <>
+        {selectedVideoOpenPosition ? (
+          <button
+            aria-label="랭킹 기록 보기"
+            className="app-shell__stage-action-button app-shell__stage-action-button--history"
+            onClick={() => setSelectedRankHistoryPosition(selectedVideoOpenPosition)}
+            title="이 포지션의 랭킹 추이를 봅니다."
+            type="button"
+          >
+            기록 보기
+          </button>
+        ) : null}
+        <button
+          aria-label={stageGameActionLabel}
+          className="app-shell__stage-action-button app-shell__stage-action-button--game"
+          data-variant={selectedVideoOpenPosition ? 'sell' : 'buy'}
+          disabled={isStageGameActionDisabled}
+          onClick={() =>
+            selectedVideoOpenPosition
+              ? void handleSellPosition(selectedVideoOpenPosition)
+              : void handleBuyCurrentVideo()
+          }
+          title={gameActionTitle}
+          type="button"
+        >
+          {(selectedVideoOpenPosition
+            ? sellGamePositionMutation.isPending && sellGamePositionMutation.variables === selectedVideoOpenPosition.id
+            : buyGamePositionMutation.isPending)
+            ? '⋯'
+            : selectedVideoOpenPosition
+            ? '매도'
+            : '매수'}
+        </button>
+      </>
+    ) : null;
   const leaderboardContent =
     isGameLeaderboardLoading && !isGameLeaderboardError ? (
       <p className="app-shell__game-empty">리더보드를 불러오는 중입니다.</p>
@@ -1176,11 +1250,13 @@ function HomePage() {
           const playbackQueueId = findPlaybackQueueIdForVideo(position.videoId, {
             favoriteStreamerVideoSection,
             gamePortfolioSection,
+            historyPlaybackSection,
             realtimeSurgingSection,
             selectedSection: selectedPlaybackSection,
           });
           const isSelectable = Boolean(playbackQueueId);
           const isSelectedPosition = position.videoId === selectedVideoId;
+          const isLoadingHistoryPlayback = historyPlaybackLoadingVideoId === position.videoId;
           const historyStatusTone =
             position.status === 'OPEN'
               ? 'open'
@@ -1202,15 +1278,17 @@ function HomePage() {
             >
               <button
                 className="app-shell__game-history-select"
-                disabled={!isSelectable}
+                disabled={isLoadingHistoryPlayback}
                 onClick={() => {
-                  if (!playbackQueueId) {
-                    return;
-                  }
-
-                  handleSelectGameHistoryVideo(position, playbackQueueId);
+                  void handleSelectGameHistoryVideo(position, playbackQueueId);
                 }}
-                title={isSelectable ? '이 영상을 플레이어에서 엽니다.' : '지금은 다시 열 수 없는 거래입니다.'}
+                title={
+                  isLoadingHistoryPlayback
+                    ? '영상 정보를 다시 불러오는 중입니다.'
+                    : isSelectable
+                      ? '이 영상을 플레이어에서 엽니다.'
+                      : '영상 정보를 다시 불러와 플레이어에서 엽니다.'
+                }
                 type="button"
               >
                 <img
@@ -1221,6 +1299,9 @@ function HomePage() {
                 />
                 <div className="app-shell__game-history-copy">
                   <p className="app-shell__game-history-title">{position.title}</p>
+                  {isLoadingHistoryPlayback ? (
+                    <p className="app-shell__game-history-meta">YouTube에서 영상 정보를 다시 불러오는 중입니다.</p>
+                  ) : null}
                   <p className="app-shell__game-history-meta">
                     매수 {formatGameTimestamp(position.createdAt)} · {formatRank(position.buyRank)} ·{' '}
                     {formatPoints(position.stakePoints)}
@@ -1556,6 +1637,14 @@ function HomePage() {
         selectedCategoryLabel={selectedCategory?.label}
         selectedCountryName={selectedCountryName}
         selectedRegionCode={selectedRegionCode}
+      />
+      <GameRankHistoryModal
+        error={selectedPositionRankHistoryError instanceof Error ? selectedPositionRankHistoryError : null}
+        history={selectedPositionRankHistory}
+        isLoading={isPositionRankHistoryLoading}
+        isOpen={Boolean(selectedRankHistoryPosition)}
+        onClose={() => setSelectedRankHistoryPosition(null)}
+        position={selectedRankHistoryPosition}
       />
     </div>
   );

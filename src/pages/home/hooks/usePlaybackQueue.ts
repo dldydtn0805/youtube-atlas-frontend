@@ -7,6 +7,7 @@ import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features
 interface UsePlaybackQueueOptions {
   favoriteStreamerVideoSection?: YouTubeCategorySection;
   gamePortfolioSection?: YouTubeCategorySection;
+  historyPlaybackSection?: YouTubeCategorySection;
   isMobileLayout: boolean;
   playerSectionRef: RefObject<HTMLElement | null>;
   playerViewportRef: RefObject<HTMLDivElement | null>;
@@ -21,6 +22,7 @@ interface UsePlaybackQueueOptions {
 function usePlaybackQueue({
   favoriteStreamerVideoSection,
   gamePortfolioSection,
+  historyPlaybackSection,
   isMobileLayout,
   playerSectionRef,
   playerViewportRef,
@@ -45,6 +47,7 @@ function usePlaybackQueue({
   const activePlaybackItems = getPlaybackQueueItems(activePlaybackQueueId, {
     favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,
     selectedSection: matchedSelectedSection,
@@ -116,6 +119,7 @@ function usePlaybackQueue({
     const queueItems = getPlaybackQueueItems(activePlaybackQueueId, {
       favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
       gamePortfolioSection,
+      historyPlaybackSection,
       realtimeSurgingSection,
       restoredPlaybackVideo,
       selectedSection: matchedSelectedSection,
@@ -163,6 +167,7 @@ function usePlaybackQueue({
     const fallbackQueueId = isWaitingForSelectedCategoryQueue
       ? undefined
       : matchedSelectedSection?.categoryId ??
+        historyPlaybackSection?.categoryId ??
         gamePortfolioSection?.categoryId ??
         autoPlayableFavoriteStreamerSection?.categoryId ??
         realtimeSurgingSection?.categoryId;
@@ -172,6 +177,7 @@ function usePlaybackQueue({
         : getPlaybackQueueItems(fallbackQueueId, {
             favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
             gamePortfolioSection,
+            historyPlaybackSection,
             realtimeSurgingSection,
             restoredPlaybackVideo,
             selectedSection: matchedSelectedSection,
@@ -204,6 +210,7 @@ function usePlaybackQueue({
     activePlaybackQueueId,
     autoPlayableFavoriteStreamerSection,
     gamePortfolioSection,
+    historyPlaybackSection,
     matchedSelectedSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,

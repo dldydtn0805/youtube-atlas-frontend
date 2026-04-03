@@ -119,6 +119,55 @@ describe('fetchPopularVideosByCategory', () => {
   });
 });
 
+describe('fetchVideoById', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com');
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('requests a single video from the backend catalog endpoint', async () => {
+    const { fetchVideoById } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        id: 'video-1',
+        contentDetails: {
+          duration: 'PT5M12S',
+        },
+        statistics: {
+          viewCount: '125000',
+        },
+        snippet: {
+          title: 'full review',
+          channelTitle: 'beta',
+          channelId: 'channel-1',
+          categoryId: '20',
+          thumbnails: {
+            default: { url: 'https://example.com/1.jpg', width: 120, height: 90 },
+            medium: { url: 'https://example.com/1.jpg', width: 320, height: 180 },
+            high: { url: 'https://example.com/1.jpg', width: 480, height: 360 },
+          },
+        },
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const video = await fetchVideoById('video-1');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/catalog/videos/video-1',
+      undefined,
+    );
+    expect(video.id).toBe('video-1');
+  });
+});
+
 describe('fetchRealtimeSurging', () => {
   beforeEach(() => {
     vi.resetModules();

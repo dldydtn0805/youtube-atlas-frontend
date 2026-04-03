@@ -4,6 +4,7 @@ import {
   fetchCurrentGameSeason,
   fetchGameLeaderboard,
   fetchGameMarket,
+  fetchGamePositionRankHistory,
   fetchMyGamePositions,
   sellGamePosition,
 } from './api';
@@ -15,6 +16,8 @@ export const gameQueryKeys = {
   market: (accessToken: string | null) => ['game', 'market', accessToken] as const,
   positions: (accessToken: string | null, status = 'OPEN') =>
     ['game', 'positions', accessToken, status] as const,
+  positionRankHistory: (accessToken: string | null, positionId: number | null) =>
+    ['game', 'positionRankHistory', accessToken, positionId] as const,
 };
 
 export function useCurrentGameSeason(accessToken: string | null, enabled = true) {
@@ -53,6 +56,19 @@ export function useMyGamePositions(
     enabled: enabled && Boolean(accessToken),
     queryKey: gameQueryKeys.positions(accessToken, status),
     queryFn: () => fetchMyGamePositions(accessToken as string, status),
+    staleTime: 1000 * 15,
+  });
+}
+
+export function useGamePositionRankHistory(
+  accessToken: string | null,
+  positionId: number | null,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && typeof positionId === 'number',
+    queryKey: gameQueryKeys.positionRankHistory(accessToken, positionId),
+    queryFn: () => fetchGamePositionRankHistory(accessToken as string, positionId as number),
     staleTime: 1000 * 15,
   });
 }

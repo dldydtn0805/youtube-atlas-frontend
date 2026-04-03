@@ -515,6 +515,17 @@
   background: rgba(185, 28, 28, 0.16);
 }
 
+.app-shell__stage-action-button--history {
+  background: rgba(14, 116, 144, 0.08);
+  border-color: rgba(8, 145, 178, 0.2);
+  color: #0f766e;
+}
+
+.app-shell__stage-action-button--history:hover,
+.app-shell__stage-action-button--history:focus-visible {
+  background: rgba(14, 116, 144, 0.14);
+}
+
 .app-shell__stage-action-button--favorite {
   width: 42px;
   padding: 0;
@@ -1515,6 +1526,152 @@
   min-width: 116px;
 }
 
+.app-shell__modal--history {
+  max-width: 880px;
+  width: min(880px, 100%);
+}
+
+.app-shell__game-history-modal-head {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 160px minmax(0, 1fr);
+}
+
+.app-shell__game-history-modal-thumb {
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.app-shell__game-history-modal-copy {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.app-shell__game-history-modal-title,
+.app-shell__game-history-modal-channel {
+  margin: 0;
+}
+
+.app-shell__game-history-modal-title {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.app-shell__game-history-modal-channel {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.app-shell__game-rank-history-empty {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.app-shell__game-rank-history-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.app-shell__game-rank-history-chart-svg {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  overflow: visible;
+  width: 100%;
+}
+
+.app-shell__game-rank-history-axis {
+  stroke: rgba(100, 116, 139, 0.32);
+  stroke-width: 1;
+}
+
+.app-shell__game-rank-history-line {
+  stroke: #0f766e;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.app-shell__game-rank-history-point {
+  fill: #0f766e;
+}
+
+.app-shell__game-rank-history-chartout {
+  fill: #fff;
+  stroke: #b45309;
+  stroke-width: 2;
+}
+
+.app-shell__game-rank-history-event {
+  fill: rgba(15, 23, 42, 0.9);
+}
+
+.app-shell__game-rank-history-event-label {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.app-shell__game-rank-history-axis-label {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+.app-shell__game-rank-history-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-shell__game-rank-history-samples {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-shell__game-rank-history-sample {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px 14px;
+}
+
+.app-shell__game-rank-history-sample-rank,
+.app-shell__game-rank-history-sample-meta {
+  margin: 0;
+}
+
+.app-shell__game-rank-history-sample-rank {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.app-shell__game-rank-history-sample-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.app-shell__game-rank-history-sample-side {
+  align-items: flex-end;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
 .app-shell__theme-toggle {
   align-items: center;
   background: transparent;
@@ -1860,6 +2017,10 @@
     width: auto;
   }
 
+  .app-shell__stage-action-button--history {
+    min-width: 88px;
+  }
+
   .app-shell__stage-status {
     max-width: none;
     text-align: left;
@@ -1974,6 +2135,18 @@
   .app-shell__modal-close,
   .app-shell__modal-action {
     width: 100%;
+  }
+
+  .app-shell__game-history-modal-head {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell__game-rank-history-sample {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell__game-rank-history-sample-side {
+    justify-items: start;
   }
 }
 

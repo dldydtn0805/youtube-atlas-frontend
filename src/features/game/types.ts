@@ -70,6 +70,33 @@ export interface GamePosition {
   closedAt: string | null;
 }
 
+export interface GamePositionRankHistoryPoint {
+  runId: number;
+  capturedAt: string;
+  rank: number | null;
+  viewCount: number | null;
+  chartOut: boolean;
+  buyPoint: boolean;
+  sellPoint: boolean;
+}
+
+export interface GamePositionRankHistory {
+  positionId: number;
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  status: string;
+  buyRank: number;
+  latestRank: number | null;
+  sellRank: number | null;
+  latestChartOut: boolean;
+  buyCapturedAt: string;
+  latestCapturedAt: string;
+  closedAt: string | null;
+  points: GamePositionRankHistoryPoint[];
+}
+
 export interface CreateGamePositionInput {
   regionCode: string;
   categoryId: string;
