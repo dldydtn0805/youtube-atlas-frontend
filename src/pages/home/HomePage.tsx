@@ -560,6 +560,8 @@ function HomePage() {
           )}개 기준 · 최대 ${BUYABLE_ONLY_PREFETCH_LIMIT}개까지 자동 탐색`
       : `상위 ${loadedSelectedVideoCount}개 기준 결과`
     : undefined;
+  const isBuyableVideoSearchLoading =
+    isBuyableOnlyFilterActive && isFetchingNextPage && !isChartLoading && !isChartError;
 
   useLogoutOnUnauthorized(favoriteStreamersError, logout);
   useLogoutOnUnauthorized(favoriteStreamerVideosError, logout);
@@ -1756,6 +1758,21 @@ function HomePage() {
             : null
         }
       />
+      {isBuyableVideoSearchLoading ? (
+        <div className="app-shell__fullscreen-loading" role="status" aria-live="polite" aria-modal="true">
+          <div className="app-shell__fullscreen-loading-card">
+            <span className="app-shell__fullscreen-loading-spinner" aria-hidden="true" />
+            <p className="app-shell__fullscreen-loading-eyebrow">Buyable Scan</p>
+            <p className="app-shell__fullscreen-loading-title">매수 가능 영상 탐색 중</p>
+            <p className="app-shell__fullscreen-loading-copy">
+              상위 차트 영상을 순차적으로 확인하고 있습니다. 잠시만 기다려 주세요.
+            </p>
+            {buyableVideoSearchStatus ? (
+              <p className="app-shell__fullscreen-loading-status">{buyableVideoSearchStatus}</p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

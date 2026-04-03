@@ -280,6 +280,80 @@
   text-wrap: balance;
 }
 
+.app-shell__fullscreen-loading {
+  align-items: center;
+  backdrop-filter: blur(14px);
+  background: rgba(243, 244, 246, 0.76);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 40;
+}
+
+.app-shell__fullscreen-loading-card {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 28px;
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 28px 26px;
+  text-align: center;
+}
+
+.app-shell__fullscreen-loading-spinner {
+  animation: app-shell-spin 0.9s linear infinite;
+  border: 3px solid rgba(14, 165, 233, 0.16);
+  border-radius: 999px;
+  border-top-color: #0ea5e9;
+  display: block;
+  height: 40px;
+  width: 40px;
+}
+
+.app-shell__fullscreen-loading-eyebrow,
+.app-shell__fullscreen-loading-title,
+.app-shell__fullscreen-loading-copy,
+.app-shell__fullscreen-loading-status {
+  margin: 0;
+}
+
+.app-shell__fullscreen-loading-eyebrow {
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-shell__fullscreen-loading-title {
+  color: var(--text);
+  font-size: 1.12rem;
+  font-weight: 800;
+}
+
+.app-shell__fullscreen-loading-copy {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.app-shell__fullscreen-loading-status {
+  background: var(--surface-chip-muted);
+  border: 1px solid var(--surface-stat-border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 10px 14px;
+}
+
 .app-shell__mode-toggle[data-active='true'] {
   background: var(--surface-emphasis);
   border-color: transparent;
@@ -342,6 +416,32 @@
   border-color: rgba(148, 163, 184, 0.28);
   box-shadow: 0 12px 28px rgba(2, 6, 23, 0.32);
   color: var(--text);
+}
+
+:root[data-theme='dark'] .app-shell__fullscreen-loading {
+  background: rgba(8, 17, 31, 0.72);
+}
+
+:root[data-theme='dark'] .app-shell__fullscreen-loading-card {
+  background:
+    linear-gradient(180deg, rgba(9, 18, 31, 0.98), rgba(13, 26, 45, 0.94)),
+    rgba(9, 18, 31, 0.94);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+:root[data-theme='dark'] .app-shell__fullscreen-loading-spinner {
+  border-color: rgba(103, 232, 249, 0.16);
+  border-top-color: #67e8f9;
+}
+
+@keyframes app-shell-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .app-shell__stage-meta {
