@@ -73,6 +73,7 @@ export function useBuyGamePosition(accessToken: string | null) {
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.currentSeason(accessToken) }),
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.leaderboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.market(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: gameQueryKeys.positions(accessToken, '') }),
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.positions(accessToken, 'OPEN') }),
       ]);
     },
@@ -95,6 +96,7 @@ export function useSellGamePosition(accessToken: string | null) {
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.currentSeason(accessToken) }),
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.leaderboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.market(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: gameQueryKeys.positions(accessToken, '') }),
         queryClient.invalidateQueries({ queryKey: gameQueryKeys.positions(accessToken, 'OPEN') }),
       ]);
     },

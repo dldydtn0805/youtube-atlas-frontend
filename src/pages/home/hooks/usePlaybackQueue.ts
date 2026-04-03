@@ -160,13 +160,12 @@ function usePlaybackQueue({
       restoredPlaybackVideo,
       selectedSection: matchedSelectedSection,
     });
-    const fallbackQueueId =
-      isWaitingForSelectedCategoryQueue
-        ? matchedSelectedSection?.categoryId
-        : matchedSelectedSection?.categoryId ??
-          gamePortfolioSection?.categoryId ??
-          autoPlayableFavoriteStreamerSection?.categoryId ??
-          realtimeSurgingSection?.categoryId;
+    const fallbackQueueId = isWaitingForSelectedCategoryQueue
+      ? undefined
+      : matchedSelectedSection?.categoryId ??
+        gamePortfolioSection?.categoryId ??
+        autoPlayableFavoriteStreamerSection?.categoryId ??
+        realtimeSurgingSection?.categoryId;
     const fallbackItems =
       queueItems.length > 0
         ? queueItems

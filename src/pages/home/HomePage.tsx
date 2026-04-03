@@ -134,12 +134,20 @@ function formatRemainingHoldSeconds(remainingSeconds: number) {
   return `${minutes}분 ${seconds}초`;
 }
 
+function formatGameTimestamp(timestamp?: string | null) {
+  if (!timestamp) {
+    return '집계 중';
+  }
+
+  return seasonDateTimeFormatter.format(new Date(timestamp));
+}
+
 function HomePage() {
   const { accessToken, isLoggingOut, logout, status: authStatus, user } = useAuth();
   const [pendingPlaybackRestore, setPendingPlaybackRestore] = useState<PendingPlaybackRestore | null>(null);
   const [isManualPlaybackSavePending, setIsManualPlaybackSavePending] = useState(false);
   const [manualPlaybackSaveStatus, setManualPlaybackSaveStatus] = useState<string | null>(null);
-  const [activeGameTab, setActiveGameTab] = useState<'positions' | 'leaderboard'>('positions');
+  const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'leaderboard'>('positions');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
   const [gameActionStatus, setGameActionStatus] = useState<string | null>(null);
   const [gameClock, setGameClock] = useState(() => Date.now());
@@ -212,6 +220,11 @@ function HomePage() {
     data: openGamePositions = [],
     error: openGamePositionsError,
   } = useMyGamePositions(accessToken, 'OPEN', shouldLoadGame);
+  const {
+    data: gameHistoryPositions = [],
+    error: gameHistoryPositionsError,
+    isLoading: isGameHistoryLoading,
+  } = useMyGamePositions(accessToken, '', shouldLoadGame && activeGameTab === 'history');
   const buyGamePositionMutation = useBuyGamePosition(accessToken);
   const sellGamePositionMutation = useSellGamePosition(accessToken);
 
@@ -476,6 +489,7 @@ function HomePage() {
   useLogoutOnUnauthorized(gameLeaderboardError, logout);
   useLogoutOnUnauthorized(gameMarketError, logout);
   useLogoutOnUnauthorized(openGamePositionsError, logout);
+  useLogoutOnUnauthorized(gameHistoryPositionsError, logout);
 
   useEffect(() => {
     if (authStatus === 'authenticated') {
@@ -844,6 +858,12 @@ function HomePage() {
     },
     [gamePortfolioSection.categoryId, handleSelectVideo],
   );
+  const handleSelectGameHistoryVideo = useCallback(
+    (position: GamePosition, playbackQueueId: string) => {
+      handleSelectVideo(position.videoId, playbackQueueId);
+    },
+    [handleSelectVideo],
+  );
 
   const selectedVideoHoldRemainingSeconds = selectedVideoOpenPosition
     ? getRemainingHoldSeconds(selectedVideoOpenPosition)
@@ -872,6 +892,9 @@ function HomePage() {
             : isCurrentGameSeasonLoading
               ? '게임 시즌을 불러오는 중입니다.'
               : '다음 게임 시즌을 준비 중입니다.';
+  const isCurrentVideoGameHelperWarning =
+    selectedVideoMarketEntry?.canBuy === false &&
+    (selectedVideoMarketEntry.buyBlockedReason?.includes('포인트가 부족') ?? false);
   const currentVideoGamePriceSummary = selectedVideoOpenPosition ? (
     <div className="app-shell__game-price-strip" aria-label="선택한 영상 가격 정보">
       <span className="app-shell__game-price-chip">
@@ -1144,6 +1167,97 @@ function HomePage() {
           : '새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다.'}
       </p>
     ) : null;
+  const historyContent =
+    isGameHistoryLoading ? (
+      <p className="app-shell__game-empty">거래내역을 불러오는 중입니다.</p>
+    ) : gameHistoryPositions.length > 0 ? (
+      <ul className="app-shell__game-history">
+        {gameHistoryPositions.map((position) => {
+          const playbackQueueId = findPlaybackQueueIdForVideo(position.videoId, {
+            favoriteStreamerVideoSection,
+            gamePortfolioSection,
+            realtimeSurgingSection,
+            selectedSection: selectedPlaybackSection,
+          });
+          const isSelectable = Boolean(playbackQueueId);
+          const isSelectedPosition = position.videoId === selectedVideoId;
+          const historyStatusTone =
+            position.status === 'OPEN'
+              ? 'open'
+              : position.status === 'AUTO_CLOSED'
+                ? 'auto'
+                : 'closed';
+          const historyStatusLabel =
+            position.status === 'OPEN'
+              ? '보유 중'
+              : position.status === 'AUTO_CLOSED'
+                ? '자동 청산'
+                : '매도 완료';
+
+          return (
+            <li
+              key={position.id}
+              className="app-shell__game-history-item"
+              data-selected={isSelectedPosition}
+            >
+              <button
+                className="app-shell__game-history-select"
+                disabled={!isSelectable}
+                onClick={() => {
+                  if (!playbackQueueId) {
+                    return;
+                  }
+
+                  handleSelectGameHistoryVideo(position, playbackQueueId);
+                }}
+                title={isSelectable ? '이 영상을 플레이어에서 엽니다.' : '지금은 다시 열 수 없는 거래입니다.'}
+                type="button"
+              >
+                <img
+                  alt=""
+                  className="app-shell__game-history-thumb"
+                  loading="lazy"
+                  src={position.thumbnailUrl}
+                />
+                <div className="app-shell__game-history-copy">
+                  <p className="app-shell__game-history-title">{position.title}</p>
+                  <p className="app-shell__game-history-meta">
+                    매수 {formatGameTimestamp(position.createdAt)} · {formatRank(position.buyRank)} ·{' '}
+                    {formatPoints(position.stakePoints)}
+                  </p>
+                  <p className="app-shell__game-history-meta">
+                    {position.status === 'OPEN' ? '현재' : position.status === 'AUTO_CLOSED' ? '자동청산' : '매도'}{' '}
+                    {formatRank(position.currentRank, {
+                      chartOut: position.chartOut,
+                    })}{' '}
+                    · {position.status === 'OPEN' ? '평가' : '정산'} {formatMaybePoints(position.currentPricePoints)} ·
+                    손익{' '}
+                    <span data-tone={getPointTone(position.profitPoints)}>
+                      {formatSignedPoints(position.profitPoints)}
+                    </span>
+                  </p>
+                </div>
+              </button>
+              <div className="app-shell__game-history-side">
+                <span
+                  className="app-shell__game-history-status"
+                  data-status={historyStatusTone}
+                >
+                  {historyStatusLabel}
+                </span>
+                <p className="app-shell__game-history-time">
+                  {position.closedAt
+                    ? `종료 ${formatGameTimestamp(position.closedAt)}`
+                    : `진입 ${formatGameTimestamp(position.createdAt)}`}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    ) : currentGameSeason ? (
+      <p className="app-shell__game-empty">아직 현재 시즌 거래내역이 없습니다.</p>
+    ) : null;
   const portfolioContent =
     isApiConfigured && authStatus === 'authenticated' ? (
       <div className="app-shell__game-panel">
@@ -1174,19 +1288,30 @@ function HomePage() {
             </span>
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">
-                {activeGameTab === 'leaderboard' ? '내 순위' : '보유'}
+                {activeGameTab === 'leaderboard'
+                  ? '내 순위'
+                  : activeGameTab === 'history'
+                    ? '거래'
+                    : '보유'}
               </span>
               <span className="app-shell__game-panel-metric-value">
                 {activeGameTab === 'leaderboard'
                   ? myLeaderboardEntry
                     ? `${myLeaderboardEntry.rank}위`
                     : '-'
-                  : `${openGamePositions.length}/${currentGameSeason?.maxOpenPositions ?? '-'}`}
+                  : activeGameTab === 'history'
+                    ? isGameHistoryLoading
+                      ? '...'
+                      : `${gameHistoryPositions.length}건`
+                    : `${openGamePositions.length}/${currentGameSeason?.maxOpenPositions ?? '-'}`}
               </span>
             </span>
           </div>
         </div>
-        <p className="app-shell__game-panel-helper">
+        <p
+          className="app-shell__game-panel-helper"
+          data-tone={isCurrentVideoGameHelperWarning ? 'warning' : undefined}
+        >
           {currentGameSeason
             ? currentVideoGameHelperText
             : isCurrentGameSeasonLoading
@@ -1213,6 +1338,16 @@ function HomePage() {
             내 포지션
           </button>
           <button
+            aria-selected={activeGameTab === 'history'}
+            className="app-shell__game-tab"
+            data-active={activeGameTab === 'history'}
+            onClick={() => setActiveGameTab('history')}
+            role="tab"
+            type="button"
+          >
+            거래내역
+          </button>
+          <button
             aria-selected={activeGameTab === 'leaderboard'}
             className="app-shell__game-tab"
             data-active={activeGameTab === 'leaderboard'}
@@ -1224,7 +1359,11 @@ function HomePage() {
           </button>
         </div>
         <div className="app-shell__game-tab-panel" role="tabpanel">
-          {activeGameTab === 'positions' ? positionsContent : leaderboardContent}
+          {activeGameTab === 'positions'
+            ? positionsContent
+            : activeGameTab === 'history'
+              ? historyContent
+              : leaderboardContent}
         </div>
       </div>
     ) : null;
