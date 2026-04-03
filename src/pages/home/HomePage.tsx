@@ -24,6 +24,7 @@ import {
   mergeSections,
   mergeUniqueVideoItems,
   mapPlaybackProgressToVideoItem,
+  scrollElementToViewportCenter,
   shouldPrefetchBuyableVideos,
   shouldRenderRealtimeSurgingSection,
   sortedCountryCodes,
@@ -945,14 +946,37 @@ function HomePage() {
     }
   }
 
+  const scrollToPlayerStage = useCallback(() => {
+    window.setTimeout(() => {
+      const playerSection = isMobileLayout ? playerViewportRef.current : playerSectionRef.current;
+
+      if (!playerSection) {
+        return;
+      }
+
+      if (isMobileLayout) {
+        scrollElementToViewportCenter(playerSection);
+        return;
+      }
+
+      playerSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 0);
+  }, [isMobileLayout]);
+
   const handleSelectGamePositionVideo = useCallback(
     (position: GamePosition) => {
+      scrollToPlayerStage();
       handleSelectVideo(position.videoId, gamePortfolioSection.categoryId);
     },
-    [gamePortfolioSection.categoryId, handleSelectVideo],
+    [gamePortfolioSection.categoryId, handleSelectVideo, scrollToPlayerStage],
   );
   const handleSelectGameHistoryVideo = useCallback(
     async (position: GamePosition, playbackQueueId?: string) => {
+      scrollToPlayerStage();
+
       if (playbackQueueId) {
         setGameActionStatus(null);
         handleSelectVideo(position.videoId, playbackQueueId);
@@ -976,7 +1000,7 @@ function HomePage() {
         setHistoryPlaybackLoadingVideoId(null);
       }
     },
-    [handleSelectVideo],
+    [handleSelectVideo, scrollToPlayerStage],
   );
 
   const selectedVideoHoldRemainingSeconds = selectedVideoOpenPosition
@@ -1348,7 +1372,7 @@ function HomePage() {
       <p className="app-shell__game-empty">아직 현재 시즌 거래내역이 없습니다.</p>
     ) : null;
   const portfolioContent =
-    isGameRegionSelected && isApiConfigured && authStatus === 'authenticated' ? (
+    isAllCategorySelected && isGameRegionSelected && isApiConfigured && authStatus === 'authenticated' ? (
       <div className="app-shell__game-panel">
         <div className="app-shell__game-panel-header">
           <div className="app-shell__game-panel-copy">
