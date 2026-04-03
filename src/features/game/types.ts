@@ -61,6 +61,7 @@ export interface GamePosition {
   rankDiff: number | null;
   stakePoints: number;
   profitPoints: number | null;
+  chartOut: boolean;
   status: string;
   buyCapturedAt: string;
   createdAt: string;

@@ -95,7 +95,11 @@ function formatSignedPoints(points?: number | null) {
   return formatPoints(0);
 }
 
-function formatRank(rank?: number | null) {
+function formatRank(rank?: number | null, options?: { chartOut?: boolean }) {
+  if (options?.chartOut) {
+    return '차트 아웃';
+  }
+
   return typeof rank === 'number' ? `${rank}위` : '집계 중';
 }
 
@@ -639,8 +643,10 @@ function HomePage() {
   const handleSellPosition = useCallback(
     async (position: GamePosition) => {
       try {
-        await sellGamePositionMutation.mutateAsync(position.id);
-        setGameActionStatus(`${position.title} 포지션을 ${formatSignedPoints(position.profitPoints)} 기준으로 정리했어요.`);
+        const result = await sellGamePositionMutation.mutateAsync(position.id);
+        setGameActionStatus(
+          `${position.title} 포지션을 ${formatRank(result.sellRank)} / ${formatSignedPoints(result.pnlPoints)} 기준으로 정리했어요.`,
+        );
       } catch (error) {
         if (
           error instanceof ApiRequestError &&
@@ -761,6 +767,7 @@ function HomePage() {
         ? selectedVideoOpenPosition
           ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
               selectedVideoOpenPosition.currentRank,
+              { chartOut: selectedVideoOpenPosition.chartOut },
             )} · 손익 ${formatSignedPoints(
               selectedVideoOpenPosition.profitPoints,
             )} · 랭킹 게임은 대한민국 전체 카테고리에서만 가능합니다.`
@@ -768,6 +775,7 @@ function HomePage() {
         : selectedVideoOpenPosition
           ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
               selectedVideoOpenPosition.currentRank,
+              { chartOut: selectedVideoOpenPosition.chartOut },
             )} · 손익 ${formatSignedPoints(
               selectedVideoOpenPosition.profitPoints,
             )} · 매수/매도는 전체 카테고리에서만 가능합니다.`
@@ -777,6 +785,7 @@ function HomePage() {
       : selectedVideoOpenPosition
         ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
             selectedVideoOpenPosition.currentRank,
+            { chartOut: selectedVideoOpenPosition.chartOut },
           )} · 손익 ${formatSignedPoints(selectedVideoOpenPosition.profitPoints)}`
         : selectedVideoMarketEntry
           ? selectedVideoMarketEntry.canBuy
@@ -969,7 +978,9 @@ function HomePage() {
                 <div className="app-shell__game-position-copy">
                   <p className="app-shell__game-position-title">{position.title}</p>
                   <p className="app-shell__game-position-meta">
-                    매수 {formatRank(position.buyRank)} · 현재 {formatRank(position.currentRank)} ·{' '}
+                    매수 {formatRank(position.buyRank)} · 현재 {formatRank(position.currentRank, {
+                      chartOut: position.chartOut,
+                    })} ·{' '}
                     {formatSignedPoints(position.profitPoints)}
                   </p>
                 </div>
