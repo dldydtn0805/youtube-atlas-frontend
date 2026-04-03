@@ -20,6 +20,7 @@ import {
   mergeSections,
   mergeUniqueVideoItems,
   mapPlaybackProgressToVideoItem,
+  shouldRenderRealtimeSurgingSection,
   sortedCountryCodes,
   type PendingPlaybackRestore,
   type RegionCode,
@@ -281,6 +282,10 @@ function HomePage() {
     ALL_VIDEO_CATEGORY_ID,
     selectedRegionCode,
   );
+  const shouldShowRealtimeSurgingSection = shouldRenderRealtimeSurgingSection(
+    isAllCategorySelected,
+    shouldShowAllCategoryTrendSignals,
+  );
 
   const {
     data: trendSignalsByVideoId = {},
@@ -308,7 +313,7 @@ function HomePage() {
     data: realtimeSurgingData,
     isLoading: isRealtimeSurgingLoading,
     isError: isRealtimeSurgingError,
-  } = useRealtimeSurging(selectedRegionCode, isApiConfigured && shouldShowAllCategoryTrendSignals);
+  } = useRealtimeSurging(selectedRegionCode, isApiConfigured && shouldShowRealtimeSurgingSection);
   const realtimeSurgingSignalsByVideoId = Object.fromEntries(
     (realtimeSurgingData?.items ?? []).map((signal) => [signal.videoId, signal]),
   );
@@ -319,11 +324,11 @@ function HomePage() {
       }
     : {};
   const realtimeSurgingSection = buildRealtimeSurgingSection(
-    shouldShowAllCategoryTrendSignals,
+    shouldShowRealtimeSurgingSection,
     realtimeSurgingData,
   );
   const realtimeSurgingEmptyMessage =
-    shouldShowAllCategoryTrendSignals &&
+    shouldShowRealtimeSurgingSection &&
     !isChartLoading &&
     !isRealtimeSurgingLoading &&
     !isRealtimeSurgingError

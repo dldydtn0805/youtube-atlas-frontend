@@ -235,6 +235,13 @@ export function mapTrendSignalToVideoItem(signal: VideoTrendSignal): YouTubeVide
   };
 }
 
+export function shouldRenderRealtimeSurgingSection(
+  isAllCategorySelected: boolean,
+  isAllCategoryTrendSignalsSupported: boolean,
+) {
+  return isAllCategorySelected && isAllCategoryTrendSignalsSupported;
+}
+
 export function buildRealtimeSurgingSection(
   isAllCategorySelected: boolean,
   realtimeSurgingData: RealtimeSurgingResponse | undefined,
