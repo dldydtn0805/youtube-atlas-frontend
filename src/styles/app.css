@@ -566,6 +566,44 @@
   color: var(--text);
 }
 
+.app-shell__game-price-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-shell__game-price-chip {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.app-shell__game-price-chip[data-tone='gain'],
+.app-shell__game-position-meta [data-tone='gain'],
+.app-shell__game-leaderboard-meta [data-tone='gain'] {
+  color: #dc2626;
+}
+
+.app-shell__game-price-chip[data-tone='loss'],
+.app-shell__game-position-meta [data-tone='loss'],
+.app-shell__game-leaderboard-meta [data-tone='loss'] {
+  color: #2563eb;
+}
+
+.app-shell__game-price-chip[data-tone='flat'],
+.app-shell__game-position-meta [data-tone='flat'],
+.app-shell__game-leaderboard-meta [data-tone='flat'] {
+  color: var(--text-muted);
+}
+
 .app-shell__game-tabs {
   background: var(--surface-chip-muted);
   border-radius: 999px;
@@ -869,6 +907,11 @@
     linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(30, 41, 59, 0.88)),
     var(--surface-elevated);
   border-color: rgba(148, 163, 184, 0.22);
+}
+
+:root[data-theme='dark'] .app-shell__game-price-chip {
+  background: rgba(15, 23, 42, 0.64);
+  border-color: rgba(148, 163, 184, 0.16);
 }
 
 :root[data-theme='dark'] .app-shell__game-position {

@@ -85,6 +85,18 @@ function formatMaybePoints(points?: number | null) {
   return typeof points === 'number' ? formatPoints(points) : '집계 중';
 }
 
+function getPointTone(points?: number | null) {
+  if ((points ?? 0) > 0) {
+    return 'gain';
+  }
+
+  if ((points ?? 0) < 0) {
+    return 'loss';
+  }
+
+  return 'flat';
+}
+
 function formatSignedPoints(points?: number | null) {
   const normalizedPoints = points ?? 0;
 
@@ -811,6 +823,29 @@ function HomePage() {
             : isCurrentGameSeasonLoading
               ? '게임 시즌을 불러오는 중입니다.'
               : '다음 게임 시즌을 준비 중입니다.';
+  const currentVideoGamePriceSummary = selectedVideoOpenPosition ? (
+    <div className="app-shell__game-price-strip" aria-label="선택한 영상 가격 정보">
+      <span className="app-shell__game-price-chip">매수가 {formatPoints(selectedVideoOpenPosition.stakePoints)}</span>
+      <span className="app-shell__game-price-chip">
+        현재가 {formatMaybePoints(selectedVideoOpenPosition.currentPricePoints)}
+      </span>
+      <span
+        className="app-shell__game-price-chip"
+        data-tone={getPointTone(selectedVideoOpenPosition.profitPoints)}
+      >
+        손익 {formatSignedPoints(selectedVideoOpenPosition.profitPoints)}
+      </span>
+    </div>
+  ) : selectedVideoMarketEntry ? (
+    <div className="app-shell__game-price-strip" aria-label="선택한 영상 현재 가격">
+      <span className="app-shell__game-price-chip">
+        현재 {formatRank(selectedVideoMarketEntry.currentRank)}
+      </span>
+      <span className="app-shell__game-price-chip">
+        가격 {formatPoints(selectedVideoMarketEntry.currentPricePoints)}
+      </span>
+    </div>
+  ) : null;
   const stageGameActionLabel =
     authStatus !== 'authenticated'
       ? '영상 매수'
@@ -915,8 +950,15 @@ function HomePage() {
                   </p>
                 </div>
                 <p className="app-shell__game-leaderboard-meta">
-                  실현 {formatSignedPoints(entry.realizedPnlPoints)} · 평가{' '}
-                  {formatSignedPoints(entry.unrealizedPnlPoints)} · 보유 {entry.openPositionCount}개
+                  실현{' '}
+                  <span data-tone={getPointTone(entry.realizedPnlPoints)}>
+                    {formatSignedPoints(entry.realizedPnlPoints)}
+                  </span>{' '}
+                  · 평가{' '}
+                  <span data-tone={getPointTone(entry.unrealizedPnlPoints)}>
+                    {formatSignedPoints(entry.unrealizedPnlPoints)}
+                  </span>{' '}
+                  · 보유 {entry.openPositionCount}개
                 </p>
               </div>
             </li>
@@ -950,9 +992,15 @@ function HomePage() {
                   </p>
                 </div>
                 <p className="app-shell__game-leaderboard-meta">
-                  실현 {formatSignedPoints(myLeaderboardEntry.realizedPnlPoints)} · 평가{' '}
-                  {formatSignedPoints(myLeaderboardEntry.unrealizedPnlPoints)} · 보유{' '}
-                  {myLeaderboardEntry.openPositionCount}개
+                  실현{' '}
+                  <span data-tone={getPointTone(myLeaderboardEntry.realizedPnlPoints)}>
+                    {formatSignedPoints(myLeaderboardEntry.realizedPnlPoints)}
+                  </span>{' '}
+                  · 평가{' '}
+                  <span data-tone={getPointTone(myLeaderboardEntry.unrealizedPnlPoints)}>
+                    {formatSignedPoints(myLeaderboardEntry.unrealizedPnlPoints)}
+                  </span>{' '}
+                  · 보유 {myLeaderboardEntry.openPositionCount}개
                 </p>
               </div>
             </div>
@@ -996,7 +1044,9 @@ function HomePage() {
                     )} · 현재 {formatRank(position.currentRank, {
                       chartOut: position.chartOut,
                     })} ·{' '}
-                    {formatSignedPoints(position.profitPoints)}
+                    <span data-tone={getPointTone(position.profitPoints)}>
+                      {formatSignedPoints(position.profitPoints)}
+                    </span>
                   </p>
                 </div>
               </button>
@@ -1076,6 +1126,7 @@ function HomePage() {
                 ? currentGameSeasonError.message
               : '다음 게임 시즌을 준비 중입니다.'}
         </p>
+        {currentVideoGamePriceSummary}
         {gameActionStatus ? <p className="app-shell__game-panel-status">{gameActionStatus}</p> : null}
         <div
           aria-label="게임 패널 탭"
