@@ -56,7 +56,6 @@ import { usePopularVideosByCategory, useVideoCategories } from '../../features/y
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import '../../styles/app.css';
 
-const GAME_STAKE_POINTS = 1_000;
 const pointsFormatter = new Intl.NumberFormat('ko-KR');
 const seasonDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   day: 'numeric',
@@ -80,6 +79,10 @@ function formatPlaybackSaveTimestamp(positionSeconds: number) {
 
 function formatPoints(points: number) {
   return `${pointsFormatter.format(points)}P`;
+}
+
+function formatMaybePoints(points?: number | null) {
+  return typeof points === 'number' ? formatPoints(points) : '집계 중';
 }
 
 function formatSignedPoints(points?: number | null) {
@@ -650,7 +653,9 @@ function HomePage() {
       try {
         const result = await sellGamePositionMutation.mutateAsync(position.id);
         setGameActionStatus(
-          `${position.title} 포지션을 ${formatRank(result.sellRank)} / ${formatSignedPoints(result.pnlPoints)} 기준으로 정리했어요.`,
+          `${position.title} 포지션을 ${formatRank(result.sellRank)} / ${formatPoints(
+            result.sellPricePoints,
+          )} / ${formatSignedPoints(result.pnlPoints)} 기준으로 정리했어요.`,
         );
       } catch (error) {
         if (
@@ -702,11 +707,11 @@ function HomePage() {
       await buyGamePositionMutation.mutateAsync({
         categoryId: '0',
         regionCode: currentGameSeason.regionCode,
-        stakePoints: GAME_STAKE_POINTS,
+        stakePoints: selectedVideoMarketEntry.currentPricePoints,
         videoId: selectedVideoId,
       });
       setGameActionStatus(
-        `${formatPoints(GAME_STAKE_POINTS)}로 ${selectedVideoMarketEntry.currentRank}위 영상을 매수했어요.`,
+        `${formatPoints(selectedVideoMarketEntry.currentPricePoints)}로 ${selectedVideoMarketEntry.currentRank}위 영상을 매수했어요.`,
       );
     } catch (error) {
       if (
@@ -788,14 +793,15 @@ function HomePage() {
       : authStatus !== 'authenticated'
       ? '로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다.'
       : selectedVideoOpenPosition
-        ? `매수 ${formatRank(selectedVideoOpenPosition.buyRank)} · 현재 ${formatRank(
-            selectedVideoOpenPosition.currentRank,
-            { chartOut: selectedVideoOpenPosition.chartOut },
-          )} · 손익 ${formatSignedPoints(selectedVideoOpenPosition.profitPoints)}`
+        ? `매수가 ${formatPoints(selectedVideoOpenPosition.stakePoints)} · 현재가 ${formatMaybePoints(
+            selectedVideoOpenPosition.currentPricePoints,
+          )} · 현재 ${formatRank(selectedVideoOpenPosition.currentRank, {
+            chartOut: selectedVideoOpenPosition.chartOut,
+          })} · 손익 ${formatSignedPoints(selectedVideoOpenPosition.profitPoints)}`
         : selectedVideoMarketEntry
           ? selectedVideoMarketEntry.canBuy
             ? `현재 ${formatRank(selectedVideoMarketEntry.currentRank)} · ${formatPoints(
-                GAME_STAKE_POINTS,
+                selectedVideoMarketEntry.currentPricePoints,
               )}로 바로 매수할 수 있습니다.`
             : selectedVideoMarketEntry.buyBlockedReason ?? '지금은 매수할 수 없습니다.'
           : currentGameSeason
@@ -814,7 +820,9 @@ function HomePage() {
           : '영상 매도'
         : buyGamePositionMutation.isPending
           ? '영상 매수 중'
-          : `영상 매수 ${formatPoints(GAME_STAKE_POINTS)}`;
+          : selectedVideoMarketEntry
+            ? `영상 매수 ${formatPoints(selectedVideoMarketEntry.currentPricePoints)}`
+            : '영상 매수';
   const isSelectedVideoSellDisabled =
     !selectedVideoOpenPosition ||
     selectedVideoHoldRemainingSeconds > 0 ||
@@ -836,7 +844,7 @@ function HomePage() {
           ? `최소 보유 시간까지 ${formatRemainingHoldSeconds(selectedVideoHoldRemainingSeconds)} 남았습니다.`
           : '현재 보유 중인 포지션을 정리합니다.'
         : selectedVideoMarketEntry?.canBuy
-          ? `${formatPoints(GAME_STAKE_POINTS)}로 현재 영상을 매수합니다.`
+          ? `${formatPoints(selectedVideoMarketEntry.currentPricePoints)}로 현재 영상을 매수합니다.`
           : selectedVideoMarketEntry?.buyBlockedReason ??
             (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
   const gameActionContent = selectedVideoId && isApiConfigured && canShowGameActions ? (
@@ -983,7 +991,9 @@ function HomePage() {
                 <div className="app-shell__game-position-copy">
                   <p className="app-shell__game-position-title">{position.title}</p>
                   <p className="app-shell__game-position-meta">
-                    매수 {formatRank(position.buyRank)} · 현재 {formatRank(position.currentRank, {
+                    매수가 {formatPoints(position.stakePoints)} · 현재가 {formatMaybePoints(
+                      position.currentPricePoints,
+                    )} · 현재 {formatRank(position.currentRank, {
                       chartOut: position.chartOut,
                     })} ·{' '}
                     {formatSignedPoints(position.profitPoints)}

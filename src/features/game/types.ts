@@ -28,6 +28,7 @@ export interface GameMarketVideo {
   currentRank: number;
   previousRank: number | null;
   rankChange: number | null;
+  currentPricePoints: number;
   currentViewCount: number | null;
   viewCountDelta: number | null;
   isNew: boolean;
@@ -60,6 +61,7 @@ export interface GamePosition {
   currentRank: number | null;
   rankDiff: number | null;
   stakePoints: number;
+  currentPricePoints: number | null;
   profitPoints: number | null;
   chartOut: boolean;
   status: string;
@@ -82,6 +84,7 @@ export interface SellGamePositionResponse {
   sellRank: number;
   rankDiff: number;
   stakePoints: number;
+  sellPricePoints: number;
   pnlPoints: number;
   settledPoints: number;
   balancePoints: number;
