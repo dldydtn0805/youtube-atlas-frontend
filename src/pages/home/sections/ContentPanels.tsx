@@ -18,6 +18,7 @@ interface ChartPanelProps {
   isChartError: boolean;
   isChartLoading: boolean;
   isFetchingNextPage: boolean;
+  mainSectionCollapseKey?: string;
   onLoadMore: () => void;
   onToggleFeaturedSectionCollapse?: (sectionId: string) => void;
   onToggleBuyableOnlyFilter?: () => void;
@@ -78,6 +79,7 @@ export function ChartPanel({
   isChartError,
   isChartLoading,
   isFetchingNextPage,
+  mainSectionCollapseKey,
   onLoadMore,
   onToggleFeaturedSectionCollapse,
   onToggleBuyableOnlyFilter,
@@ -123,6 +125,8 @@ export function ChartPanel({
         isError={isChartError}
         isFetchingNextPage={isFetchingNextPage}
         isLoading={isChartLoading}
+        isPrimarySectionCollapsible={Boolean(mainSectionCollapseKey)}
+        primarySectionCollapseKey={mainSectionCollapseKey}
         onLoadMore={onLoadMore}
         onSelectVideo={onSelectVideo}
         onToggleSectionCollapse={onToggleFeaturedSectionCollapse}
@@ -171,16 +175,22 @@ export function FavoriteVideosPanel({
       <div className="app-shell__section-heading app-shell__section-heading--chart">
         <div className="app-shell__section-heading-copy">
           <p className="app-shell__section-eyebrow">Favorite Videos</p>
-          <h2 className="app-shell__section-title">{selectedCountryName} 기준 즐겨찾기 채널</h2>
+          <div className="app-shell__section-title-row">
+            <h2 className="app-shell__section-title">{selectedCountryName} 기준 즐겨찾기 채널</h2>
+            <button
+              aria-expanded={!isCollapsed}
+              aria-label={isCollapsed ? '즐겨찾기 채널 펼치기' : '즐겨찾기 채널 숨기기'}
+              className="app-shell__collapse-toggle"
+              data-active={isCollapsed}
+              onClick={onToggleCollapse}
+              type="button"
+            >
+              <span className="app-shell__collapse-toggle-icon" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+          </div>
         </div>
-        <button
-          aria-expanded={!isCollapsed}
-          className="app-shell__subtle-toggle"
-          onClick={onToggleCollapse}
-          type="button"
-        >
-          {isCollapsed ? '펼치기' : '숨기기'}
-        </button>
       </div>
       {isCollapsed ? null : authStatus !== 'authenticated' ? (
         <p className="app-shell__favorites-status">

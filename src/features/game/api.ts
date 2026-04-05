@@ -31,6 +31,12 @@ export async function fetchGameLeaderboard(accessToken: string) {
   });
 }
 
+export async function fetchGameLeaderboardPositions(accessToken: string, userId: number) {
+  return fetchApi<GamePosition[]>(`/api/game/leaderboard/${userId}/positions`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
 export async function fetchMyGamePositions(accessToken: string, status = 'OPEN') {
   const params = new URLSearchParams();
 

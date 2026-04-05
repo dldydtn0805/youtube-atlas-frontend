@@ -3,6 +3,7 @@ import {
   buyGamePosition,
   fetchCurrentGameSeason,
   fetchGameLeaderboard,
+  fetchGameLeaderboardPositions,
   fetchGameMarket,
   fetchGamePositionRankHistory,
   fetchMyGamePositions,
@@ -13,6 +14,8 @@ import type { CreateGamePositionInput } from './types';
 export const gameQueryKeys = {
   currentSeason: (accessToken: string | null) => ['game', 'currentSeason', accessToken] as const,
   leaderboard: (accessToken: string | null) => ['game', 'leaderboard', accessToken] as const,
+  leaderboardPositions: (accessToken: string | null, userId: number | null) =>
+    ['game', 'leaderboardPositions', accessToken, userId] as const,
   market: (accessToken: string | null) => ['game', 'market', accessToken] as const,
   positions: (accessToken: string | null, status = 'OPEN') =>
     ['game', 'positions', accessToken, status] as const,
@@ -43,6 +46,19 @@ export function useGameLeaderboard(accessToken: string | null, enabled = true) {
     enabled: enabled && Boolean(accessToken),
     queryKey: gameQueryKeys.leaderboard(accessToken),
     queryFn: () => fetchGameLeaderboard(accessToken as string),
+    staleTime: 1000 * 15,
+  });
+}
+
+export function useGameLeaderboardPositions(
+  accessToken: string | null,
+  userId: number | null,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && typeof userId === 'number',
+    queryKey: gameQueryKeys.leaderboardPositions(accessToken, userId),
+    queryFn: () => fetchGameLeaderboardPositions(accessToken as string, userId as number),
     staleTime: 1000 * 15,
   });
 }

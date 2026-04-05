@@ -20,6 +20,7 @@ interface VideoListProps {
   collapsedSectionIds?: string[];
   featuredSections?: FeaturedVideoSection[];
   hasResolvedTrendSignals?: boolean;
+  isPrimarySectionCollapsible?: boolean;
   selectedVideoId?: string;
   trendSignalsByVideoId?: Record<string, VideoTrendSignal>;
   hasNextPage: boolean;
@@ -31,6 +32,7 @@ interface VideoListProps {
     triggerElement?: HTMLButtonElement,
   ) => void;
   onToggleSectionCollapse?: (sectionId: string) => void;
+  primarySectionCollapseKey?: string;
 }
 
 function formatViewCount(viewCount?: string) {
@@ -57,6 +59,7 @@ function VideoList({
   collapsedSectionIds = [],
   featuredSections = [],
   hasResolvedTrendSignals = false,
+  isPrimarySectionCollapsible = false,
   selectedVideoId,
   trendSignalsByVideoId,
   hasNextPage,
@@ -64,6 +67,7 @@ function VideoList({
   onLoadMore,
   onSelectVideo,
   onToggleSectionCollapse,
+  primarySectionCollapseKey,
 }: VideoListProps) {
   if (isLoading) {
     return <p className="video-list__status">영상을 불러오는 중입니다.</p>;
@@ -120,20 +124,26 @@ function VideoList({
           <div className="video-list__section-header-main">
             <div>
               <p className="video-list__section-eyebrow">{eyebrow}</p>
-              <h3 className="video-list__section-title">{currentSection.label}</h3>
+              <div className="video-list__section-title-row">
+                <h3 className="video-list__section-title">{currentSection.label}</h3>
+                {isCollapsible && sectionKey ? (
+                  <button
+                    aria-expanded={!isCollapsed}
+                    aria-label={isCollapsed ? `${currentSection.label} 펼치기` : `${currentSection.label} 숨기기`}
+                    className="video-list__section-toggle"
+                    data-active={isCollapsed}
+                    onClick={() => onToggleSectionCollapse?.(sectionKey)}
+                    type="button"
+                  >
+                    <span className="video-list__section-toggle-icon" aria-hidden="true">
+                      ▾
+                    </span>
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
           <div className="video-list__section-header-side">
-            {isCollapsible && sectionKey ? (
-              <button
-                aria-expanded={!isCollapsed}
-                className="video-list__section-toggle"
-                onClick={() => onToggleSectionCollapse?.(sectionKey)}
-                type="button"
-              >
-                {isCollapsed ? '펼치기' : '숨기기'}
-              </button>
-            ) : null}
             <p className="video-list__section-description">{currentSection.description}</p>
           </div>
         </header>
@@ -224,6 +234,11 @@ function VideoList({
         eyebrow: 'Category Ranking',
         emptyMessage: sectionEmptyMessage,
         getRankLabel,
+        isCollapsible: isPrimarySectionCollapsible,
+        isCollapsed: primarySectionCollapseKey
+          ? collapsedSectionIds.includes(primarySectionCollapseKey)
+          : false,
+        sectionKey: primarySectionCollapseKey,
         showLoadMore: true,
       })}
     </div>

@@ -17,8 +17,6 @@ import {
   FAVORITE_STREAMER_VIDEO_SECTION,
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
-  NEW_CHART_ENTRIES_QUEUE_ID,
-  REALTIME_SURGING_QUEUE_ID,
   RESTORED_PLAYBACK_QUEUE_ID,
   findPlaybackQueueIdForVideo,
   filterVideoSection,
@@ -51,6 +49,7 @@ import {
   useBuyGamePosition,
   useCurrentGameSeason,
   useGameLeaderboard,
+  useGameLeaderboardPositions,
   useGameMarket,
   useGamePositionRankHistory,
   useMyGamePositions,
@@ -78,6 +77,7 @@ import '../../styles/app.css';
 const pointsFormatter = new Intl.NumberFormat('ko-KR');
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
 const FAVORITES_PANEL_SECTION_ID = 'favorites-panel';
+const MAIN_CHART_SECTION_ID = 'chart-main-list';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
 const seasonDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   day: 'numeric',
@@ -238,6 +238,7 @@ function HomePage() {
   const [collapsedHomeSectionIds, setCollapsedHomeSectionIds] = useState(getInitialCollapsedHomeSectionIds);
   const [gameActionStatus, setGameActionStatus] = useState<string | null>(null);
   const [gameClock, setGameClock] = useState(() => Date.now());
+  const [selectedLeaderboardUserId, setSelectedLeaderboardUserId] = useState<number | null>(null);
   const [selectedRankHistoryPosition, setSelectedRankHistoryPosition] = useState<GamePosition | null>(null);
   const [selectedVideoRankHistoryVideoId, setSelectedVideoRankHistoryVideoId] = useState<string | null>(null);
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
@@ -315,6 +316,16 @@ function HomePage() {
     data: openGamePositions = [],
     error: openGamePositionsError,
   } = useMyGamePositions(accessToken, 'OPEN', shouldLoadGame);
+  const {
+    data: selectedLeaderboardPositions = [],
+    error: selectedLeaderboardPositionsError,
+    isError: isSelectedLeaderboardPositionsError,
+    isLoading: isSelectedLeaderboardPositionsLoading,
+  } = useGameLeaderboardPositions(
+    accessToken,
+    selectedLeaderboardUserId,
+    shouldLoadGame && activeGameTab === 'leaderboard' && selectedLeaderboardUserId !== null,
+  );
   const {
     data: gameHistoryPositions = [],
     error: gameHistoryPositionsError,
@@ -632,11 +643,7 @@ function HomePage() {
   const isRankingGameCollapsed = collapsedHomeSectionIds.includes(RANKING_GAME_SECTION_ID);
   const isFavoritesPanelCollapsed = collapsedHomeSectionIds.includes(FAVORITES_PANEL_SECTION_ID);
   const collapsedFeaturedSectionIds = useMemo(
-    () =>
-      collapsedHomeSectionIds.filter(
-        (sectionId) =>
-          sectionId === REALTIME_SURGING_QUEUE_ID || sectionId === NEW_CHART_ENTRIES_QUEUE_ID,
-      ),
+    () => collapsedHomeSectionIds.filter((sectionId) => sectionId !== FAVORITES_PANEL_SECTION_ID),
     [collapsedHomeSectionIds],
   );
   const toggleCollapsedSection = useCallback((sectionId: string) => {
@@ -733,19 +740,13 @@ function HomePage() {
     isFetchingNextPage,
     loadedItemCount: loadedSelectedVideoCount,
   });
-  const buyableVideoSearchStatus = isBuyableOnlyFilterActive
-    ? hasNextPage
-      ? isFetchingNextPage
-        ? `매수 가능 영상을 찾는 중 · ${Math.min(
-            loadedSelectedVideoCount,
-            BUYABLE_ONLY_PREFETCH_LIMIT,
-          )}/${BUYABLE_ONLY_PREFETCH_LIMIT}개 확인`
-        : `상위 ${Math.min(
-            loadedSelectedVideoCount,
-            BUYABLE_ONLY_PREFETCH_LIMIT,
-          )}개 기준 · 최대 ${BUYABLE_ONLY_PREFETCH_LIMIT}개까지 자동 탐색`
-      : `상위 ${loadedSelectedVideoCount}개 기준 결과`
-    : undefined;
+  const buyableVideoSearchStatus =
+    isBuyableOnlyFilterActive && isFetchingNextPage
+      ? `매수 가능 영상을 찾는 중 · ${Math.min(
+          loadedSelectedVideoCount,
+          BUYABLE_ONLY_PREFETCH_LIMIT,
+        )}/${BUYABLE_ONLY_PREFETCH_LIMIT}개 확인`
+      : undefined;
   const isBuyableVideoSearchLoading =
     isBuyableOnlyFilterActive && isFetchingNextPage && !isChartLoading && !isChartError;
 
@@ -1277,6 +1278,12 @@ function HomePage() {
   const selectedGameActionTitle =
     selectedVideoOpenPosition?.title ?? resolvedSelectedVideo?.snippet.title ?? '선택한 영상';
   const isChartActionDisabled = !selectedVideoId || !canShowGameActions;
+  const selectedLeaderboardEntry = selectedLeaderboardUserId
+    ? gameLeaderboard.find((entry) => entry.userId === selectedLeaderboardUserId) ?? null
+    : null;
+  const selectedLeaderboardPositionsTitle = selectedLeaderboardEntry
+    ? `${selectedLeaderboardEntry.displayName}님의 보유 포지션`
+    : '보유 포지션';
   const leaderboardContent =
     isGameLeaderboardLoading && !isGameLeaderboardError ? (
       <p className="app-shell__game-empty">리더보드를 불러오는 중입니다.</p>
@@ -1289,99 +1296,216 @@ function HomePage() {
     ) : topLeaderboardEntries.length > 0 ? (
       <div className="app-shell__game-leaderboard-stack">
         <ol className="app-shell__game-leaderboard">
-          {topLeaderboardEntries.map((entry) => (
-            <li
-              key={entry.userId}
-              className="app-shell__game-leaderboard-item"
-              data-me={entry.me}
-            >
-              <div className="app-shell__game-leaderboard-rank">{entry.rank}</div>
-              {entry.pictureUrl ? (
-                <img
-                  alt={`${entry.displayName} 프로필`}
-                  className="app-shell__game-leaderboard-avatar"
-                  loading="lazy"
-                  src={entry.pictureUrl}
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="app-shell__game-leaderboard-avatar app-shell__game-leaderboard-avatar--fallback"
+          {topLeaderboardEntries.map((entry) => {
+            const isExpanded = selectedLeaderboardUserId === entry.userId;
+
+            return (
+              <li
+                key={entry.userId}
+                className="app-shell__game-leaderboard-row"
+              >
+                <button
+                  className="app-shell__game-leaderboard-item app-shell__game-leaderboard-item--button"
+                  data-expanded={isExpanded}
+                  data-me={entry.me}
+                  onClick={() =>
+                    setSelectedLeaderboardUserId((currentUserId) =>
+                      currentUserId === entry.userId ? null : entry.userId,
+                    )
+                  }
+                  type="button"
                 >
-                  {(entry.displayName || 'A').slice(0, 1).toUpperCase()}
-                </span>
-              )}
-              <div className="app-shell__game-leaderboard-copy">
-                <div className="app-shell__game-leaderboard-head">
-                  <p className="app-shell__game-leaderboard-name">
-                    {entry.displayName}
-                  </p>
-                  <p className="app-shell__game-leaderboard-total">
-                    총자산 {formatPoints(entry.totalAssetPoints)}
-                  </p>
-                </div>
-                <p className="app-shell__game-leaderboard-meta">
-                  실현 금액{' '}
-                  <span data-tone={getPointTone(entry.realizedPnlPoints)}>
-                    {formatSignedPoints(entry.realizedPnlPoints)}
-                  </span>{' '}
-                </p>
-                <p className="app-shell__game-leaderboard-meta">
-                  평가 금액{' '}
-                  <span data-tone={getPointTone(entry.unrealizedPnlPoints)}>
-                    {formatSignedPoints(entry.unrealizedPnlPoints)}
+                  <div className="app-shell__game-leaderboard-rank">{entry.rank}</div>
+                  {entry.pictureUrl ? (
+                    <img
+                      alt={`${entry.displayName} 프로필`}
+                      className="app-shell__game-leaderboard-avatar"
+                      loading="lazy"
+                      src={entry.pictureUrl}
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="app-shell__game-leaderboard-avatar app-shell__game-leaderboard-avatar--fallback"
+                    >
+                      {(entry.displayName || 'A').slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="app-shell__game-leaderboard-copy">
+                    <div className="app-shell__game-leaderboard-head">
+                      <p className="app-shell__game-leaderboard-name">
+                        {entry.displayName}
+                      </p>
+                      <p className="app-shell__game-leaderboard-total">
+                        총자산 {formatPoints(entry.totalAssetPoints)}
+                      </p>
+                    </div>
+                    <p className="app-shell__game-leaderboard-meta">
+                      실현 금액{' '}
+                      <span data-tone={getPointTone(entry.realizedPnlPoints)}>
+                        {formatSignedPoints(entry.realizedPnlPoints)}
+                      </span>{' '}
+                    </p>
+                    <p className="app-shell__game-leaderboard-meta">
+                      평가 금액{' '}
+                      <span data-tone={getPointTone(entry.unrealizedPnlPoints)}>
+                        {formatSignedPoints(entry.unrealizedPnlPoints)}
+                      </span>
+                    </p>
+                    <p className="app-shell__game-leaderboard-meta">
+                      보유 {entry.openPositionCount}개
+                    </p>
+                  </div>
+                  <span className="app-shell__game-leaderboard-expand" aria-hidden="true">
+                    ▾
                   </span>
-                </p>
-                <p className="app-shell__game-leaderboard-meta">
-                  보유 {entry.openPositionCount}개
-                </p>
-              </div>
-            </li>
-          ))}
+                </button>
+                {isExpanded ? (
+                  <div className="app-shell__game-leaderboard-positions" aria-label={selectedLeaderboardPositionsTitle}>
+                    <p className="app-shell__game-leaderboard-positions-title">{selectedLeaderboardPositionsTitle}</p>
+                    {isSelectedLeaderboardPositionsLoading ? (
+                      <p className="app-shell__game-leaderboard-positions-status">보유 포지션을 불러오는 중입니다.</p>
+                    ) : isSelectedLeaderboardPositionsError ? (
+                      <p className="app-shell__game-leaderboard-positions-status">
+                        {selectedLeaderboardPositionsError instanceof Error
+                          ? selectedLeaderboardPositionsError.message
+                          : '보유 포지션을 불러오지 못했습니다.'}
+                      </p>
+                    ) : selectedLeaderboardPositions.length > 0 ? (
+                      <ul className="app-shell__game-leaderboard-position-list">
+                        {selectedLeaderboardPositions.map((position) => (
+                          <li key={position.id} className="app-shell__game-leaderboard-position-item">
+                            <img
+                              alt=""
+                              className="app-shell__game-leaderboard-position-thumb"
+                              loading="lazy"
+                              src={position.thumbnailUrl}
+                            />
+                            <div className="app-shell__game-leaderboard-position-copy">
+                              <p className="app-shell__game-leaderboard-position-title">{position.title}</p>
+                              <p className="app-shell__game-leaderboard-position-meta">
+                                현재 {formatRank(position.currentRank, { chartOut: position.chartOut })} · 평가 금액{' '}
+                                {formatMaybePoints(position.currentPricePoints)}
+                              </p>
+                              <p className="app-shell__game-leaderboard-position-meta">
+                                매수 금액 {formatPoints(position.stakePoints)} · 손익{' '}
+                                <span data-tone={getPointTone(position.profitPoints)}>
+                                  {formatSignedPoints(position.profitPoints)}
+                                </span>
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="app-shell__game-leaderboard-positions-status">보유 중인 포지션이 없습니다.</p>
+                    )}
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
         </ol>
         {myLeaderboardEntry ? (
           <section className="app-shell__game-leaderboard-pinned" aria-label="내 순위">
             <p className="app-shell__game-leaderboard-pinned-label">내 순위</p>
-            <div className="app-shell__game-leaderboard-item" data-me="true">
-              <div className="app-shell__game-leaderboard-rank">{myLeaderboardEntry.rank}</div>
-              {myLeaderboardEntry.pictureUrl ? (
-                <img
-                  alt={`${myLeaderboardEntry.displayName} 프로필`}
-                  className="app-shell__game-leaderboard-avatar"
-                  loading="lazy"
-                  src={myLeaderboardEntry.pictureUrl}
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="app-shell__game-leaderboard-avatar app-shell__game-leaderboard-avatar--fallback"
-                >
-                  {(myLeaderboardEntry.displayName || 'A').slice(0, 1).toUpperCase()}
-                </span>
-              )}
-              <div className="app-shell__game-leaderboard-copy">
-                <div className="app-shell__game-leaderboard-head">
-                  <p className="app-shell__game-leaderboard-name">{myLeaderboardEntry.displayName}</p>
-                  <p className="app-shell__game-leaderboard-total">
-                    총자산 {formatPoints(myLeaderboardEntry.totalAssetPoints)}
+            <div className="app-shell__game-leaderboard-row">
+              <button
+                className="app-shell__game-leaderboard-item app-shell__game-leaderboard-item--button"
+                data-expanded={selectedLeaderboardUserId === myLeaderboardEntry.userId}
+                data-me="true"
+                onClick={() =>
+                  setSelectedLeaderboardUserId((currentUserId) =>
+                    currentUserId === myLeaderboardEntry.userId ? null : myLeaderboardEntry.userId,
+                  )
+                }
+                type="button"
+              >
+                <div className="app-shell__game-leaderboard-rank">{myLeaderboardEntry.rank}</div>
+                {myLeaderboardEntry.pictureUrl ? (
+                  <img
+                    alt={`${myLeaderboardEntry.displayName} 프로필`}
+                    className="app-shell__game-leaderboard-avatar"
+                    loading="lazy"
+                    src={myLeaderboardEntry.pictureUrl}
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="app-shell__game-leaderboard-avatar app-shell__game-leaderboard-avatar--fallback"
+                  >
+                    {(myLeaderboardEntry.displayName || 'A').slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <div className="app-shell__game-leaderboard-copy">
+                  <div className="app-shell__game-leaderboard-head">
+                    <p className="app-shell__game-leaderboard-name">{myLeaderboardEntry.displayName}</p>
+                    <p className="app-shell__game-leaderboard-total">
+                      총자산 {formatPoints(myLeaderboardEntry.totalAssetPoints)}
+                    </p>
+                  </div>
+                  <p className="app-shell__game-leaderboard-meta">
+                    실현 금액{' '}
+                    <span data-tone={getPointTone(myLeaderboardEntry.realizedPnlPoints)}>
+                      {formatSignedPoints(myLeaderboardEntry.realizedPnlPoints)}
+                    </span>{' '}
+                  </p>
+                  <p className="app-shell__game-leaderboard-meta">
+                    평가 금액{' '}
+                    <span data-tone={getPointTone(myLeaderboardEntry.unrealizedPnlPoints)}>
+                      {formatSignedPoints(myLeaderboardEntry.unrealizedPnlPoints)}
+                    </span>
+                  </p>
+                  <p className="app-shell__game-leaderboard-meta">
+                    보유 {myLeaderboardEntry.openPositionCount}개
                   </p>
                 </div>
-                <p className="app-shell__game-leaderboard-meta">
-                  실현 금액{' '}
-                  <span data-tone={getPointTone(myLeaderboardEntry.realizedPnlPoints)}>
-                    {formatSignedPoints(myLeaderboardEntry.realizedPnlPoints)}
-                  </span>{' '}
-                </p>
-                <p className="app-shell__game-leaderboard-meta">
-                  평가 금액{' '}
-                  <span data-tone={getPointTone(myLeaderboardEntry.unrealizedPnlPoints)}>
-                    {formatSignedPoints(myLeaderboardEntry.unrealizedPnlPoints)}
-                  </span>
-                </p>
-                <p className="app-shell__game-leaderboard-meta">
-                  보유 {myLeaderboardEntry.openPositionCount}개
-                </p>
-              </div>
+                <span className="app-shell__game-leaderboard-expand" aria-hidden="true">
+                  ▾
+                </span>
+              </button>
+              {selectedLeaderboardUserId === myLeaderboardEntry.userId ? (
+                <div className="app-shell__game-leaderboard-positions" aria-label={selectedLeaderboardPositionsTitle}>
+                  <p className="app-shell__game-leaderboard-positions-title">{selectedLeaderboardPositionsTitle}</p>
+                  {isSelectedLeaderboardPositionsLoading ? (
+                    <p className="app-shell__game-leaderboard-positions-status">보유 포지션을 불러오는 중입니다.</p>
+                  ) : isSelectedLeaderboardPositionsError ? (
+                    <p className="app-shell__game-leaderboard-positions-status">
+                      {selectedLeaderboardPositionsError instanceof Error
+                        ? selectedLeaderboardPositionsError.message
+                        : '보유 포지션을 불러오지 못했습니다.'}
+                    </p>
+                  ) : selectedLeaderboardPositions.length > 0 ? (
+                    <ul className="app-shell__game-leaderboard-position-list">
+                      {selectedLeaderboardPositions.map((position) => (
+                        <li key={position.id} className="app-shell__game-leaderboard-position-item">
+                          <img
+                            alt=""
+                            className="app-shell__game-leaderboard-position-thumb"
+                            loading="lazy"
+                            src={position.thumbnailUrl}
+                          />
+                          <div className="app-shell__game-leaderboard-position-copy">
+                            <p className="app-shell__game-leaderboard-position-title">{position.title}</p>
+                            <p className="app-shell__game-leaderboard-position-meta">
+                              현재 {formatRank(position.currentRank, { chartOut: position.chartOut })} · 평가 금액{' '}
+                              {formatMaybePoints(position.currentPricePoints)}
+                            </p>
+                            <p className="app-shell__game-leaderboard-position-meta">
+                              매수 금액 {formatPoints(position.stakePoints)} · 손익{' '}
+                              <span data-tone={getPointTone(position.profitPoints)}>
+                                {formatSignedPoints(position.profitPoints)}
+                              </span>
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="app-shell__game-leaderboard-positions-status">보유 중인 포지션이 없습니다.</p>
+                  )}
+                </div>
+              ) : null}
             </div>
           </section>
         ) : null}
@@ -1577,23 +1701,29 @@ function HomePage() {
         <div className="app-shell__game-panel-header">
           <div className="app-shell__game-panel-copy">
             <p className="app-shell__game-panel-eyebrow">Ranking Game</p>
-            <h3 className="app-shell__game-panel-title">
-              {currentGameSeason ? `${currentGameSeason.regionCode} 시즌` : '시즌 준비 중'}
-            </h3>
+            <div className="app-shell__game-panel-title-row">
+              <h3 className="app-shell__game-panel-title">
+                {currentGameSeason ? `${currentGameSeason.regionCode} 시즌` : '시즌 준비 중'}
+              </h3>
+              <button
+                aria-expanded={!isRankingGameCollapsed}
+                aria-label={isRankingGameCollapsed ? '랭킹 게임 펼치기' : '랭킹 게임 숨기기'}
+                className="app-shell__collapse-toggle"
+                data-active={isRankingGameCollapsed}
+                onClick={() => toggleCollapsedSection(RANKING_GAME_SECTION_ID)}
+                type="button"
+              >
+                <span className="app-shell__collapse-toggle-icon" aria-hidden="true">
+                  ▾
+                </span>
+              </button>
+            </div>
             {currentGameSeason ? (
               <p className="app-shell__game-panel-subtle">
                 종료 {seasonDateTimeFormatter.format(new Date(currentGameSeason.endAt))}
               </p>
             ) : null}
           </div>
-          <button
-            aria-expanded={!isRankingGameCollapsed}
-            className="app-shell__subtle-toggle"
-            onClick={() => toggleCollapsedSection(RANKING_GAME_SECTION_ID)}
-            type="button"
-          >
-            {isRankingGameCollapsed ? '펼치기' : '숨기기'}
-          </button>
         </div>
         {!isRankingGameCollapsed ? (
           <>
@@ -1790,6 +1920,7 @@ function HomePage() {
       isChartError={isChartError}
       isChartLoading={isChartLoading}
       isFetchingNextPage={isFetchingNextPage}
+      mainSectionCollapseKey={MAIN_CHART_SECTION_ID}
       onLoadMore={() => void fetchNextPage()}
       onToggleFeaturedSectionCollapse={toggleCollapsedSection}
       onToggleBuyableOnlyFilter={() => setIsBuyableOnlyFilterActive((current) => !current)}
@@ -1815,6 +1946,7 @@ function HomePage() {
       isChartError={isChartError}
       isChartLoading={isChartLoading}
       isFetchingNextPage={isFetchingNextPage}
+      mainSectionCollapseKey={MAIN_CHART_SECTION_ID}
       onLoadMore={() => void fetchNextPage()}
       onToggleFeaturedSectionCollapse={toggleCollapsedSection}
       onToggleBuyableOnlyFilter={() => setIsBuyableOnlyFilterActive((current) => !current)}
