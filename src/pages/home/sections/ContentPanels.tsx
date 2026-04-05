@@ -1,5 +1,5 @@
 import CommentSection from '../../../components/CommentSection/CommentSection';
-import VideoList from '../../../components/VideoList/VideoList';
+import VideoList, { type FeaturedVideoSection } from '../../../components/VideoList/VideoList';
 import type { AuthStatus } from '../../../features/auth/types';
 import type { FavoriteStreamer } from '../../../features/favorites/types';
 import type { VideoTrendSignal } from '../../../features/trending/types';
@@ -9,8 +9,7 @@ interface ChartPanelProps {
   buyableVideoSearchStatus?: string;
   chartErrorMessage?: string;
   className?: string;
-  featuredSection?: YouTubeCategorySection;
-  featuredSectionEmptyMessage?: string;
+  featuredSections?: FeaturedVideoSection[];
   hasNextPage: boolean;
   hasResolvedTrendSignals: boolean;
   isBuyableOnlyFilterActive?: boolean;
@@ -25,7 +24,6 @@ interface ChartPanelProps {
     playbackQueueId: string,
     triggerElement?: HTMLButtonElement,
   ) => void;
-  realtimeSurgingSignalsByVideoId: Record<string, VideoTrendSignal>;
   section?: YouTubeCategorySection;
   selectedCategoryLabel?: string;
   selectedVideoId?: string;
@@ -67,8 +65,7 @@ export function ChartPanel({
   buyableVideoSearchStatus,
   chartErrorMessage,
   className,
-  featuredSection,
-  featuredSectionEmptyMessage,
+  featuredSections,
   hasNextPage,
   hasResolvedTrendSignals,
   isBuyableOnlyFilterActive = false,
@@ -79,7 +76,6 @@ export function ChartPanel({
   onLoadMore,
   onToggleBuyableOnlyFilter,
   onSelectVideo,
-  realtimeSurgingSignalsByVideoId,
   section,
   selectedCategoryLabel,
   selectedVideoId,
@@ -114,18 +110,7 @@ export function ChartPanel({
       </div>
       <VideoList
         errorMessage={chartErrorMessage}
-        featuredSection={featuredSection}
-        featuredSectionEmptyMessage={featuredSectionEmptyMessage}
-        featuredSectionEyebrow="Realtime Movers"
-        getFeaturedRankLabel={(item) => {
-          const signal = realtimeSurgingSignalsByVideoId[item.id];
-
-          if (!signal?.rankChange) {
-            return '실시간 급상승';
-          }
-
-          return `전체 ${signal.currentRank}위 · ${signal.rankChange > 0 ? '+' : ''}${signal.rankChange}`;
-        }}
+        featuredSections={featuredSections}
         hasNextPage={hasNextPage}
         hasResolvedTrendSignals={hasResolvedTrendSignals}
         isError={isChartError}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FeaturedVideoSection } from '../../components/VideoList/VideoList';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
 import AppHeader from './sections/AppHeader';
 import { ChartPanel, CommunityPanel, FavoriteVideosPanel } from './sections/ContentPanels';
@@ -10,6 +11,7 @@ import useLogoutOnUnauthorized from './hooks/useLogoutOnUnauthorized';
 import usePlaybackQueue from './hooks/usePlaybackQueue';
 import {
   BUYABLE_ONLY_PREFETCH_LIMIT,
+  buildNewChartEntriesSection,
   buildRealtimeSurgingSection,
   DEFAULT_CATEGORY_ID,
   FAVORITE_STREAMER_VIDEO_SECTION,
@@ -58,7 +60,12 @@ import {
   useFavoriteStreamers,
   useToggleFavoriteStreamer,
 } from '../../features/favorites/queries';
-import { useRealtimeSurging, useVideoRankHistory, useVideoTrendSignals } from '../../features/trending/queries';
+import {
+  useNewChartEntries,
+  useRealtimeSurging,
+  useVideoRankHistory,
+  useVideoTrendSignals,
+} from '../../features/trending/queries';
 import { fetchVideoById } from '../../features/youtube/api';
 import { usePopularVideosByCategory, useVideoCategories } from '../../features/youtube/queries';
 import type { YouTubeVideoItem } from '../../features/youtube/types';
@@ -397,6 +404,7 @@ function HomePage() {
     isAllCategorySelected,
     shouldShowAllCategoryTrendSignals,
   );
+  const shouldShowNewChartEntriesSection = shouldShowRealtimeSurgingSection;
 
   const {
     data: trendSignalsByVideoId = {},
@@ -425,18 +433,31 @@ function HomePage() {
     isLoading: isRealtimeSurgingLoading,
     isError: isRealtimeSurgingError,
   } = useRealtimeSurging(selectedRegionCode, isApiConfigured && shouldShowRealtimeSurgingSection);
+  const {
+    data: newChartEntriesData,
+    isLoading: isNewChartEntriesLoading,
+    isError: isNewChartEntriesError,
+  } = useNewChartEntries(selectedRegionCode, isApiConfigured && shouldShowNewChartEntriesSection);
   const realtimeSurgingSignalsByVideoId = Object.fromEntries(
     (realtimeSurgingData?.items ?? []).map((signal) => [signal.videoId, signal]),
+  );
+  const newChartEntriesSignalsByVideoId = Object.fromEntries(
+    (newChartEntriesData?.items ?? []).map((signal) => [signal.videoId, signal]),
   );
   const chartTrendSignalsByVideoId = shouldShowSelectedCategoryTrendSignals
     ? {
         ...trendSignalsByVideoId,
         ...(isAllCategorySelected ? realtimeSurgingSignalsByVideoId : {}),
+        ...(isAllCategorySelected ? newChartEntriesSignalsByVideoId : {}),
       }
     : {};
   const realtimeSurgingSection = buildRealtimeSurgingSection(
     shouldShowRealtimeSurgingSection,
     realtimeSurgingData,
+  );
+  const newChartEntriesSection = buildNewChartEntriesSection(
+    shouldShowNewChartEntriesSection,
+    newChartEntriesData,
   );
   const realtimeSurgingEmptyMessage =
     shouldShowRealtimeSurgingSection &&
@@ -444,6 +465,13 @@ function HomePage() {
     !isRealtimeSurgingLoading &&
     !isRealtimeSurgingError
       ? `아직 +${realtimeSurgingData?.rankChangeThreshold ?? 5} 이상 급상승한 영상이 없습니다.`
+      : undefined;
+  const newChartEntriesEmptyMessage =
+    shouldShowNewChartEntriesSection &&
+    !isChartLoading &&
+    !isNewChartEntriesLoading &&
+    !isNewChartEntriesError
+      ? '이번 집계에서 새로 차트에 진입한 영상이 없습니다.'
       : undefined;
   const hasResolvedChartTrendSignals =
     isApiConfigured &&
@@ -455,6 +483,7 @@ function HomePage() {
     : undefined;
   const combinedPlayableItems = mergeUniqueVideoItems(
     realtimeSurgingSection?.items,
+    newChartEntriesSection?.items,
     selectedPlaybackSection?.items,
     favoriteStreamerVideoSection?.items,
     gamePortfolioSection.items,
@@ -476,6 +505,7 @@ function HomePage() {
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     isMobileLayout,
     playerSectionRef,
     playerViewportRef,
@@ -540,6 +570,62 @@ function HomePage() {
         ? filterVideoSection(realtimeSurgingSection, (item) => buyableVideoIdSet.has(item.id))
         : realtimeSurgingSection,
     [buyableVideoIdSet, isBuyableOnlyFilterActive, realtimeSurgingSection],
+  );
+  const filteredNewChartEntriesSection = useMemo(
+    () =>
+      isBuyableOnlyFilterActive
+        ? filterVideoSection(newChartEntriesSection, (item) => buyableVideoIdSet.has(item.id))
+        : newChartEntriesSection,
+    [buyableVideoIdSet, isBuyableOnlyFilterActive, newChartEntriesSection],
+  );
+  const featuredChartSections = useMemo(
+    (): FeaturedVideoSection[] => {
+      const sections: FeaturedVideoSection[] = [];
+
+      if (filteredRealtimeSurgingSection) {
+        sections.push({
+          section: filteredRealtimeSurgingSection,
+          eyebrow: 'Realtime Movers',
+          emptyMessage: realtimeSurgingEmptyMessage,
+          getRankLabel: (item: YouTubeVideoItem) => {
+            const signal = realtimeSurgingSignalsByVideoId[item.id];
+
+            if (!signal?.rankChange) {
+              return '실시간 급상승';
+            }
+
+            return `전체 ${signal.currentRank}위 · ${signal.rankChange > 0 ? '+' : ''}${signal.rankChange}`;
+          },
+        });
+      }
+
+      if (filteredNewChartEntriesSection) {
+        sections.push({
+          section: filteredNewChartEntriesSection,
+          eyebrow: 'Fresh Entries',
+          emptyMessage: newChartEntriesEmptyMessage,
+          getRankLabel: (item: YouTubeVideoItem) => {
+            const signal = newChartEntriesSignalsByVideoId[item.id];
+
+            if (!signal?.currentRank) {
+              return '신규 차트 등록';
+            }
+
+            return `전체 ${signal.currentRank}위 · 신규 진입`;
+          },
+        });
+      }
+
+      return sections;
+    },
+    [
+      filteredNewChartEntriesSection,
+      filteredRealtimeSurgingSection,
+      newChartEntriesEmptyMessage,
+      newChartEntriesSignalsByVideoId,
+      realtimeSurgingEmptyMessage,
+      realtimeSurgingSignalsByVideoId,
+    ],
   );
   const shouldAutoPrefetchBuyableVideos = shouldPrefetchBuyableVideos({
     hasNextPage,
@@ -670,6 +756,7 @@ function HomePage() {
         favoriteStreamerVideoSection,
         gamePortfolioSection,
         historyPlaybackSection,
+        newChartEntriesSection,
         realtimeSurgingSection,
         selectedSection: selectedPlaybackSection,
       }) ?? RESTORED_PLAYBACK_QUEUE_ID,
@@ -679,6 +766,7 @@ function HomePage() {
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     realtimeSurgingSection,
     restorePlaybackSelection,
     selectedPlaybackSection,
@@ -694,6 +782,7 @@ function HomePage() {
       favoriteStreamerVideoSection,
       gamePortfolioSection,
       historyPlaybackSection,
+      newChartEntriesSection,
       realtimeSurgingSection,
       selectedSection: selectedPlaybackSection,
     });
@@ -706,6 +795,7 @@ function HomePage() {
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     realtimeSurgingSection,
     selectedPlaybackSection,
     selectedVideoId,
@@ -1283,6 +1373,7 @@ function HomePage() {
             favoriteStreamerVideoSection,
             gamePortfolioSection,
             historyPlaybackSection,
+            newChartEntriesSection,
             realtimeSurgingSection,
             selectedSection: selectedPlaybackSection,
           });
@@ -1569,8 +1660,7 @@ function HomePage() {
     <ChartPanel
       buyableVideoSearchStatus={buyableVideoSearchStatus}
       chartErrorMessage={chartErrorMessage}
-      featuredSection={filteredRealtimeSurgingSection}
-      featuredSectionEmptyMessage={realtimeSurgingEmptyMessage}
+      featuredSections={featuredChartSections}
       hasNextPage={hasNextPage}
       hasResolvedTrendSignals={hasResolvedChartTrendSignals}
       isBuyableOnlyFilterActive={isBuyableOnlyFilterActive}
@@ -1581,7 +1671,6 @@ function HomePage() {
       onLoadMore={() => void fetchNextPage()}
       onToggleBuyableOnlyFilter={() => setIsBuyableOnlyFilterActive((current) => !current)}
       onSelectVideo={handleSelectVideo}
-      realtimeSurgingSignalsByVideoId={realtimeSurgingSignalsByVideoId}
       section={filteredSelectedPlaybackSection}
       selectedCategoryLabel={selectedCategory?.label}
       selectedVideoId={selectedVideoId}
@@ -1594,8 +1683,7 @@ function HomePage() {
       buyableVideoSearchStatus={buyableVideoSearchStatus}
       chartErrorMessage={chartErrorMessage}
       className="app-shell__panel--chart-cinematic"
-      featuredSection={filteredRealtimeSurgingSection}
-      featuredSectionEmptyMessage={realtimeSurgingEmptyMessage}
+      featuredSections={featuredChartSections}
       hasNextPage={hasNextPage}
       hasResolvedTrendSignals={hasResolvedChartTrendSignals}
       isBuyableOnlyFilterActive={isBuyableOnlyFilterActive}
@@ -1606,7 +1694,6 @@ function HomePage() {
       onLoadMore={() => void fetchNextPage()}
       onToggleBuyableOnlyFilter={() => setIsBuyableOnlyFilterActive((current) => !current)}
       onSelectVideo={handleSelectVideo}
-      realtimeSurgingSignalsByVideoId={realtimeSurgingSignalsByVideoId}
       section={filteredSelectedPlaybackSection}
       selectedCategoryLabel={selectedCategory?.label}
       selectedVideoId={selectedVideoId}

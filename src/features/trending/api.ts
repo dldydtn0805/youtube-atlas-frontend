@@ -1,5 +1,10 @@
 import { fetchApi } from '../../lib/api';
-import type { RealtimeSurgingResponse, VideoRankHistory, VideoTrendSignal } from './types';
+import type {
+  NewChartEntriesResponse,
+  RealtimeSurgingResponse,
+  VideoRankHistory,
+  VideoTrendSignal,
+} from './types';
 
 export async function fetchVideoTrendSignals(
   regionCode: string,
@@ -32,6 +37,14 @@ export async function fetchRealtimeSurging(regionCode: string): Promise<Realtime
   });
 
   return fetchApi<RealtimeSurgingResponse>(`/api/trending/realtime-surging?${params.toString()}`);
+}
+
+export async function fetchNewChartEntries(regionCode: string): Promise<NewChartEntriesResponse> {
+  const params = new URLSearchParams({
+    regionCode,
+  });
+
+  return fetchApi<NewChartEntriesResponse>(`/api/trending/new-entries?${params.toString()}`);
 }
 
 export async function fetchVideoRankHistory(regionCode: string, videoId: string): Promise<VideoRankHistory> {

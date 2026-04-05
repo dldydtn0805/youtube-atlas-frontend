@@ -17,15 +17,20 @@ export interface VideoTrendSignal {
   viewCountDelta: number | null;
 }
 
-export interface RealtimeSurgingResponse {
+export interface TrendSignalFeedResponse {
   regionCode: string;
   categoryId: string;
   categoryLabel: string;
-  rankChangeThreshold: number;
   totalCount: number;
   capturedAt: string | null;
   items: VideoTrendSignal[];
 }
+
+export interface RealtimeSurgingResponse extends TrendSignalFeedResponse {
+  rankChangeThreshold: number;
+}
+
+export interface NewChartEntriesResponse extends TrendSignalFeedResponse {}
 
 export interface VideoRankHistoryPoint {
   runId: number;

@@ -3,13 +3,18 @@ import { ALL_VIDEO_CATEGORY_ID } from '../../constants/videoCategories';
 import type { GamePosition } from '../../features/game/types';
 import type { PlaybackProgress } from '../../features/playback/types';
 import { formatCompactCount } from '../../features/trending/presentation';
-import type { RealtimeSurgingResponse, VideoTrendSignal } from '../../features/trending/types';
+import type {
+  NewChartEntriesResponse,
+  RealtimeSurgingResponse,
+  VideoTrendSignal,
+} from '../../features/trending/types';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
 
 export const DEFAULT_REGION_CODE = 'US';
 export const DEFAULT_CATEGORY_ID = ALL_VIDEO_CATEGORY_ID;
 export const GAME_PORTFOLIO_QUEUE_ID = 'game-portfolio';
 export const MOBILE_BREAKPOINT = 768;
+export const NEW_CHART_ENTRIES_QUEUE_ID = 'new-chart-entries';
 export const REALTIME_SURGING_QUEUE_ID = 'realtime-surging';
 export const RESTORED_PLAYBACK_QUEUE_ID = 'last-playback-progress';
 const STORAGE_KEY = 'youtube-atlas-region-code';
@@ -300,6 +305,22 @@ export function buildRealtimeSurgingSection(
   };
 }
 
+export function buildNewChartEntriesSection(
+  isAllCategorySelected: boolean,
+  newChartEntriesData: NewChartEntriesResponse | undefined,
+) {
+  if (!isAllCategorySelected || !newChartEntriesData) {
+    return undefined;
+  }
+
+  return {
+    categoryId: NEW_CHART_ENTRIES_QUEUE_ID,
+    label: '신규 차트 등록',
+    description: '전체 차트에 이번 집계에서 새로 진입한 영상을 모았습니다.',
+    items: newChartEntriesData.items.map(mapTrendSignalToVideoItem),
+  };
+}
+
 export function mergeUniqueVideoItems(...groups: Array<YouTubeVideoItem[] | undefined>) {
   const mergedItems: YouTubeVideoItem[] = [];
   const seenVideoIds = new Set<string>();
@@ -328,6 +349,7 @@ export function getPlaybackQueueItems(
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,
     selectedSection,
@@ -335,6 +357,7 @@ export function getPlaybackQueueItems(
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
+    newChartEntriesSection?: YouTubeCategorySection;
     realtimeSurgingSection?: YouTubeCategorySection;
     restoredPlaybackVideo?: YouTubeVideoItem;
     selectedSection?: YouTubeCategorySection;
@@ -346,6 +369,10 @@ export function getPlaybackQueueItems(
 
   if (queueId && realtimeSurgingSection?.categoryId === queueId) {
     return realtimeSurgingSection.items;
+  }
+
+  if (queueId && newChartEntriesSection?.categoryId === queueId) {
+    return newChartEntriesSection.items;
   }
 
   if (queueId && favoriteStreamerVideoSection?.categoryId === queueId) {
@@ -373,12 +400,14 @@ export function findPlaybackQueueIdForVideo(
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     realtimeSurgingSection,
     selectedSection,
   }: {
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
+    newChartEntriesSection?: YouTubeCategorySection;
     realtimeSurgingSection?: YouTubeCategorySection;
     selectedSection?: YouTubeCategorySection;
   },
@@ -389,6 +418,10 @@ export function findPlaybackQueueIdForVideo(
 
   if (realtimeSurgingSection?.items.some((item) => item.id === videoId)) {
     return realtimeSurgingSection.categoryId;
+  }
+
+  if (newChartEntriesSection?.items.some((item) => item.id === videoId)) {
+    return newChartEntriesSection.categoryId;
   }
 
   if (favoriteStreamerVideoSection?.items.some((item) => item.id === videoId)) {

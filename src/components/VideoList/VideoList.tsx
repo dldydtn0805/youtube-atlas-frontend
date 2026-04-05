@@ -3,6 +3,13 @@ import { formatCompactCount, getFallbackNewBadge, getVideoTrendBadges } from '..
 import type { VideoTrendSignal } from '../../features/trending/types';
 import './VideoList.css';
 
+export interface FeaturedVideoSection {
+  section: YouTubeCategorySection;
+  eyebrow?: string;
+  emptyMessage?: string;
+  getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+}
+
 interface VideoListProps {
   isLoading: boolean;
   isError: boolean;
@@ -10,10 +17,7 @@ interface VideoListProps {
   section?: YouTubeCategorySection;
   sectionEmptyMessage?: string;
   getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
-  featuredSection?: YouTubeCategorySection;
-  featuredSectionEyebrow?: string;
-  featuredSectionEmptyMessage?: string;
-  getFeaturedRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+  featuredSections?: FeaturedVideoSection[];
   hasResolvedTrendSignals?: boolean;
   selectedVideoId?: string;
   trendSignalsByVideoId?: Record<string, VideoTrendSignal>;
@@ -48,10 +52,7 @@ function VideoList({
   section,
   sectionEmptyMessage,
   getRankLabel,
-  featuredSection,
-  featuredSectionEyebrow = 'Realtime Movers',
-  featuredSectionEmptyMessage,
-  getFeaturedRankLabel,
+  featuredSections = [],
   hasResolvedTrendSignals = false,
   selectedVideoId,
   trendSignalsByVideoId,
@@ -72,7 +73,12 @@ function VideoList({
     return <p className="video-list__status">카테고리를 먼저 선택해 주세요.</p>;
   }
 
-  if (section.items.length === 0 && !featuredSection?.items.length) {
+  const hasFeaturedContent = featuredSections.some(
+    ({ section: featuredSection, emptyMessage }) =>
+      featuredSection.items.length > 0 || Boolean(emptyMessage),
+  );
+
+  if (section.items.length === 0 && !hasFeaturedContent) {
     return (
       <p className="video-list__status">
         {sectionEmptyMessage ?? '이 카테고리에는 현재 표시할 영상이 없습니다.'}
@@ -86,11 +92,13 @@ function VideoList({
       eyebrow,
       emptyMessage,
       getRankLabel,
+      sectionKey,
       showLoadMore,
     }: {
       eyebrow: string;
       emptyMessage?: string;
       getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+      sectionKey?: string;
       showLoadMore: boolean;
     },
   ) {
@@ -99,7 +107,7 @@ function VideoList({
     }
 
     return (
-      <section className="video-list__section" aria-label={`${currentSection.label} 영상`}>
+      <section key={sectionKey} className="video-list__section" aria-label={`${currentSection.label} 영상`}>
         <header className="video-list__section-header">
           <div>
             <p className="video-list__section-eyebrow">{eyebrow}</p>
@@ -179,14 +187,15 @@ function VideoList({
 
   return (
     <div className="video-list" aria-label="선택한 카테고리 인기 영상 목록">
-      {featuredSection
-        ? renderSection(featuredSection, {
-            eyebrow: featuredSectionEyebrow,
-            emptyMessage: featuredSectionEmptyMessage,
-            getRankLabel: getFeaturedRankLabel,
-            showLoadMore: false,
-          })
-        : null}
+      {featuredSections.map(({ section: featuredSection, eyebrow, emptyMessage, getRankLabel }) =>
+        renderSection(featuredSection, {
+          eyebrow: eyebrow ?? 'Realtime Movers',
+          emptyMessage,
+          getRankLabel,
+          sectionKey: featuredSection.categoryId,
+          showLoadMore: false,
+        }),
+      )}
       {renderSection(section, {
         eyebrow: 'Category Ranking',
         emptyMessage: sectionEmptyMessage,

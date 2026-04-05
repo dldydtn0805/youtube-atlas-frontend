@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supportsVideoTrendSignals } from '../../constants/videoCategories';
-import { fetchRealtimeSurging, fetchVideoRankHistory, fetchVideoTrendSignals } from './api';
+import {
+  fetchNewChartEntries,
+  fetchRealtimeSurging,
+  fetchVideoRankHistory,
+  fetchVideoTrendSignals,
+} from './api';
 
 export function useVideoTrendSignals(
   regionCode: string | undefined,
@@ -24,6 +29,15 @@ export function useRealtimeSurging(regionCode: string | undefined, enabled = tru
     enabled: enabled && Boolean(regionCode),
     queryKey: ['realtimeSurging', regionCode],
     queryFn: () => fetchRealtimeSurging(regionCode as string),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useNewChartEntries(regionCode: string | undefined, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(regionCode),
+    queryKey: ['newChartEntries', regionCode],
+    queryFn: () => fetchNewChartEntries(regionCode as string),
     staleTime: 1000 * 60 * 5,
   });
 }

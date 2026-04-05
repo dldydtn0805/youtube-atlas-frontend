@@ -4,9 +4,11 @@ import type { PropsWithChildren } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const fetchRealtimeSurging = vi.fn();
+const fetchNewChartEntries = vi.fn();
 const fetchVideoTrendSignals = vi.fn();
 
 vi.mock('./api', () => ({
+  fetchNewChartEntries,
   fetchRealtimeSurging,
   fetchVideoTrendSignals,
 }));
@@ -28,6 +30,7 @@ function createWrapper() {
 
 describe('useVideoTrendSignals', () => {
   afterEach(() => {
+    fetchNewChartEntries.mockReset();
     fetchRealtimeSurging.mockReset();
     fetchVideoTrendSignals.mockReset();
   });
@@ -92,6 +95,23 @@ describe('useVideoTrendSignals', () => {
 
     await waitFor(() => {
       expect(fetchRealtimeSurging).toHaveBeenCalledWith('KR');
+    });
+  });
+
+  it('requests new chart entries feed for the selected region', async () => {
+    fetchNewChartEntries.mockResolvedValue({
+      items: [],
+      regionCode: 'KR',
+    });
+
+    const { useNewChartEntries } = await import('./queries');
+
+    renderHook(() => useNewChartEntries('KR'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(fetchNewChartEntries).toHaveBeenCalledWith('KR');
     });
   });
 });

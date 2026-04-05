@@ -9,6 +9,7 @@ interface UsePlaybackQueueOptions {
   gamePortfolioSection?: YouTubeCategorySection;
   historyPlaybackSection?: YouTubeCategorySection;
   isMobileLayout: boolean;
+  newChartEntriesSection?: YouTubeCategorySection;
   playerSectionRef: RefObject<HTMLElement | null>;
   playerViewportRef: RefObject<HTMLDivElement | null>;
   realtimeSurgingSection?: YouTubeCategorySection;
@@ -24,6 +25,7 @@ function usePlaybackQueue({
   gamePortfolioSection,
   historyPlaybackSection,
   isMobileLayout,
+  newChartEntriesSection,
   playerSectionRef,
   playerViewportRef,
   realtimeSurgingSection,
@@ -48,6 +50,7 @@ function usePlaybackQueue({
     favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,
     selectedSection: matchedSelectedSection,
@@ -120,6 +123,7 @@ function usePlaybackQueue({
       favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
       gamePortfolioSection,
       historyPlaybackSection,
+      newChartEntriesSection,
       realtimeSurgingSection,
       restoredPlaybackVideo,
       selectedSection: matchedSelectedSection,
@@ -161,6 +165,7 @@ function usePlaybackQueue({
       favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
       gamePortfolioSection,
       historyPlaybackSection,
+      newChartEntriesSection,
       realtimeSurgingSection,
       restoredPlaybackVideo,
       selectedSection: matchedSelectedSection,
@@ -171,6 +176,7 @@ function usePlaybackQueue({
         historyPlaybackSection?.categoryId ??
         gamePortfolioSection?.categoryId ??
         autoPlayableFavoriteStreamerSection?.categoryId ??
+        newChartEntriesSection?.categoryId ??
         realtimeSurgingSection?.categoryId;
     const fallbackItems =
       queueItems.length > 0
@@ -179,6 +185,7 @@ function usePlaybackQueue({
             favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
             gamePortfolioSection,
             historyPlaybackSection,
+            newChartEntriesSection,
             realtimeSurgingSection,
             restoredPlaybackVideo,
             selectedSection: matchedSelectedSection,
@@ -212,6 +219,7 @@ function usePlaybackQueue({
     autoPlayableFavoriteStreamerSection,
     gamePortfolioSection,
     historyPlaybackSection,
+    newChartEntriesSection,
     matchedSelectedSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,

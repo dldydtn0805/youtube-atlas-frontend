@@ -205,3 +205,40 @@ describe('fetchRealtimeSurging', () => {
     expect(response.totalCount).toBe(1);
   });
 });
+
+describe('fetchNewChartEntries', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com');
+  });
+
+  afterEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('requests the new chart entries feed from the backend', async () => {
+    const { fetchNewChartEntries } = await import('../trending/api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        regionCode: 'KR',
+        categoryId: '0',
+        categoryLabel: '전체',
+        totalCount: 2,
+        capturedAt: '2026-04-01T05:30:00Z',
+        items: [],
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await fetchNewChartEntries('KR');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/trending/new-entries?regionCode=KR',
+      undefined,
+    );
+    expect(response.totalCount).toBe(2);
+  });
+});
