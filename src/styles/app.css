@@ -2727,6 +2727,14 @@
     width: 100%;
   }
 
+  .app-shell__game-position-hold {
+    order: 1;
+  }
+
+  .app-shell__game-position-sell {
+    order: 2;
+  }
+
   .app-shell__game-history-item {
     gap: 12px;
     grid-template-columns: 1fr;
