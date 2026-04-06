@@ -4,6 +4,7 @@ import {
   buildNewChartEntriesSection,
   buildRealtimeSurgingSection,
   filterVideoSection,
+  formatSignedProfitRate,
   formatSelectedVideoRankLabel,
   NEW_CHART_ENTRIES_QUEUE_ID,
   REALTIME_SURGING_QUEUE_ID,
@@ -230,5 +231,17 @@ describe('home utils', () => {
     expect(formatSelectedVideoRankLabel('대한민국', 137)).toBe('137위');
     expect(formatSelectedVideoRankLabel('대한민국', 137, { chartOut: true })).toBe('차트 아웃');
     expect(formatSelectedVideoRankLabel('대한민국', null)).toBeUndefined();
+  });
+
+  it('formats position profit as a signed percentage', () => {
+    expect(formatSignedProfitRate(250, 1000)).toBe('+25%');
+    expect(formatSignedProfitRate(-125, 1000)).toBe('-12.5%');
+    expect(formatSignedProfitRate(0, 1000)).toBe('0%');
+  });
+
+  it('returns pending text when a profit rate cannot be calculated', () => {
+    expect(formatSignedProfitRate(null, 1000)).toBe('집계 중');
+    expect(formatSignedProfitRate(100, null)).toBe('집계 중');
+    expect(formatSignedProfitRate(100, 0)).toBe('집계 중');
   });
 });

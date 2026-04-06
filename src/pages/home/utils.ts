@@ -20,6 +20,9 @@ export const RESTORED_PLAYBACK_QUEUE_ID = 'last-playback-progress';
 const STORAGE_KEY = 'youtube-atlas-region-code';
 const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
 const THEME_MODE_STORAGE_KEY = 'youtube-atlas-theme-mode';
+const profitRateFormatter = new Intl.NumberFormat('ko-KR', {
+  maximumFractionDigits: 1,
+});
 
 export const FAVORITE_STREAMER_VIDEO_SECTION: YouTubeCategorySection = {
   categoryId: 'favorite-streamers',
@@ -471,6 +474,30 @@ export function formatSelectedVideoRankLabel(
   }
 
   return `${rank}위`;
+}
+
+export function formatSignedProfitRate(profitPoints?: number | null, stakePoints?: number | null) {
+  if (
+    typeof profitPoints !== 'number' ||
+    typeof stakePoints !== 'number' ||
+    !Number.isFinite(profitPoints) ||
+    !Number.isFinite(stakePoints) ||
+    stakePoints <= 0
+  ) {
+    return '집계 중';
+  }
+
+  const roundedProfitRate = Math.round((profitPoints / stakePoints) * 1000) / 10;
+
+  if (roundedProfitRate > 0) {
+    return `+${profitRateFormatter.format(roundedProfitRate)}%`;
+  }
+
+  if (roundedProfitRate < 0) {
+    return `-${profitRateFormatter.format(Math.abs(roundedProfitRate))}%`;
+  }
+
+  return '0%';
 }
 
 export function persistRegionCode(regionCode: RegionCode) {

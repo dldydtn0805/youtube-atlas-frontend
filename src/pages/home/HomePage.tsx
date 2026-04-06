@@ -20,6 +20,7 @@ import {
   RESTORED_PLAYBACK_QUEUE_ID,
   findPlaybackQueueIdForVideo,
   filterVideoSection,
+  formatSignedProfitRate,
   formatSelectedVideoRankLabel,
   formatVideoViewCount,
   getVideoThumbnailUrl,
@@ -1028,7 +1029,7 @@ function HomePage() {
         setGameActionStatus(
           `${position.title} 포지션을 ${formatRank(result.sellRank)} / ${formatPoints(
             result.sellPricePoints,
-          )} / ${formatSignedPoints(result.pnlPoints)} 기준으로 정리했어요.`,
+          )} / 손익률 ${formatSignedProfitRate(result.pnlPoints, result.stakePoints)} 기준으로 정리했어요.`,
         );
       } catch (error) {
         if (
@@ -1240,7 +1241,11 @@ function HomePage() {
         className="app-shell__game-price-chip"
         data-tone={getPointTone(selectedVideoOpenPosition.profitPoints)}
       >
-        손익 {formatSignedPoints(selectedVideoOpenPosition.profitPoints)}
+        손익률{' '}
+        {formatSignedProfitRate(
+          selectedVideoOpenPosition.profitPoints,
+          selectedVideoOpenPosition.stakePoints,
+        )}
       </span>
     </div>
   ) : selectedVideoMarketEntry ? (
@@ -1392,9 +1397,9 @@ function HomePage() {
                                 {formatMaybePoints(position.currentPricePoints)}
                               </p>
                               <p className="app-shell__game-leaderboard-position-meta">
-                                매수 금액 {formatPoints(position.stakePoints)} · 손익{' '}
+                                매수 금액 {formatPoints(position.stakePoints)} · 손익률{' '}
                                 <span data-tone={getPointTone(position.profitPoints)}>
-                                  {formatSignedPoints(position.profitPoints)}
+                                  {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
                                 </span>
                               </p>
                             </div>
@@ -1500,9 +1505,9 @@ function HomePage() {
                               {formatMaybePoints(position.currentPricePoints)}
                             </p>
                             <p className="app-shell__game-leaderboard-position-meta">
-                              매수 금액 {formatPoints(position.stakePoints)} · 손익{' '}
+                              매수 금액 {formatPoints(position.stakePoints)} · 손익률{' '}
                               <span data-tone={getPointTone(position.profitPoints)}>
-                                {formatSignedPoints(position.profitPoints)}
+                                {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
                               </span>
                             </p>
                           </div>
@@ -1558,9 +1563,9 @@ function HomePage() {
                     </span>
                   </p>
                   <p className="app-shell__game-position-meta">
-                    평가 금액 {formatMaybePoints(position.currentPricePoints)} · 손익{' '}
+                    평가 금액 {formatMaybePoints(position.currentPricePoints)} · 손익률{' '}
                     <span data-tone={getPointTone(position.profitPoints)}>
-                      {formatSignedPoints(position.profitPoints)}
+                      {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
                     </span>
                   </p>
                 </div>
@@ -1682,9 +1687,9 @@ function HomePage() {
                     · {position.status === 'OPEN' ? '평가 금액' : '정산 금액'} {formatMaybePoints(position.currentPricePoints)}
                   </p>
                   <p className="app-shell__game-history-meta">
-                    손익{' '}
+                    손익률{' '}
                     <span data-tone={getPointTone(position.profitPoints)}>
-                      {formatSignedPoints(position.profitPoints)}
+                      {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
                     </span>
                   </p>
                 </div>
