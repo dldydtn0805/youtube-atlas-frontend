@@ -52,6 +52,8 @@ export default function GameTradeModal({
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
   const modalTitleId = `game-trade-modal-title-${mode}`;
   const normalizedQuantity = Math.max(1, Math.floor(quantity));
+  const previousQuantity = normalizedQuantity <= 1 ? maxQuantity : normalizedQuantity - 1;
+  const nextQuantity = normalizedQuantity >= maxQuantity ? 1 : normalizedQuantity + 1;
   const quickActions =
     maxQuantity > 0
       ? [
@@ -117,8 +119,8 @@ export default function GameTradeModal({
                 <div className="app-shell__game-panel-quantity">
                   <button
                     className="app-shell__game-panel-quantity-button"
-                    disabled={isSubmitting || (mode === 'sell' ? normalizedQuantity <= 1 : maxQuantity <= 0)}
-                    onClick={() => onChangeQuantity(mode === 'buy' ? normalizedQuantity - 1 : normalizedQuantity - 1)}
+                    disabled={isSubmitting || maxQuantity <= 0}
+                    onClick={() => onChangeQuantity(previousQuantity)}
                     type="button"
                   >
                     -
@@ -138,8 +140,8 @@ export default function GameTradeModal({
                   />
                   <button
                     className="app-shell__game-panel-quantity-button"
-                    disabled={isSubmitting || maxQuantity <= 0 || normalizedQuantity >= maxQuantity}
-                    onClick={() => onChangeQuantity(normalizedQuantity + 1)}
+                    disabled={isSubmitting || maxQuantity <= 0}
+                    onClick={() => onChangeQuantity(nextQuantity)}
                     type="button"
                   >
                     +

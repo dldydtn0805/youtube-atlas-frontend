@@ -1893,6 +1893,29 @@
   border-color: rgba(148, 163, 184, 0.16);
 }
 
+:root[data-theme='dark'] .app-shell__game-trade-modal-summary-item {
+  background:
+    linear-gradient(180deg, rgba(18, 31, 52, 0.96), rgba(10, 18, 32, 0.88)),
+    rgba(10, 18, 32, 0.9);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+:root[data-theme='dark'] .app-shell__game-trade-modal-summary-label {
+  color: rgba(191, 219, 254, 0.76);
+}
+
+:root[data-theme='dark'] .app-shell__game-trade-modal-summary-value {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .app-shell__game-trade-modal-summary-value[data-tone='gain'] {
+  color: #fca5a5;
+}
+
+:root[data-theme='dark'] .app-shell__game-trade-modal-summary-value[data-tone='loss'] {
+  color: #93c5fd;
+}
+
 :root[data-theme='dark'] .app-shell__game-panel-actions {
   background:
     linear-gradient(180deg, rgba(12, 22, 38, 0.94), rgba(10, 18, 32, 0.9)),
