@@ -6,10 +6,14 @@ import type { VideoTrendSignal } from '../../../features/trending/types';
 import type { YouTubeVideoItem } from '../../../features/youtube/types';
 import {
   buildSellCandidates,
+  calculateGameOrderPoints,
+  DEFAULT_GAME_QUANTITY,
+  formatGameQuantity,
   formatHoldCountdown,
   getBuyRemainingPointsText,
   getBuyShortfallPointsText,
   getGamePositionQuantity,
+  normalizeGameQuantity,
   SELL_FEE_RATE_LABEL,
   summarizeGamePositions,
   summarizeSellCandidates,
@@ -210,13 +214,15 @@ export default function useSelectedVideoGameState({
       ? Math.max(
           0,
           selectedVideoAlreadyOwned || remainingOpenPositionSlots > 0
-            ? Math.floor(currentGameSeason.wallet.balancePoints / selectedVideoUnitPricePoints)
+            ? Math.floor((currentGameSeason.wallet.balancePoints * DEFAULT_GAME_QUANTITY) / selectedVideoUnitPricePoints)
             : 0,
         )
       : 0;
-  const normalizedBuyQuantity = Math.max(1, Math.floor(buyQuantity));
+  const normalizedBuyQuantity = normalizeGameQuantity(buyQuantity);
   const totalSelectedVideoBuyPoints =
-    typeof selectedVideoUnitPricePoints === 'number' ? selectedVideoUnitPricePoints * normalizedBuyQuantity : null;
+    typeof selectedVideoUnitPricePoints === 'number'
+      ? calculateGameOrderPoints(selectedVideoUnitPricePoints, normalizedBuyQuantity)
+      : null;
   const selectedVideoCurrentChartRank =
     selectedVideoMarketEntry?.currentRank ??
     selectedVideoTrendSignal?.currentRank ??
@@ -267,7 +273,7 @@ export default function useSelectedVideoGameState({
     (count, position) => count + getGamePositionQuantity(position),
     0,
   );
-  const normalizedSellQuantity = Math.max(1, Math.floor(sellQuantity));
+  const normalizedSellQuantity = normalizeGameQuantity(sellQuantity);
   const selectedVideoSellSummary = useMemo(
     () => summarizeSellCandidates(buildSellCandidates(sellableSelectedVideoOpenPositions, normalizedSellQuantity)),
     [normalizedSellQuantity, sellableSelectedVideoOpenPositions],
@@ -283,20 +289,22 @@ export default function useSelectedVideoGameState({
   const sellModalHelperText =
     maxSellQuantity > 0
       ? selectedOpenHoldingLockedQuantity > 0 && selectedOpenHoldingNextSellableInSeconds !== null
-        ? `지금 ${maxSellQuantity}개 매도 가능하고, 나머지 ${selectedOpenHoldingLockedQuantity}개는 ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 가능합니다.`
-        : `지금 매도 가능한 포지션은 ${maxSellQuantity}개이며 오래된 순서부터 정리됩니다.`
+        ? `지금 ${formatGameQuantity(maxSellQuantity)} 매도 가능하고, 나머지 ${formatGameQuantity(selectedOpenHoldingLockedQuantity)}는 ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 가능합니다.`
+        : `지금 매도 가능한 수량은 ${formatGameQuantity(maxSellQuantity)}이며 오래된 순서부터 정리됩니다.`
       : selectedOpenHoldingNextSellableInSeconds !== null
         ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
         : '지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.';
+  const defaultPreviewBuyQuantity =
+    maxBuyQuantity > 0 ? Math.min(DEFAULT_GAME_QUANTITY, maxBuyQuantity) : DEFAULT_GAME_QUANTITY;
   const buyRemainingPointsText = getBuyRemainingPointsText(
     currentGameSeason,
     selectedVideoMarketEntry,
-    1,
+    defaultPreviewBuyQuantity,
   );
   const buyShortfallPointsText = getBuyShortfallPointsText(
     currentGameSeason,
     selectedVideoMarketEntry,
-    1,
+    defaultPreviewBuyQuantity,
   );
   const buyModalRemainingPointsText = getBuyRemainingPointsText(
     currentGameSeason,
@@ -324,8 +332,8 @@ export default function useSelectedVideoGameState({
         ? '로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다.'
         : selectedVideoOpenPositionCount > 0
           ? selectedVideoMarketEntry?.canBuy
-            ? `현재 이 영상을 ${selectedVideoOpenPositionCount}개 포지션으로 보유 중이며, 보유 포인트가 허용하는 만큼 계속 추가 매수할 수 있습니다.`
-            : `현재 이 영상을 ${selectedVideoOpenPositionCount}개 포지션으로 보유 중입니다.`
+            ? `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중이며, 보유 포인트가 허용하는 만큼 계속 추가 매수할 수 있습니다.`
+            : `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중입니다.`
           : selectedVideoMarketEntry
             ? selectedVideoMarketEntry.canBuy
               ? buyRemainingPointsText ?? '지금 바로 매수할 수 있습니다.'
@@ -381,7 +389,7 @@ export default function useSelectedVideoGameState({
     !canShowGameActions
       ? '전체 카테고리에서만 매도할 수 있습니다.'
       : maxSellQuantity > 0
-        ? `${maxSellQuantity}개까지 수량을 선택해 매도할 수 있습니다.`
+        ? `${formatGameQuantity(maxSellQuantity)}까지 수량을 선택해 매도할 수 있습니다.`
         : sellModalHelperText;
   const selectedVideoTradeThumbnailUrl =
     selectedVideoMarketEntry?.thumbnailUrl ??

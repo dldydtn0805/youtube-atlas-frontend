@@ -3,6 +3,7 @@ import type { GameCurrentSeason, GameLeaderboardEntry, GamePosition } from '../.
 import type { VideoTrendSignal } from '../../../features/trending/types';
 import { getPrimaryVideoTrendBadge } from '../../../features/trending/presentation';
 import {
+  formatGameQuantity,
   formatGameTimestamp,
   formatHoldCountdown,
   formatMaybePoints,
@@ -544,7 +545,7 @@ export function RankingGamePositionsTab({
               <div className="app-shell__game-position-copy">
                 <p className="app-shell__game-position-title">{holding.title}</p>
                 <p className="app-shell__game-position-meta">
-                  보유 수량 {holding.quantity}개 · 현재 순위{' '}
+                  보유 수량 {formatGameQuantity(holding.quantity)} · 현재 순위{' '}
                   <span className="app-shell__game-rank-emphasis">
                     {formatRank(holding.currentRank, {
                       chartOut: holding.chartOut,
@@ -574,8 +575,8 @@ export function RankingGamePositionsTab({
                 {canShowGameActions
                   ? holding.sellableQuantity > 0
                     ? holding.lockedQuantity > 0 && holding.nextSellableInSeconds !== null
-                      ? `지금 ${holding.sellableQuantity}개 매도 가능 · ${holding.lockedQuantity}개는 ${formatHoldCountdown(holding.nextSellableInSeconds)} 후`
-                      : `지금 ${holding.sellableQuantity}개 매도 가능`
+                      ? `지금 ${formatGameQuantity(holding.sellableQuantity)} 매도 가능 · ${formatGameQuantity(holding.lockedQuantity)}는 ${formatHoldCountdown(holding.nextSellableInSeconds)} 후`
+                      : `지금 ${formatGameQuantity(holding.sellableQuantity)} 매도 가능`
                     : holding.nextSellableInSeconds !== null
                       ? `${formatHoldCountdown(holding.nextSellableInSeconds)} 후 매도 가능`
                       : '아직 매도 가능 수량 없음'

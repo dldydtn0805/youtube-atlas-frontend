@@ -15,10 +15,14 @@ import {
 } from './sections/RankingGamePanel';
 import {
   buildOpenGameHoldings,
+  DEFAULT_GAME_QUANTITY,
+  formatGameQuantity,
   formatPoints,
   formatRank,
   getBuyShortfallPointsText,
   getPointTone,
+  MIN_GAME_QUANTITY,
+  normalizeGameQuantity,
   SELL_FEE_RATE_LABEL,
   summarizeGamePositions,
 } from './gameHelpers';
@@ -122,8 +126,8 @@ function HomePage() {
   const [selectedVideoRankHistoryVideoId, setSelectedVideoRankHistoryVideoId] = useState<string | null>(null);
   const [activeTradeModal, setActiveTradeModal] = useState<'buy' | 'sell' | null>(null);
   const [activeTradeRequest, setActiveTradeRequest] = useState<'buy' | 'sell' | null>(null);
-  const [buyQuantity, setBuyQuantity] = useState(1);
-  const [sellQuantity, setSellQuantity] = useState(1);
+  const [buyQuantity, setBuyQuantity] = useState(DEFAULT_GAME_QUANTITY);
+  const [sellQuantity, setSellQuantity] = useState(DEFAULT_GAME_QUANTITY);
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
@@ -593,20 +597,20 @@ function HomePage() {
   useEffect(() => {
     setBuyQuantity((currentQuantity) => {
       if (maxBuyQuantity <= 0) {
-        return 1;
+        return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(Math.max(1, Math.floor(currentQuantity)), maxBuyQuantity);
+      return Math.min(normalizeGameQuantity(currentQuantity), maxBuyQuantity);
     });
   }, [maxBuyQuantity]);
 
   useEffect(() => {
     setSellQuantity((currentQuantity) => {
       if (maxSellQuantity <= 0) {
-        return 1;
+        return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(Math.max(1, Math.floor(currentQuantity)), maxSellQuantity);
+      return Math.min(normalizeGameQuantity(currentQuantity), maxSellQuantity);
     });
   }, [maxSellQuantity]);
 
@@ -638,7 +642,7 @@ function HomePage() {
       return;
     }
 
-    const clampedBuyQuantity = Math.max(1, Math.floor(buyQuantity));
+    const clampedBuyQuantity = normalizeGameQuantity(buyQuantity);
     const buyShortfallMessage = getBuyShortfallPointsText(
       currentGameSeason,
       selectedVideoMarketEntry,
@@ -655,7 +659,7 @@ function HomePage() {
     if (maxBuyQuantity <= 0 || clampedBuyQuantity > maxBuyQuantity) {
       setGameActionStatus(
         maxBuyQuantity > 0
-          ? `지금은 최대 ${maxBuyQuantity}개까지 한 번에 매수할 수 있습니다.`
+          ? `지금은 최대 ${formatGameQuantity(maxBuyQuantity)}까지 한 번에 매수할 수 있습니다.`
           : buyShortfallMessage ?? '지금은 매수할 수 없습니다.',
       );
       return;
@@ -664,7 +668,7 @@ function HomePage() {
     try {
       tradeRequestLockRef.current = 'buy';
       setActiveTradeRequest('buy');
-      const boughtPositions = await buyGamePositionMutation.mutateAsync({
+      await buyGamePositionMutation.mutateAsync({
         categoryId: '0',
         regionCode: currentGameSeason.regionCode,
         stakePoints: selectedVideoMarketEntry.currentPricePoints,
@@ -672,11 +676,11 @@ function HomePage() {
         videoId: selectedVideoId,
       });
       setActiveTradeModal(null);
-      setBuyQuantity(1);
+      setBuyQuantity(DEFAULT_GAME_QUANTITY);
       setGameActionStatus(
-        `${formatPoints(selectedVideoMarketEntry.currentPricePoints * boughtPositions.length)}로 ${
+        `${formatPoints(totalSelectedVideoBuyPoints ?? selectedVideoMarketEntry.currentPricePoints)}로 ${
           selectedVideoMarketEntry.currentRank
-        }위 영상을 ${boughtPositions.length}개 매수했어요.`,
+        }위 영상을 ${formatGameQuantity(clampedBuyQuantity)} 매수했어요.`,
       );
     } catch (error) {
       if (
@@ -705,6 +709,7 @@ function HomePage() {
     maxBuyQuantity,
     selectedVideoId,
     selectedVideoMarketEntry,
+    totalSelectedVideoBuyPoints,
   ]);
   const handleSellCurrentVideo = useCallback(async () => {
     if (tradeRequestLockRef.current) {
@@ -716,12 +721,12 @@ function HomePage() {
       return;
     }
 
-    const clampedSellQuantity = Math.max(1, Math.floor(sellQuantity));
+    const clampedSellQuantity = normalizeGameQuantity(sellQuantity);
 
     if (maxSellQuantity <= 0 || clampedSellQuantity > maxSellQuantity) {
       setGameActionStatus(
         maxSellQuantity > 0
-          ? `지금은 최대 ${maxSellQuantity}개까지 매도할 수 있습니다.`
+          ? `지금은 최대 ${formatGameQuantity(maxSellQuantity)}까지 매도할 수 있습니다.`
           : '지금 바로 매도 가능한 포지션이 없습니다.',
       );
       return;
@@ -750,12 +755,16 @@ function HomePage() {
         (sum, response) => sum + response.stakePoints,
         0,
       );
+      const totalSoldQuantity = soldPositions.reduce(
+        (sum, response) => sum + response.quantity,
+        0,
+      );
       const totalFeePoints = totalSellPricePoints - totalSettledPoints;
 
       setActiveTradeModal(null);
-      setSellQuantity(1);
+      setSellQuantity(DEFAULT_GAME_QUANTITY);
       setGameActionStatus(
-        `${selectedGameActionTitle} 포지션 ${soldPositions.length}개를 정산 ${formatPoints(totalSettledPoints)} / 수수료 ${formatPoints(totalFeePoints)} / 손익률 ${formatSignedProfitRate(
+        `${selectedGameActionTitle} 포지션 ${formatGameQuantity(totalSoldQuantity)}를 정산 ${formatPoints(totalSettledPoints)} / 수수료 ${formatPoints(totalFeePoints)} / 손익률 ${formatSignedProfitRate(
           totalPnlPoints,
           totalStakePoints,
         )} 기준으로 정리했어요.`,
@@ -789,10 +798,10 @@ function HomePage() {
   const openBuyTradeModal = useCallback(() => {
     setBuyQuantity((currentQuantity) => {
       if (maxBuyQuantity <= 0) {
-        return 1;
+        return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(Math.max(1, Math.floor(currentQuantity)), maxBuyQuantity);
+      return Math.min(normalizeGameQuantity(currentQuantity), maxBuyQuantity);
     });
     setActiveTradeModal('buy');
   }, [maxBuyQuantity]);
@@ -800,10 +809,10 @@ function HomePage() {
   const openSellTradeModal = useCallback(() => {
     setSellQuantity((currentQuantity) => {
       if (maxSellQuantity <= 0) {
-        return 1;
+        return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(Math.max(1, Math.floor(currentQuantity)), maxSellQuantity);
+      return Math.min(normalizeGameQuantity(currentQuantity), maxSellQuantity);
     });
     setActiveTradeModal('sell');
   }, [maxSellQuantity]);
@@ -921,7 +930,7 @@ function HomePage() {
             ))}
           </span>
         ) : null}{' '}
-        · 보유 {selectedVideoOpenPositionSummary.quantity}개 · 손익률{' '}
+        · 보유 {formatGameQuantity(selectedVideoOpenPositionSummary.quantity)} · 손익률{' '}
         <span data-tone={getPointTone(selectedVideoOpenPositionSummary.profitPoints)}>
           {formatSignedProfitRate(
             selectedVideoOpenPositionSummary.profitPoints,
@@ -1389,7 +1398,7 @@ function HomePage() {
         }
       />
       <GameTradeModal
-        confirmLabel={`${normalizedBuyQuantity}개 매수`}
+        confirmLabel={`${formatGameQuantity(normalizedBuyQuantity)} 매수`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         helperText={buyModalHelperText}
         isOpen={activeTradeModal === 'buy' && Boolean(selectedVideoId) && Boolean(selectedVideoMarketEntry)}
@@ -1402,14 +1411,18 @@ function HomePage() {
             return;
           }
 
-          setBuyQuantity(maxBuyQuantity > 0 ? Math.min(Math.max(1, quantity), maxBuyQuantity) : Math.max(1, quantity));
+          setBuyQuantity(
+            maxBuyQuantity > 0
+              ? Math.min(Math.max(MIN_GAME_QUANTITY, quantity), maxBuyQuantity)
+              : Math.max(MIN_GAME_QUANTITY, quantity),
+          );
         }}
         onClose={() => setActiveTradeModal(null)}
         onConfirm={() => void handleBuyCurrentVideo()}
         quantity={normalizedBuyQuantity}
         summaryItems={[
-          { label: '수량', value: `${normalizedBuyQuantity}개` },
-          { label: '개당 가격', value: formatPoints(selectedVideoUnitPricePoints ?? 0) },
+          { label: '수량', value: formatGameQuantity(normalizedBuyQuantity) },
+          { label: '1개당 가격', value: formatPoints(selectedVideoUnitPricePoints ?? 0) },
           { label: '총 매수', value: formatPoints(totalSelectedVideoBuyPoints ?? (selectedVideoUnitPricePoints ?? 0)) },
         ]}
         summaryNote={undefined}
@@ -1418,7 +1431,7 @@ function HomePage() {
         unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? 0)}
       />
       <GameTradeModal
-        confirmLabel={`${normalizedSellQuantity}개 매도`}
+        confirmLabel={`${formatGameQuantity(normalizedSellQuantity)} 매도`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         helperText={sellModalHelperText}
         isOpen={activeTradeModal === 'sell' && Boolean(selectedVideoId) && selectedVideoOpenPositionCount > 0}
@@ -1431,13 +1444,17 @@ function HomePage() {
             return;
           }
 
-          setSellQuantity(maxSellQuantity > 0 ? Math.min(Math.max(1, quantity), maxSellQuantity) : Math.max(1, quantity));
+          setSellQuantity(
+            maxSellQuantity > 0
+              ? Math.min(Math.max(MIN_GAME_QUANTITY, quantity), maxSellQuantity)
+              : Math.max(MIN_GAME_QUANTITY, quantity),
+          );
         }}
         onClose={() => setActiveTradeModal(null)}
         onConfirm={() => void handleSellCurrentVideo()}
         quantity={normalizedSellQuantity}
         summaryItems={[
-          { label: '수량', value: `${normalizedSellQuantity}개` },
+          { label: '수량', value: formatGameQuantity(normalizedSellQuantity) },
           { label: '예상 정산', value: formatPoints(selectedVideoSellSummary.settledPoints) },
           { label: '매도 금액', value: formatPoints(selectedVideoSellSummary.grossSellPoints) },
           { label: '수수료', value: formatPoints(selectedVideoSellSummary.feePoints) },

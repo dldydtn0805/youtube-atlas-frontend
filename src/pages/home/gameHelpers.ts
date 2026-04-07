@@ -2,6 +2,9 @@ import type { GameCurrentSeason, GameMarketVideo, GamePosition } from '../../fea
 import { calculateSellFeePoints, calculateSettledSellPoints } from './utils';
 
 const pointsFormatter = new Intl.NumberFormat('ko-KR');
+const quantityFormatter = new Intl.NumberFormat('ko-KR', {
+  maximumFractionDigits: 2,
+});
 const seasonDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   day: 'numeric',
   hour: '2-digit',
@@ -10,6 +13,9 @@ const seasonDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
 });
 
 export const SELL_FEE_RATE_LABEL = '0.3%';
+export const GAME_QUANTITY_SCALE = 100;
+export const MIN_GAME_QUANTITY = 1;
+export const DEFAULT_GAME_QUANTITY = GAME_QUANTITY_SCALE;
 
 export interface OpenGameHolding {
   videoId: string;
@@ -112,6 +118,40 @@ export function formatPointBalance(points: number) {
   return `${pointsFormatter.format(points)} 포인트`;
 }
 
+export function normalizeGameQuantity(quantity?: number | null, fallback = DEFAULT_GAME_QUANTITY) {
+  const normalizedFallback =
+    Number.isFinite(fallback) && fallback >= MIN_GAME_QUANTITY
+      ? Math.floor(fallback)
+      : DEFAULT_GAME_QUANTITY;
+
+  if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < MIN_GAME_QUANTITY) {
+    return normalizedFallback;
+  }
+
+  return Math.floor(quantity);
+}
+
+export function toDisplayGameQuantity(quantity?: number | null) {
+  return normalizeGameQuantity(quantity) / GAME_QUANTITY_SCALE;
+}
+
+export function formatGameQuantity(quantity?: number | null) {
+  return `${quantityFormatter.format(toDisplayGameQuantity(quantity))}개`;
+}
+
+export function parseGameQuantityInput(quantity: number, fallback = DEFAULT_GAME_QUANTITY) {
+  if (!Number.isFinite(quantity)) {
+    return normalizeGameQuantity(undefined, fallback);
+  }
+
+  return Math.max(MIN_GAME_QUANTITY, Math.round(quantity * GAME_QUANTITY_SCALE));
+}
+
+export function calculateGameOrderPoints(unitPricePoints: number, quantity: number) {
+  const normalizedQuantity = normalizeGameQuantity(quantity);
+  return Math.floor((unitPricePoints * normalizedQuantity + GAME_QUANTITY_SCALE / 2) / GAME_QUANTITY_SCALE);
+}
+
 export function formatMaybePoints(points?: number | null) {
   return typeof points === 'number' ? formatPoints(points) : '집계 중';
 }
@@ -147,21 +187,22 @@ export function formatGameTimestamp(timestamp?: string | null) {
 export function getBuyBalanceDeltaPoints(
   currentGameSeason?: GameCurrentSeason,
   selectedVideoMarketEntry?: GameMarketVideo,
-  quantity = 1,
+  quantity = DEFAULT_GAME_QUANTITY,
 ) {
   if (!currentGameSeason || !selectedVideoMarketEntry) {
     return null;
   }
 
-  const normalizedQuantity = Math.max(1, Math.floor(quantity));
-
-  return currentGameSeason.wallet.balancePoints - selectedVideoMarketEntry.currentPricePoints * normalizedQuantity;
+  return (
+    currentGameSeason.wallet.balancePoints -
+    calculateGameOrderPoints(selectedVideoMarketEntry.currentPricePoints, quantity)
+  );
 }
 
 export function getBuyRemainingPointsText(
   currentGameSeason?: GameCurrentSeason,
   selectedVideoMarketEntry?: GameMarketVideo,
-  quantity = 1,
+  quantity = DEFAULT_GAME_QUANTITY,
 ) {
   const buyBalanceDeltaPoints = getBuyBalanceDeltaPoints(currentGameSeason, selectedVideoMarketEntry, quantity);
 
@@ -173,7 +214,7 @@ export function getBuyRemainingPointsText(
 export function getBuyShortfallPointsText(
   currentGameSeason?: GameCurrentSeason,
   selectedVideoMarketEntry?: GameMarketVideo,
-  quantity = 1,
+  quantity = DEFAULT_GAME_QUANTITY,
 ) {
   const buyBalanceDeltaPoints = getBuyBalanceDeltaPoints(currentGameSeason, selectedVideoMarketEntry, quantity);
 
@@ -183,7 +224,7 @@ export function getBuyShortfallPointsText(
 }
 
 export function getGamePositionQuantity(position: Pick<GamePosition, 'quantity'>) {
-  return Number.isFinite(position.quantity) && position.quantity > 0 ? Math.floor(position.quantity) : 1;
+  return normalizeGameQuantity(position.quantity);
 }
 
 export function summarizeGamePositions(positions: GamePosition[]): GamePositionSummary {

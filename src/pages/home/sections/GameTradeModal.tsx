@@ -1,4 +1,11 @@
 import { createPortal } from 'react-dom';
+import {
+  DEFAULT_GAME_QUANTITY,
+  MIN_GAME_QUANTITY,
+  formatGameQuantity,
+  parseGameQuantityInput,
+  toDisplayGameQuantity,
+} from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
 
 interface GameTradeModalSummaryItem {
@@ -51,14 +58,15 @@ export default function GameTradeModal({
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
   const modalTitleId = `game-trade-modal-title-${mode}`;
-  const normalizedQuantity = Math.max(1, Math.floor(quantity));
-  const previousQuantity = normalizedQuantity <= 1 ? maxQuantity : normalizedQuantity - 1;
-  const nextQuantity = normalizedQuantity >= maxQuantity ? 1 : normalizedQuantity + 1;
+  const normalizedQuantity = Math.max(MIN_GAME_QUANTITY, Math.floor(quantity));
+  const previousQuantity = normalizedQuantity <= MIN_GAME_QUANTITY ? maxQuantity : normalizedQuantity - 1;
+  const nextQuantity = normalizedQuantity >= maxQuantity ? MIN_GAME_QUANTITY : normalizedQuantity + 1;
+  const displayQuantity = toDisplayGameQuantity(normalizedQuantity);
   const quickActions =
     maxQuantity > 0
       ? [
-          { label: '25%', quantity: Math.max(1, Math.ceil(maxQuantity * 0.25)) },
-          { label: '50%', quantity: Math.max(1, Math.ceil(maxQuantity * 0.5)) },
+          { label: '25%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.25)) },
+          { label: '50%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.5)) },
           { label: '전량', quantity: maxQuantity },
         ].filter((action, index, actions) => actions.findIndex((candidate) => candidate.quantity === action.quantity) === index)
       : [];
@@ -87,7 +95,7 @@ export default function GameTradeModal({
             <div className="app-shell__game-trade-modal-copy">
               <p className="app-shell__game-trade-modal-title">{title}</p>
               <p className="app-shell__game-trade-modal-meta">
-                현재 {currentRankLabel} · 개당 {unitPointsLabel}
+                현재 {currentRankLabel} · 1개당 {unitPointsLabel}
               </p>
             </div>
           </div>
@@ -128,15 +136,22 @@ export default function GameTradeModal({
                   <input
                     className="app-shell__game-panel-quantity-input"
                     disabled={isSubmitting || maxQuantity <= 0}
-                    inputMode="numeric"
-                    max={maxQuantity > 0 ? maxQuantity : undefined}
-                    min={mode === 'buy' ? 0 : 1}
+                    inputMode="decimal"
+                    max={maxQuantity > 0 ? toDisplayGameQuantity(maxQuantity) : undefined}
+                    min={mode === 'buy' ? 0 : toDisplayGameQuantity(MIN_GAME_QUANTITY)}
                     onChange={(event) => {
-                      const nextValue = Number.parseInt(event.target.value, 10);
-                      onChangeQuantity(Number.isFinite(nextValue) ? nextValue : mode === 'buy' ? 0 : 1);
+                      const nextValue = Number.parseFloat(event.target.value);
+                      onChangeQuantity(
+                        Number.isFinite(nextValue)
+                          ? parseGameQuantityInput(nextValue)
+                          : mode === 'buy'
+                            ? 0
+                            : DEFAULT_GAME_QUANTITY,
+                      );
                     }}
+                    step="0.01"
                     type="number"
-                    value={normalizedQuantity}
+                    value={displayQuantity}
                   />
                   <button
                     className="app-shell__game-panel-quantity-button"
@@ -147,6 +162,7 @@ export default function GameTradeModal({
                     +
                   </button>
                 </div>
+                <p className="app-shell__modal-field-copy">현재 선택: {formatGameQuantity(normalizedQuantity)}</p>
               </div>
             </div>
 
