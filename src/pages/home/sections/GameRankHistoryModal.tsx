@@ -86,6 +86,10 @@ function isPreBuyPoint(
 }
 
 function getEventLabel(point: GamePositionRankHistoryPoint | VideoRankHistory['points'][number]) {
+  if ('buyPoint' in point && point.buyPoint) {
+    return 'B';
+  }
+
   if ('sellPoint' in point && point.sellPoint) {
     return 'S';
   }
@@ -185,7 +189,6 @@ export default function GameRankHistoryModal({
   isOpen,
   onClose,
   position,
-  videoFallback,
 }: GameRankHistoryModalProps) {
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
 
@@ -219,23 +222,11 @@ export default function GameRankHistoryModal({
   const buyPoint = getBuyPoint(points);
   const buyPointMarker = buyPointIndex >= 0 ? chart.markers[buyPointIndex] ?? null : null;
   const preBuyPointCount = buyPointIndex > 0 ? buyPointIndex : 0;
-  const bestRank =
-    rankedPoints.length > 0
-      ? Math.min(...rankedPoints.map((point) => point.rank as number))
-      : gameHistory
-        ? gameHistory.buyRank
-        : history?.latestRank;
   const chartOutCount = points.filter((point) => point.chartOut).length;
   const recentPoints = points
     .map((point, index) => ({ index, point }))
     .slice(-6)
     .reverse();
-  const title = history?.title ?? videoFallback?.title ?? position?.title ?? '랭킹 기록';
-  const channelTitle = history?.channelTitle ?? videoFallback?.channelTitle ?? position?.channelTitle ?? '';
-  const thumbnailUrl = history?.thumbnailUrl ?? videoFallback?.thumbnailUrl ?? position?.thumbnailUrl ?? '';
-  const latestRankLabel = history
-    ? formatRank(history.latestRank, history.latestChartOut)
-    : formatRank(videoFallback?.currentRank ?? position?.currentRank, videoFallback?.chartOut ?? position?.chartOut);
   const buyCapturedAtLabel = hasBuyRank
     ? formatTimestamp(buyPoint?.capturedAt ?? gameHistory?.buyCapturedAt ?? position?.buyCapturedAt ?? position?.createdAt)
     : null;
@@ -410,43 +401,6 @@ export default function GameRankHistoryModal({
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="app-shell__game-history-modal-head">
-            {thumbnailUrl ? (
-              <img
-                alt=""
-                className="app-shell__game-history-modal-thumb"
-                loading="lazy"
-                src={thumbnailUrl}
-              />
-            ) : null}
-            <div className="app-shell__game-history-modal-copy">
-              <p className="app-shell__game-history-modal-title">{title}</p>
-              <p className="app-shell__game-history-modal-channel">{channelTitle}</p>
-              <div className="app-shell__filter-pill-group">
-                {hasBuyRank ? (
-                  <span className="app-shell__filter-pill">
-                    <strong>매수</strong>
-                    <span>{formatRank(gameHistory?.buyRank ?? position?.buyRank)}</span>
-                  </span>
-                ) : null}
-                {buyCapturedAtLabel ? (
-                  <span className="app-shell__filter-pill">
-                    <strong>매수 시점</strong>
-                    <span>{buyCapturedAtLabel}</span>
-                  </span>
-                ) : null}
-                <span className="app-shell__filter-pill">
-                  <strong>현재</strong>
-                  <span>{latestRankLabel}</span>
-                </span>
-                <span className="app-shell__filter-pill">
-                  <strong>최고</strong>
-                  <span>{formatRank(bestRank)}</span>
-                </span>
-              </div>
-            </div>
           </div>
 
           {points.length > 0 ? (

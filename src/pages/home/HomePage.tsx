@@ -332,6 +332,32 @@ function HomePage() {
     error: gameMarketError,
     isLoading: isGameMarketLoading,
   } = useGameMarket(accessToken, shouldLoadGame);
+  const gameMarketSignalsByVideoId = useMemo(
+    () =>
+      Object.fromEntries(
+        gameMarket.map((marketVideo) => [
+          marketVideo.videoId,
+          {
+            categoryId: ALL_VIDEO_CATEGORY_ID,
+            categoryLabel: '전체',
+            capturedAt: marketVideo.capturedAt,
+            currentRank: marketVideo.currentRank,
+            currentViewCount: marketVideo.currentViewCount,
+            isNew: marketVideo.isNew,
+            previousRank: marketVideo.previousRank,
+            previousViewCount: null,
+            rankChange: marketVideo.rankChange,
+            regionCode: currentGameSeason?.regionCode ?? selectedRegionCode,
+            title: marketVideo.title,
+            channelTitle: marketVideo.channelTitle,
+            thumbnailUrl: marketVideo.thumbnailUrl,
+            videoId: marketVideo.videoId,
+            viewCountDelta: marketVideo.viewCountDelta,
+          } satisfies VideoTrendSignal,
+        ]),
+      ),
+    [currentGameSeason?.regionCode, gameMarket, selectedRegionCode],
+  );
   const {
     data: gameLeaderboard = [],
     error: gameLeaderboardError,
@@ -2097,11 +2123,11 @@ function HomePage() {
       <ul className="app-shell__game-positions">
         {openGameHoldings.map((holding) => {
           const isSelectedPosition = holding.videoId === selectedVideoId;
-          const averageBuyPricePoints = Math.round(holding.stakePoints / Math.max(1, holding.quantity));
-          const averageCurrentPricePoints =
-            typeof holding.currentPricePoints === 'number'
-              ? Math.round(holding.currentPricePoints / Math.max(1, holding.quantity))
-              : null;
+          const holdingRankTrendBadge = getPrimaryVideoTrendBadge(
+            gameMarketSignalsByVideoId[holding.videoId] ??
+              chartTrendSignalsByVideoId[holding.videoId] ??
+              favoriteTrendSignalsByVideoId[holding.videoId],
+          );
 
           return (
             <li
@@ -2129,9 +2155,19 @@ function HomePage() {
                         chartOut: holding.chartOut,
                       })}
                     </span>
+                    {holdingRankTrendBadge ? (
+                      <span className="app-shell__game-position-trends">
+                        <span
+                          className="app-shell__game-panel-actions-trend app-shell__game-position-trend"
+                          data-tone={holdingRankTrendBadge.tone}
+                        >
+                          {holdingRankTrendBadge.label}
+                        </span>
+                      </span>
+                    ) : null}
                   </p>
                   <p className="app-shell__game-position-meta">
-                    평균 매수 {formatPoints(averageBuyPricePoints)} · 평균 평가 {formatMaybePoints(averageCurrentPricePoints)} · 손익률{' '}
+                    총 매수 {formatPoints(holding.stakePoints)} · 총 평가 {formatMaybePoints(holding.currentPricePoints)} · 손익률{' '}
                     <span data-tone={getPointTone(holding.profitPoints)}>
                       {formatSignedProfitRate(holding.profitPoints, holding.stakePoints)}
                     </span>

@@ -1404,6 +1404,17 @@
   line-height: 1.45;
 }
 
+.app-shell__game-position-trends {
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.app-shell__game-position-trend {
+  min-height: 18px;
+  padding: 0 6px;
+}
+
 .app-shell__game-rank-emphasis {
   color: var(--text);
   font-weight: 700;
@@ -2399,60 +2410,6 @@
   width: min(560px, 100%);
 }
 
-.app-shell__game-history-modal-head {
-  align-items: center;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: 160px minmax(0, 1fr);
-}
-
-.app-shell__game-history-modal-thumb {
-  aspect-ratio: 16 / 9;
-  border-radius: 18px;
-  display: block;
-  object-fit: cover;
-  width: 100%;
-}
-
-.app-shell__game-history-modal-copy {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.app-shell__game-history-modal-copy .app-shell__filter-pill {
-  align-items: flex-start;
-  display: grid;
-  gap: 6px;
-  grid-template-columns: auto minmax(0, 1fr);
-  line-height: 1.2;
-  padding: 12px 16px;
-}
-
-.app-shell__game-history-modal-copy .app-shell__filter-pill span {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  word-break: keep-all;
-}
-
-.app-shell__game-history-modal-title,
-.app-shell__game-history-modal-channel {
-  margin: 0;
-}
-
-.app-shell__game-history-modal-title {
-  color: var(--text);
-  font-size: 1.05rem;
-  font-weight: 800;
-  line-height: 1.4;
-}
-
-.app-shell__game-history-modal-channel {
-  color: var(--text-muted);
-  font-size: 0.88rem;
-}
-
 .app-shell__game-trade-modal-head {
   align-items: center;
   display: grid;
@@ -3367,10 +3324,6 @@
   .app-shell__modal-close,
   .app-shell__modal-action {
     width: 100%;
-  }
-
-  .app-shell__game-history-modal-head {
-    grid-template-columns: 1fr;
   }
 
   .app-shell__game-trade-modal-head {
