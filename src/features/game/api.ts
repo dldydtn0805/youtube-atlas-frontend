@@ -38,11 +38,15 @@ export async function fetchGameLeaderboardPositions(accessToken: string, userId:
   });
 }
 
-export async function fetchMyGamePositions(accessToken: string, status = 'OPEN') {
+export async function fetchMyGamePositions(accessToken: string, status = 'OPEN', limit?: number) {
   const params = new URLSearchParams();
 
   if (status.trim()) {
     params.set('status', status);
+  }
+
+  if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
+    params.set('limit', String(Math.floor(limit)));
   }
 
   const queryString = params.toString();

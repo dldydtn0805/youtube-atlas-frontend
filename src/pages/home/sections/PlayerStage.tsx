@@ -199,11 +199,15 @@ function PlayerStage({
                       )}
                     </span>
                   </button>
-                  {selectedVideoRankLabel ? (
-                    <span className="app-shell__stage-stat">{selectedVideoRankLabel}</span>
-                  ) : null}
-                  {selectedVideoStatLabel ? (
-                    <span className="app-shell__stage-stat">{selectedVideoStatLabel}</span>
+                  {selectedVideoRankLabel || selectedVideoStatLabel ? (
+                    <div className="app-shell__stage-stats">
+                      {selectedVideoRankLabel ? (
+                        <span className="app-shell__stage-stat">{selectedVideoRankLabel}</span>
+                      ) : null}
+                      {selectedVideoStatLabel ? (
+                        <span className="app-shell__stage-stat">{selectedVideoStatLabel}</span>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
                 <p

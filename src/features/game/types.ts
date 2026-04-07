@@ -60,6 +60,7 @@ export interface GamePosition {
   buyRank: number;
   currentRank: number | null;
   rankDiff: number | null;
+  quantity: number;
   stakePoints: number;
   currentPricePoints: number | null;
   profitPoints: number | null;
@@ -116,6 +117,7 @@ export interface SellGamePositionResponse {
   buyRank: number;
   sellRank: number;
   rankDiff: number;
+  quantity: number;
   stakePoints: number;
   sellPricePoints: number;
   pnlPoints: number;

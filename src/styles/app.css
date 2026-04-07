@@ -540,6 +540,13 @@
   width: 100%;
 }
 
+.app-shell__stage-stats {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
 .app-shell__stage-title {
   color: var(--text);
   min-width: 0;
@@ -976,6 +983,81 @@
   display: grid;
   gap: 4px;
   min-width: 0;
+  width: 100%;
+}
+
+.app-shell__game-panel-actions-main {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+.app-shell__game-panel-actions-thumb {
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  display: block;
+  height: auto;
+  object-fit: cover;
+  width: 64px;
+}
+
+.app-shell__game-panel-actions-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-shell__game-panel-actions-summary {
+  display: grid;
+  gap: 4px;
+}
+
+.app-shell__game-panel-actions-summary-line {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.app-shell__game-panel-actions-trends {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.app-shell__game-panel-actions-trend {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 20px;
+  padding: 0 7px;
+}
+
+.app-shell__game-panel-actions-trend[data-tone='up'] {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+
+.app-shell__game-panel-actions-trend[data-tone='down'] {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.app-shell__game-panel-actions-trend[data-tone='steady'] {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-muted);
+}
+
+.app-shell__game-panel-actions-trend[data-tone='new'] {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
 }
 
 .app-shell__game-panel-actions-eyebrow,
@@ -997,7 +1079,8 @@
   font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.45;
 }
 
 .app-shell__game-panel-actions-buttons {
@@ -1305,46 +1388,10 @@
 }
 
 .app-shell__game-position-side {
-  align-items: flex-end;
-  display: grid;
-  gap: 6px;
-  justify-items: end;
-}
-
-.app-shell__game-position-sell {
   align-items: center;
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.14), rgba(220, 38, 38, 0.08));
-  border: 1px solid rgba(220, 38, 38, 0.24);
-  border-radius: 999px;
-  color: #b91c1c;
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 0.76rem;
-  font-weight: 800;
-  height: 34px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 68px;
-  padding: 0 12px;
-  transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    opacity 0.22s ease;
-}
-
-.app-shell__game-position-sell:hover,
-.app-shell__game-position-sell:focus-visible {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.2), rgba(220, 38, 38, 0.12));
-  border-color: rgba(220, 38, 38, 0.32);
-  box-shadow: var(--shadow-soft);
-  outline: none;
-  transform: translateY(-1px);
-}
-
-.app-shell__game-position-sell:disabled {
-  cursor: default;
-  opacity: 0.62;
-  transform: none;
+  display: grid;
+  gap: 0;
+  justify-items: end;
 }
 
 .app-shell__game-history {
@@ -2410,6 +2457,43 @@
   gap: 12px;
 }
 
+.app-shell__game-trade-modal-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-shell__game-trade-modal-quick-action {
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 0 12px;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.app-shell__game-trade-modal-quick-action:hover,
+.app-shell__game-trade-modal-quick-action:focus-visible {
+  background: rgba(15, 23, 42, 0.09);
+  border-color: rgba(37, 99, 235, 0.32);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.app-shell__game-trade-modal-quick-action:disabled {
+  cursor: default;
+  opacity: 0.48;
+  transform: none;
+}
+
 .app-shell__game-trade-modal-summary {
   display: flex;
   flex-wrap: wrap;
@@ -2895,14 +2979,35 @@
   }
 
   .app-shell__stage-action-button {
+    font-size: 0.8rem;
+    height: 32px;
     margin-left: 0;
+    min-width: 32px;
     width: auto;
   }
 
+  .app-shell__stage-action-button:not([class*='--game']):not([class*='--favorite']) {
+    width: 32px;
+  }
+
   .app-shell__stage-action-button--game {
-    min-width: 42px;
+    min-width: 32px;
     padding: 0;
-    width: 42px;
+    width: 32px;
+  }
+
+  .app-shell__stage-action-button--favorite {
+    min-width: 32px;
+    width: 32px;
+  }
+
+  .app-shell__stage-action-icon {
+    height: 14px;
+    width: 14px;
+  }
+
+  .app-shell__stage-stats {
+    gap: 8px;
   }
 
   .app-shell__stage-action-button--history {
@@ -2948,6 +3053,58 @@
   .app-shell__game-panel-actions {
     align-items: stretch;
     flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .app-shell__game-panel-actions-main {
+    align-items: start;
+    gap: 10px;
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+
+  .app-shell__game-panel-actions-thumb {
+    border-radius: 12px;
+    width: 60px;
+  }
+
+  .app-shell__game-panel-actions-body {
+    gap: 8px;
+  }
+
+  .app-shell__game-panel-actions-eyebrow {
+    font-size: 0.68rem;
+  }
+
+  .app-shell__game-panel-actions-title {
+    font-size: 0.94rem;
+    line-height: 1.35;
+    word-break: keep-all;
+  }
+
+  .app-shell__game-panel-actions-summary-line {
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+
+  .app-shell__game-panel-actions-trends {
+    display: inline-flex;
+    flex-wrap: wrap;
+    margin-left: 4px;
+  }
+
+  .app-shell__game-price-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .app-shell__game-price-chip {
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 10px;
+    text-align: center;
+    white-space: nowrap;
   }
 
   .app-shell__game-panel-order {
@@ -3010,9 +3167,8 @@
     align-items: center;
     border-top: 1px solid rgba(148, 163, 184, 0.14);
     gap: 8px;
-    grid-auto-flow: column;
     grid-column: 1;
-    justify-content: space-between;
+    justify-content: flex-start;
     justify-items: start;
     padding-top: 8px;
     width: 100%;
@@ -3020,10 +3176,6 @@
 
   .app-shell__game-position-hold {
     order: 1;
-  }
-
-  .app-shell__game-position-sell {
-    order: 2;
   }
 
   .app-shell__game-history-item {

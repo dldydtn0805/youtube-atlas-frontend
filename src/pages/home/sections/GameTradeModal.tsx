@@ -46,6 +46,14 @@ export default function GameTradeModal({
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
   const modalTitleId = `game-trade-modal-title-${mode}`;
   const normalizedQuantity = Math.max(1, Math.floor(quantity));
+  const sellQuickActions =
+    mode === 'sell' && maxQuantity > 0
+      ? [
+          { label: '25%', quantity: Math.max(1, Math.ceil(maxQuantity * 0.25)) },
+          { label: '50%', quantity: Math.max(1, Math.ceil(maxQuantity * 0.5)) },
+          { label: '전량', quantity: maxQuantity },
+        ].filter((action, index, actions) => actions.findIndex((candidate) => candidate.quantity === action.quantity) === index)
+      : [];
 
   return createPortal(
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
@@ -92,6 +100,21 @@ export default function GameTradeModal({
               </div>
               <p className="app-shell__modal-field-copy">{helperText}</p>
               <div className="app-shell__game-trade-modal-controls">
+                {sellQuickActions.length > 0 ? (
+                  <div className="app-shell__game-trade-modal-quick-actions">
+                    {sellQuickActions.map((action) => (
+                      <button
+                        key={action.label}
+                        className="app-shell__game-trade-modal-quick-action"
+                        disabled={isSubmitting || maxQuantity <= 0}
+                        onClick={() => onChangeQuantity(action.quantity)}
+                        type="button"
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="app-shell__game-panel-quantity">
                   <button
                     className="app-shell__game-panel-quantity-button"

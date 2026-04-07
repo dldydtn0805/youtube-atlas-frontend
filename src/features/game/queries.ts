@@ -68,11 +68,12 @@ export function useMyGamePositions(
   accessToken: string | null,
   status = 'OPEN',
   enabled = true,
+  limit?: number,
 ) {
   return useQuery({
     enabled: enabled && Boolean(accessToken),
-    queryKey: gameQueryKeys.positions(accessToken, status),
-    queryFn: () => fetchMyGamePositions(accessToken as string, status),
+    queryKey: [...gameQueryKeys.positions(accessToken, status), limit ?? null],
+    queryFn: () => fetchMyGamePositions(accessToken as string, status, limit),
     staleTime: 1000 * 15,
   });
 }
