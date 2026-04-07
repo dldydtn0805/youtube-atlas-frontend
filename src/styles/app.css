@@ -2420,6 +2420,22 @@
   min-width: 0;
 }
 
+.app-shell__game-history-modal-copy .app-shell__filter-pill {
+  align-items: flex-start;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: auto minmax(0, 1fr);
+  line-height: 1.2;
+  padding: 12px 16px;
+}
+
+.app-shell__game-history-modal-copy .app-shell__filter-pill span {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: keep-all;
+}
+
 .app-shell__game-history-modal-title,
 .app-shell__game-history-modal-channel {
   margin: 0;

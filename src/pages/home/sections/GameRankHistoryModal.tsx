@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { useEffect, useRef } from 'react';
 import type {
   GamePosition,
   GamePositionRankHistory,
@@ -186,6 +187,18 @@ export default function GameRankHistoryModal({
   position,
   videoFallback,
 }: GameRankHistoryModalProps) {
+  const modalBodyRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    modalBodyRef.current?.scrollTo({
+      top: 0,
+    });
+  }, [history, isOpen, position?.id]);
+
   if (!isOpen) {
     return null;
   }
@@ -257,44 +270,7 @@ export default function GameRankHistoryModal({
           </button>
         </div>
 
-        <div className="app-shell__modal-body">
-          <div className="app-shell__game-history-modal-head">
-            {thumbnailUrl ? (
-              <img
-                alt=""
-                className="app-shell__game-history-modal-thumb"
-                loading="lazy"
-                src={thumbnailUrl}
-              />
-            ) : null}
-            <div className="app-shell__game-history-modal-copy">
-              <p className="app-shell__game-history-modal-title">{title}</p>
-              <p className="app-shell__game-history-modal-channel">{channelTitle}</p>
-              <div className="app-shell__filter-pill-group">
-                {hasBuyRank ? (
-                  <span className="app-shell__filter-pill">
-                    <strong>매수</strong>
-                    <span>{formatRank(gameHistory?.buyRank ?? position?.buyRank)}</span>
-                  </span>
-                ) : null}
-                {buyCapturedAtLabel ? (
-                  <span className="app-shell__filter-pill">
-                    <strong>매수 시점</strong>
-                    <span>{buyCapturedAtLabel}</span>
-                  </span>
-                ) : null}
-                <span className="app-shell__filter-pill">
-                  <strong>현재</strong>
-                  <span>{latestRankLabel}</span>
-                </span>
-                <span className="app-shell__filter-pill">
-                  <strong>최고</strong>
-                  <span>{formatRank(bestRank)}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
+        <div ref={modalBodyRef} className="app-shell__modal-body">
           <div className="app-shell__modal-field">
             <div className="app-shell__section-heading">
               <p className="app-shell__section-eyebrow">Timeline</p>
@@ -434,6 +410,43 @@ export default function GameRankHistoryModal({
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="app-shell__game-history-modal-head">
+            {thumbnailUrl ? (
+              <img
+                alt=""
+                className="app-shell__game-history-modal-thumb"
+                loading="lazy"
+                src={thumbnailUrl}
+              />
+            ) : null}
+            <div className="app-shell__game-history-modal-copy">
+              <p className="app-shell__game-history-modal-title">{title}</p>
+              <p className="app-shell__game-history-modal-channel">{channelTitle}</p>
+              <div className="app-shell__filter-pill-group">
+                {hasBuyRank ? (
+                  <span className="app-shell__filter-pill">
+                    <strong>매수</strong>
+                    <span>{formatRank(gameHistory?.buyRank ?? position?.buyRank)}</span>
+                  </span>
+                ) : null}
+                {buyCapturedAtLabel ? (
+                  <span className="app-shell__filter-pill">
+                    <strong>매수 시점</strong>
+                    <span>{buyCapturedAtLabel}</span>
+                  </span>
+                ) : null}
+                <span className="app-shell__filter-pill">
+                  <strong>현재</strong>
+                  <span>{latestRankLabel}</span>
+                </span>
+                <span className="app-shell__filter-pill">
+                  <strong>최고</strong>
+                  <span>{formatRank(bestRank)}</span>
+                </span>
+              </div>
+            </div>
           </div>
 
           {points.length > 0 ? (
