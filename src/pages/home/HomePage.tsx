@@ -154,20 +154,6 @@ function getPointTone(points?: number | null) {
   return 'flat';
 }
 
-function formatSignedPoints(points?: number | null) {
-  const normalizedPoints = points ?? 0;
-
-  if (normalizedPoints > 0) {
-    return `+${formatPoints(normalizedPoints)}`;
-  }
-
-  if (normalizedPoints < 0) {
-    return `-${formatPoints(Math.abs(normalizedPoints))}`;
-  }
-
-  return formatPoints(0);
-}
-
 function formatRank(rank?: number | null, options?: { chartOut?: boolean }) {
   if (options?.chartOut) {
     return '차트 아웃';
@@ -341,6 +327,24 @@ function HomePage() {
     selectedRankHistoryPosition?.id ?? null,
     shouldLoadGame && Boolean(selectedRankHistoryPosition),
   );
+  const openPositionsBuyPoints = useMemo(
+    () => openGamePositions.reduce((totalPoints, position) => totalPoints + position.stakePoints, 0),
+    [openGamePositions],
+  );
+  const openPositionsEvaluationPoints = useMemo(() => {
+    if (currentGameSeason) {
+      return Math.max(
+        currentGameSeason.wallet.totalAssetPoints - currentGameSeason.wallet.balancePoints,
+        0,
+      );
+    }
+
+    return openGamePositions.reduce(
+      (totalPoints, position) => totalPoints + (position.currentPricePoints ?? 0),
+      0,
+    );
+  }, [currentGameSeason, openGamePositions]);
+  const openPositionsProfitPoints = openPositionsEvaluationPoints - openPositionsBuyPoints;
   const {
     data: selectedVideoRankHistory,
     error: selectedVideoRankHistoryError,
@@ -1345,21 +1349,6 @@ function HomePage() {
                         총자산 {formatPoints(entry.totalAssetPoints)}
                       </p>
                     </div>
-                    <p className="app-shell__game-leaderboard-meta">
-                      실현 금액{' '}
-                      <span data-tone={getPointTone(entry.realizedPnlPoints)}>
-                        {formatSignedPoints(entry.realizedPnlPoints)}
-                      </span>{' '}
-                    </p>
-                    <p className="app-shell__game-leaderboard-meta">
-                      평가 금액{' '}
-                      <span data-tone={getPointTone(entry.unrealizedPnlPoints)}>
-                        {formatSignedPoints(entry.unrealizedPnlPoints)}
-                      </span>
-                    </p>
-                    <p className="app-shell__game-leaderboard-meta">
-                      보유 {entry.openPositionCount}개
-                    </p>
                   </div>
                   <span className="app-shell__game-leaderboard-expand" aria-hidden="true">
                     ▾
@@ -1453,21 +1442,6 @@ function HomePage() {
                       총자산 {formatPoints(myLeaderboardEntry.totalAssetPoints)}
                     </p>
                   </div>
-                  <p className="app-shell__game-leaderboard-meta">
-                    실현 금액{' '}
-                    <span data-tone={getPointTone(myLeaderboardEntry.realizedPnlPoints)}>
-                      {formatSignedPoints(myLeaderboardEntry.realizedPnlPoints)}
-                    </span>{' '}
-                  </p>
-                  <p className="app-shell__game-leaderboard-meta">
-                    평가 금액{' '}
-                    <span data-tone={getPointTone(myLeaderboardEntry.unrealizedPnlPoints)}>
-                      {formatSignedPoints(myLeaderboardEntry.unrealizedPnlPoints)}
-                    </span>
-                  </p>
-                  <p className="app-shell__game-leaderboard-meta">
-                    보유 {myLeaderboardEntry.openPositionCount}개
-                  </p>
                 </div>
                 <span className="app-shell__game-leaderboard-expand" aria-hidden="true">
                   ▾
@@ -1748,35 +1722,44 @@ function HomePage() {
           <>
             <div className="app-shell__game-panel-metrics">
               <span className="app-shell__game-panel-metric">
-                <span className="app-shell__game-panel-metric-label">잔액</span>
-                <span className="app-shell__game-panel-metric-value">
-                  {currentGameSeason ? formatPoints(currentGameSeason.wallet.balancePoints) : '-'}
-                </span>
-              </span>
-              <span className="app-shell__game-panel-metric">
                 <span className="app-shell__game-panel-metric-label">총자산</span>
                 <span className="app-shell__game-panel-metric-value">
                   {currentGameSeason ? formatPoints(currentGameSeason.wallet.totalAssetPoints) : '-'}
                 </span>
               </span>
               <span className="app-shell__game-panel-metric">
-                <span className="app-shell__game-panel-metric-label">
-                  {activeGameTab === 'leaderboard'
-                    ? '내 순위'
-                    : activeGameTab === 'history'
-                      ? '거래'
-                      : '보유'}
-                </span>
+                <span className="app-shell__game-panel-metric-label">잔액</span>
                 <span className="app-shell__game-panel-metric-value">
-                  {activeGameTab === 'leaderboard'
-                    ? myLeaderboardEntry
-                      ? `${myLeaderboardEntry.rank}위`
-                      : '-'
-                    : activeGameTab === 'history'
-                      ? isGameHistoryLoading
-                        ? '...'
-                        : `${gameHistoryPositions.length}건`
-                      : `${openGamePositions.length}/${currentGameSeason?.maxOpenPositions ?? '-'}`}
+                  {currentGameSeason ? formatPoints(currentGameSeason.wallet.balancePoints) : '-'}
+                </span>
+              </span>
+              <span className="app-shell__game-panel-metric">
+                <span className="app-shell__game-panel-metric-label">보유</span>
+                <span className="app-shell__game-panel-metric-value">
+                  {`${openGamePositions.length}/${currentGameSeason?.maxOpenPositions ?? '-'}`}
+                </span>
+              </span>
+              <span className="app-shell__game-panel-metric">
+                <span className="app-shell__game-panel-metric-label">총 매수 금액</span>
+                <span className="app-shell__game-panel-metric-value">
+                  {currentGameSeason ? formatPoints(openPositionsBuyPoints) : '-'}
+                </span>
+              </span>
+              <span className="app-shell__game-panel-metric">
+                <span className="app-shell__game-panel-metric-label">총 평가 금액</span>
+                <span className="app-shell__game-panel-metric-value">
+                  {currentGameSeason ? formatPoints(openPositionsEvaluationPoints) : '-'}
+                </span>
+              </span>
+              <span className="app-shell__game-panel-metric">
+                <span className="app-shell__game-panel-metric-label">손익률</span>
+                <span
+                  className="app-shell__game-panel-metric-value"
+                  data-tone={getPointTone(openPositionsProfitPoints)}
+                >
+                  {currentGameSeason
+                    ? formatSignedProfitRate(openPositionsProfitPoints, openPositionsBuyPoints)
+                    : '-'}
                 </span>
               </span>
             </div>
