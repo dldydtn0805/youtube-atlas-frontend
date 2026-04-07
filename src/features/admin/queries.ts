@@ -53,10 +53,14 @@ export function useUpdateAdminUserWallet(accessToken: string | null) {
       userId: number;
       request: AdminWalletUpdateRequest;
     }) => updateAdminUserWallet(accessToken as string, userId, request),
-    onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) });
-      void queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'users'] });
+    onSuccess: async (data) => {
       queryClient.setQueryData(adminQueryKeys.userDetail(accessToken, data.id), data);
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'users'] }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(accessToken, data.id) }),
+      ]);
     },
   });
 }

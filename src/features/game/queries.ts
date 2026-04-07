@@ -29,7 +29,9 @@ export function useCurrentGameSeason(accessToken: string | null, enabled = true)
     enabled: enabled && Boolean(accessToken),
     queryKey: gameQueryKeys.currentSeason(accessToken),
     queryFn: () => fetchCurrentGameSeason(accessToken as string),
-    staleTime: 1000 * 30,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
