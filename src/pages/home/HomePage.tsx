@@ -910,6 +910,35 @@ function HomePage() {
     },
     [handleSelectVideo, scrollToPlayerStage],
   );
+  const handleSelectLeaderboardPositionVideo = useCallback(
+    async (position: GamePosition, playbackQueueId?: string) => {
+      scrollToPlayerStage();
+
+      if (playbackQueueId) {
+        setGameActionStatus(null);
+        handleSelectVideo(position.videoId, playbackQueueId);
+        return;
+      }
+
+      setHistoryPlaybackLoadingVideoId(position.videoId);
+
+      try {
+        const video = await fetchVideoById(position.videoId);
+        setHistoryPlaybackVideo(video);
+        setGameActionStatus(null);
+        handleSelectVideo(video.id, HISTORY_PLAYBACK_QUEUE_ID);
+      } catch (error) {
+        setGameActionStatus(
+          error instanceof Error
+            ? error.message
+            : '이 리더보드 영상 정보를 다시 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+        );
+      } finally {
+        setHistoryPlaybackLoadingVideoId(null);
+      }
+    },
+    [handleSelectVideo, scrollToPlayerStage],
+  );
   const currentVideoGamePriceSummary = selectedVideoOpenPositionCount > 0 ? (
     <div className="app-shell__game-panel-actions-summary" aria-label="선택한 영상 가격 정보">
       <p className="app-shell__game-panel-actions-summary-line">
@@ -1085,6 +1114,25 @@ function HomePage() {
       selectedPlaybackSection,
     ],
   );
+  const resolveLeaderboardPlaybackQueueId = useCallback(
+    (videoId: string) =>
+      findPlaybackQueueIdForVideo(videoId, {
+        favoriteStreamerVideoSection,
+        gamePortfolioSection,
+        historyPlaybackSection,
+        newChartEntriesSection,
+        realtimeSurgingSection,
+        selectedSection: selectedPlaybackSection,
+      }),
+    [
+      favoriteStreamerVideoSection,
+      gamePortfolioSection,
+      historyPlaybackSection,
+      newChartEntriesSection,
+      realtimeSurgingSection,
+      selectedPlaybackSection,
+    ],
+  );
   const leaderboardContent = (
     <RankingGameLeaderboardTab
       entries={gameLeaderboard}
@@ -1093,12 +1141,17 @@ function HomePage() {
       isLoading={isGameLeaderboardLoading}
       isPositionsError={isSelectedLeaderboardPositionsError}
       isPositionsLoading={isSelectedLeaderboardPositionsLoading}
+      loadingVideoId={historyPlaybackLoadingVideoId}
+      onSelectPosition={(position, playbackQueueId) => {
+        void handleSelectLeaderboardPositionVideo(position, playbackQueueId);
+      }}
       onToggleUser={(userId) =>
         setSelectedLeaderboardUserId((currentUserId) => (currentUserId === userId ? null : userId))
       }
       positions={selectedLeaderboardPositions}
       positionsError={selectedLeaderboardPositionsError}
       positionsTitle={selectedLeaderboardPositionsTitle}
+      resolvePlaybackQueueId={resolveLeaderboardPlaybackQueueId}
       season={currentGameSeason}
       selectedUserId={selectedLeaderboardUserId}
     />

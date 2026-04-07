@@ -1806,10 +1806,39 @@
 }
 
 .app-shell__game-leaderboard-position-item {
+  display: block;
+}
+
+.app-shell__game-leaderboard-position-select {
   align-items: start;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
   display: grid;
   gap: 10px;
   grid-template-columns: 64px minmax(0, 1fr);
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.app-shell__game-leaderboard-position-select:hover .app-shell__game-leaderboard-position-title,
+.app-shell__game-leaderboard-position-select:focus-visible .app-shell__game-leaderboard-position-title {
+  text-decoration: underline;
+}
+
+.app-shell__game-leaderboard-position-select:focus-visible {
+  outline: none;
+}
+
+.app-shell__game-leaderboard-position-select:disabled {
+  cursor: default;
+}
+
+.app-shell__game-leaderboard-position-select:disabled .app-shell__game-leaderboard-position-title {
+  text-decoration: none;
 }
 
 .app-shell__game-leaderboard-position-thumb {
@@ -3324,6 +3353,11 @@
   .app-shell__game-history-select {
     align-items: start;
     gap: 12px;
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .app-shell__game-leaderboard-position-select {
+    align-items: start;
     grid-template-columns: 56px minmax(0, 1fr);
   }
 

@@ -60,9 +60,12 @@ interface RankingGameLeaderboardTabProps {
   error: unknown;
   isError: boolean;
   isLoading: boolean;
+  loadingVideoId: string | null;
+  onSelectPosition: (position: GamePosition, playbackQueueId?: string) => void;
   positions: GamePosition[];
   positionsError: unknown;
   positionsTitle: string;
+  resolvePlaybackQueueId: (videoId: string) => string | undefined;
   selectedUserId: number | null;
   isPositionsError: boolean;
   isPositionsLoading: boolean;
@@ -92,35 +95,69 @@ interface RankingGameHistoryTabProps {
   selectedVideoId?: string;
 }
 
-function LeaderboardPositionList({ positions }: { positions: GamePosition[] }) {
+function LeaderboardPositionList({
+  loadingVideoId,
+  onSelectPosition,
+  positions,
+  resolvePlaybackQueueId,
+}: {
+  loadingVideoId: string | null;
+  onSelectPosition: (position: GamePosition, playbackQueueId?: string) => void;
+  positions: GamePosition[];
+  resolvePlaybackQueueId: (videoId: string) => string | undefined;
+}) {
   return (
     <ul className="app-shell__game-leaderboard-position-list">
-      {positions.map((position) => (
-        <li key={position.id} className="app-shell__game-leaderboard-position-item">
-          <img
-            alt=""
-            className="app-shell__game-leaderboard-position-thumb"
-            loading="lazy"
-            src={position.thumbnailUrl}
-          />
-          <div className="app-shell__game-leaderboard-position-copy">
-            <p className="app-shell__game-leaderboard-position-title">{position.title}</p>
-            <p className="app-shell__game-leaderboard-position-meta">
-              현재{' '}
-              <span className="app-shell__game-rank-emphasis">
-                {formatRank(position.currentRank, { chartOut: position.chartOut })}
-              </span>{' '}
-              · 평가 금액 {formatMaybePoints(position.currentPricePoints)}
-            </p>
-            <p className="app-shell__game-leaderboard-position-meta">
-              매수 금액 {formatPoints(position.stakePoints)} · 손익률{' '}
-              <span data-tone={getPointTone(position.profitPoints)}>
-                {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
-              </span>
-            </p>
-          </div>
-        </li>
-      ))}
+      {positions.map((position) => {
+        const playbackQueueId = resolvePlaybackQueueId(position.videoId);
+        const isLoadingPlayback = loadingVideoId === position.videoId;
+
+        return (
+          <li key={position.id} className="app-shell__game-leaderboard-position-item">
+            <button
+              className="app-shell__game-leaderboard-position-select"
+              disabled={isLoadingPlayback}
+              onClick={() => onSelectPosition(position, playbackQueueId)}
+              title={
+                isLoadingPlayback
+                  ? '영상 정보를 다시 불러오는 중입니다.'
+                  : playbackQueueId
+                    ? '이 영상을 플레이어에서 엽니다.'
+                    : '영상 정보를 다시 불러와 플레이어에서 엽니다.'
+              }
+              type="button"
+            >
+              <img
+                alt=""
+                className="app-shell__game-leaderboard-position-thumb"
+                loading="lazy"
+                src={position.thumbnailUrl}
+              />
+              <div className="app-shell__game-leaderboard-position-copy">
+                <p className="app-shell__game-leaderboard-position-title">{position.title}</p>
+                {isLoadingPlayback ? (
+                  <p className="app-shell__game-leaderboard-position-meta">
+                    YouTube에서 영상 정보를 다시 불러오는 중입니다.
+                  </p>
+                ) : null}
+                <p className="app-shell__game-leaderboard-position-meta">
+                  현재{' '}
+                  <span className="app-shell__game-rank-emphasis">
+                    {formatRank(position.currentRank, { chartOut: position.chartOut })}
+                  </span>{' '}
+                  · 평가 금액 {formatMaybePoints(position.currentPricePoints)}
+                </p>
+                <p className="app-shell__game-leaderboard-position-meta">
+                  매수 금액 {formatPoints(position.stakePoints)} · 손익률{' '}
+                  <span data-tone={getPointTone(position.profitPoints)}>
+                    {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
+                  </span>
+                </p>
+              </div>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -129,16 +166,22 @@ function LeaderboardPositionsPanel({
   isError,
   isExpanded,
   isLoading,
+  loadingVideoId,
+  onSelectPosition,
   positions,
   positionsError,
   positionsTitle,
+  resolvePlaybackQueueId,
 }: {
   isError: boolean;
   isExpanded: boolean;
   isLoading: boolean;
+  loadingVideoId: string | null;
+  onSelectPosition: (position: GamePosition, playbackQueueId?: string) => void;
   positions: GamePosition[];
   positionsError: unknown;
   positionsTitle: string;
+  resolvePlaybackQueueId: (videoId: string) => string | undefined;
 }) {
   if (!isExpanded) {
     return null;
@@ -154,7 +197,12 @@ function LeaderboardPositionsPanel({
           {positionsError instanceof Error ? positionsError.message : '보유 포지션을 불러오지 못했습니다.'}
         </p>
       ) : positions.length > 0 ? (
-        <LeaderboardPositionList positions={positions} />
+        <LeaderboardPositionList
+          loadingVideoId={loadingVideoId}
+          onSelectPosition={onSelectPosition}
+          positions={positions}
+          resolvePlaybackQueueId={resolvePlaybackQueueId}
+        />
       ) : (
         <p className="app-shell__game-leaderboard-positions-status">보유 중인 포지션이 없습니다.</p>
       )}
@@ -165,19 +213,25 @@ function LeaderboardPositionsPanel({
 function LeaderboardRow({
   entry,
   isExpanded,
+  loadingVideoId,
+  onSelectPosition,
   onToggleUser,
   positions,
   positionsError,
   positionsTitle,
+  resolvePlaybackQueueId,
   isPositionsError,
   isPositionsLoading,
 }: {
   entry: GameLeaderboardEntry;
   isExpanded: boolean;
+  loadingVideoId: string | null;
+  onSelectPosition: (position: GamePosition, playbackQueueId?: string) => void;
   onToggleUser: (userId: number) => void;
   positions: GamePosition[];
   positionsError: unknown;
   positionsTitle: string;
+  resolvePlaybackQueueId: (videoId: string) => string | undefined;
   isPositionsError: boolean;
   isPositionsLoading: boolean;
 }) {
@@ -220,9 +274,12 @@ function LeaderboardRow({
         isError={isPositionsError}
         isExpanded={isExpanded}
         isLoading={isPositionsLoading}
+        loadingVideoId={loadingVideoId}
+        onSelectPosition={onSelectPosition}
         positions={positions}
         positionsError={positionsError}
         positionsTitle={positionsTitle}
+        resolvePlaybackQueueId={resolvePlaybackQueueId}
       />
     </div>
   );
@@ -439,9 +496,12 @@ export function RankingGameLeaderboardTab({
   error,
   isError,
   isLoading,
+  loadingVideoId,
+  onSelectPosition,
   positions,
   positionsError,
   positionsTitle,
+  resolvePlaybackQueueId,
   selectedUserId,
   isPositionsError,
   isPositionsLoading,
@@ -477,10 +537,13 @@ export function RankingGameLeaderboardTab({
               isExpanded={selectedUserId === entry.userId}
               isPositionsError={isPositionsError}
               isPositionsLoading={isPositionsLoading}
+              loadingVideoId={loadingVideoId}
+              onSelectPosition={onSelectPosition}
               onToggleUser={onToggleUser}
               positions={positions}
               positionsError={positionsError}
               positionsTitle={positionsTitle}
+              resolvePlaybackQueueId={resolvePlaybackQueueId}
             />
           </li>
         ))}
@@ -493,10 +556,13 @@ export function RankingGameLeaderboardTab({
             isExpanded={selectedUserId === myEntry.userId}
             isPositionsError={isPositionsError}
             isPositionsLoading={isPositionsLoading}
+            loadingVideoId={loadingVideoId}
+            onSelectPosition={onSelectPosition}
             onToggleUser={onToggleUser}
             positions={positions}
             positionsError={positionsError}
             positionsTitle={positionsTitle}
+            resolvePlaybackQueueId={resolvePlaybackQueueId}
           />
         </section>
       ) : null}
