@@ -30,7 +30,7 @@ export interface RealtimeSurgingResponse extends TrendSignalFeedResponse {
   rankChangeThreshold: number;
 }
 
-export interface NewChartEntriesResponse extends TrendSignalFeedResponse {}
+export type NewChartEntriesResponse = TrendSignalFeedResponse;
 
 export interface VideoRankHistoryPoint {
   runId: number;
