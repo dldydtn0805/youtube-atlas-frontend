@@ -72,6 +72,10 @@ function getBuyPointIndex(points: Array<GamePositionRankHistoryPoint | VideoRank
   return points.findIndex((point) => 'buyPoint' in point && point.buyPoint);
 }
 
+function getBuyPoint(points: Array<GamePositionRankHistoryPoint | VideoRankHistory['points'][number]>) {
+  return points.find((point) => 'buyPoint' in point && point.buyPoint) ?? null;
+}
+
 function isPreBuyPoint(
   point: GamePositionRankHistoryPoint | VideoRankHistory['points'][number],
   index: number,
@@ -81,10 +85,6 @@ function isPreBuyPoint(
 }
 
 function getEventLabel(point: GamePositionRankHistoryPoint | VideoRankHistory['points'][number]) {
-  if ('buyPoint' in point && point.buyPoint) {
-    return 'B';
-  }
-
   if ('sellPoint' in point && point.sellPoint) {
     return 'S';
   }
@@ -123,6 +123,7 @@ function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoR
         x: xForIndex(index),
         y: baselineY,
       })),
+      plotTopY: padding.top,
       postBuyPath: '',
       preBuyPath: '',
       width,
@@ -161,6 +162,7 @@ function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoR
     hasRankedPoints: true,
     height,
     markers,
+    plotTopY: padding.top,
     postBuyPath: buildLinePath(postBuyMarkers),
     preBuyPath: buildLinePath(preBuyMarkers),
     width,
@@ -198,14 +200,17 @@ export default function GameRankHistoryModal({
   const points = history?.points ?? [];
   const chart = createChartGeometry(points);
   const rankedPoints = points.filter((point) => typeof point.rank === 'number');
-  const hasBuyRank = history && 'buyRank' in history;
+  const gameHistory = history && 'buyRank' in history ? history : null;
+  const hasBuyRank = Boolean(gameHistory);
   const buyPointIndex = getBuyPointIndex(points);
+  const buyPoint = getBuyPoint(points);
+  const buyPointMarker = buyPointIndex >= 0 ? chart.markers[buyPointIndex] ?? null : null;
   const preBuyPointCount = buyPointIndex > 0 ? buyPointIndex : 0;
   const bestRank =
     rankedPoints.length > 0
       ? Math.min(...rankedPoints.map((point) => point.rank as number))
-      : hasBuyRank
-        ? history.buyRank
+      : gameHistory
+        ? gameHistory.buyRank
         : history?.latestRank;
   const chartOutCount = points.filter((point) => point.chartOut).length;
   const recentPoints = points
@@ -218,6 +223,9 @@ export default function GameRankHistoryModal({
   const latestRankLabel = history
     ? formatRank(history.latestRank, history.latestChartOut)
     : formatRank(videoFallback?.currentRank ?? position?.currentRank, videoFallback?.chartOut ?? position?.chartOut);
+  const buyCapturedAtLabel = hasBuyRank
+    ? formatTimestamp(buyPoint?.capturedAt ?? gameHistory?.buyCapturedAt ?? position?.buyCapturedAt ?? position?.createdAt)
+    : null;
 
   return createPortal(
     <div
@@ -266,7 +274,13 @@ export default function GameRankHistoryModal({
                 {hasBuyRank ? (
                   <span className="app-shell__filter-pill">
                     <strong>매수</strong>
-                    <span>{formatRank(history.buyRank ?? position?.buyRank)}</span>
+                    <span>{formatRank(gameHistory?.buyRank ?? position?.buyRank)}</span>
+                  </span>
+                ) : null}
+                {buyCapturedAtLabel ? (
+                  <span className="app-shell__filter-pill">
+                    <strong>매수 시점</strong>
+                    <span>{buyCapturedAtLabel}</span>
                   </span>
                 ) : null}
                 <span className="app-shell__filter-pill">
@@ -288,7 +302,7 @@ export default function GameRankHistoryModal({
             </div>
             <p className="app-shell__modal-field-copy">
               {hasBuyRank
-                ? '숫자가 낮을수록 상위 순위입니다. 매수 이전 흐름은 연한 색으로 표시되고, 매수와 매도 시점은 별도 마커로 표시됩니다.'
+                ? '숫자가 낮을수록 상위 순위입니다. 매수 이전 흐름은 연한 색으로 표시되고, 매수 시점은 세로 가이드로 확인할 수 있습니다.'
                 : '숫자가 낮을수록 상위 순위입니다. 차트 아웃 구간은 별도 마커로 표시됩니다.'}
             </p>
             {isLoading ? (
@@ -312,6 +326,17 @@ export default function GameRankHistoryModal({
                     y1={chart.baselineY}
                     y2={chart.baselineY}
                   />
+                  {buyPointMarker ? (
+                    <>
+                      <line
+                        className="app-shell__game-rank-history-buy-guide"
+                        x1={buyPointMarker.x}
+                        x2={buyPointMarker.x}
+                        y1={chart.plotTopY}
+                        y2={chart.baselineY}
+                      />
+                    </>
+                  ) : null}
                   {chart.hasRankedPoints ? (
                     <>
                       {chart.preBuyPath ? (
@@ -395,6 +420,9 @@ export default function GameRankHistoryModal({
                   ))}
                 </svg>
                 <div className="app-shell__game-rank-history-stats">
+                  {buyCapturedAtLabel ? (
+                    <span className="app-shell__game-history-status">매수 시점 {buyCapturedAtLabel}</span>
+                  ) : null}
                   {preBuyPointCount > 0 ? (
                     <span className="app-shell__game-history-status">{preBuyPointCount}회 매수 전</span>
                   ) : null}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatCompactCount,
+  getPrimaryVideoTrendBadge,
   getVideoTrendBadges,
   isRealtimeSurgingSignal,
   REALTIME_SURGING_RANK_CHANGE_THRESHOLD,
@@ -153,6 +154,68 @@ describe('trend presentation helpers', () => {
         tone: 'up',
       },
     ]);
+  });
+
+  it('uses the first shared badge for compact player indicators', () => {
+    expect(
+      getPrimaryVideoTrendBadge({
+        categoryId: '0',
+        categoryLabel: '전체',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 4,
+        currentViewCount: 250_000,
+        isNew: true,
+        previousRank: 7,
+        previousViewCount: 245_000,
+        rankChange: 3,
+        regionCode: 'KR',
+        videoId: 'video-indicator-new',
+        viewCountDelta: 5_000,
+      }),
+    ).toEqual({
+      label: 'NEW',
+      tone: 'new',
+    });
+
+    expect(
+      getPrimaryVideoTrendBadge({
+        categoryId: '0',
+        categoryLabel: '전체',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 8,
+        currentViewCount: 801_000,
+        isNew: false,
+        previousRank: 8,
+        previousViewCount: 800_000,
+        rankChange: 0,
+        regionCode: 'KR',
+        videoId: 'video-indicator-steady',
+        viewCountDelta: 1_000,
+      }),
+    ).toEqual({
+      label: '유지',
+      tone: 'steady',
+    });
+
+    expect(
+      getPrimaryVideoTrendBadge({
+        categoryId: 'gaming',
+        categoryLabel: '게임',
+        capturedAt: '2026-03-24T00:00:00.000Z',
+        currentRank: 3,
+        currentViewCount: 1_900_000,
+        isNew: false,
+        previousRank: 11,
+        previousViewCount: 1_700_000,
+        rankChange: 8,
+        regionCode: 'KR',
+        videoId: 'video-indicator-up',
+        viewCountDelta: 200_000,
+      }),
+    ).toEqual({
+      label: '▲8',
+      tone: 'up',
+    });
   });
 
   it('formats compact counts for Korean labels', () => {

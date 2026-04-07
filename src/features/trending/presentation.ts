@@ -62,6 +62,30 @@ export function getVideoTrendBadges(signal?: VideoTrendSignal | null): VideoTren
   return badges;
 }
 
+export function getPrimaryVideoTrendBadge(signal?: VideoTrendSignal | null): VideoTrendBadge | null {
+  const [badge] = getVideoTrendBadges(signal);
+
+  if (!badge) {
+    return null;
+  }
+
+  if (badge.tone === 'steady') {
+    return {
+      ...badge,
+      label: '유지',
+    };
+  }
+
+  if (badge.tone === 'up' || badge.tone === 'down') {
+    return {
+      ...badge,
+      label: badge.label.replace(/\s+/g, ''),
+    };
+  }
+
+  return badge;
+}
+
 export function isRealtimeSurgingSignal(signal?: VideoTrendSignal | null) {
   return (signal?.rankChange ?? 0) >= REALTIME_SURGING_RANK_CHANGE_THRESHOLD;
 }

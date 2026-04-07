@@ -71,7 +71,7 @@ import {
   useVideoTrendSignals,
 } from '../../features/trending/queries';
 import type { VideoTrendSignal } from '../../features/trending/types';
-import { getVideoTrendBadges } from '../../features/trending/presentation';
+import { getPrimaryVideoTrendBadge, getVideoTrendBadges } from '../../features/trending/presentation';
 import { fetchVideoById } from '../../features/youtube/api';
 import { usePopularVideosByCategory, useVideoById, useVideoCategories } from '../../features/youtube/queries';
 import type { YouTubeVideoItem } from '../../features/youtube/types';
@@ -89,8 +89,6 @@ const seasonDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit',
   month: 'short',
 });
-
-type RankTrendTone = 'up' | 'down' | 'steady' | 'new';
 
 function getInitialCollapsedHomeSectionIds() {
   if (typeof window === 'undefined') {
@@ -133,34 +131,6 @@ function formatPlaybackSaveTimestamp(positionSeconds: number) {
   }
 
   return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
-}
-
-function resolveRankTrendIndicator(options?: {
-  isNew?: boolean | null;
-  previousRank?: number | null;
-  rankChange?: number | null;
-}): { label: string; tone: RankTrendTone } | null {
-  if (!options) {
-    return null;
-  }
-
-  if (options.isNew) {
-    return { label: 'NEW', tone: 'new' };
-  }
-
-  if (typeof options.rankChange === 'number' && options.rankChange > 0) {
-    return { label: `▲${options.rankChange}`, tone: 'up' };
-  }
-
-  if (typeof options.rankChange === 'number' && options.rankChange < 0) {
-    return { label: `▼${Math.abs(options.rankChange)}`, tone: 'down' };
-  }
-
-  if (options.rankChange === 0 && options.previousRank !== null) {
-    return { label: '유지', tone: 'steady' };
-  }
-
-  return null;
 }
 
 function formatHoldCountdown(remainingSeconds: number) {
@@ -697,6 +667,23 @@ function HomePage() {
   const selectedHistoricalPosition = selectedVideoId
     ? gameHistoryPositions.find((position) => position.videoId === selectedVideoId)
     : undefined;
+  const selectedVideoHistoryTargetPosition = useMemo(() => {
+    const candidatePositions = [...selectedVideoOpenPositions];
+
+    if (selectedHistoricalPosition) {
+      candidatePositions.push(selectedHistoricalPosition);
+    }
+
+    if (candidatePositions.length === 0) {
+      return null;
+    }
+
+    return candidatePositions.reduce((latestPosition, currentPosition) =>
+      new Date(currentPosition.createdAt).getTime() > new Date(latestPosition.createdAt).getTime()
+        ? currentPosition
+        : latestPosition,
+    );
+  }, [selectedHistoricalPosition, selectedVideoOpenPositions]);
   const selectedVideoOpenPositionCount = selectedVideoOpenPositions.reduce(
     (count, position) => count + getGamePositionQuantity(position),
     0,
@@ -768,11 +755,6 @@ function HomePage() {
       chartOut: selectedVideoIsChartOut,
     },
   );
-  const selectedVideoRankTrendIndicator = resolveRankTrendIndicator({
-    isNew: selectedVideoMarketEntry?.isNew ?? selectedVideoTrendSignal?.isNew ?? false,
-    previousRank: selectedVideoMarketEntry?.previousRank ?? selectedVideoTrendSignal?.previousRank ?? null,
-    rankChange: selectedVideoMarketEntry?.rankChange ?? selectedVideoTrendSignal?.rankChange ?? null,
-  });
   const selectedVideoStatLabel = formatVideoViewCount(resolvedSelectedVideo?.statistics?.viewCount);
   const selectedChannelId = resolvedSelectedVideo?.snippet.channelId?.trim();
   const gameSeasonRegionMismatch =
@@ -1556,6 +1538,21 @@ function HomePage() {
     setActiveTradeModal('sell');
   }, [maxSellQuantity]);
 
+  const openSelectedVideoRankHistory = useCallback(() => {
+    if (!selectedVideoId) {
+      return;
+    }
+
+    if (selectedVideoHistoryTargetPosition) {
+      setSelectedVideoRankHistoryVideoId(null);
+      setSelectedRankHistoryPosition(selectedVideoHistoryTargetPosition);
+      return;
+    }
+
+    setSelectedRankHistoryPosition(null);
+    setSelectedVideoRankHistoryVideoId(selectedVideoId);
+  }, [selectedVideoHistoryTargetPosition, selectedVideoId]);
+
   async function handleToggleFavoriteStreamer() {
     if (authStatus !== 'authenticated' || !resolvedSelectedVideo || !selectedChannelId) {
       return;
@@ -1713,6 +1710,7 @@ function HomePage() {
         }
       : null;
   const selectedVideoTrendBadges = getVideoTrendBadges(selectedVideoTrendBadgeSource);
+  const selectedVideoRankTrendIndicator = getPrimaryVideoTrendBadge(selectedVideoTrendBadgeSource);
   const currentVideoGamePriceSummary = selectedVideoOpenPositionCount > 0 ? (
     <div className="app-shell__game-panel-actions-summary" aria-label="선택한 영상 가격 정보">
       <p className="app-shell__game-panel-actions-summary-line">
@@ -1803,10 +1801,7 @@ function HomePage() {
         className="app-shell__stage-action-button app-shell__stage-action-button--game"
         data-variant="chart"
         disabled={!canShowGameActions}
-        onClick={() => {
-          setSelectedRankHistoryPosition(null);
-          setSelectedVideoRankHistoryVideoId(selectedVideoId);
-        }}
+        onClick={openSelectedVideoRankHistory}
         title={
           !canShowGameActions
             ? '대한민국 전체 카테고리에서만 차트를 볼 수 있습니다.'
@@ -2388,10 +2383,7 @@ function HomePage() {
                     <button
                       className="app-shell__game-panel-action"
                       disabled={isChartActionDisabled}
-                      onClick={() => {
-                        setSelectedRankHistoryPosition(null);
-                        setSelectedVideoRankHistoryVideoId(selectedVideoId);
-                      }}
+                      onClick={openSelectedVideoRankHistory}
                       title={
                         !canShowGameActions
                           ? '대한민국 전체 카테고리에서만 차트를 볼 수 있습니다.'
