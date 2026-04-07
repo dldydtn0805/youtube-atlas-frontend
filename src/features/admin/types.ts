@@ -39,6 +39,7 @@ export interface AdminUserSummary {
   email: string;
   displayName: string;
   pictureUrl: string | null;
+  admin: boolean;
   createdAt: string;
   lastLoginAt: string;
 }
@@ -69,4 +70,51 @@ export interface AdminDashboard {
   recentUsers: AdminUserSummary[];
   recentComments: AdminCommentSummary[];
   recentFavorites: AdminFavoriteSummary[];
+}
+
+export interface AdminPlaybackProgress {
+  videoId: string;
+  videoTitle: string | null;
+  channelTitle: string | null;
+  thumbnailUrl: string | null;
+  positionSeconds: number;
+  updatedAt: string;
+}
+
+export interface AdminUserGameSummary {
+  seasonId: number;
+  seasonName: string;
+  participating: boolean;
+  balancePoints: number | null;
+  reservedPoints: number | null;
+  realizedPnlPoints: number | null;
+  totalAssetPoints: number | null;
+  openPositionCount: number;
+  closedPositionCount: number;
+}
+
+export interface AdminUserDetail {
+  id: number;
+  email: string;
+  displayName: string;
+  pictureUrl: string | null;
+  admin: boolean;
+  createdAt: string;
+  lastLoginAt: string;
+  favoriteCount: number;
+  lastPlaybackProgress: AdminPlaybackProgress | null;
+  activeSeasonGame: AdminUserGameSummary | null;
+}
+
+export interface AdminUserList {
+  query: string | null;
+  limit: number;
+  count: number;
+  users: AdminUserSummary[];
+}
+
+export interface AdminWalletUpdateRequest {
+  balancePoints: number;
+  reservedPoints: number;
+  realizedPnlPoints: number;
 }

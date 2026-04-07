@@ -10,7 +10,9 @@
 
 .admin-page__hero,
 .admin-page__panel,
-.admin-page__metric-card {
+.admin-page__metric-card,
+.admin-page__subpanel,
+.admin-page__detail-card {
   backdrop-filter: blur(18px);
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(24, 32, 44, 0.08);
@@ -105,10 +107,31 @@
   text-decoration: none;
 }
 
+.admin-page__button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .admin-page__button--ghost {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(24, 32, 44, 0.1);
   color: #18202c;
+}
+
+.admin-page__button--danger {
+  background: linear-gradient(135deg, #7d1d1d, #b53939);
+}
+
+.admin-page__pill {
+  background: rgba(18, 37, 63, 0.08);
+  border: 1px solid rgba(18, 37, 63, 0.14);
+  border-radius: 999px;
+  color: #274f7c;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 4px 9px;
 }
 
 .admin-page__login-panel {
@@ -151,11 +174,20 @@
   padding: 24px;
 }
 
+.admin-page__panel--notice {
+  background: rgba(245, 251, 255, 0.88);
+  border-color: rgba(39, 79, 124, 0.16);
+}
+
 .admin-page__section-header {
   align-items: center;
   display: flex;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.admin-page__section-header--stacked-mobile {
+  gap: 16px;
 }
 
 .admin-page__section-title {
@@ -171,6 +203,10 @@
 .admin-page__detail-list {
   display: grid;
   gap: 10px;
+}
+
+.admin-page__detail-list--compact {
+  margin-bottom: 18px;
 }
 
 .admin-page__detail-list p {
@@ -229,6 +265,74 @@
   color: #536072;
 }
 
+.admin-page__management-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.25fr);
+}
+
+.admin-page__subpanel {
+  border-radius: 24px;
+  padding: 18px;
+}
+
+.admin-page__detail-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-page__detail-card {
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.admin-page__search-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-page__search-bar input,
+.admin-page__field input {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(24, 32, 44, 0.12);
+  border-radius: 16px;
+  color: #18202c;
+  min-height: 46px;
+  outline: none;
+  padding: 0 14px;
+  width: 100%;
+}
+
+.admin-page__search-bar input:focus,
+.admin-page__field input:focus {
+  border-color: rgba(39, 79, 124, 0.48);
+  box-shadow: 0 0 0 4px rgba(39, 79, 124, 0.08);
+}
+
+.admin-page__form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.admin-page__field {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-page__field span {
+  color: #536072;
+  font-size: 0.86rem;
+}
+
+.admin-page__action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
 .admin-page__table-wrap {
   overflow-x: auto;
 }
@@ -253,6 +357,25 @@
   font-weight: 700;
 }
 
+.admin-page__table--interactive tbody tr {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.admin-page__table--interactive tbody tr:hover {
+  background: rgba(39, 79, 124, 0.05);
+}
+
+.admin-page__table-row--selected {
+  background: rgba(39, 79, 124, 0.1);
+}
+
+.admin-page__user-cell {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
 .admin-page__content-cell {
   max-width: 460px;
   min-width: 280px;
@@ -261,7 +384,9 @@
 
 @media (max-width: 980px) {
   .admin-page__metrics,
-  .admin-page__grid {
+  .admin-page__grid,
+  .admin-page__management-grid,
+  .admin-page__form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -280,13 +405,17 @@
   }
 
   .admin-page__hero,
-  .admin-page__panel {
+  .admin-page__panel,
+  .admin-page__subpanel,
+  .admin-page__detail-card {
     border-radius: 24px;
     padding: 20px;
   }
 
   .admin-page__metrics,
-  .admin-page__grid {
+  .admin-page__grid,
+  .admin-page__management-grid,
+  .admin-page__form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -294,7 +423,15 @@
     grid-template-columns: 1fr;
   }
 
-  .admin-page__user-chip {
+  .admin-page__user-chip,
+  .admin-page__search-bar {
     min-width: 100%;
+  }
+
+  .admin-page__search-bar,
+  .admin-page__section-header--stacked-mobile,
+  .admin-page__section-header {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

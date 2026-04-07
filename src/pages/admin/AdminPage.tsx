@@ -1,10 +1,18 @@
+import { useEffect, useState } from 'react';
 import GoogleLoginButton from '../../components/GoogleLoginButton/GoogleLoginButton';
 import { useAuth } from '../../features/auth/useAuth';
-import { useAdminDashboard } from '../../features/admin/queries';
+import {
+  useAdminDashboard,
+  useAdminUserDetail,
+  useAdminUsers,
+  useDeleteAdminUser,
+  useUpdateAdminUserWallet,
+} from '../../features/admin/queries';
 import type {
   AdminCommentSummary,
   AdminFavoriteSummary,
   AdminTrendSnapshot,
+  AdminUserDetail,
   AdminUserSummary,
 } from '../../features/admin/types';
 import useLogoutOnUnauthorized from '../home/hooks/useLogoutOnUnauthorized';
@@ -30,6 +38,20 @@ function formatNumber(value: number | null | undefined) {
   return new Intl.NumberFormat('ko-KR').format(value);
 }
 
+function formatDurationSeconds(value: number | null | undefined) {
+  if (typeof value !== 'number') {
+    return '-';
+  }
+
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const seconds = value % 60;
+
+  return [hours, minutes, seconds]
+    .map((part, index) => (index === 0 ? String(part) : String(part).padStart(2, '0')))
+    .join(':');
+}
+
 function MetricCard({
   label,
   value,
@@ -43,6 +65,10 @@ function MetricCard({
       <strong className="admin-page__metric-value">{formatNumber(value)}</strong>
     </article>
   );
+}
+
+function UserBadge({ admin }: { admin: boolean }) {
+  return admin ? <span className="admin-page__pill">ADMIN</span> : null;
 }
 
 function RecentUsersTable({ items }: { items: AdminUserSummary[] }) {
@@ -60,7 +86,12 @@ function RecentUsersTable({ items }: { items: AdminUserSummary[] }) {
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
-              <td>{item.displayName}</td>
+              <td>
+                <div className="admin-page__user-cell">
+                  <span>{item.displayName}</span>
+                  <UserBadge admin={item.admin} />
+                </div>
+              </td>
               <td>{item.email}</td>
               <td>{formatDateTime(item.createdAt)}</td>
               <td>{formatDateTime(item.lastLoginAt)}</td>
@@ -144,18 +175,318 @@ function TrendList({ items }: { items: AdminTrendSnapshot[] }) {
   );
 }
 
+function UserDirectoryTable({
+  items,
+  selectedUserId,
+  onSelect,
+}: {
+  items: AdminUserSummary[];
+  selectedUserId: number | null;
+  onSelect: (userId: number) => void;
+}) {
+  return (
+    <div className="admin-page__table-wrap">
+      <table className="admin-page__table admin-page__table--interactive">
+        <thead>
+          <tr>
+            <th>사용자</th>
+            <th>이메일</th>
+            <th>권한</th>
+            <th>최근 로그인</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr
+              className={item.id === selectedUserId ? 'admin-page__table-row--selected' : undefined}
+              key={item.id}
+              onClick={() => onSelect(item.id)}
+            >
+              <td>{item.displayName}</td>
+              <td>{item.email}</td>
+              <td>{item.admin ? '관리자' : '일반'}</td>
+              <td>{formatDateTime(item.lastLoginAt)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UserDetailPanel({
+  user,
+  walletDraft,
+  onWalletDraftChange,
+  onSaveWallet,
+  onDeleteUser,
+  isSaving,
+  isDeleting,
+}: {
+  user: AdminUserDetail;
+  walletDraft: {
+    balancePoints: string;
+    reservedPoints: string;
+    realizedPnlPoints: string;
+  };
+  onWalletDraftChange: (field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints', value: string) => void;
+  onSaveWallet: () => void;
+  onDeleteUser: () => void;
+  isSaving: boolean;
+  isDeleting: boolean;
+}) {
+  return (
+    <div className="admin-page__detail-stack">
+      <div className="admin-page__detail-card">
+        <div className="admin-page__section-header">
+          <h3 className="admin-page__section-title">사용자 상세</h3>
+          <UserBadge admin={user.admin} />
+        </div>
+        <div className="admin-page__detail-list">
+          <p><span>이름</span><strong>{user.displayName}</strong></p>
+          <p><span>이메일</span><strong>{user.email}</strong></p>
+          <p><span>가입일</span><strong>{formatDateTime(user.createdAt)}</strong></p>
+          <p><span>마지막 로그인</span><strong>{formatDateTime(user.lastLoginAt)}</strong></p>
+          <p><span>즐겨찾기 수</span><strong>{formatNumber(user.favoriteCount)}</strong></p>
+        </div>
+      </div>
+
+      <div className="admin-page__detail-card">
+        <div className="admin-page__section-header">
+          <h3 className="admin-page__section-title">최근 재생 위치</h3>
+        </div>
+        {user.lastPlaybackProgress ? (
+          <div className="admin-page__detail-list">
+            <p><span>영상</span><strong>{user.lastPlaybackProgress.videoTitle ?? user.lastPlaybackProgress.videoId}</strong></p>
+            <p><span>채널</span><strong>{user.lastPlaybackProgress.channelTitle ?? '-'}</strong></p>
+            <p><span>재생 위치</span><strong>{formatDurationSeconds(user.lastPlaybackProgress.positionSeconds)}</strong></p>
+            <p><span>업데이트</span><strong>{formatDateTime(user.lastPlaybackProgress.updatedAt)}</strong></p>
+          </div>
+        ) : (
+          <p className="admin-page__muted">저장된 최근 재생 위치가 없습니다.</p>
+        )}
+      </div>
+
+      <div className="admin-page__detail-card">
+        <div className="admin-page__section-header">
+          <h3 className="admin-page__section-title">활성 시즌 지갑 수정</h3>
+          <span className="admin-page__section-caption">
+            {user.activeSeasonGame ? user.activeSeasonGame.seasonName : '활성 시즌 없음'}
+          </span>
+        </div>
+        {user.activeSeasonGame ? (
+          <>
+            <div className="admin-page__detail-list admin-page__detail-list--compact">
+              <p><span>참여 여부</span><strong>{user.activeSeasonGame.participating ? '참여 중' : '미참여'}</strong></p>
+              <p><span>오픈 포지션</span><strong>{formatNumber(user.activeSeasonGame.openPositionCount)}</strong></p>
+              <p><span>종료 포지션</span><strong>{formatNumber(user.activeSeasonGame.closedPositionCount)}</strong></p>
+              <p><span>총 자산</span><strong>{formatNumber(user.activeSeasonGame.totalAssetPoints)}</strong></p>
+            </div>
+            <div className="admin-page__form-grid">
+              <label className="admin-page__field">
+                <span>가용 포인트</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => onWalletDraftChange('balancePoints', event.target.value)}
+                  type="text"
+                  value={walletDraft.balancePoints}
+                />
+              </label>
+              <label className="admin-page__field">
+                <span>예약 포인트</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => onWalletDraftChange('reservedPoints', event.target.value)}
+                  type="text"
+                  value={walletDraft.reservedPoints}
+                />
+              </label>
+              <label className="admin-page__field">
+                <span>실현 손익</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => onWalletDraftChange('realizedPnlPoints', event.target.value)}
+                  type="text"
+                  value={walletDraft.realizedPnlPoints}
+                />
+              </label>
+            </div>
+            <p className="admin-page__muted">
+              예약 포인트는 오픈 포지션과 연결되어 있을 수 있으니, 수동 조정 시 운영 기준으로만 사용하세요.
+            </p>
+            <div className="admin-page__action-row">
+              <button className="admin-page__button" disabled={isSaving || isDeleting} onClick={onSaveWallet} type="button">
+                {isSaving ? '저장 중...' : '지갑 저장'}
+              </button>
+              <button
+                className="admin-page__button admin-page__button--danger"
+                disabled={isSaving || isDeleting}
+                onClick={onDeleteUser}
+                type="button"
+              >
+                {isDeleting ? '탈퇴 처리 중...' : '유저 탈퇴'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="admin-page__muted">현재 활성 시즌이 없어 지갑 수정은 비활성화되어 있습니다.</p>
+            <div className="admin-page__action-row">
+              <button
+                className="admin-page__button admin-page__button--danger"
+                disabled={isDeleting}
+                onClick={onDeleteUser}
+                type="button"
+              >
+                {isDeleting ? '탈퇴 처리 중...' : '유저 탈퇴'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function parsePointInput(value: string, label: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new Error(`${label} 값을 입력해주세요.`);
+  }
+
+  if (!/^\d+$/.test(normalized)) {
+    throw new Error(`${label}는 0 이상의 정수만 입력할 수 있습니다.`);
+  }
+
+  return Number.parseInt(normalized, 10);
+}
+
 export default function AdminPage() {
   const { accessToken, isLoggingOut, logout, status, user } = useAuth();
+  const [searchInput, setSearchInput] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [walletDraft, setWalletDraft] = useState({
+    balancePoints: '',
+    reservedPoints: '',
+    realizedPnlPoints: '',
+  });
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
   const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
+  const usersQuery = useAdminUsers(accessToken, submittedQuery, status === 'authenticated');
+  const detailQuery = useAdminUserDetail(accessToken, selectedUserId, status === 'authenticated');
+  const updateWalletMutation = useUpdateAdminUserWallet(accessToken);
+  const deleteUserMutation = useDeleteAdminUser(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
+  useLogoutOnUnauthorized(usersQuery.error, logout);
+  useLogoutOnUnauthorized(detailQuery.error, logout);
+
+  useEffect(() => {
+    const users = usersQuery.data?.users ?? [];
+
+    if (users.length === 0) {
+      setSelectedUserId(null);
+      return;
+    }
+
+    if (selectedUserId === null || !users.some((item) => item.id === selectedUserId)) {
+      setSelectedUserId(users[0].id);
+    }
+  }, [selectedUserId, usersQuery.data]);
+
+  useEffect(() => {
+    const game = detailQuery.data?.activeSeasonGame;
+
+    if (!game) {
+      setWalletDraft({
+        balancePoints: '',
+        reservedPoints: '',
+        realizedPnlPoints: '',
+      });
+      return;
+    }
+
+    setWalletDraft({
+      balancePoints: String(game.balancePoints ?? 0),
+      reservedPoints: String(game.reservedPoints ?? 0),
+      realizedPnlPoints: String(game.realizedPnlPoints ?? 0),
+    });
+  }, [detailQuery.data]);
 
   const errorMessage =
     dashboardQuery.error instanceof ApiRequestError
       ? dashboardQuery.error.message
-      : '관리자 정보를 불러오지 못했습니다.';
+      : usersQuery.error instanceof ApiRequestError
+        ? usersQuery.error.message
+        : detailQuery.error instanceof ApiRequestError
+          ? detailQuery.error.message
+          : '관리자 정보를 불러오지 못했습니다.';
   const isForbidden =
     dashboardQuery.error instanceof ApiRequestError && dashboardQuery.error.status === 403;
+
+  const handleWalletDraftChange = (field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints', value: string) => {
+    setWalletDraft((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleWalletSave = () => {
+    if (!selectedUserId) {
+      return;
+    }
+
+    try {
+      const request = {
+        balancePoints: parsePointInput(walletDraft.balancePoints, '가용 포인트'),
+        reservedPoints: parsePointInput(walletDraft.reservedPoints, '예약 포인트'),
+        realizedPnlPoints: parsePointInput(walletDraft.realizedPnlPoints, '실현 손익'),
+      };
+
+      setActionMessage(null);
+      updateWalletMutation.mutate(
+        { userId: selectedUserId, request },
+        {
+          onSuccess: () => {
+            setActionMessage('지갑 정보가 저장되었습니다.');
+          },
+          onError: (error) => {
+            setActionMessage(error instanceof Error ? error.message : '지갑 저장에 실패했습니다.');
+          },
+        },
+      );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '입력값을 확인해주세요.');
+    }
+  };
+
+  const handleDeleteUser = () => {
+    if (!selectedUserId || !detailQuery.data) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `${detailQuery.data.displayName} (${detailQuery.data.email}) 사용자를 탈퇴 처리할까요? 연관 세션, 즐겨찾기, 재생 위치, 게임 데이터가 함께 삭제됩니다.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionMessage(null);
+    deleteUserMutation.mutate(selectedUserId, {
+      onSuccess: () => {
+        setActionMessage('유저 탈퇴 처리가 완료되었습니다.');
+        setSelectedUserId(null);
+      },
+      onError: (error) => {
+        setActionMessage(error instanceof Error ? error.message : '유저 탈퇴 처리에 실패했습니다.');
+      },
+    });
+  };
 
   if (!isApiConfigured) {
     return (
@@ -207,7 +538,7 @@ export default function AdminPage() {
           <p className="admin-page__eyebrow">Operations Console</p>
           <h1 className="admin-page__title">YouTube Atlas Admin</h1>
           <p className="admin-page__description">
-            최근 사용자 활동과 댓글, 즐겨찾기, 트렌딩 수집 상태를 한 화면에서 확인할 수 있습니다.
+            최근 사용자 활동과 댓글, 즐겨찾기, 트렌딩 수집 상태뿐 아니라 유저 지갑 수정과 탈퇴 처리까지 한 화면에서 운영할 수 있습니다.
           </p>
         </div>
         <div className="admin-page__hero-actions">
@@ -231,19 +562,25 @@ export default function AdminPage() {
         </div>
       </section>
 
-      {dashboardQuery.isLoading ? (
+      {dashboardQuery.isLoading || usersQuery.isLoading ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">대시보드 로딩 중</h2>
         </section>
       ) : null}
 
-      {dashboardQuery.isError ? (
+      {dashboardQuery.isError || usersQuery.isError || detailQuery.isError ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">{isForbidden ? '접근 권한 없음' : '불러오기 실패'}</h2>
           <p className="admin-page__error">{errorMessage}</p>
           {isForbidden ? (
             <p className="admin-page__muted">백엔드의 `ADMIN_ALLOWED_EMAILS`에 현재 이메일을 추가하면 접근할 수 있습니다.</p>
           ) : null}
+        </section>
+      ) : null}
+
+      {actionMessage ? (
+        <section className="admin-page__panel admin-page__panel--notice">
+          <p>{actionMessage}</p>
         </section>
       ) : null}
 
@@ -288,6 +625,65 @@ export default function AdminPage() {
                 <p className="admin-page__muted">아직 수집된 트렌딩 데이터가 없습니다.</p>
               )}
             </article>
+          </section>
+
+          <section className="admin-page__panel">
+            <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
+              <div>
+                <h2 className="admin-page__section-title">유저 관리</h2>
+                <p className="admin-page__section-caption">검색, 지갑 수정, 탈퇴 처리를 지원합니다.</p>
+              </div>
+              <form
+                className="admin-page__search-bar"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setSubmittedQuery(searchInput.trim() || null);
+                }}
+              >
+                <input
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="이메일 또는 닉네임 검색"
+                  type="search"
+                  value={searchInput}
+                />
+                <button className="admin-page__button admin-page__button--ghost" type="submit">
+                  검색
+                </button>
+              </form>
+            </div>
+            <div className="admin-page__management-grid">
+              <article className="admin-page__subpanel">
+                <div className="admin-page__section-header">
+                  <h3 className="admin-page__section-title">유저 목록</h3>
+                  <span className="admin-page__section-caption">{formatNumber(usersQuery.data?.count ?? 0)}명</span>
+                </div>
+                {usersQuery.data?.users.length ? (
+                  <UserDirectoryTable
+                    items={usersQuery.data.users}
+                    onSelect={setSelectedUserId}
+                    selectedUserId={selectedUserId}
+                  />
+                ) : (
+                  <p className="admin-page__muted">검색 결과가 없습니다.</p>
+                )}
+              </article>
+              <article className="admin-page__subpanel">
+                {detailQuery.isLoading ? <p className="admin-page__muted">사용자 상세를 불러오는 중입니다.</p> : null}
+                {detailQuery.data ? (
+                  <UserDetailPanel
+                    isDeleting={deleteUserMutation.isPending}
+                    isSaving={updateWalletMutation.isPending}
+                    onDeleteUser={handleDeleteUser}
+                    onSaveWallet={handleWalletSave}
+                    onWalletDraftChange={handleWalletDraftChange}
+                    user={detailQuery.data}
+                    walletDraft={walletDraft}
+                  />
+                ) : !detailQuery.isLoading ? (
+                  <p className="admin-page__muted">왼쪽 목록에서 유저를 선택하면 상세 정보가 표시됩니다.</p>
+                ) : null}
+              </article>
+            </div>
           </section>
 
           <section className="admin-page__panel">
