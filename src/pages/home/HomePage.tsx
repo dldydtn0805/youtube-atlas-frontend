@@ -301,7 +301,6 @@ function HomePage() {
   const selectedCountryName =
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
   const isAllCategorySelected = selectedCategory?.id === ALL_VIDEO_CATEGORY_ID;
-  const isGameRegionSelected = selectedRegionCode.toUpperCase() === VIDEO_GAME_REGION_CODE;
   const isTrendRegionSelected = supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode);
   const chartViewOptions = [
     { id: 'all', label: '전체' },
@@ -552,7 +551,7 @@ function HomePage() {
     }
 
     if (
-      isGameRegionSelected ||
+      isTrendRegionSelected ||
       selectedChartView === 'all' ||
       selectedChartView === 'favorites' ||
       selectedChartView === 'popular'
@@ -561,7 +560,7 @@ function HomePage() {
     }
 
     setSelectedChartView('all');
-  }, [authStatus, isGameRegionSelected, selectedChartView]);
+  }, [authStatus, isTrendRegionSelected, selectedChartView]);
 
   useEffect(() => {
     if (openGamePositions.length === 0) {
@@ -669,7 +668,6 @@ function HomePage() {
     isBuySubmitting,
     isCurrentGameSeasonLoading,
     isFavoriteTogglePending: toggleFavoriteStreamerMutation.isPending,
-    isGameRegionSelected,
     openGameHoldings,
     openGamePositions,
     resolvedSelectedVideo,
@@ -1139,7 +1137,7 @@ function HomePage() {
         onClick={openSelectedVideoRankHistory}
         title={
           !canShowGameActions
-            ? '대한민국 전체 카테고리에서만 차트를 볼 수 있습니다.'
+            ? '전체 카테고리에서만 차트를 볼 수 있습니다.'
             : '선택한 영상의 랭킹 차트를 엽니다.'
         }
         type="button"
@@ -1223,11 +1221,9 @@ function HomePage() {
         ? currentGameSeasonError.message
         : '다음 게임 시즌을 준비 중입니다.';
   const positionsEmptyMessage = currentGameSeason
-    ? !isGameRegionSelected
-      ? '랭킹 게임 참여와 포지션 정리는 대한민국 전체 카테고리에서만 가능합니다.'
-      : canShowGameActions
-        ? '아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.'
-        : '새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다.'
+    ? canShowGameActions
+      ? '아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.'
+      : '새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다.'
     : null;
   const historyEmptyMessage = currentGameSeason ? '아직 현재 시즌 거래내역이 없습니다.' : null;
   const resolveHistoryPlaybackQueueId = useCallback(
@@ -1298,7 +1294,6 @@ function HomePage() {
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}
       holdings={openGameHoldings}
-      isGameRegionSelected={isGameRegionSelected}
       onSelectVideo={handleSelectGamePositionVideo}
       selectedVideoId={selectedVideoId}
       trendSignalsByVideoId={chartTrendSignalsByVideoId}
@@ -1343,7 +1338,7 @@ function HomePage() {
         ? historyContent
         : leaderboardContent;
   const portfolioContent =
-    isAllCategorySelected && isGameRegionSelected && isApiConfigured && authStatus === 'authenticated' ? (
+    isAllCategorySelected && isApiConfigured && authStatus === 'authenticated' ? (
       <RankingGamePanelShell
         activeGameTab={activeGameTab}
         dividendOverview={

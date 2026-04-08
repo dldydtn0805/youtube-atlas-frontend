@@ -38,7 +38,6 @@ interface UseSelectedVideoGameStateOptions {
   isBuySubmitting: boolean;
   isCurrentGameSeasonLoading: boolean;
   isFavoriteTogglePending: boolean;
-  isGameRegionSelected: boolean;
   openGameHoldings: OpenGameHolding[];
   openGamePositions: GamePosition[];
   resolvedSelectedVideo?: YouTubeVideoItem;
@@ -148,7 +147,6 @@ export default function useSelectedVideoGameState({
   isBuySubmitting,
   isCurrentGameSeasonLoading,
   isFavoriteTogglePending,
-  isGameRegionSelected,
   openGameHoldings,
   openGamePositions,
   resolvedSelectedVideo,
@@ -322,9 +320,7 @@ export default function useSelectedVideoGameState({
       : buyModalShortfallPointsText ?? selectedVideoMarketEntry?.buyBlockedReason ?? '지금은 추가 매수할 수 없습니다.';
   const currentVideoGameHelperText =
     !canShowGameActions
-      ? !isGameRegionSelected
-        ? '랭킹 게임은 대한민국 전체 카테고리에서만 가능합니다.'
-        : '매수/매도는 전체 카테고리에서만 가능합니다.'
+      ? '매수/매도는 전체 카테고리에서만 가능합니다.'
       : authStatus !== 'authenticated'
         ? '로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다.'
         : selectedVideoOpenPositionCount > 0

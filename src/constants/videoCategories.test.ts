@@ -69,7 +69,7 @@ describe('video category helpers', () => {
 
   it('allows game actions only for the all category in the game region', () => {
     expect(supportsVideoGameActions('0', VIDEO_GAME_REGION_CODE)).toBe(true);
-    expect(supportsVideoGameActions('0', 'US')).toBe(false);
+    expect(supportsVideoGameActions('0', 'US')).toBe(true);
     expect(supportsVideoGameActions('28', VIDEO_GAME_REGION_CODE)).toBe(false);
     expect(supportsVideoGameActions('10', VIDEO_GAME_REGION_CODE)).toBe(false);
     expect(supportsVideoGameActions('24', VIDEO_GAME_REGION_CODE)).toBe(false);

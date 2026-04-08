@@ -85,7 +85,6 @@ interface RankingGamePositionsTabProps {
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
   holdings: OpenGameHolding[];
-  isGameRegionSelected: boolean;
   onSelectVideo: (videoId: string) => void;
   selectedVideoId?: string;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
@@ -518,7 +517,7 @@ export function RankingGameSelectedVideoActions({
           onClick={onOpenRankHistory}
           title={
             !canShowGameActions
-              ? '대한민국 전체 카테고리에서만 차트를 볼 수 있습니다.'
+              ? '전체 카테고리에서만 차트를 볼 수 있습니다.'
               : '선택한 영상의 랭킹 차트를 엽니다.'
           }
           type="button"
@@ -637,7 +636,6 @@ export function RankingGamePositionsTab({
   favoriteTrendSignalsByVideoId,
   gameMarketSignalsByVideoId,
   holdings,
-  isGameRegionSelected,
   onSelectVideo,
   selectedVideoId,
   trendSignalsByVideoId,
@@ -707,9 +705,7 @@ export function RankingGamePositionsTab({
                     : holding.nextSellableInSeconds !== null
                       ? `${formatHoldCountdown(holding.nextSellableInSeconds)} 후 매도 가능`
                       : '아직 매도 가능 수량 없음'
-                  : !isGameRegionSelected
-                    ? '대한민국 전체 카테고리에서 매도 가능'
-                    : '전체 카테고리에서 매도 가능'}
+                  : '전체 카테고리에서 매도 가능'}
               </span>
             </div>
           </li>

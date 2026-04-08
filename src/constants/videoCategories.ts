@@ -52,7 +52,7 @@ export function supportsVideoTrendSignals(categoryId?: string, regionCode?: stri
 }
 
 export function supportsVideoGameActions(categoryId?: string, regionCode?: string) {
-  return categoryId === ALL_VIDEO_CATEGORY_ID && regionCode?.toUpperCase() === VIDEO_GAME_REGION_CODE;
+  return categoryId === ALL_VIDEO_CATEGORY_ID && Boolean(regionCode);
 }
 
 export function getMainVideoCategories(categories: VideoCategory[]) {
