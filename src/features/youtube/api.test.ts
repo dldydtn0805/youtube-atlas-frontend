@@ -117,6 +117,38 @@ describe('fetchPopularVideosByCategory', () => {
     expect(section.nextPageToken).toBe('next-page');
     expect(section.items.map((item) => item.id)).toEqual(['video-1']);
   });
+
+  it('requests snapshot-backed top videos for the KR all-category chart', async () => {
+    const { fetchPopularVideosByCategory } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        categoryId: '0',
+        label: '전체',
+        description: '전체',
+        items: [],
+        nextPageToken: '50',
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const section = await fetchPopularVideosByCategory(
+      'KR',
+      {
+        id: '0',
+        label: '전체',
+        description: '전체',
+        sourceIds: [],
+      },
+      '50',
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/trending/top-videos?regionCode=KR&pageToken=50',
+      undefined,
+    );
+    expect(section.nextPageToken).toBe('50');
+  });
 });
 
 describe('fetchVideoById', () => {
