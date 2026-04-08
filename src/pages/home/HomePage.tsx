@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
 import AppHeader from './sections/AppHeader';
-import { ChartPanel, CommunityPanel, FavoriteVideosPanel } from './sections/ContentPanels';
+import { ChartPanel, CommunityPanel } from './sections/ContentPanels';
 import GameDividendModal from './sections/GameDividendModal';
-import { CinematicQuickFilters, FilterModal, FilterSummaryPanel } from './sections/FilterPanels';
+import { FilterBar } from './sections/FilterPanels';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
 import PlayerStage from './sections/PlayerStage';
@@ -41,6 +41,9 @@ import {
   FAVORITE_STREAMER_VIDEO_SECTION,
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
+  NEW_CHART_ENTRIES_QUEUE_ID,
+  REALTIME_SURGING_QUEUE_ID,
+  filterVideoSection,
   findPlaybackQueueIdForVideo,
   formatSignedProfitRate,
   getVideoThumbnailUrl,
@@ -53,8 +56,6 @@ import {
 import countryCodes from '../../constants/countryCodes';
 import {
   ALL_VIDEO_CATEGORY_ID,
-  getDetailVideoCategories,
-  getMainVideoCategories,
   sortVideoCategories,
   supportsVideoGameActions,
   VIDEO_GAME_REGION_CODE,
@@ -86,9 +87,9 @@ import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import '../../styles/app.css';
 
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
-const FAVORITES_PANEL_SECTION_ID = 'favorites-panel';
 const MAIN_CHART_SECTION_ID = 'chart-main-list';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
+type ChartViewMode = 'all' | 'realtime-surging' | 'new-chart-entries' | 'favorites' | 'popular';
 
 function getInitialCollapsedHomeSectionIds() {
   if (typeof window === 'undefined') {
@@ -137,6 +138,7 @@ function HomePage() {
   const [sellQuantity, setSellQuantity] = useState(DEFAULT_GAME_QUANTITY);
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
+  const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('all');
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
@@ -144,15 +146,11 @@ function HomePage() {
   const tradeRequestLockRef = useRef<'buy' | 'sell' | null>(null);
   const {
     cinematicToggleLabel,
-    closeFilterModal,
-    handleCompleteFilterSelection,
     handleToggleCinematicMode,
     handleToggleThemeMode,
     isCinematicModeActive,
     isDarkMode,
-    isFilterModalOpen,
     isMobileLayout,
-    openFilterModal,
     selectedRegionCode,
     themeToggleDisplayLabel,
     themeToggleLabel,
@@ -174,18 +172,11 @@ function HomePage() {
   } = useVideoCategories(selectedRegionCode);
   const [selectedCategoryId, setSelectedCategoryId] = useState(DEFAULT_CATEGORY_ID);
   const sortedVideoCategories = sortVideoCategories(videoCategories);
-  const mainVideoCategories = getMainVideoCategories(sortedVideoCategories);
-  const detailVideoCategories = getDetailVideoCategories(sortedVideoCategories);
-
   const selectedCategory =
     sortedVideoCategories.find((category) => category.id === selectedCategoryId) ?? sortedVideoCategories[0];
   const regionOptions = sortedCountryCodes.map((country) => ({
     value: country.code,
     label: `${country.code} · ${country.name}`,
-  }));
-  const detailCategoryOptions = detailVideoCategories.map((category) => ({
-    value: category.id,
-    label: category.label,
   }));
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
   const {
@@ -309,6 +300,39 @@ function HomePage() {
     countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
   const isAllCategorySelected = selectedCategory?.id === ALL_VIDEO_CATEGORY_ID;
   const isGameRegionSelected = selectedRegionCode.toUpperCase() === VIDEO_GAME_REGION_CODE;
+  const chartViewOptions = [
+    { id: 'all', label: '전체' },
+    {
+      id: 'favorites',
+      label: '즐겨찾기',
+      disabled: authStatus !== 'authenticated',
+    },
+    {
+      id: 'realtime-surging',
+      label: '실시간 급상승',
+      disabled: !isGameRegionSelected,
+    },
+    {
+      id: 'new-chart-entries',
+      label: '신규 진입',
+      disabled: !isGameRegionSelected,
+    },
+    {
+      id: 'popular',
+      label: 'TOP 200',
+    },
+  ] satisfies Array<{ id: ChartViewMode; label: string; disabled?: boolean }>;
+  const effectiveChartView: ChartViewMode =
+    !isGameRegionSelected &&
+    selectedChartView !== 'all' &&
+    selectedChartView !== 'favorites' &&
+    selectedChartView !== 'popular'
+      ? 'all'
+      : authStatus !== 'authenticated' && selectedChartView === 'favorites'
+        ? 'all'
+        : selectedChartView;
+  const selectedChartViewOption =
+    chartViewOptions.find((option) => option.id === effectiveChartView) ?? chartViewOptions[0];
   const canShowGameActions = supportsVideoGameActions(selectedCategory?.id, selectedRegionCode);
   const shouldLoadFavorites = isApiConfigured && authStatus === 'authenticated';
   const isChartLoading =
@@ -321,13 +345,9 @@ function HomePage() {
     : error instanceof Error
       ? error.message
       : undefined;
-  const detailCategoryHelperText = isVideoCategoriesLoading
-    ? '세부 카테고리를 불러오는 중입니다.'
-    : isVideoCategoriesError
-      ? `불러오기에 실패했습니다. ${chartErrorMessage}`
-      : detailVideoCategories.length > 0
-        ? '추가 카테고리는 여기서 선택할 수 있습니다.'
-        : '현재 이 국가에는 추가 세부 카테고리가 없습니다.';
+  const chartViewHelperText = isGameRegionSelected
+    ? '전체는 여러 섹션을 함께 보고, 각 카테고리는 원하는 보기만 집중해서 볼 수 있습니다.'
+    : '실시간 급상승과 신규 진입은 현재 대한민국에서만 지원합니다.';
 
   const {
     data: favoriteStreamers = [],
@@ -353,6 +373,25 @@ function HomePage() {
     favoriteStreamers.length > 0 && isAllCategorySelected
       ? mergeSections(favoriteStreamerVideosData?.pages) ?? FAVORITE_STREAMER_VIDEO_SECTION
       : undefined;
+  const favoriteChartSection =
+    authStatus === 'authenticated' && isAllCategorySelected
+      ? favoriteStreamerVideoSection ?? FAVORITE_STREAMER_VIDEO_SECTION
+      : undefined;
+  const buyableFavoriteChartSection = useMemo(() => {
+    if (!favoriteChartSection) {
+      return undefined;
+    }
+
+    if (!isBuyableOnlyFilterActive) {
+      return favoriteChartSection;
+    }
+
+    const buyableVideoIdSet = new Set(
+      gameMarket.filter((marketVideo) => marketVideo.canBuy).map((marketVideo) => marketVideo.videoId),
+    );
+
+    return filterVideoSection(favoriteChartSection, (item) => buyableVideoIdSet.has(item.id));
+  }, [favoriteChartSection, gameMarket, isBuyableOnlyFilterActive]);
   const gamePortfolioSection = useMemo(
     () => ({
       categoryId: GAME_PORTFOLIO_QUEUE_ID,
@@ -384,6 +423,10 @@ function HomePage() {
     hasResolvedFavoriteTrendSignals,
     isBuyableOnlyFilterAvailable,
     isBuyableVideoSearchLoading,
+    isNewChartEntriesError,
+    isNewChartEntriesLoading,
+    isRealtimeSurgingError,
+    isRealtimeSurgingLoading,
     newChartEntriesSection,
     realtimeSurgingSection,
     shouldAutoPrefetchBuyableVideos,
@@ -413,7 +456,6 @@ function HomePage() {
     handlePlaybackRestoreApplied,
     handlePlayNextVideo,
     handlePlayPreviousVideo,
-    handleSelectCategory,
     handleSelectVideo,
     isManualPlaybackSavePending,
     manualPlaybackSaveStatus,
@@ -446,11 +488,7 @@ function HomePage() {
       ? favoriteStreamerVideosError.message
       : '즐겨찾기 영상을 불러오지 못했습니다.';
   const isRankingGameCollapsed = collapsedHomeSectionIds.includes(RANKING_GAME_SECTION_ID);
-  const isFavoritesPanelCollapsed = collapsedHomeSectionIds.includes(FAVORITES_PANEL_SECTION_ID);
-  const collapsedFeaturedSectionIds = useMemo(
-    () => collapsedHomeSectionIds.filter((sectionId) => sectionId !== FAVORITES_PANEL_SECTION_ID),
-    [collapsedHomeSectionIds],
-  );
+  const collapsedFeaturedSectionIds = collapsedHomeSectionIds;
   const toggleCollapsedSection = useCallback((sectionId: string) => {
     setCollapsedHomeSectionIds((currentSectionIds) =>
       currentSectionIds.includes(sectionId)
@@ -509,6 +547,24 @@ function HomePage() {
   }, [selectedVideoId]);
 
   useEffect(() => {
+    if (selectedChartView === 'favorites' && authStatus !== 'authenticated') {
+      setSelectedChartView('all');
+      return;
+    }
+
+    if (
+      isGameRegionSelected ||
+      selectedChartView === 'all' ||
+      selectedChartView === 'favorites' ||
+      selectedChartView === 'popular'
+    ) {
+      return;
+    }
+
+    setSelectedChartView('all');
+  }, [authStatus, isGameRegionSelected, selectedChartView]);
+
+  useEffect(() => {
     if (openGamePositions.length === 0) {
       return;
     }
@@ -524,7 +580,20 @@ function HomePage() {
 
   function handleSelectRegion(regionCode: RegionCode) {
     resetForRegionChange();
+    setSelectedCategoryId(DEFAULT_CATEGORY_ID);
     updateRegionCode(regionCode);
+  }
+
+  function handleSelectChartView(viewId: string, triggerElement?: HTMLButtonElement) {
+    const nextView = chartViewOptions.find((option) => option.id === viewId);
+
+    if (!nextView || nextView.disabled) {
+      triggerElement?.blur();
+      return;
+    }
+
+    setSelectedChartView(nextView.id);
+    triggerElement?.blur();
   }
 
   const getRemainingHoldSeconds = useCallback(
@@ -597,7 +666,7 @@ function HomePage() {
     openGamePositions,
     resolvedSelectedVideo,
     selectedCategoryId,
-    selectedCategoryLabel: selectedCategory?.label,
+    selectedCategoryLabel: selectedChartViewOption.label,
     selectedCountryName,
     selectedRegionCode,
     selectedVideoId,
@@ -1294,102 +1363,229 @@ function HomePage() {
         tabContent={activeGameTabContent}
       />
     ) : null;
+  const realtimeSurgingFeaturedSection = featuredChartSections.find(
+    (featuredSection) => featuredSection.section.categoryId === REALTIME_SURGING_QUEUE_ID,
+  );
+  const newChartEntriesFeaturedSection = featuredChartSections.find(
+    (featuredSection) => featuredSection.section.categoryId === NEW_CHART_ENTRIES_QUEUE_ID,
+  );
+  const favoriteChartGetRankLabel = useCallback(
+    (item: YouTubeVideoItem) => {
+      const signal = favoriteTrendSignalsByVideoId[item.id];
+
+      if (signal?.currentRank) {
+        return `${signal.currentRank}위`;
+      }
+
+      return hasResolvedFavoriteTrendSignals ? '현재 순위 미집계' : '현재 순위 확인 중';
+    },
+    [favoriteTrendSignalsByVideoId, hasResolvedFavoriteTrendSignals],
+  );
+  const popularChartGetRankLabel = useCallback(
+    (item: YouTubeVideoItem) => {
+      const signal = chartTrendSignalsByVideoId[item.id];
+
+      if (signal?.currentRank) {
+        return `${signal.currentRank}위`;
+      }
+
+      return hasResolvedChartTrendSignals ? '현재 순위 미집계' : '현재 순위 확인 중';
+    },
+    [chartTrendSignalsByVideoId, hasResolvedChartTrendSignals],
+  );
+  const favoriteFeaturedSection =
+    authStatus === 'authenticated' && buyableFavoriteChartSection
+      ? {
+          section: buyableFavoriteChartSection,
+          eyebrow: 'Favorite Videos',
+          emptyMessage:
+            favoriteStreamers.length === 0
+              ? '저장한 채널이 생기면 해당 채널의 인기 영상을 여기에서 바로 볼 수 있습니다.'
+              : isBuyableOnlyFilterActive
+                ? '지금 매수 가능한 즐겨찾기 영상이 없습니다. 필터를 해제하거나 다른 보기를 확인해 보세요.'
+              : undefined,
+          getRankLabel: favoriteChartGetRankLabel,
+        }
+      : undefined;
+  const activeChartSection =
+    effectiveChartView === 'realtime-surging'
+        ? realtimeSurgingFeaturedSection?.section
+      : effectiveChartView === 'new-chart-entries'
+        ? newChartEntriesFeaturedSection?.section
+        : effectiveChartView === 'favorites'
+          ? buyableFavoriteChartSection
+          : effectiveChartView === 'popular'
+            ? filteredSelectedPlaybackSection
+        : filteredSelectedPlaybackSection;
+  const activeChartFeaturedSections: typeof featuredChartSections =
+    effectiveChartView === 'all'
+      ? favoriteFeaturedSection
+        ? [...featuredChartSections, favoriteFeaturedSection]
+        : featuredChartSections
+      : [];
+  const activeChartSectionEyebrow =
+    effectiveChartView === 'realtime-surging'
+      ? realtimeSurgingFeaturedSection?.eyebrow
+      : effectiveChartView === 'new-chart-entries'
+        ? newChartEntriesFeaturedSection?.eyebrow
+        : effectiveChartView === 'favorites'
+          ? 'Favorite Videos'
+          : effectiveChartView === 'popular'
+            ? 'Popular Videos'
+        : 'Category Ranking';
+  const activeChartRankLabel =
+    effectiveChartView === 'realtime-surging'
+      ? realtimeSurgingFeaturedSection?.getRankLabel
+      : effectiveChartView === 'new-chart-entries'
+        ? newChartEntriesFeaturedSection?.getRankLabel
+        : effectiveChartView === 'favorites'
+          ? favoriteChartGetRankLabel
+          : effectiveChartView === 'popular'
+            ? popularChartGetRankLabel
+        : undefined;
+  const activeChartEmptyMessage =
+    effectiveChartView === 'realtime-surging'
+      ? realtimeSurgingFeaturedSection?.emptyMessage
+      : effectiveChartView === 'new-chart-entries'
+        ? newChartEntriesFeaturedSection?.emptyMessage
+        : effectiveChartView === 'favorites'
+          ? favoriteStreamers.length === 0
+            ? '저장한 채널이 생기면 해당 채널의 인기 영상을 여기에서 바로 볼 수 있습니다.'
+            : isBuyableOnlyFilterActive
+              ? '지금 매수 가능한 즐겨찾기 영상이 없습니다. 필터를 해제하거나 다른 보기를 확인해 보세요.'
+            : undefined
+        : undefined;
+  const isTrendOnlyViewSelected = effectiveChartView !== 'all';
+  const activeTrendViewIsLoading =
+    effectiveChartView === 'realtime-surging'
+      ? isRealtimeSurgingLoading
+      : effectiveChartView === 'new-chart-entries'
+        ? isNewChartEntriesLoading
+        : effectiveChartView === 'favorites'
+          ? isFavoriteStreamersLoading || isFavoriteStreamerVideosLoading
+        : false;
+  const activeTrendViewIsError =
+    effectiveChartView === 'realtime-surging'
+      ? isRealtimeSurgingError
+      : effectiveChartView === 'new-chart-entries'
+        ? isNewChartEntriesError
+        : effectiveChartView === 'favorites'
+          ? isFavoriteStreamersError || isFavoriteStreamerVideosError
+        : false;
+  const activeChartIsLoading =
+    effectiveChartView === 'favorites'
+      ? activeTrendViewIsLoading
+      : isTrendOnlyViewSelected
+        ? isChartLoading || activeTrendViewIsLoading
+        : isChartLoading;
+  const activeChartIsError =
+    effectiveChartView === 'favorites'
+      ? activeTrendViewIsError
+      : isTrendOnlyViewSelected
+        ? isChartError || activeTrendViewIsError
+        : isChartError;
+  const activeChartErrorMessage =
+    effectiveChartView === 'favorites'
+      ? isFavoriteStreamersError
+        ? '즐겨찾기 채널을 불러오지 못했습니다.'
+        : favoriteStreamerVideoErrorMessage
+      : activeTrendViewIsError && !chartErrorMessage
+        ? '선택한 차트 보기를 불러오지 못했습니다.'
+        : chartErrorMessage;
+  const activeChartHasNextPage =
+    effectiveChartView === 'favorites'
+      ? hasNextFavoriteStreamerVideosPage
+      : effectiveChartView === 'realtime-surging' || effectiveChartView === 'new-chart-entries'
+        ? false
+        : hasNextPage;
+  const activeChartMainSectionCollapseKey = isTrendOnlyViewSelected
+    ? activeChartSection?.categoryId
+    : MAIN_CHART_SECTION_ID;
+  const activeChartHasResolvedTrendSignals =
+    effectiveChartView === 'favorites' ? hasResolvedFavoriteTrendSignals : hasResolvedChartTrendSignals;
+  const activeChartIsFetchingNextPage =
+    effectiveChartView === 'favorites' ? isFetchingNextFavoriteStreamerVideosPage : isFetchingNextPage;
+  const activeChartTrendSignalsByVideoId =
+    effectiveChartView === 'favorites' ? favoriteTrendSignalsByVideoId : chartTrendSignalsByVideoId;
+  const activeChartOnLoadMore =
+    effectiveChartView === 'favorites'
+      ? () => void fetchNextFavoriteStreamerVideosPage()
+      : () => void fetchNextPage();
+  const activeChartBuyableOnlyFilterAvailable = isBuyableOnlyFilterAvailable;
+  const activeChartBuyableOnlyFilterActive = isBuyableOnlyFilterActive;
+  const activeChartBuyableVideoSearchStatus = buyableVideoSearchStatus;
 
   const chartContent = (
     <ChartPanel
-      buyableVideoSearchStatus={buyableVideoSearchStatus}
-      chartErrorMessage={chartErrorMessage}
-      featuredSections={featuredChartSections}
+      getRankLabel={activeChartRankLabel}
+      buyableVideoSearchStatus={activeChartBuyableVideoSearchStatus}
+      chartErrorMessage={activeChartErrorMessage}
+      featuredSections={activeChartFeaturedSections}
       collapsedFeaturedSectionIds={collapsedFeaturedSectionIds}
-      hasNextPage={hasNextPage}
-      hasResolvedTrendSignals={hasResolvedChartTrendSignals}
-      isBuyableOnlyFilterActive={isBuyableOnlyFilterActive}
-      isBuyableOnlyFilterAvailable={isBuyableOnlyFilterAvailable}
-      isChartError={isChartError}
-      isChartLoading={isChartLoading}
-      isFetchingNextPage={isFetchingNextPage}
-      mainSectionCollapseKey={MAIN_CHART_SECTION_ID}
-      onLoadMore={() => void fetchNextPage()}
+      hasNextPage={activeChartHasNextPage}
+      hasResolvedTrendSignals={activeChartHasResolvedTrendSignals}
+      isBuyableOnlyFilterActive={activeChartBuyableOnlyFilterActive}
+      isBuyableOnlyFilterAvailable={activeChartBuyableOnlyFilterAvailable}
+      isChartError={activeChartIsError}
+      isChartLoading={activeChartIsLoading}
+      isFetchingNextPage={activeChartIsFetchingNextPage}
+      mainSectionCollapseKey={activeChartMainSectionCollapseKey}
+      onLoadMore={activeChartOnLoadMore}
       onToggleFeaturedSectionCollapse={toggleCollapsedSection}
       onToggleBuyableOnlyFilter={() => setIsBuyableOnlyFilterActive((current) => !current)}
       onSelectVideo={handleSelectVideo}
-      section={filteredSelectedPlaybackSection}
-      selectedCategoryLabel={selectedCategory?.label}
+      primarySectionEyebrow={activeChartSectionEyebrow}
+      section={activeChartSection}
+      sectionEmptyMessage={activeChartEmptyMessage}
+      selectedCategoryLabel={selectedChartViewOption.label}
+      selectedCountryName={selectedCountryName}
       selectedVideoId={selectedVideoId}
-      trendSignalsByVideoId={chartTrendSignalsByVideoId}
+      trendSignalsByVideoId={activeChartTrendSignalsByVideoId}
     />
   );
 
   const cinematicChartContent = (
     <ChartPanel
-      buyableVideoSearchStatus={buyableVideoSearchStatus}
-      chartErrorMessage={chartErrorMessage}
+      getRankLabel={activeChartRankLabel}
+      buyableVideoSearchStatus={activeChartBuyableVideoSearchStatus}
+      chartErrorMessage={activeChartErrorMessage}
       className="app-shell__panel--chart-cinematic"
-      featuredSections={featuredChartSections}
+      featuredSections={activeChartFeaturedSections}
       collapsedFeaturedSectionIds={collapsedFeaturedSectionIds}
-      hasNextPage={hasNextPage}
-      hasResolvedTrendSignals={hasResolvedChartTrendSignals}
-      isBuyableOnlyFilterActive={isBuyableOnlyFilterActive}
-      isBuyableOnlyFilterAvailable={isBuyableOnlyFilterAvailable}
-      isChartError={isChartError}
-      isChartLoading={isChartLoading}
-      isFetchingNextPage={isFetchingNextPage}
-      mainSectionCollapseKey={MAIN_CHART_SECTION_ID}
-      onLoadMore={() => void fetchNextPage()}
+      hasNextPage={activeChartHasNextPage}
+      hasResolvedTrendSignals={activeChartHasResolvedTrendSignals}
+      isBuyableOnlyFilterActive={activeChartBuyableOnlyFilterActive}
+      isBuyableOnlyFilterAvailable={activeChartBuyableOnlyFilterAvailable}
+      isChartError={activeChartIsError}
+      isChartLoading={activeChartIsLoading}
+      isFetchingNextPage={activeChartIsFetchingNextPage}
+      mainSectionCollapseKey={activeChartMainSectionCollapseKey}
+      onLoadMore={activeChartOnLoadMore}
       onToggleFeaturedSectionCollapse={toggleCollapsedSection}
       onToggleBuyableOnlyFilter={() => setIsBuyableOnlyFilterActive((current) => !current)}
       onSelectVideo={handleSelectVideo}
-      section={filteredSelectedPlaybackSection}
-      selectedCategoryLabel={selectedCategory?.label}
-      selectedVideoId={selectedVideoId}
-      trendSignalsByVideoId={chartTrendSignalsByVideoId}
-    />
-  );
-
-  const favoriteVideosContent = isAllCategorySelected ? (
-    <FavoriteVideosPanel
-      authStatus={authStatus}
-      favoriteStreamerCount={favoriteStreamers.length}
-      favoriteStreamerVideoErrorMessage={favoriteStreamerVideoErrorMessage}
-      favoriteStreamerVideoSection={favoriteStreamerVideoSection}
-      favoriteStreamers={favoriteStreamers}
-      favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
-      hasNextPage={hasNextFavoriteStreamerVideosPage}
-      hasResolvedTrendSignals={hasResolvedFavoriteTrendSignals}
-      isCinematicModeActive={isCinematicModeActive}
-      isCollapsed={isFavoritesPanelCollapsed}
-      isFavoriteStreamerVideosError={isFavoriteStreamerVideosError}
-      isFavoriteStreamerVideosLoading={isFavoriteStreamerVideosLoading}
-      isFavoriteStreamersError={isFavoriteStreamersError}
-      isFavoriteStreamersLoading={isFavoriteStreamersLoading}
-      isFetchingNextPage={isFetchingNextFavoriteStreamerVideosPage}
-      onLoadMore={() => void fetchNextFavoriteStreamerVideosPage()}
-      onSelectVideo={handleSelectVideo}
-      onToggleCollapse={() => toggleCollapsedSection(FAVORITES_PANEL_SECTION_ID)}
+      primarySectionEyebrow={activeChartSectionEyebrow}
+      section={activeChartSection}
+      sectionEmptyMessage={activeChartEmptyMessage}
+      selectedCategoryLabel={selectedChartViewOption.label}
       selectedCountryName={selectedCountryName}
       selectedVideoId={selectedVideoId}
-      trendSignalsByVideoId={favoriteTrendSignalsByVideoId}
-    />
-  ) : null;
-
-  const filterSummaryContent = (
-    <FilterSummaryPanel
-      mainVideoCategories={mainVideoCategories}
-      onOpenFilterModal={openFilterModal}
-      onSelectCategory={handleSelectCategory}
-      selectedCategoryId={selectedCategoryId}
-      selectedCategoryLabel={selectedCategory?.label}
-      selectedCountryName={selectedCountryName}
+      trendSignalsByVideoId={activeChartTrendSignalsByVideoId}
     />
   );
-
-  const cinematicQuickFiltersContent = isCinematicModeActive ? (
-    <CinematicQuickFilters
-      mainVideoCategories={mainVideoCategories}
-      onSelectCategory={handleSelectCategory}
-      selectedCategoryId={selectedCategoryId}
+  const filterContent = (
+    <FilterBar
+      onChangeRegion={(regionCode) => handleSelectRegion(regionCode as RegionCode)}
+      onSelectView={handleSelectChartView}
+      regionOptions={regionOptions}
+      selectedCountryName={selectedCountryName}
+      selectedRegionCode={selectedRegionCode}
+      selectedViewId={effectiveChartView}
+      selectedViewLabel={selectedChartViewOption.label}
+      viewHelperText={chartViewHelperText}
+      viewOptions={chartViewOptions}
     />
-  ) : null;
+  );
 
   return (
     <div className="app-shell">
@@ -1408,11 +1604,10 @@ function HomePage() {
           authStatus={authStatus}
           canNavigateVideos={canPlayNextVideo}
           chartContent={cinematicChartContent}
-          cinematicQuickFiltersContent={cinematicQuickFiltersContent}
           cinematicToggleLabel={cinematicToggleLabel}
           favoriteToggleHelperText={favoriteToggleHelperText}
           favoriteToggleLabel={favoriteToggleLabel}
-          favoriteVideosContent={favoriteVideosContent}
+          filterContent={filterContent}
           isChartLoading={isChartLoading}
           isCinematicModeActive={isCinematicModeActive}
           isFavoriteToggleDisabled={!selectedChannelId || toggleFavoriteStreamerMutation.isPending}
@@ -1434,7 +1629,7 @@ function HomePage() {
           playerSectionRef={playerSectionRef}
           playerStageRef={playerStageRef}
           playerViewportRef={playerViewportRef}
-          selectedCategoryLabel={selectedCategory?.label}
+          selectedCategoryLabel={selectedChartViewOption.label}
           selectedCountryName={selectedCountryName}
           selectedVideoChannelTitle={resolvedSelectedVideo?.snippet.channelTitle}
           selectedVideoId={selectedVideoId}
@@ -1450,8 +1645,7 @@ function HomePage() {
         />
         {isMobileLayout ? (
           <>
-            {!isCinematicModeActive ? favoriteVideosContent : null}
-            {!isCinematicModeActive ? filterSummaryContent : null}
+            {!isCinematicModeActive ? filterContent : null}
             {!isCinematicModeActive ? chartContent : null}
             <CommunityPanel
               selectedVideoId={selectedVideoId}
@@ -1460,8 +1654,7 @@ function HomePage() {
           </>
         ) : (
           <>
-            {!isCinematicModeActive ? favoriteVideosContent : null}
-            {!isCinematicModeActive ? filterSummaryContent : null}
+            {!isCinematicModeActive ? filterContent : null}
             {!isCinematicModeActive ? chartContent : null}
             <CommunityPanel
               selectedVideoId={selectedVideoId}
@@ -1470,23 +1663,6 @@ function HomePage() {
           </>
         )}
       </main>
-      <FilterModal
-        detailCategoryHelperText={detailCategoryHelperText}
-        detailCategoryOptions={detailCategoryOptions}
-        isOpen={isFilterModalOpen}
-        isVideoCategoriesError={isVideoCategoriesError}
-        isVideoCategoriesLoading={isVideoCategoriesLoading}
-        mainVideoCategories={mainVideoCategories}
-        onChangeRegion={(regionCode) => handleSelectRegion(regionCode as RegionCode)}
-        onClose={closeFilterModal}
-        onComplete={handleCompleteFilterSelection}
-        onSelectCategory={handleSelectCategory}
-        regionOptions={regionOptions}
-        selectedCategoryId={selectedCategory?.id ?? ''}
-        selectedCategoryLabel={selectedCategory?.label}
-        selectedCountryName={selectedCountryName}
-        selectedRegionCode={selectedRegionCode}
-      />
       <GameRankHistoryModal
         error={
           selectedPositionRankHistoryError instanceof Error

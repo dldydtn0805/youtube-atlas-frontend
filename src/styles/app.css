@@ -175,19 +175,35 @@
   justify-content: space-between;
 }
 
-.app-shell__chart-filter-group {
+.app-shell__chart-controls {
   align-items: flex-end;
   display: grid;
   flex-shrink: 0;
   gap: 6px;
   justify-items: end;
-  max-width: min(320px, 100%);
+  max-width: min(360px, 100%);
 }
 
 .app-shell__section-heading-copy {
   display: grid;
   gap: 6px;
   min-width: 0;
+}
+
+.app-shell__chart-context {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  text-align: right;
+}
+
+.app-shell__chart-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .app-shell__section-title-row,
@@ -2591,6 +2607,12 @@
   text-transform: uppercase;
 }
 
+.app-shell__filter-fields {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .app-shell__favorites-list {
   display: grid;
   gap: 14px;
@@ -2636,6 +2658,16 @@
   color: var(--text);
   outline: none;
   transform: translateY(-1px);
+}
+
+.app-shell__quick-category:disabled {
+  background: var(--surface-panel-muted);
+  border-color: var(--border);
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
 }
 
 .app-shell__quick-category[data-active='true'] {
@@ -3390,6 +3422,30 @@
     border-radius: 24px;
     padding: 16px;
     width: 100%;
+  }
+
+  .app-shell__filter-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell__section-heading--chart {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-shell__chart-controls {
+    justify-items: start;
+    max-width: none;
+    width: 100%;
+  }
+
+  .app-shell__chart-context,
+  .app-shell__chart-filter-status {
+    text-align: left;
+  }
+
+  .app-shell__chart-filter-actions {
+    justify-content: flex-start;
   }
 
   .app-shell__section-heading--player {

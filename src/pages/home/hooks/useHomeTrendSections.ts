@@ -45,6 +45,10 @@ interface UseHomeTrendSectionsResult {
   hasResolvedFavoriteTrendSignals: boolean;
   isBuyableOnlyFilterAvailable: boolean;
   isBuyableVideoSearchLoading: boolean;
+  isNewChartEntriesError: boolean;
+  isNewChartEntriesLoading: boolean;
+  isRealtimeSurgingError: boolean;
+  isRealtimeSurgingLoading: boolean;
   newChartEntriesSection?: YouTubeCategorySection;
   realtimeSurgingSection?: YouTubeCategorySection;
   shouldAutoPrefetchBuyableVideos: boolean;
@@ -65,7 +69,7 @@ function getSectionRankLabel(
     return fallbackLabel;
   }
 
-  return `전체 ${signal.currentRank}위`;
+  return `${signal.currentRank}위`;
 }
 
 export default function useHomeTrendSections({
@@ -286,6 +290,10 @@ export default function useHomeTrendSections({
     hasResolvedFavoriteTrendSignals,
     isBuyableOnlyFilterAvailable,
     isBuyableVideoSearchLoading,
+    isNewChartEntriesError,
+    isNewChartEntriesLoading,
+    isRealtimeSurgingError,
+    isRealtimeSurgingLoading,
     newChartEntriesSection,
     realtimeSurgingSection,
     shouldAutoPrefetchBuyableVideos,

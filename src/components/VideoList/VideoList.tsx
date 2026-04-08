@@ -17,6 +17,7 @@ interface VideoListProps {
   section?: YouTubeCategorySection;
   sectionEmptyMessage?: string;
   getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+  primarySectionEyebrow?: string;
   collapsedSectionIds?: string[];
   featuredSections?: FeaturedVideoSection[];
   hasResolvedTrendSignals?: boolean;
@@ -56,6 +57,7 @@ function VideoList({
   section,
   sectionEmptyMessage,
   getRankLabel,
+  primarySectionEyebrow = 'Category Ranking',
   collapsedSectionIds = [],
   featuredSections = [],
   hasResolvedTrendSignals = false,
@@ -231,7 +233,7 @@ function VideoList({
         }),
       )}
       {renderSection(section, {
-        eyebrow: 'Category Ranking',
+        eyebrow: primarySectionEyebrow,
         emptyMessage: sectionEmptyMessage,
         getRankLabel,
         isCollapsible: isPrimarySectionCollapsible,

@@ -7,11 +7,10 @@ interface PlayerStageProps {
   authStatus: AuthStatus;
   canNavigateVideos: boolean;
   chartContent?: ReactNode;
-  cinematicQuickFiltersContent?: ReactNode;
   cinematicToggleLabel: string;
   favoriteToggleHelperText: string;
   favoriteToggleLabel: string;
-  favoriteVideosContent?: ReactNode;
+  filterContent?: ReactNode;
   isChartLoading: boolean;
   isCinematicModeActive: boolean;
   isFavoriteToggleDisabled: boolean;
@@ -50,11 +49,10 @@ function PlayerStage({
   authStatus,
   canNavigateVideos,
   chartContent,
-  cinematicQuickFiltersContent,
   cinematicToggleLabel,
   favoriteToggleHelperText,
   favoriteToggleLabel,
-  favoriteVideosContent,
+  filterContent,
   isChartLoading,
   isCinematicModeActive,
   isFavoriteToggleDisabled,
@@ -243,8 +241,7 @@ function PlayerStage({
           ) : null}
           {supplementalContent}
         </section>
-        {cinematicQuickFiltersContent}
-        {isCinematicModeActive ? favoriteVideosContent : null}
+        {isCinematicModeActive ? filterContent : null}
         {isCinematicModeActive ? chartContent : null}
       </div>
     </div>

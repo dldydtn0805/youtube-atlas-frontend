@@ -3,7 +3,7 @@ import VideoList, { type FeaturedVideoSection } from '../../../components/VideoL
 import type { AuthStatus } from '../../../features/auth/types';
 import type { FavoriteStreamer } from '../../../features/favorites/types';
 import type { VideoTrendSignal } from '../../../features/trending/types';
-import type { YouTubeCategorySection } from '../../../features/youtube/types';
+import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
 
 interface ChartPanelProps {
   buyableVideoSearchStatus?: string;
@@ -11,6 +11,7 @@ interface ChartPanelProps {
   className?: string;
   collapsedFeaturedSectionIds?: string[];
   featuredSections?: FeaturedVideoSection[];
+  getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
   hasNextPage: boolean;
   hasResolvedTrendSignals: boolean;
   isBuyableOnlyFilterActive?: boolean;
@@ -27,8 +28,11 @@ interface ChartPanelProps {
     playbackQueueId: string,
     triggerElement?: HTMLButtonElement,
   ) => void;
+  primarySectionEyebrow?: string;
   section?: YouTubeCategorySection;
+  sectionEmptyMessage?: string;
   selectedCategoryLabel?: string;
+  selectedCountryName: string;
   selectedVideoId?: string;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
 }
@@ -72,6 +76,7 @@ export function ChartPanel({
   className,
   collapsedFeaturedSectionIds,
   featuredSections,
+  getRankLabel,
   hasNextPage,
   hasResolvedTrendSignals,
   isBuyableOnlyFilterActive = false,
@@ -84,8 +89,11 @@ export function ChartPanel({
   onToggleFeaturedSectionCollapse,
   onToggleBuyableOnlyFilter,
   onSelectVideo,
+  primarySectionEyebrow,
   section,
+  sectionEmptyMessage,
   selectedCategoryLabel,
+  selectedCountryName,
   selectedVideoId,
   trendSignalsByVideoId,
 }: ChartPanelProps) {
@@ -100,32 +108,40 @@ export function ChartPanel({
           <p className="app-shell__section-eyebrow">Program Queue</p>
           <h2 className="app-shell__section-title">{selectedCategoryLabel ?? '선택한 카테고리'} 인기 영상</h2>
         </div>
-        {isBuyableOnlyFilterAvailable ? (
-          <div className="app-shell__chart-filter-group">
-            <button
-              className="app-shell__subtle-toggle"
-              data-active={isBuyableOnlyFilterActive}
-              onClick={onToggleBuyableOnlyFilter}
-              type="button"
-            >
-              매수 가능 목록 탐색
-            </button>
-            {buyableVideoSearchStatus ? (
-              <p className="app-shell__chart-filter-status">{buyableVideoSearchStatus}</p>
+        <div className="app-shell__chart-controls">
+          <p className="app-shell__chart-context">
+            {selectedCountryName}
+            {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ''}
+          </p>
+          <div className="app-shell__chart-filter-actions">
+            {isBuyableOnlyFilterAvailable ? (
+              <button
+                className="app-shell__subtle-toggle"
+                data-active={isBuyableOnlyFilterActive}
+                onClick={onToggleBuyableOnlyFilter}
+                type="button"
+              >
+                매수 가능 목록 탐색
+              </button>
             ) : null}
           </div>
-        ) : null}
+          {buyableVideoSearchStatus ? (
+            <p className="app-shell__chart-filter-status">{buyableVideoSearchStatus}</p>
+          ) : null}
+        </div>
       </div>
       <VideoList
         collapsedSectionIds={collapsedFeaturedSectionIds}
         errorMessage={chartErrorMessage}
         featuredSections={featuredSections}
+        getRankLabel={getRankLabel}
         hasNextPage={hasNextPage}
         hasResolvedTrendSignals={hasResolvedTrendSignals}
         isError={isChartError}
         isFetchingNextPage={isFetchingNextPage}
         isLoading={isChartLoading}
         isPrimarySectionCollapsible={Boolean(mainSectionCollapseKey)}
+        primarySectionEyebrow={primarySectionEyebrow}
         primarySectionCollapseKey={mainSectionCollapseKey}
         onLoadMore={onLoadMore}
         onSelectVideo={onSelectVideo}
@@ -134,7 +150,7 @@ export function ChartPanel({
         sectionEmptyMessage={
           isBuyableOnlyFilterActive
             ? '지금 매수 가능한 영상이 없습니다. 더 불러오거나 필터를 해제해 보세요.'
-            : undefined
+            : sectionEmptyMessage
         }
         selectedVideoId={selectedVideoId}
         trendSignalsByVideoId={trendSignalsByVideoId}

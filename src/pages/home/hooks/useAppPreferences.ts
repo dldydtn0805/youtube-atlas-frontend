@@ -24,7 +24,6 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
   const shouldScrollOnModeChangeRef = useRef(false);
   const isCinematicModeActive = isCinematicMode;
@@ -103,31 +102,6 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   }, [isMobileLayout, playerStageRef]);
 
   useEffect(() => {
-    if (!isFilterModalOpen) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsFilterModalOpen(false);
-      }
-    };
-
-    const { body, documentElement } = document;
-    const previousOverflow = body.style.overflow;
-    const previousDocumentOverflow = documentElement.style.overflow;
-    body.style.overflow = 'hidden';
-    documentElement.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      body.style.overflow = previousOverflow;
-      documentElement.style.overflow = previousDocumentOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isFilterModalOpen]);
-
-  useEffect(() => {
     if (!isCinematicModeActive || isMobileLayout || !shouldScrollOnModeChangeRef.current) {
       return;
     }
@@ -185,33 +159,17 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
     setThemeMode((currentThemeMode) => (currentThemeMode === 'dark' ? 'light' : 'dark'));
   }
 
-  function openFilterModal() {
-    setIsFilterModalOpen(true);
-  }
-
-  function closeFilterModal() {
-    setIsFilterModalOpen(false);
-  }
-
-  function handleCompleteFilterSelection() {
-    setIsFilterModalOpen(false);
-  }
-
   function updateRegionCode(regionCode: RegionCode) {
     setSelectedRegionCode(regionCode);
   }
 
   return {
     cinematicToggleLabel,
-    closeFilterModal,
-    handleCompleteFilterSelection,
     handleToggleCinematicMode,
     handleToggleThemeMode,
     isCinematicModeActive,
     isDarkMode,
-    isFilterModalOpen,
     isMobileLayout,
-    openFilterModal,
     selectedRegionCode,
     themeToggleDisplayLabel,
     themeToggleLabel,
