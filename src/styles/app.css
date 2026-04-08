@@ -2552,6 +2552,10 @@
   color: var(--text);
 }
 
+.app-shell__stage-stack[data-cinematic='true'] > .app-shell__panel--filters {
+  width: 100%;
+}
+
 .app-shell__cinematic-filters {
   backdrop-filter: blur(18px);
   background: var(--surface-panel-highlight-alt);
