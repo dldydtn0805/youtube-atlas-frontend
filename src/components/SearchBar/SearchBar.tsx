@@ -32,6 +32,11 @@ function SearchBar({
 
   return (
     <label className="search-bar" aria-label={ariaLabel}>
+      {helperText ? (
+        <span className="search-bar__helper">
+          {helperText}
+        </span>
+      ) : null}
       <div className="search-bar__field">
         <select
           className="search-bar__select"
@@ -62,11 +67,6 @@ function SearchBar({
           ▾
         </span>
       </div>
-      {helperText ? (
-        <span className="search-bar__helper">
-          {helperText}
-        </span>
-      ) : null}
     </label>
   );
 }

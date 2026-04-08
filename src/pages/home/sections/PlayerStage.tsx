@@ -21,6 +21,7 @@ interface PlayerStageProps {
   manualPlaybackSaveStatus?: string;
   onManualPlaybackSave: () => void;
   onNextVideo: () => void;
+  onOpenRegionModal: () => void;
   onPreviousVideo: () => void;
   onPlaybackRestoreApplied?: (restoreId: number) => void;
   onToggleCinematicMode: () => void;
@@ -63,6 +64,7 @@ function PlayerStage({
   manualPlaybackSaveStatus,
   onManualPlaybackSave,
   onNextVideo,
+  onOpenRegionModal,
   onPreviousVideo,
   onPlaybackRestoreApplied,
   onToggleCinematicMode,
@@ -100,7 +102,9 @@ function PlayerStage({
             <div className="app-shell__section-heading-copy">
               <p className="app-shell__section-eyebrow">Now Playing</p>
               <h2 className="app-shell__section-title">
-                {selectedCountryName}
+                <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
+                  {selectedCountryName}
+                </button>
                 {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ''}
               </h2>
             </div>

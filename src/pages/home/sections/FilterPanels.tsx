@@ -1,4 +1,6 @@
+import { createPortal } from 'react-dom';
 import SearchBar, { type SearchBarOption } from '../../../components/SearchBar/SearchBar';
+import { getFullscreenElement } from '../utils';
 
 interface ViewOption {
   id: string;
@@ -13,15 +15,76 @@ interface QuickViewButtonsProps {
 }
 
 interface FilterBarProps {
-  onChangeRegion: (regionCode: string) => void;
+  onOpenRegionModal: () => void;
   onSelectView: (viewId: string, triggerElement?: HTMLButtonElement) => void;
-  regionOptions: SearchBarOption[];
-  selectedRegionCode: string;
   selectedCountryName: string;
   selectedViewId: string;
   selectedViewLabel: string;
-  viewHelperText?: string;
   viewOptions: ViewOption[];
+}
+
+interface RegionFilterModalProps {
+  isOpen: boolean;
+  onChangeRegion: (regionCode: string) => void;
+  onClose: () => void;
+  regionOptions: SearchBarOption[];
+  selectedRegionCode: string;
+}
+
+export function RegionFilterModal({
+  isOpen,
+  onChangeRegion,
+  onClose,
+  regionOptions,
+  selectedRegionCode,
+}: RegionFilterModalProps) {
+  if (!isOpen || typeof document === 'undefined') {
+    return null;
+  }
+
+  const portalTarget = getFullscreenElement();
+  const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
+
+  return createPortal(
+    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
+      <div
+        aria-modal="true"
+        className="app-shell__modal app-shell__modal--region-filter"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <div className="app-shell__modal-header">
+          <div className="app-shell__section-heading">
+            <p className="app-shell__section-eyebrow">Region</p>
+            <h2 className="app-shell__section-title">국가 선택</h2>
+          </div>
+          <button className="app-shell__modal-close" onClick={onClose} type="button">
+            닫기
+          </button>
+        </div>
+        <div className="app-shell__modal-body">
+          <div className="app-shell__modal-fields">
+            <div className="app-shell__modal-field">
+              <div className="app-shell__section-heading">
+                <p className="app-shell__section-eyebrow">Location</p>
+                <h3 className="app-shell__modal-field-title">탐색 국가</h3>
+              </div>
+              <p className="app-shell__modal-field-copy">
+                베타 버전에서는 대한민국 외 국가에서 일부 기능이 제한될 수 있습니다.
+              </p>
+              <SearchBar
+                ariaLabel="국가 선택"
+                onChange={onChangeRegion}
+                options={regionOptions}
+                value={selectedRegionCode}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    container,
+  );
 }
 
 function QuickViewButtons({ options, onSelectView, selectedViewId }: QuickViewButtonsProps) {
@@ -44,14 +107,11 @@ function QuickViewButtons({ options, onSelectView, selectedViewId }: QuickViewBu
 }
 
 export function FilterBar({
-  onChangeRegion,
+  onOpenRegionModal,
   onSelectView,
-  regionOptions,
   selectedCountryName,
-  selectedRegionCode,
   selectedViewId,
   selectedViewLabel,
-  viewHelperText,
   viewOptions,
 }: FilterBarProps) {
   return (
@@ -62,34 +122,19 @@ export function FilterBar({
             <p className="app-shell__section-eyebrow">Explore</p>
             <h2 className="app-shell__section-title">탐색 필터</h2>
           </div>
-          <p className="app-shell__filter-summary-text">
-            {selectedCountryName} · {selectedViewLabel}
-          </p>
+          <div className="app-shell__filter-summary-text">
+            <button className="app-shell__filter-summary-button" onClick={onOpenRegionModal} type="button">
+              {selectedCountryName}
+            </button>
+            <span aria-hidden="true" className="app-shell__filter-summary-separator">
+              ·
+            </span>
+            <span>{selectedViewLabel}</span>
+          </div>
         </div>
       </div>
       <div className="app-shell__filter-fields">
-        <div className="app-shell__modal-field">
-          <div className="app-shell__section-heading">
-            <p className="app-shell__section-eyebrow">Region</p>
-            <h3 className="app-shell__modal-field-title">국가</h3>
-          </div>
-          <SearchBar
-            ariaLabel="국가 선택"
-            helperText="게임 기능은 현재 대한민국에서만 지원합니다."
-            onChange={onChangeRegion}
-            options={regionOptions}
-            value={selectedRegionCode}
-          />
-        </div>
-
-        <div className="app-shell__modal-field">
-          <div className="app-shell__section-heading">
-            <p className="app-shell__section-eyebrow">Views</p>
-            <h3 className="app-shell__modal-field-title">카테고리</h3>
-          </div>
-          <p className="app-shell__modal-field-copy">
-            {viewHelperText ?? '전체 차트를 기준으로 원하는 보기 모드를 바로 전환합니다.'}
-          </p>
+        <div className="app-shell__filter-bar" aria-label="탐색 필터 선택">
           <div className="app-shell__quick-category-group" aria-label="차트 보기 선택">
             <QuickViewButtons
               onSelectView={onSelectView}

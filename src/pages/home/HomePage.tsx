@@ -3,7 +3,7 @@ import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer
 import AppHeader from './sections/AppHeader';
 import { ChartPanel, CommunityPanel } from './sections/ContentPanels';
 import GameDividendModal from './sections/GameDividendModal';
-import { FilterBar } from './sections/FilterPanels';
+import { FilterBar, RegionFilterModal } from './sections/FilterPanels';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
 import PlayerStage from './sections/PlayerStage';
@@ -138,6 +138,7 @@ function HomePage() {
   const [sellQuantity, setSellQuantity] = useState(DEFAULT_GAME_QUANTITY);
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
+  const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('all');
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
@@ -303,6 +304,10 @@ function HomePage() {
   const chartViewOptions = [
     { id: 'all', label: '전체' },
     {
+      id: 'popular',
+      label: 'TOP 200',
+    },
+    {
       id: 'favorites',
       label: '즐겨찾기',
       disabled: authStatus !== 'authenticated',
@@ -316,10 +321,6 @@ function HomePage() {
       id: 'new-chart-entries',
       label: '신규 진입',
       disabled: !isGameRegionSelected,
-    },
-    {
-      id: 'popular',
-      label: 'TOP 200',
     },
   ] satisfies Array<{ id: ChartViewMode; label: string; disabled?: boolean }>;
   const effectiveChartView: ChartViewMode =
@@ -345,10 +346,6 @@ function HomePage() {
     : error instanceof Error
       ? error.message
       : undefined;
-  const chartViewHelperText = isGameRegionSelected
-    ? '전체는 여러 섹션을 함께 보고, 각 카테고리는 원하는 보기만 집중해서 볼 수 있습니다.'
-    : '실시간 급상승과 신규 진입은 현재 대한민국에서만 지원합니다.';
-
   const {
     data: favoriteStreamers = [],
     error: favoriteStreamersError,
@@ -582,6 +579,7 @@ function HomePage() {
     resetForRegionChange();
     setSelectedCategoryId(DEFAULT_CATEGORY_ID);
     updateRegionCode(regionCode);
+    setIsRegionModalOpen(false);
   }
 
   function handleSelectChartView(viewId: string, triggerElement?: HTMLButtonElement) {
@@ -590,6 +588,14 @@ function HomePage() {
     if (!nextView || nextView.disabled) {
       triggerElement?.blur();
       return;
+    }
+
+    const nextSectionIds = chartViewExpandedSectionIds[nextView.id] ?? [];
+
+    if (nextSectionIds.length > 0) {
+      setCollapsedHomeSectionIds((currentSectionIds) =>
+        currentSectionIds.filter((currentSectionId) => !nextSectionIds.includes(currentSectionId)),
+      );
     }
 
     setSelectedChartView(nextView.id);
@@ -1514,6 +1520,21 @@ function HomePage() {
   const activeChartBuyableOnlyFilterAvailable = isBuyableOnlyFilterAvailable;
   const activeChartBuyableOnlyFilterActive = isBuyableOnlyFilterActive;
   const activeChartBuyableVideoSearchStatus = buyableVideoSearchStatus;
+  const chartViewExpandedSectionIds: Partial<Record<ChartViewMode, string[]>> = {
+    all: [
+      MAIN_CHART_SECTION_ID,
+      ...featuredChartSections.map(({ section }) => section.categoryId),
+      ...(favoriteFeaturedSection ? [favoriteFeaturedSection.section.categoryId] : []),
+    ],
+    favorites: buyableFavoriteChartSection?.categoryId ? [buyableFavoriteChartSection.categoryId] : [],
+    'new-chart-entries': newChartEntriesFeaturedSection?.section.categoryId
+      ? [newChartEntriesFeaturedSection.section.categoryId]
+      : [],
+    popular: filteredSelectedPlaybackSection?.categoryId ? [filteredSelectedPlaybackSection.categoryId] : [],
+    'realtime-surging': realtimeSurgingFeaturedSection?.section.categoryId
+      ? [realtimeSurgingFeaturedSection.section.categoryId]
+      : [],
+  };
 
   const chartContent = (
     <ChartPanel
@@ -1575,14 +1596,11 @@ function HomePage() {
   );
   const filterContent = (
     <FilterBar
-      onChangeRegion={(regionCode) => handleSelectRegion(regionCode as RegionCode)}
+      onOpenRegionModal={() => setIsRegionModalOpen(true)}
       onSelectView={handleSelectChartView}
-      regionOptions={regionOptions}
       selectedCountryName={selectedCountryName}
-      selectedRegionCode={selectedRegionCode}
       selectedViewId={effectiveChartView}
       selectedViewLabel={selectedChartViewOption.label}
-      viewHelperText={chartViewHelperText}
       viewOptions={chartViewOptions}
     />
   );
@@ -1620,6 +1638,7 @@ function HomePage() {
           manualPlaybackSaveStatus={manualPlaybackSaveStatus ?? undefined}
           onManualPlaybackSave={() => void handleManualPlaybackSave()}
           onNextVideo={handlePlayNextVideo}
+          onOpenRegionModal={() => setIsRegionModalOpen(true)}
           onPlaybackRestoreApplied={handlePlaybackRestoreApplied}
           onPreviousVideo={handlePlayPreviousVideo}
           onToggleCinematicMode={() => void handleToggleCinematicMode()}
@@ -1690,6 +1709,13 @@ function HomePage() {
               }
             : null
         }
+      />
+      <RegionFilterModal
+        isOpen={isRegionModalOpen}
+        onChangeRegion={(regionCode) => handleSelectRegion(regionCode as RegionCode)}
+        onClose={() => setIsRegionModalOpen(false)}
+        regionOptions={regionOptions}
+        selectedRegionCode={selectedRegionCode}
       />
       <GameDividendModal
         isOpen={isDividendModalOpen}

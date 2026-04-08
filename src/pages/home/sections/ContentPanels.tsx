@@ -106,7 +106,7 @@ export function ChartPanel({
       <div className="app-shell__section-heading app-shell__section-heading--chart">
         <div className="app-shell__section-heading-copy">
           <p className="app-shell__section-eyebrow">Program Queue</p>
-          <h2 className="app-shell__section-title">{selectedCategoryLabel ?? '선택한 카테고리'} 인기 영상</h2>
+          <h2 className="app-shell__section-title">인기 영상</h2>
         </div>
         <div className="app-shell__chart-controls">
           <p className="app-shell__chart-context">
