@@ -459,10 +459,6 @@ export function RankingGameDividendOverview({ onOpenDetails, overview, season }:
             <span className="app-shell__game-dividend-metric-label">배당 대상</span>
             <strong className="app-shell__game-dividend-metric-value">{overview.myEligiblePositionCount}개</strong>
           </span>
-          <span className="app-shell__game-dividend-metric">
-            <span className="app-shell__game-dividend-metric-label">대기 중</span>
-            <strong className="app-shell__game-dividend-metric-value">{overview.myWarmingUpPositionCount}개</strong>
-          </span>
         </div>
       </div>
       <div className="app-shell__game-dividend-actions">
