@@ -10,6 +10,7 @@ import {
   buildNewChartEntriesSection,
   buildRealtimeSurgingSection,
   filterVideoSection,
+  isBuyableVideoSearchActive,
   shouldPrefetchBuyableVideos,
   shouldRenderRealtimeSurgingSection,
 } from '../utils';
@@ -270,15 +271,22 @@ export default function useHomeTrendSections({
     isFetchingNextPage,
     loadedItemCount: loadedSelectedVideoCount,
   });
+  const isBuyableVideoSearchActiveState = isBuyableVideoSearchActive({
+    hasNextPage,
+    isBuyableOnlyFilterActive,
+    isBuyableOnlyFilterAvailable,
+    isFetchingNextPage,
+    loadedItemCount: loadedSelectedVideoCount,
+  });
   const buyableVideoSearchStatus =
-    isBuyableOnlyFilterActive && isFetchingNextPage
+    isBuyableVideoSearchActiveState
       ? `매수 가능 영상을 찾는 중 · ${Math.min(
           loadedSelectedVideoCount,
           BUYABLE_ONLY_PREFETCH_LIMIT,
         )}/${BUYABLE_ONLY_PREFETCH_LIMIT}개 확인`
       : undefined;
   const isBuyableVideoSearchLoading =
-    isBuyableOnlyFilterActive && isFetchingNextPage && !isChartLoading && !isChartError;
+    isBuyableVideoSearchActiveState && !isChartLoading && !isChartError;
 
   return {
     buyableVideoSearchStatus,

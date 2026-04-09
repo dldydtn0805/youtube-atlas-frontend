@@ -15,6 +15,11 @@ interface GameTradeModalSummaryItem {
   value: string;
 }
 
+interface GameTradeQuickAction {
+  label: string;
+  quantity: number;
+}
+
 interface GameTradeModalProps {
   confirmLabel: string;
   currentRankLabel: string;
@@ -32,6 +37,24 @@ interface GameTradeModalProps {
   thumbnailUrl?: string | null;
   title: string;
   unitPointsLabel: string;
+}
+
+export function getGameTradeQuickActions(maxQuantity: number): GameTradeQuickAction[] {
+  if (maxQuantity <= 0) {
+    return [];
+  }
+
+  const actionsByQuantity = new Map<number, GameTradeQuickAction>();
+
+  [
+    { label: '25%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.25)) },
+    { label: '50%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.5)) },
+    { label: '100%', quantity: maxQuantity },
+  ].forEach((action) => {
+    actionsByQuantity.set(action.quantity, action);
+  });
+
+  return [...actionsByQuantity.values()];
 }
 
 export default function GameTradeModal({
@@ -63,14 +86,7 @@ export default function GameTradeModal({
   const previousQuantity = normalizedQuantity <= MIN_GAME_QUANTITY ? maxQuantity : normalizedQuantity - 1;
   const nextQuantity = normalizedQuantity >= maxQuantity ? MIN_GAME_QUANTITY : normalizedQuantity + 1;
   const displayQuantity = toDisplayGameQuantity(normalizedQuantity);
-  const quickActions =
-    maxQuantity > 0
-      ? [
-          { label: '25%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.25)) },
-          { label: '50%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.5)) },
-          { label: '전량', quantity: maxQuantity },
-        ].filter((action, index, actions) => actions.findIndex((candidate) => candidate.quantity === action.quantity) === index)
-      : [];
+  const quickActions = getGameTradeQuickActions(maxQuantity);
 
   return createPortal(
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">

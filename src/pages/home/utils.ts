@@ -248,6 +248,31 @@ export function shouldPrefetchBuyableVideos(options: {
   );
 }
 
+export function isBuyableVideoSearchActive(options: {
+  hasNextPage: boolean;
+  isBuyableOnlyFilterActive: boolean;
+  isBuyableOnlyFilterAvailable: boolean;
+  isFetchingNextPage: boolean;
+  loadedItemCount: number;
+  prefetchLimit?: number;
+}) {
+  const {
+    hasNextPage,
+    isBuyableOnlyFilterActive,
+    isBuyableOnlyFilterAvailable,
+    isFetchingNextPage,
+    loadedItemCount,
+    prefetchLimit = BUYABLE_ONLY_PREFETCH_LIMIT,
+  } = options;
+
+  return (
+    isBuyableOnlyFilterActive &&
+    isBuyableOnlyFilterAvailable &&
+    loadedItemCount < prefetchLimit &&
+    (isFetchingNextPage || hasNextPage)
+  );
+}
+
 function createFallbackThumbnails(url: string) {
   return {
     default: { url, width: 120, height: 90 },

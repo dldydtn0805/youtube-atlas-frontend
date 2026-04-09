@@ -9,6 +9,7 @@ import {
   formatSignedProfitRate,
   formatSelectedVideoRankLabel,
   formatTrendRankLabel,
+  isBuyableVideoSearchActive,
   NEW_CHART_ENTRIES_QUEUE_ID,
   REALTIME_SURGING_QUEUE_ID,
   relabelVideoSection,
@@ -253,6 +254,48 @@ describe('home utils', () => {
 
     expect(
       shouldPrefetchBuyableVideos({
+        hasNextPage: true,
+        isBuyableOnlyFilterActive: true,
+        isBuyableOnlyFilterAvailable: true,
+        isFetchingNextPage: false,
+        loadedItemCount: BUYABLE_ONLY_PREFETCH_LIMIT,
+      }),
+    ).toBe(false);
+  });
+
+  it('keeps buyable video search active across chained prefetch gaps', () => {
+    expect(
+      isBuyableVideoSearchActive({
+        hasNextPage: true,
+        isBuyableOnlyFilterActive: true,
+        isBuyableOnlyFilterAvailable: true,
+        isFetchingNextPage: true,
+        loadedItemCount: 50,
+      }),
+    ).toBe(true);
+
+    expect(
+      isBuyableVideoSearchActive({
+        hasNextPage: true,
+        isBuyableOnlyFilterActive: true,
+        isBuyableOnlyFilterAvailable: true,
+        isFetchingNextPage: false,
+        loadedItemCount: 50,
+      }),
+    ).toBe(true);
+
+    expect(
+      isBuyableVideoSearchActive({
+        hasNextPage: false,
+        isBuyableOnlyFilterActive: true,
+        isBuyableOnlyFilterAvailable: true,
+        isFetchingNextPage: false,
+        loadedItemCount: 50,
+      }),
+    ).toBe(false);
+
+    expect(
+      isBuyableVideoSearchActive({
         hasNextPage: true,
         isBuyableOnlyFilterActive: true,
         isBuyableOnlyFilterAvailable: true,

@@ -889,6 +889,18 @@ function HomePage() {
       trendSignalsByVideoId={chartTrendSignalsByVideoId}
     />
   );
+  const isRankHistoryModalOpen = Boolean(selectedRankHistoryPosition || selectedVideoRankHistoryVideoId);
+  const isBuyTradeModalOpen =
+    activeTradeModal === 'buy' && Boolean(selectedVideoId) && Boolean(selectedVideoMarketEntry);
+  const isSellTradeModalOpen =
+    activeTradeModal === 'sell' && Boolean(selectedVideoId) && selectedVideoOpenPositionCount > 0;
+  const isAnyModalOpen =
+    isRankHistoryModalOpen ||
+    isRegionModalOpen ||
+    isDividendModalOpen ||
+    isBuyTradeModalOpen ||
+    isSellTradeModalOpen;
+
   return (
     <div className="app-shell">
       <AppHeader
@@ -994,7 +1006,7 @@ function HomePage() {
         }
         history={selectedPositionRankHistory ?? selectedVideoRankHistory}
         isLoading={isPositionRankHistoryLoading || isVideoRankHistoryLoading}
-        isOpen={Boolean(selectedRankHistoryPosition || selectedVideoRankHistoryVideoId)}
+        isOpen={isRankHistoryModalOpen}
         onClose={closeRankHistoryModal}
         position={selectedRankHistoryPosition}
         videoFallback={
@@ -1025,7 +1037,7 @@ function HomePage() {
         confirmLabel={`${formatGameQuantity(normalizedBuyQuantity)} 매수`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         helperText={buyModalHelperText}
-        isOpen={activeTradeModal === 'buy' && Boolean(selectedVideoId) && Boolean(selectedVideoMarketEntry)}
+        isOpen={isBuyTradeModalOpen}
         isSubmitting={isBuySubmitting}
         maxQuantity={maxBuyQuantity}
         mode="buy"
@@ -1058,7 +1070,7 @@ function HomePage() {
         confirmLabel={`${formatGameQuantity(normalizedSellQuantity)} 매도`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         helperText={sellModalHelperText}
-        isOpen={activeTradeModal === 'sell' && Boolean(selectedVideoId) && selectedVideoOpenPositionCount > 0}
+        isOpen={isSellTradeModalOpen}
         isSubmitting={isSellSubmitting}
         maxQuantity={maxSellQuantity}
         mode="sell"
@@ -1093,7 +1105,7 @@ function HomePage() {
         title={selectedGameActionTitle}
         unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? selectedVideoSellSummary.settledPoints ?? 0)}
       />
-      {isBuyableVideoSearchLoading ? (
+      {isBuyableVideoSearchLoading && !isAnyModalOpen ? (
         <div className="app-shell__fullscreen-loading" role="status" aria-live="polite" aria-modal="true">
           <div className="app-shell__fullscreen-loading-card">
             <span className="app-shell__fullscreen-loading-spinner" aria-hidden="true" />
