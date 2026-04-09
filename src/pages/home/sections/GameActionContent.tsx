@@ -127,20 +127,26 @@ export function GameSelectedVideoPriceSummary({
               const warmingUpPosition = gameCoinOverview.positions.find(
                 (position) => position.videoId === selectedVideoId && !position.productionActive,
               );
+              const rankCutoffLabel = `Top ${gameCoinOverview.eligibleRankCutoff}`;
 
               if (!matchingRank) {
-                return '20위 안에 들면 시즌 코인 생산이 시작됩니다.';
+                return `${rankCutoffLabel} 안에 들면 시즌 코인 생산이 시작됩니다.`;
               }
 
               if (positionEstimatedCoinYield > 0) {
-                return `코인 생산 중 ${matchingRank.rank}위 · 예상 생산 ${formatCoins(positionEstimatedCoinYield)} · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
+                const nextPayoutInSeconds = gameCoinOverview.positions.find(
+                  (position) => position.videoId === selectedVideoId && position.productionActive,
+                )?.nextPayoutInSeconds;
+                return typeof nextPayoutInSeconds === 'number'
+                  ? `생산 진행 중 · ${formatHoldCountdown(nextPayoutInSeconds)} 뒤 예상 ${formatCoins(positionEstimatedCoinYield)} 적립`
+                  : `생산 진행 중 · 이번 집계 예상 ${formatCoins(positionEstimatedCoinYield)}`;
               }
 
               if (typeof warmingUpPosition?.nextProductionInSeconds === 'number') {
-                return `코인 대상 ${matchingRank.rank}위 · ${formatHoldCountdown(warmingUpPosition.nextProductionInSeconds)} 뒤 생산 시작 · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
+                return `생산 대기 중 · ${formatHoldCountdown(warmingUpPosition.nextProductionInSeconds)} 뒤 시작`;
               }
 
-              return `코인 대상 ${matchingRank.rank}위 · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
+              return `코인 생산 대상 · 평가금액의 ${formatPercent(matchingRank.coinRatePercent)} 적립`;
             })()}
           </p>
         ) : null}
@@ -165,9 +171,10 @@ export function GameSelectedVideoPriceSummary({
             const matchingRank = gameCoinOverview.ranks.find(
               (rank) => rank.rank === selectedVideoMarketEntry.currentRank,
             );
+            const rankCutoffLabel = `Top ${gameCoinOverview.eligibleRankCutoff}`;
 
             if (!matchingRank) {
-              return '20위 안에 진입하면 시즌 코인 생산 현황에 반영됩니다.';
+              return `${rankCutoffLabel} 안에 진입하면 시즌 코인 생산 현황에 반영됩니다.`;
             }
 
             const estimatedCoinYield = calculateEstimatedCoinYield(
@@ -175,7 +182,7 @@ export function GameSelectedVideoPriceSummary({
               matchingRank.coinRatePercent,
             );
 
-            return `코인 대상 ${matchingRank.rank}위 · 예상 생산 ${formatCoins(estimatedCoinYield ?? 0)} · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
+            return `지금 진입하면 다음 적립 때 예상 ${formatCoins(estimatedCoinYield ?? 0)}`;
           })()}
         </p>
       ) : null}

@@ -181,6 +181,7 @@ export default function GamePanelSection({
   const positionsContent = (
     <RankingGamePositionsTab
       canShowGameActions={canShowGameActions}
+      coinOverview={coinOverview}
       emptyMessage={positionsEmptyMessage}
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}

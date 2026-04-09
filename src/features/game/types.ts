@@ -98,6 +98,7 @@ export interface GameCoinPosition {
   coinRatePercent: number;
   estimatedCoinYield: number;
   nextProductionInSeconds: number | null;
+  nextPayoutInSeconds: number | null;
 }
 
 export interface GameCoinOverview {

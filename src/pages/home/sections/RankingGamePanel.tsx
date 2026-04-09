@@ -87,6 +87,7 @@ interface RankingGameLeaderboardTabProps {
 
 interface RankingGamePositionsTabProps {
   canShowGameActions: boolean;
+  coinOverview?: GameCoinOverview;
   emptyMessage?: string | null;
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
@@ -674,6 +675,7 @@ export function RankingGameLeaderboardTab({
 
 export function RankingGamePositionsTab({
   canShowGameActions,
+  coinOverview,
   emptyMessage,
   favoriteTrendSignalsByVideoId,
   gameMarketSignalsByVideoId,
@@ -695,6 +697,20 @@ export function RankingGamePositionsTab({
             trendSignalsByVideoId[holding.videoId] ??
             favoriteTrendSignalsByVideoId[holding.videoId],
         );
+        const coinPositions = coinOverview?.positions.filter((position) => position.videoId === holding.videoId) ?? [];
+        const activeCoinYield = coinPositions
+          .filter((position) => position.productionActive)
+          .reduce((sum, position) => sum + position.estimatedCoinYield, 0);
+        const warmingUpCoinPosition = coinPositions.find((position) => !position.productionActive);
+        const coinMeta = activeCoinYield > 0
+          ? typeof coinPositions.find((position) => position.productionActive)?.nextPayoutInSeconds === 'number'
+            ? `생산 진행 중 · ${formatHoldCountdown(coinPositions.find((position) => position.productionActive)?.nextPayoutInSeconds ?? 0)} 뒤 예상 ${formatCoins(activeCoinYield)} 적립`
+            : `생산 진행 중 · 이번 집계 예상 ${formatCoins(activeCoinYield)}`
+          : typeof warmingUpCoinPosition?.nextProductionInSeconds === 'number'
+            ? `생산 대기 중 · ${formatHoldCountdown(warmingUpCoinPosition.nextProductionInSeconds)} 뒤 시작`
+            : coinPositions.length > 0
+              ? `코인 생산 대상 · 평가금액의 ${formatPercent(coinPositions[0].coinRatePercent)} 적립`
+              : null;
 
         return (
           <li key={holding.videoId} className="app-shell__game-position" data-selected={isSelectedPosition}>
@@ -735,6 +751,9 @@ export function RankingGamePositionsTab({
                     {formatSignedProfitRate(holding.profitPoints, holding.stakePoints)}
                   </span>
                 </p>
+                {coinMeta ? (
+                  <p className="app-shell__game-position-meta">{coinMeta}</p>
+                ) : null}
               </div>
             </button>
             <div className="app-shell__game-position-side">
