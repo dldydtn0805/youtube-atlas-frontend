@@ -19,36 +19,16 @@ interface GameDividendModalProps {
   tierProgress?: GameCoinTierProgress;
 }
 
-function buildCoinRateLinePoints(overview: GameCoinOverview, width: number, height: number) {
-  const paddingX = 20;
-  const paddingY = 16;
-  const innerWidth = Math.max(width - paddingX * 2, 1);
-  const innerHeight = Math.max(height - paddingY * 2, 1);
-  const maxRankIndex = Math.max(overview.ranks.length - 1, 1);
-  const maxRate = Math.max(...overview.ranks.map((rank) => rank.coinRatePercent), 1);
+function buildCoinRateExamples(overview: GameCoinOverview) {
+  const midpointRank = Math.max(2, Math.round(overview.eligibleRankCutoff / 2));
+  const preferredRanks = [1, 10, 50, midpointRank, 100, overview.eligibleRankCutoff];
+  const uniqueRanks = preferredRanks.filter(
+    (rank, index, array) => rank <= overview.eligibleRankCutoff && array.indexOf(rank) === index,
+  );
 
-  return overview.ranks
-    .map((rank, index) => {
-      const x = paddingX + (index / maxRankIndex) * innerWidth;
-      const y = paddingY + (1 - rank.coinRatePercent / maxRate) * innerHeight;
-      return `${x},${y}`;
-    })
-    .join(' ');
-}
-
-function getRateChartY(gridIndex: number, height: number, totalGridLines: number) {
-  const paddingY = 16;
-  const innerHeight = Math.max(height - paddingY * 2, 1);
-  const ratio = totalGridLines <= 1 ? 0 : gridIndex / (totalGridLines - 1);
-  return paddingY + ratio * innerHeight;
-}
-
-function getRateChartX(rank: number, cutoff: number, width: number) {
-  const paddingX = 20;
-  const innerWidth = Math.max(width - paddingX * 2, 1);
-  const normalizedRank = Math.max(1, Math.min(rank, cutoff));
-  const ratio = cutoff <= 1 ? 0 : (normalizedRank - 1) / (cutoff - 1);
-  return paddingX + ratio * innerWidth;
+  return uniqueRanks
+    .map((rank) => overview.ranks.find((entry) => entry.rank === rank))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 }
 
 export default function GameDividendModal({ isOpen, onClose, overview, tierProgress }: GameDividendModalProps) {
@@ -58,17 +38,9 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
 
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
-  const chartWidth = 720;
-  const chartHeight = 220;
-  const linePoints = overview ? buildCoinRateLinePoints(overview, chartWidth, chartHeight) : '';
   const topRate = overview?.ranks[0]?.coinRatePercent ?? 0;
   const bottomRate = overview?.ranks[overview.ranks.length - 1]?.coinRatePercent ?? 0;
-  const yAxisTicks = overview ? [topRate, Number((topRate / 2).toFixed(2)), 0] : [0, 0, 0];
-  const xAxisTicks = overview
-    ? [1, 50, 100, 150, overview.eligibleRankCutoff].filter(
-        (rank, index, array) => rank <= overview.eligibleRankCutoff && array.indexOf(rank) === index,
-      )
-    : [];
+  const rateExamples = overview ? buildCoinRateExamples(overview) : [];
 
   return createPortal(
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
@@ -158,74 +130,22 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
               <section className="app-shell__modal-field">
                 <div className="app-shell__section-heading">
                   <p className="app-shell__section-eyebrow">생산률</p>
-                  <h3 className="app-shell__modal-field-title">Top {overview.eligibleRankCutoff} 순위별 코인 생산률</h3>
+                  <h3 className="app-shell__modal-field-title">대표 순위별 코인 생산률 예시</h3>
                 </div>
-                <div className="app-shell__game-dividend-rate-chart" aria-label="코인 생산률 그래프">
-                  <div className="app-shell__game-dividend-rate-y-axis" aria-hidden="true">
-                    {yAxisTicks.map((tick) => (
-                      <span key={tick}>{formatPercent(tick)}</span>
-                    ))}
-                  </div>
-                  <div className="app-shell__game-dividend-rate-plot">
-                    <div className="app-shell__game-dividend-rate-badge app-shell__game-dividend-rate-badge--start">
-                      <strong>1위</strong>
-                      <span>{formatPercent(topRate)}</span>
-                    </div>
-                    <svg
-                      aria-hidden="true"
-                      className="app-shell__game-dividend-rate-svg"
-                      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                    >
-                      <defs>
-                        <linearGradient id="coin-rate-line" x1="0%" x2="100%" y1="0%" y2="0%">
-                          <stop offset="0%" stopColor="rgba(245, 158, 11, 0.95)" />
-                          <stop offset="100%" stopColor="rgba(251, 191, 36, 0.65)" />
-                        </linearGradient>
-                      </defs>
-                      {yAxisTicks.map((_, index) => {
-                        const y = getRateChartY(index, chartHeight, yAxisTicks.length);
-                        return (
-                          <line
-                            key={`y-grid-${index}`}
-                            className="app-shell__game-dividend-rate-grid"
-                            x1="20"
-                            x2={chartWidth - 20}
-                            y1={y}
-                            y2={y}
-                          />
-                        );
-                      })}
-                      {xAxisTicks.map((rank) => {
-                        const x = getRateChartX(rank, overview.eligibleRankCutoff, chartWidth);
-                        return (
-                          <line
-                            key={`x-grid-${rank}`}
-                            className="app-shell__game-dividend-rate-grid app-shell__game-dividend-rate-grid--vertical"
-                            x1={x}
-                            x2={x}
-                            y1="16"
-                            y2={chartHeight - 16}
-                          />
-                        );
-                      })}
-                      <polyline
-                        className="app-shell__game-dividend-rate-line"
-                        fill="none"
-                        points={linePoints}
-                        stroke="url(#coin-rate-line)"
-                      />
-                    </svg>
-                    <div className="app-shell__game-dividend-rate-badge app-shell__game-dividend-rate-badge--end">
-                      <strong>{overview.eligibleRankCutoff}위</strong>
-                      <span>{formatPercent(bottomRate)}</span>
-                    </div>
-                    <div className="app-shell__game-dividend-rate-axis">
-                      {xAxisTicks.map((rank) => (
-                        <span key={rank}>{rank}위</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <p className="app-shell__modal-field-copy">
+                  1위 {formatPercent(topRate)}에서 시작해 {overview.eligibleRankCutoff}위 {formatPercent(bottomRate)}까지
+                  순위가 내려갈수록 생산률이 낮아집니다.
+                </p>
+                <ul className="app-shell__game-dividend-rate-examples" aria-label="대표 순위별 코인 생산률 예시">
+                  {rateExamples.map((entry) => (
+                    <li key={entry.rank} className="app-shell__game-dividend-rate-example">
+                      <span className="app-shell__game-dividend-rate-example-rank">{entry.rank}위</span>
+                      <strong className="app-shell__game-dividend-rate-example-value">
+                        {formatPercent(entry.coinRatePercent)}
+                      </strong>
+                    </li>
+                  ))}
+                </ul>
               </section>
             ) : null}
 

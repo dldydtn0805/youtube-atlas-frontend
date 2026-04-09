@@ -115,6 +115,22 @@ interface RankingGameCoinOverviewProps {
   season?: GameCurrentSeason;
 }
 
+function formatSignedPoints(points?: number | null) {
+  if (typeof points !== 'number' || !Number.isFinite(points)) {
+    return '집계 중';
+  }
+
+  if (points > 0) {
+    return `+${formatPoints(points)}`;
+  }
+
+  if (points < 0) {
+    return `-${formatPoints(Math.abs(points))}`;
+  }
+
+  return '0P';
+}
+
 function LeaderboardPositionList({
   loadingVideoId,
   onSelectPosition,
@@ -321,6 +337,15 @@ export function RankingGamePanelShell({
   summary,
   tabContent,
 }: RankingGamePanelShellProps) {
+  const maxOpenPositions = season?.maxOpenPositions ?? null;
+  const remainingOpenSlots =
+    typeof maxOpenPositions === 'number' ? Math.max(0, maxOpenPositions - summary.openDistinctVideoCount) : null;
+  const holdingCapacityPercent =
+    typeof maxOpenPositions === 'number' && maxOpenPositions > 0
+      ? Math.min((summary.openDistinctVideoCount / maxOpenPositions) * 100, 100)
+      : 0;
+  const profitPointsTone = getPointTone(summary.openPositionsProfitPoints);
+
   return (
     <div className="app-shell__game-panel">
       <div className="app-shell__game-panel-header">
@@ -349,7 +374,7 @@ export function RankingGamePanelShell({
       {!isCollapsed ? (
         <>
           <div className="app-shell__game-panel-metrics">
-            <span className="app-shell__game-panel-metric">
+            <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero">
               <span className="app-shell__game-panel-metric-label">잔액</span>
               <span
                 className="app-shell__game-panel-metric-value"
@@ -357,8 +382,9 @@ export function RankingGamePanelShell({
               >
                 {season ? formatPoints(season.wallet.balancePoints) : '-'}
               </span>
+              <span className="app-shell__game-panel-metric-meta">즉시 매수 가능 포인트</span>
             </span>
-            <span className="app-shell__game-panel-metric">
+            <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero">
               <span className="app-shell__game-panel-metric-label">총자산</span>
               <span
                 className="app-shell__game-panel-metric-value"
@@ -372,20 +398,30 @@ export function RankingGamePanelShell({
                   ? formatPoints(summary.computedWalletTotalAssetPoints)
                   : '-'}
               </span>
+              <span className="app-shell__game-panel-metric-meta">잔액 + 현재 평가 금액</span>
             </span>
-            <span className="app-shell__game-panel-metric">
+            <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero app-shell__game-panel-metric--capacity">
               <span className="app-shell__game-panel-metric-label">보유</span>
               <span className="app-shell__game-panel-metric-value">
                 {`${summary.openDistinctVideoCount}/${season?.maxOpenPositions ?? '-'}`}
+              </span>
+              <span className="app-shell__game-panel-metric-meta">
+                {remainingOpenSlots !== null ? `남은 슬롯 ${remainingOpenSlots}개` : '보유 가능한 슬롯 집계 중'}
+              </span>
+              <span className="app-shell__game-panel-metric-meter" aria-hidden="true">
+                <span style={{ width: `${holdingCapacityPercent}%` }} />
               </span>
             </span>
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">손익률</span>
               <span
                 className="app-shell__game-panel-metric-value"
-                data-tone={getPointTone(summary.openPositionsProfitPoints)}
+                data-tone={profitPointsTone}
               >
                 {season ? formatSignedProfitRate(summary.openPositionsProfitPoints, summary.openPositionsBuyPoints) : '-'}
+              </span>
+              <span className="app-shell__game-panel-metric-meta" data-tone={profitPointsTone}>
+                평가 손익 {formatSignedPoints(summary.openPositionsProfitPoints)}
               </span>
             </span>
             <span className="app-shell__game-panel-metric">
@@ -396,6 +432,7 @@ export function RankingGamePanelShell({
               >
                 {season ? formatPoints(summary.openPositionsBuyPoints) : '-'}
               </span>
+              <span className="app-shell__game-panel-metric-meta">현재 보유 포지션 원금</span>
             </span>
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">총 평가 금액</span>
@@ -405,6 +442,7 @@ export function RankingGamePanelShell({
               >
                 {season ? formatPoints(summary.openPositionsEvaluationPoints) : '-'}
               </span>
+              <span className="app-shell__game-panel-metric-meta">최신 시세 기준 평가</span>
             </span>
           </div>
           <p className="app-shell__game-panel-helper" data-tone={isHelperWarning ? 'warning' : undefined}>
