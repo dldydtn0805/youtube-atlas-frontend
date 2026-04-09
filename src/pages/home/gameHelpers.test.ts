@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCompactPoints, formatFullPoints, formatPointBalance, formatPoints } from './gameHelpers';
+import { formatCompactPoints, formatFullPoints, formatGameQuantity, formatPointBalance, formatPoints } from './gameHelpers';
 
 describe('gameHelpers', () => {
   it('keeps smaller point values fully expanded', () => {
@@ -19,5 +19,10 @@ describe('gameHelpers', () => {
 
   it('uses the compact point balance copy in helper text contexts', () => {
     expect(formatPointBalance(1_000_000_000_365_558)).toBe('1,000조 36만 포인트');
+  });
+
+  it('keeps smaller quantities expanded and compacts large ones', () => {
+    expect(formatGameQuantity(1_234_567)).toBe('12,345.67개');
+    expect(formatGameQuantity(12_345_678_900)).toBe('1억 2,345만개');
   });
 });

@@ -205,7 +205,13 @@ export function toDisplayGameQuantity(quantity?: number | null) {
 }
 
 export function formatGameQuantity(quantity?: number | null) {
-  return `${quantityFormatter.format(toDisplayGameQuantity(quantity))}개`;
+  const displayQuantity = toDisplayGameQuantity(quantity);
+
+  if (Math.abs(displayQuantity) < 100_000_000) {
+    return `${quantityFormatter.format(displayQuantity)}개`;
+  }
+
+  return `${formatCompactKoreanNumber(displayQuantity)}개`;
 }
 
 export function parseGameQuantityInput(quantity: number, fallback = DEFAULT_GAME_QUANTITY) {
