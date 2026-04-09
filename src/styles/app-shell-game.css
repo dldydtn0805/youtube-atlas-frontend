@@ -66,9 +66,14 @@
 
 .app-shell__game-dividend-metric-value {
   color: var(--text);
+  display: block;
   font-size: 0.84rem;
   font-weight: 800;
   line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-shell__game-dividend-actions {

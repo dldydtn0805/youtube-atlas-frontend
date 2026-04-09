@@ -9,6 +9,7 @@ import type {
 import type { VideoTrendSignal } from '../../../features/trending/types';
 import { getPrimaryVideoTrendBadge } from '../../../features/trending/presentation';
 import {
+  formatFullPoints,
   formatGameQuantity,
   formatGameTimestamp,
   formatHoldCountdown,
@@ -275,7 +276,9 @@ function LeaderboardRow({
         <div className="app-shell__game-leaderboard-copy">
           <div className="app-shell__game-leaderboard-head">
             <p className="app-shell__game-leaderboard-name">{entry.displayName}</p>
-            <p className="app-shell__game-leaderboard-total">총자산 {formatPoints(entry.totalAssetPoints)}</p>
+            <p className="app-shell__game-leaderboard-total" title={`총자산 ${formatFullPoints(entry.totalAssetPoints)}`}>
+              총자산 {formatPoints(entry.totalAssetPoints)}
+            </p>
           </div>
         </div>
         <span className="app-shell__game-leaderboard-expand" aria-hidden="true">
@@ -341,14 +344,26 @@ export function RankingGamePanelShell({
           <div className="app-shell__game-panel-metrics">
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">잔액</span>
-              <span className="app-shell__game-panel-metric-value">
+              <span
+                className="app-shell__game-panel-metric-value"
+                title={season ? formatFullPoints(season.wallet.balancePoints) : undefined}
+              >
                 {season ? formatPoints(season.wallet.balancePoints) : '-'}
               </span>
             </span>
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">총자산</span>
-              <span className="app-shell__game-panel-metric-value">
-                {summary.computedWalletTotalAssetPoints !== null ? formatPoints(summary.computedWalletTotalAssetPoints) : '-'}
+              <span
+                className="app-shell__game-panel-metric-value"
+                title={
+                  summary.computedWalletTotalAssetPoints !== null
+                    ? formatFullPoints(summary.computedWalletTotalAssetPoints)
+                    : undefined
+                }
+              >
+                {summary.computedWalletTotalAssetPoints !== null
+                  ? formatPoints(summary.computedWalletTotalAssetPoints)
+                  : '-'}
               </span>
             </span>
             <span className="app-shell__game-panel-metric">
@@ -368,13 +383,19 @@ export function RankingGamePanelShell({
             </span>
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">총 매수 금액</span>
-              <span className="app-shell__game-panel-metric-value">
+              <span
+                className="app-shell__game-panel-metric-value"
+                title={season ? formatFullPoints(summary.openPositionsBuyPoints) : undefined}
+              >
                 {season ? formatPoints(summary.openPositionsBuyPoints) : '-'}
               </span>
             </span>
             <span className="app-shell__game-panel-metric">
               <span className="app-shell__game-panel-metric-label">총 평가 금액</span>
-              <span className="app-shell__game-panel-metric-value">
+              <span
+                className="app-shell__game-panel-metric-value"
+                title={season ? formatFullPoints(summary.openPositionsEvaluationPoints) : undefined}
+              >
                 {season ? formatPoints(summary.openPositionsEvaluationPoints) : '-'}
               </span>
             </span>
@@ -443,13 +464,19 @@ export function RankingGameDividendOverview({ onOpenDetails, overview, season }:
         <div className="app-shell__game-dividend-metrics" aria-label="배당 요약">
           <span className="app-shell__game-dividend-metric">
             <span className="app-shell__game-dividend-metric-label">내 예상 배당</span>
-            <strong className="app-shell__game-dividend-metric-value">
+            <strong
+              className="app-shell__game-dividend-metric-value"
+              title={formatFullPoints(overview.myEstimatedDividendPoints)}
+            >
               {formatPoints(overview.myEstimatedDividendPoints)}
             </strong>
           </span>
           <span className="app-shell__game-dividend-metric">
             <span className="app-shell__game-dividend-metric-label">누적 배당</span>
-            <strong className="app-shell__game-dividend-metric-value">
+            <strong
+              className="app-shell__game-dividend-metric-value"
+              title={season ? formatFullPoints(season.wallet.bonusPoints) : undefined}
+            >
               {season ? formatPoints(season.wallet.bonusPoints) : '-'}
             </strong>
           </span>

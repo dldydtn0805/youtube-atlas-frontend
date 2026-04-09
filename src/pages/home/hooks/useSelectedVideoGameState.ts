@@ -10,6 +10,7 @@ import {
   DEFAULT_GAME_QUANTITY,
   formatGameQuantity,
   formatHoldCountdown,
+  formatPoints,
   getBuyRemainingPointsText,
   getBuyShortfallPointsText,
   getGamePositionQuantity,
@@ -236,7 +237,7 @@ export default function useSelectedVideoGameState({
   );
   const selectedVideoPriceLabel =
     typeof selectedVideoUnitPricePoints === 'number'
-      ? `${selectedVideoUnitPricePoints.toLocaleString('ko-KR')} P`
+      ? formatPoints(selectedVideoUnitPricePoints)
       : undefined;
   const selectedVideoStatLabel = formatVideoViewCount(resolvedSelectedVideo?.statistics?.viewCount);
   const selectedChannelId = resolvedSelectedVideo?.snippet.channelId?.trim();

@@ -19,6 +19,7 @@ export const SELL_FEE_RATE_LABEL = '0.3%';
 export const GAME_QUANTITY_SCALE = 100;
 export const MIN_GAME_QUANTITY = 1;
 export const DEFAULT_GAME_QUANTITY = GAME_QUANTITY_SCALE;
+const KOREAN_LARGE_NUMBER_UNITS = ['', '만', '억', '조', '경', '해'];
 
 export interface OpenGameHolding {
   videoId: string;
@@ -113,8 +114,52 @@ export function formatHoldCountdown(remainingSeconds: number) {
   return `${seconds}초`;
 }
 
-export function formatPoints(points: number) {
+export function formatFullPoints(points: number) {
   return `${pointsFormatter.format(points)}P`;
+}
+
+function formatCompactKoreanNumber(value: number, maxSegments = 2, fullThreshold = 100_000_000) {
+  const normalizedValue = Math.trunc(value);
+  const absoluteValue = Math.abs(normalizedValue);
+
+  if (absoluteValue < fullThreshold) {
+    return pointsFormatter.format(normalizedValue);
+  }
+
+  const groups: string[] = [];
+  let digits = absoluteValue.toString();
+
+  while (digits.length > 0) {
+    groups.unshift(digits.slice(-4));
+    digits = digits.slice(0, -4);
+  }
+
+  const segments = groups
+    .map((group, index) => {
+      const groupValue = Number(group);
+      if (groupValue === 0) {
+        return null;
+      }
+
+      const unitIndex = groups.length - index - 1;
+      return `${pointsFormatter.format(groupValue)}${KOREAN_LARGE_NUMBER_UNITS[unitIndex] ?? ''}`;
+    })
+    .filter((segment): segment is string => Boolean(segment))
+    .slice(0, maxSegments);
+
+  if (segments.length === 0) {
+    return pointsFormatter.format(normalizedValue);
+  }
+
+  return `${normalizedValue < 0 ? '-' : ''}${segments.join(' ')}`;
+}
+
+export function formatCompactPoints(points: number) {
+  return `${formatCompactKoreanNumber(points)}P`;
+}
+
+export function formatPoints(points: number) {
+  return formatCompactPoints(points);
 }
 
 export function formatPercent(value?: number | null) {
@@ -139,7 +184,7 @@ export function calculateEstimatedDividendPoints(currentValuePoints?: number | n
 }
 
 export function formatPointBalance(points: number) {
-  return `${pointsFormatter.format(points)} 포인트`;
+  return `${formatCompactKoreanNumber(points)} 포인트`;
 }
 
 export function normalizeGameQuantity(quantity?: number | null, fallback = DEFAULT_GAME_QUANTITY) {
