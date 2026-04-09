@@ -2,6 +2,7 @@ import './RankingGamePanel.css';
 import type { ReactNode } from 'react';
 import type {
   GameCoinOverview,
+  GameCoinPosition,
   GameCoinTierProgress,
   GameCurrentSeason,
   GameLeaderboardEntry,
@@ -129,6 +130,50 @@ function formatSignedPoints(points?: number | null) {
   }
 
   return '0P';
+}
+
+function getCoinProductionSummary(positions: GameCoinPosition[]) {
+  const activePositions = positions.filter((position) => position.productionActive);
+  const warmingPositions = positions.filter((position) => !position.productionActive);
+  const activeCoinYield = activePositions.reduce((sum, position) => sum + position.estimatedCoinYield, 0);
+  const nextPayoutInSeconds = activePositions.reduce<number | null>((nearest, position) => {
+    if (typeof position.nextPayoutInSeconds !== 'number') {
+      return nearest;
+    }
+
+    return nearest === null ? position.nextPayoutInSeconds : Math.min(nearest, position.nextPayoutInSeconds);
+  }, null);
+  const nextProductionInSeconds = warmingPositions.reduce<number | null>((nearest, position) => {
+    if (typeof position.nextProductionInSeconds !== 'number') {
+      return nearest;
+    }
+
+    return nearest === null ? position.nextProductionInSeconds : Math.min(nearest, position.nextProductionInSeconds);
+  }, null);
+
+  return {
+    activeCoinYield,
+    activeMetricDetail:
+      activePositions.length > 0
+        ? nextPayoutInSeconds !== null
+          ? `${formatHoldCountdown(nextPayoutInSeconds)} 뒤 적립`
+          : '이번 집계 반영'
+        : null,
+    warmingMetricDetail:
+      warmingPositions.length > 0
+        ? nextProductionInSeconds !== null
+          ? `${formatHoldCountdown(nextProductionInSeconds)} 뒤 시작`
+          : '진행 대기 중'
+        : null,
+    positionMeta:
+      activeCoinYield > 0
+        ? `생산 진행 중 · 예상 ${formatCoins(activeCoinYield)} 적립`
+        : warmingPositions.length > 0
+          ? '생산 대기 중'
+          : positions.length > 0
+            ? `코인 생산 대상 · 평가금액의 ${formatPercent(positions[0].coinRatePercent)} 적립`
+            : null,
+  };
 }
 
 function LeaderboardPositionList({
@@ -515,6 +560,8 @@ export function RankingGameCoinOverview({
     return null;
   }
 
+  const productionSummary = overview ? getCoinProductionSummary(overview.positions) : null;
+
   return (
     <section className="app-shell__game-dividend" aria-label="시즌 코인 미리보기">
       <div className="app-shell__game-dividend-header">
@@ -536,6 +583,7 @@ export function RankingGameCoinOverview({
               >
                 {formatCoins(overview.myEstimatedCoinYield)}
               </strong>
+              <span className="app-shell__game-dividend-metric-detail" aria-hidden="true" />
             </span>
             <span className="app-shell__game-dividend-metric">
               <span className="app-shell__game-dividend-metric-label">보유 코인</span>
@@ -547,14 +595,21 @@ export function RankingGameCoinOverview({
                   ? formatCoins(coinTierProgress?.coinBalance ?? season?.wallet.coinBalance ?? 0)
                   : '-'}
               </strong>
+              <span className="app-shell__game-dividend-metric-detail" aria-hidden="true" />
             </span>
             <span className="app-shell__game-dividend-metric">
               <span className="app-shell__game-dividend-metric-label">생산 진행 중</span>
               <strong className="app-shell__game-dividend-metric-value">{overview.myActiveProducerCount}개</strong>
+              <span className="app-shell__game-dividend-metric-detail">
+                {productionSummary?.activeMetricDetail ?? ''}
+              </span>
             </span>
             <span className="app-shell__game-dividend-metric">
               <span className="app-shell__game-dividend-metric-label">생산 대기</span>
               <strong className="app-shell__game-dividend-metric-value">{overview.myWarmingUpPositionCount}개</strong>
+              <span className="app-shell__game-dividend-metric-detail">
+                {productionSummary?.warmingMetricDetail ?? ''}
+              </span>
             </span>
           </div>
         ) : null}
@@ -750,19 +805,7 @@ export function RankingGamePositionsTab({
             favoriteTrendSignalsByVideoId[holding.videoId],
         );
         const coinPositions = coinOverview?.positions.filter((position) => position.videoId === holding.videoId) ?? [];
-        const activeCoinYield = coinPositions
-          .filter((position) => position.productionActive)
-          .reduce((sum, position) => sum + position.estimatedCoinYield, 0);
-        const warmingUpCoinPosition = coinPositions.find((position) => !position.productionActive);
-        const coinMeta = activeCoinYield > 0
-          ? typeof coinPositions.find((position) => position.productionActive)?.nextPayoutInSeconds === 'number'
-            ? `생산 진행 중 · ${formatHoldCountdown(coinPositions.find((position) => position.productionActive)?.nextPayoutInSeconds ?? 0)} 뒤 예상 ${formatCoins(activeCoinYield)} 적립`
-            : `생산 진행 중 · 이번 집계 예상 ${formatCoins(activeCoinYield)}`
-          : typeof warmingUpCoinPosition?.nextProductionInSeconds === 'number'
-            ? `생산 대기 중 · ${formatHoldCountdown(warmingUpCoinPosition.nextProductionInSeconds)} 뒤 시작`
-            : coinPositions.length > 0
-              ? `코인 생산 대상 · 평가금액의 ${formatPercent(coinPositions[0].coinRatePercent)} 적립`
-              : null;
+        const coinMeta = getCoinProductionSummary(coinPositions).positionMeta;
 
         return (
           <li key={holding.videoId} className="app-shell__game-position" data-selected={isSelectedPosition}>

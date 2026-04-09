@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
 import AppHeader from './sections/AppHeader';
@@ -55,6 +56,7 @@ import {
 } from '../../constants/videoCategories';
 import { useAuth } from '../../features/auth/useAuth';
 import {
+  gameQueryKeys,
   useBuyGamePosition,
   useCurrentGameSeason,
   useGameCoinOverview,
@@ -113,7 +115,18 @@ function persistCollapsedHomeSectionIds(sectionIds: string[]) {
   window.localStorage.setItem(COLLAPSED_HOME_SECTIONS_STORAGE_KEY, JSON.stringify(sectionIds));
 }
 
+function getNextCoinRefreshSeconds(remainingSecondsList: Array<number | null | undefined>) {
+  return remainingSecondsList.reduce<number | null>((nearest, remainingSeconds) => {
+    if (typeof remainingSeconds !== 'number' || !Number.isFinite(remainingSeconds) || remainingSeconds < 0) {
+      return nearest;
+    }
+
+    return nearest === null ? remainingSeconds : Math.min(nearest, remainingSeconds);
+  }, null);
+}
+
 function HomePage() {
+  const queryClient = useQueryClient();
   const { accessToken, isLoggingOut, logout, status: authStatus, user } = useAuth();
   const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'leaderboard'>('positions');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
@@ -123,6 +136,8 @@ function HomePage() {
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
   const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('all');
+  const [coinCountdownNow, setCoinCountdownNow] = useState(() => Date.now());
+  const lastCoinAutoRefreshAtRef = useRef<number | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
@@ -172,7 +187,11 @@ function HomePage() {
     error: gameMarketError,
     isLoading: isGameMarketLoading,
   } = useGameMarket(accessToken, selectedRegionCode, shouldLoadGame);
-  const { data: gameCoinOverview, error: gameCoinOverviewError } = useGameCoinOverview(
+  const {
+    data: gameCoinOverview,
+    error: gameCoinOverviewError,
+    dataUpdatedAt: gameCoinOverviewUpdatedAt,
+  } = useGameCoinOverview(
     accessToken,
     selectedRegionCode,
     shouldLoadGame,
@@ -238,11 +257,100 @@ function HomePage() {
     profitPoints: openPositionsProfitPoints,
     stakePoints: openPositionsBuyPoints,
   } = useMemo(() => summarizeGamePositions(openGamePositions), [openGamePositions]);
+  const liveGameCoinOverview = useMemo(() => {
+    if (!gameCoinOverview) {
+      return undefined;
+    }
+
+    const elapsedSeconds = Math.max(0, Math.floor((coinCountdownNow - gameCoinOverviewUpdatedAt) / 1000));
+
+    return {
+      ...gameCoinOverview,
+      positions: gameCoinOverview.positions.map((position) => ({
+        ...position,
+        nextPayoutInSeconds:
+          typeof position.nextPayoutInSeconds === 'number'
+            ? Math.max(0, position.nextPayoutInSeconds - elapsedSeconds)
+            : position.nextPayoutInSeconds,
+        nextProductionInSeconds:
+          typeof position.nextProductionInSeconds === 'number'
+            ? Math.max(0, position.nextProductionInSeconds - elapsedSeconds)
+            : position.nextProductionInSeconds,
+      })),
+    };
+  }, [coinCountdownNow, gameCoinOverview, gameCoinOverviewUpdatedAt]);
+  const nextCoinRefreshInSeconds = useMemo(
+    () =>
+      getNextCoinRefreshSeconds(
+        liveGameCoinOverview?.positions.flatMap((position) => [
+          position.nextPayoutInSeconds,
+          position.nextProductionInSeconds,
+        ]) ?? [],
+      ),
+    [liveGameCoinOverview],
+  );
+  const hasCoinCountdown = nextCoinRefreshInSeconds !== null;
   const computedWalletTotalAssetPoints = currentGameSeason
     ? currentGameSeason.wallet.balancePoints + openPositionsEvaluationPoints
     : null;
   const buyGamePositionMutation = useBuyGamePosition(accessToken);
   const sellGamePositionsMutation = useSellGamePositions(accessToken);
+
+  useEffect(() => {
+    if (!shouldLoadGame || !hasCoinCountdown) {
+      return;
+    }
+
+    setCoinCountdownNow(Date.now());
+
+    const intervalId = window.setInterval(() => {
+      setCoinCountdownNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [hasCoinCountdown, shouldLoadGame]);
+
+  useEffect(() => {
+    if (!shouldLoadGame || !accessToken || nextCoinRefreshInSeconds === null || nextCoinRefreshInSeconds > 0) {
+      return;
+    }
+
+    if (lastCoinAutoRefreshAtRef.current === gameCoinOverviewUpdatedAt) {
+      return;
+    }
+
+    lastCoinAutoRefreshAtRef.current = gameCoinOverviewUpdatedAt;
+
+    void Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.currentSeason(accessToken, selectedRegionCode),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.coinOverview(accessToken, selectedRegionCode),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.coinTierProgress(accessToken, selectedRegionCode),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.leaderboard(accessToken, selectedRegionCode),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.positions(accessToken, selectedRegionCode, 'OPEN'),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'positions', accessToken, selectedRegionCode],
+      }),
+    ]);
+  }, [
+    accessToken,
+    gameCoinOverviewUpdatedAt,
+    nextCoinRefreshInSeconds,
+    queryClient,
+    selectedRegionCode,
+    shouldLoadGame,
+  ]);
 
   const {
     data,
@@ -678,11 +786,11 @@ function HomePage() {
   });
 
   const selectedVideoBuyCoinSummary = useMemo(() => {
-    if (!gameCoinOverview || typeof totalSelectedVideoBuyPoints !== 'number') {
+    if (!liveGameCoinOverview || typeof totalSelectedVideoBuyPoints !== 'number') {
       return null;
     }
 
-    const matchingRank = gameCoinOverview.ranks.find((rank) => rank.rank === selectedVideoCurrentChartRank);
+    const matchingRank = liveGameCoinOverview.ranks.find((rank) => rank.rank === selectedVideoCurrentChartRank);
 
     if (!matchingRank) {
       return {
@@ -700,7 +808,7 @@ function HomePage() {
       nextEvaluationPoints: selectedVideoOpenPositionSummary.evaluationPoints + totalSelectedVideoBuyPoints,
     };
   }, [
-    gameCoinOverview,
+    liveGameCoinOverview,
     selectedVideoCurrentChartRank,
     selectedVideoOpenPositionSummary.evaluationPoints,
     totalSelectedVideoBuyPoints,
@@ -832,7 +940,7 @@ function HomePage() {
     <SelectedVideoGameActionsBundle
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
-      gameCoinOverview={gameCoinOverview}
+      gameCoinOverview={liveGameCoinOverview}
       isBuySubmitting={isBuySubmitting}
       isChartDisabled={isChartActionDisabled}
       isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
@@ -858,7 +966,7 @@ function HomePage() {
     <SelectedVideoGameActionsBundle
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
-      gameCoinOverview={gameCoinOverview}
+      gameCoinOverview={liveGameCoinOverview}
       isBuySubmitting={isBuySubmitting}
       isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
       isSelectedVideoSellDisabled={isSelectedVideoSellDisabled}
@@ -882,7 +990,7 @@ function HomePage() {
       activeGameTab={activeGameTab}
       authStatus={authStatus}
       canShowGameActions={canShowGameActions}
-      coinOverview={gameCoinOverview}
+      coinOverview={liveGameCoinOverview}
       coinTierProgress={gameCoinTierProgress}
       computedWalletTotalAssetPoints={computedWalletTotalAssetPoints}
       currentGameSeason={currentGameSeason}
@@ -1094,7 +1202,7 @@ function HomePage() {
       <GameCoinModal
         isOpen={isCoinModalOpen}
         onClose={closeCoinModal}
-        overview={gameCoinOverview}
+        overview={liveGameCoinOverview}
         tierProgress={gameCoinTierProgress}
       />
       <GameTradeModal
@@ -1135,7 +1243,7 @@ function HomePage() {
                   value:
                     typeof selectedVideoBuyCoinSummary.estimatedCoinYield === 'number'
                       ? formatCoins(selectedVideoBuyCoinSummary.estimatedCoinYield)
-                      : `Top ${gameCoinOverview?.eligibleRankCutoff ?? 0} 진입 시 반영`,
+                      : `Top ${liveGameCoinOverview?.eligibleRankCutoff ?? 0} 진입 시 반영`,
                 },
               ]
             : []),
