@@ -43,6 +43,8 @@ export interface GameLeaderboardEntry {
   userId: number;
   displayName: string;
   pictureUrl: string | null;
+  currentTier: GameCoinTier;
+  coinBalance: number;
   totalAssetPoints: number;
   balancePoints: number;
   reservedPoints: number;

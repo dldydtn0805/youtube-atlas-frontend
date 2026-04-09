@@ -298,11 +298,24 @@ function LeaderboardRow({
         )}
         <div className="app-shell__game-leaderboard-copy">
           <div className="app-shell__game-leaderboard-head">
-            <p className="app-shell__game-leaderboard-name">{entry.displayName}</p>
-            <p className="app-shell__game-leaderboard-total" title={`총자산 ${formatFullPoints(entry.totalAssetPoints)}`}>
-              총자산 {formatPoints(entry.totalAssetPoints)}
+            <div className="app-shell__game-leaderboard-identity">
+              <p className="app-shell__game-leaderboard-name">{entry.displayName}</p>
+              <span
+                className="app-shell__game-leaderboard-tier"
+                data-tier-code={entry.currentTier.tierCode}
+                title={`${entry.currentTier.displayName} 티어`}
+              >
+                {entry.currentTier.displayName}
+              </span>
+            </div>
+            <p className="app-shell__game-leaderboard-total" title={`코인 ${formatFullCoins(entry.coinBalance)}`}>
+              코인 {formatCoins(entry.coinBalance)}
             </p>
           </div>
+          <p className="app-shell__game-leaderboard-meta">
+            총자산 {formatPoints(entry.totalAssetPoints)} · 실현손익{' '}
+            <span data-tone={getPointTone(entry.realizedPnlPoints)}>{formatSignedPoints(entry.realizedPnlPoints)}</span>
+          </p>
         </div>
         <span className="app-shell__game-leaderboard-expand" aria-hidden="true">
           ▾
