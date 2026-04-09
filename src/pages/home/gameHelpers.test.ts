@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { formatCompactPoints, formatFullPoints, formatGameQuantity, formatPointBalance, formatPoints } from './gameHelpers';
+import {
+  formatCoins,
+  formatCompactCoins,
+  formatCompactPoints,
+  formatFullCoins,
+  formatFullPoints,
+  formatGameQuantity,
+  formatPointBalance,
+  formatPoints,
+} from './gameHelpers';
 
 describe('gameHelpers', () => {
   it('keeps smaller point values fully expanded', () => {
@@ -15,6 +24,12 @@ describe('gameHelpers', () => {
 
   it('can still render the full point value when needed', () => {
     expect(formatFullPoints(1_234_567_890_123_456)).toBe('1,234,567,890,123,456P');
+  });
+
+  it('renders coin values with the C suffix', () => {
+    expect(formatCoins(365_558)).toBe('365,558C');
+    expect(formatCompactCoins(1_234_567_890_123_456)).toBe('1,234조 5,678억C');
+    expect(formatFullCoins(1_234_567_890_123_456)).toBe('1,234,567,890,123,456C');
   });
 
   it('uses the compact point balance copy in helper text contexts', () => {

@@ -118,6 +118,10 @@ export function formatFullPoints(points: number) {
   return `${pointsFormatter.format(points)}P`;
 }
 
+export function formatFullCoins(coins: number) {
+  return `${pointsFormatter.format(coins)}C`;
+}
+
 function formatCompactKoreanNumber(value: number, maxSegments = 2, fullThreshold = 100_000_000) {
   const normalizedValue = Math.trunc(value);
   const absoluteValue = Math.abs(normalizedValue);
@@ -158,8 +162,16 @@ export function formatCompactPoints(points: number) {
   return `${formatCompactKoreanNumber(points)}P`;
 }
 
+export function formatCompactCoins(coins: number) {
+  return `${formatCompactKoreanNumber(coins)}C`;
+}
+
 export function formatPoints(points: number) {
   return formatCompactPoints(points);
+}
+
+export function formatCoins(coins: number) {
+  return formatCompactCoins(coins);
 }
 
 export function formatPercent(value?: number | null) {

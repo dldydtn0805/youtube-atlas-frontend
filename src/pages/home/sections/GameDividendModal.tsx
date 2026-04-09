@@ -1,11 +1,11 @@
 import { createPortal } from 'react-dom';
 import type { GameCoinOverview, GameCoinTierProgress } from '../../../features/game/types';
 import {
+  formatCoins,
   formatGameQuantity,
   formatHoldCountdown,
   formatMaybePoints,
   formatPercent,
-  formatPoints,
   formatRank,
 } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
@@ -39,9 +39,9 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
       >
         <div className="app-shell__modal-header">
           <div className="app-shell__section-heading">
-            <p className="app-shell__section-eyebrow">Season Coin Table</p>
+            <p className="app-shell__section-eyebrow">시즌 코인</p>
             <h2 className="app-shell__section-title" id="game-dividend-modal-title">
-              시즌 코인 & 티어
+              시즌 코인 상세
             </h2>
           </div>
           <button
@@ -59,32 +59,43 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
             {overview ? (
               <section className="app-shell__modal-field">
                 <div className="app-shell__section-heading">
-                  <p className="app-shell__section-eyebrow">Overview</p>
-                  <h3 className="app-shell__modal-field-title">내 시즌 코인 요약</h3>
+                  <p className="app-shell__section-eyebrow">코인 현황</p>
+                  <h3 className="app-shell__modal-field-title">내 코인 요약</h3>
                 </div>
                 <p className="app-shell__modal-field-copy">
-                  코인은 Top {overview.eligibleRankCutoff} 종목을 충분히 보유한 포지션만 생산합니다. 최소{' '}
-                  {formatHoldCountdown(overview.minimumHoldSeconds)} 보유한 포지션만 반영돼요.
+                  Top {overview.eligibleRankCutoff} 종목 포지션 중 최소 {formatHoldCountdown(overview.minimumHoldSeconds)} 이상
+                  보유한 포지션만 코인 생산에 반영됩니다.
                 </p>
                 <div className="app-shell__game-dividend-metrics" aria-label="코인 요약">
                   <span className="app-shell__game-dividend-metric">
                     <span className="app-shell__game-dividend-metric-label">보유 코인</span>
                     <strong className="app-shell__game-dividend-metric-value">
-                      {formatPoints(overview.myCoinBalance)}
+                      {formatCoins(overview.myCoinBalance)}
                     </strong>
                   </span>
                   <span className="app-shell__game-dividend-metric">
-                    <span className="app-shell__game-dividend-metric-label">예상 생산</span>
-                    <strong className="app-shell__game-dividend-metric-value">{formatPoints(overview.myEstimatedCoinYield)}</strong>
+                    <span className="app-shell__game-dividend-metric-label">예상 생산량</span>
+                    <strong className="app-shell__game-dividend-metric-value">{formatCoins(overview.myEstimatedCoinYield)}</strong>
                   </span>
                   <span className="app-shell__game-dividend-metric">
-                    <span className="app-shell__game-dividend-metric-label">생산 중</span>
+                    <span className="app-shell__game-dividend-metric-label">생산 진행 중</span>
                     <strong className="app-shell__game-dividend-metric-value">{overview.myActiveProducerCount}개</strong>
                   </span>
                   <span className="app-shell__game-dividend-metric">
-                    <span className="app-shell__game-dividend-metric-label">준비 중</span>
+                    <span className="app-shell__game-dividend-metric-label">생산 대기</span>
                     <strong className="app-shell__game-dividend-metric-value">{overview.myWarmingUpPositionCount}개</strong>
                   </span>
+                </div>
+                <div className="app-shell__game-dividend-rule-block" aria-label="코인 생산 로직">
+                  <strong className="app-shell__game-dividend-rule-title">코인 생산 로직</strong>
+                  <ul className="app-shell__game-dividend-rule-list">
+                    <li>Top {overview.eligibleRankCutoff} 안에 든 포지션만 코인 생산 대상이 됩니다.</li>
+                    <li>{formatHoldCountdown(overview.minimumHoldSeconds)} 이상 보유하면 생산 대기 상태에서 생산 진행 중으로 전환됩니다.</li>
+                    <li>코인 집계는 1시간마다 한 번씩 반영됩니다.</li>
+                    <li>집계 시점의 순위와 평가금액 기준으로 생산량이 계산됩니다.</li>
+                    <li>같은 집계에서는 같은 포지션이 한 번만 반영됩니다.</li>
+                    <li>여러 포지션이 조건을 만족하면 예상 생산량과 보유 코인에 함께 반영됩니다.</li>
+                  </ul>
                 </div>
               </section>
             ) : null}
@@ -92,18 +103,18 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
             {tierProgress ? (
               <section className="app-shell__modal-field">
                 <div className="app-shell__section-heading">
-                  <p className="app-shell__section-eyebrow">Tier</p>
-                  <h3 className="app-shell__modal-field-title">시즌 티어 진행도</h3>
+                  <p className="app-shell__section-eyebrow">티어 현황</p>
+                  <h3 className="app-shell__modal-field-title">코인 티어 진행 현황</h3>
                 </div>
-                <GameCoinTierSummary progress={tierProgress} title="코인 티어 진행도" />
+                <GameCoinTierSummary progress={tierProgress} title="현재 티어" />
               </section>
             ) : null}
 
             {overview ? (
               <section className="app-shell__modal-field">
                 <div className="app-shell__section-heading">
-                  <p className="app-shell__section-eyebrow">Rates</p>
-                  <h3 className="app-shell__modal-field-title">1위~20위 고정 코인 생산률</h3>
+                  <p className="app-shell__section-eyebrow">생산률</p>
+                  <h3 className="app-shell__modal-field-title">Top {overview.eligibleRankCutoff} 순위별 코인 생산률</h3>
                 </div>
                 <div className="app-shell__game-dividend-rate-chart" aria-label="코인 생산률 그래프">
                   {overview.ranks.map((rank) => (
@@ -129,7 +140,7 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
             {overview ? (
               <section className="app-shell__modal-field">
                 <div className="app-shell__section-heading">
-                  <p className="app-shell__section-eyebrow">My Positions</p>
+                  <p className="app-shell__section-eyebrow">대상 포지션</p>
                   <h3 className="app-shell__modal-field-title">내 코인 대상 포지션</h3>
                 </div>
                 {overview.positions.length > 0 ? (
@@ -150,7 +161,7 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
                           </p>
                           <p className="app-shell__game-dividend-position-meta">
                             {position.productionActive
-                              ? `예상 생산 ${formatPoints(position.estimatedCoinYield)}`
+                              ? `예상 생산 ${formatCoins(position.estimatedCoinYield)}`
                               : position.nextProductionInSeconds !== null
                                 ? `${formatHoldCountdown(position.nextProductionInSeconds)} 뒤 생산 시작`
                                 : '코인 준비 중'}
@@ -162,7 +173,7 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
                   </ul>
                 ) : (
                   <p className="app-shell__modal-field-copy">
-                    현재 Top {overview.eligibleRankCutoff} 안에 든 내 보유 포지션이 없습니다.
+                    현재 Top {overview.eligibleRankCutoff} 안에 포함된 보유 포지션이 없습니다.
                   </p>
                 )}
               </section>

@@ -2,6 +2,7 @@ import type { GameCoinOverview, GameMarketVideo } from '../../../features/game/t
 import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
   calculateEstimatedCoinYield,
+  formatCoins,
   formatGameQuantity,
   formatHoldCountdown,
   formatPercent,
@@ -132,7 +133,7 @@ export function GameSelectedVideoPriceSummary({
               }
 
               if (positionEstimatedCoinYield > 0) {
-                return `코인 생산 중 ${matchingRank.rank}위 · 예상 생산 ${formatPoints(positionEstimatedCoinYield)} · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
+                return `코인 생산 중 ${matchingRank.rank}위 · 예상 생산 ${formatCoins(positionEstimatedCoinYield)} · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
               }
 
               if (typeof warmingUpPosition?.nextProductionInSeconds === 'number') {
@@ -166,7 +167,7 @@ export function GameSelectedVideoPriceSummary({
             );
 
             if (!matchingRank) {
-              return '20위 안 진입 시 시즌 코인 생산 구간에 들어갑니다.';
+              return '20위 안에 진입하면 시즌 코인 생산 현황에 반영됩니다.';
             }
 
             const estimatedCoinYield = calculateEstimatedCoinYield(
@@ -174,7 +175,7 @@ export function GameSelectedVideoPriceSummary({
               matchingRank.coinRatePercent,
             );
 
-            return `코인 대상 ${matchingRank.rank}위 · 예상 생산 ${formatPoints(estimatedCoinYield ?? 0)} · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
+            return `코인 대상 ${matchingRank.rank}위 · 예상 생산 ${formatCoins(estimatedCoinYield ?? 0)} · 생산률 ${formatPercent(matchingRank.coinRatePercent)}`;
           })()}
         </p>
       ) : null}

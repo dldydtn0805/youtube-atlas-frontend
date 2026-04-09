@@ -1,9 +1,10 @@
 import type { GameCoinTierProgress } from '../../../features/game/types';
-import { formatPoints } from '../gameHelpers';
+import { formatCoins } from '../gameHelpers';
 
 interface GameCoinTierSummaryProps {
   progress?: GameCoinTierProgress;
   title?: string;
+  showLadder?: boolean;
 }
 
 function getTierProgressPercent(progress: GameCoinTierProgress) {
@@ -21,7 +22,8 @@ function getTierProgressPercent(progress: GameCoinTierProgress) {
 
 export default function GameCoinTierSummary({
   progress,
-  title = '현재 티어 진행도',
+  title = '현재 티어',
+  showLadder = true,
 }: GameCoinTierSummaryProps) {
   if (!progress) {
     return null;
@@ -33,24 +35,28 @@ export default function GameCoinTierSummary({
     : 0;
 
   return (
-    <section className="app-shell__game-tier" aria-label="시즌 코인 티어 진행도">
+    <section
+      aria-label="시즌 코인 티어 진행도"
+      className="app-shell__game-tier"
+      data-current-tier={progress.currentTier.tierCode}
+    >
       <div className="app-shell__game-tier-copy">
-        <p className="app-shell__game-tier-eyebrow">Current Tier</p>
+        <p className="app-shell__game-tier-eyebrow">티어</p>
         <h5 className="app-shell__game-tier-title">{title}</h5>
       </div>
 
-      <div className="app-shell__game-tier-card">
+      <div className="app-shell__game-tier-card" data-tier-code={progress.currentTier.tierCode}>
         <div className="app-shell__game-tier-head">
           <div className="app-shell__game-tier-head-copy">
             <strong className="app-shell__game-tier-name">{progress.currentTier.displayName}</strong>
             <p className="app-shell__game-tier-description">
               {progress.nextTier
-                ? `${progress.nextTier.displayName}까지 ${formatPoints(remainingToNextTier)} 남음`
+                ? `${progress.nextTier.displayName}까지 ${formatCoins(remainingToNextTier)} 남음`
                 : '이번 시즌 최고 티어를 달성했어요.'}
             </p>
           </div>
-          <strong className="app-shell__game-tier-balance" title={formatPoints(progress.coinBalance)}>
-            {formatPoints(progress.coinBalance)}
+          <strong className="app-shell__game-tier-balance" title={formatCoins(progress.coinBalance)}>
+            {formatCoins(progress.coinBalance)}
           </strong>
         </div>
 
@@ -59,31 +65,34 @@ export default function GameCoinTierSummary({
         </div>
 
         <div className="app-shell__game-tier-progress-scale">
-          <span>{formatPoints(progress.currentTier.minCoinBalance)}</span>
+          <span>{formatCoins(progress.currentTier.minCoinBalance)}</span>
           <span>
-            {progress.nextTier ? formatPoints(progress.nextTier.minCoinBalance) : 'MAX'}
+            {progress.nextTier ? formatCoins(progress.nextTier.minCoinBalance) : 'MAX'}
           </span>
         </div>
       </div>
 
-      <ul className="app-shell__game-tier-ladder">
-        {progress.tiers.map((tier) => {
-          const isCurrent = tier.tierCode === progress.currentTier.tierCode;
-          const isReached = progress.coinBalance >= tier.minCoinBalance;
+      {showLadder ? (
+        <ul className="app-shell__game-tier-ladder">
+          {progress.tiers.map((tier) => {
+            const isCurrent = tier.tierCode === progress.currentTier.tierCode;
+            const isReached = progress.coinBalance >= tier.minCoinBalance;
 
-          return (
-            <li
-              key={tier.tierCode}
-              className="app-shell__game-tier-step"
-              data-current={isCurrent}
-              data-reached={isReached}
-            >
-              <span className="app-shell__game-tier-step-name">{tier.displayName}</span>
-              <span className="app-shell__game-tier-step-value">{formatPoints(tier.minCoinBalance)}</span>
-            </li>
-          );
-        })}
-      </ul>
+            return (
+              <li
+                key={tier.tierCode}
+                className="app-shell__game-tier-step"
+                data-current={isCurrent}
+                data-reached={isReached}
+                data-tier-code={tier.tierCode}
+              >
+                <span className="app-shell__game-tier-step-name">{tier.displayName}</span>
+                <span className="app-shell__game-tier-step-value">{formatCoins(tier.minCoinBalance)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </section>
   );
 }
