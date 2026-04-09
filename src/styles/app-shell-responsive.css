@@ -46,6 +46,15 @@
     flex-direction: column;
   }
 
+  .app-shell__game-tier-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .app-shell__game-tier-balance {
+    text-align: left;
+  }
+
   .app-shell__section-heading--chart {
     align-items: flex-start;
     flex-direction: row;

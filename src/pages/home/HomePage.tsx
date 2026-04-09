@@ -56,6 +56,7 @@ import {
   useBuyGamePosition,
   useCurrentGameSeason,
   useGameCoinOverview,
+  useGameCoinTierProgress,
   useGameLeaderboard,
   useGameLeaderboardPositions,
   useGameMarket,
@@ -174,6 +175,10 @@ function HomePage() {
     selectedRegionCode,
     shouldLoadGame,
   );
+  const {
+    data: gameCoinTierProgress,
+    error: gameCoinTierProgressError,
+  } = useGameCoinTierProgress(accessToken, selectedRegionCode, shouldLoadGame);
   const gameMarketSignalsByVideoId = useMemo(
     () =>
       Object.fromEntries(
@@ -536,6 +541,7 @@ function HomePage() {
   useLogoutOnUnauthorized(currentGameSeasonError, logout);
   useLogoutOnUnauthorized(gameLeaderboardError, logout);
   useLogoutOnUnauthorized(gameCoinOverviewError, logout);
+  useLogoutOnUnauthorized(gameCoinTierProgressError, logout);
   useLogoutOnUnauthorized(gameMarketError, logout);
   useLogoutOnUnauthorized(openGamePositionsError, logout);
   useLogoutOnUnauthorized(gameHistoryPositionsError, logout);
@@ -846,6 +852,7 @@ function HomePage() {
       authStatus={authStatus}
       canShowGameActions={canShowGameActions}
       coinOverview={gameCoinOverview}
+      coinTierProgress={gameCoinTierProgress}
       computedWalletTotalAssetPoints={computedWalletTotalAssetPoints}
       currentGameSeason={currentGameSeason}
       favoriteStreamerVideoSection={favoriteStreamerVideoSection}
@@ -1057,6 +1064,7 @@ function HomePage() {
         isOpen={isCoinModalOpen}
         onClose={closeCoinModal}
         overview={gameCoinOverview}
+        tierProgress={gameCoinTierProgress}
       />
       <GameTradeModal
         confirmLabel={`${formatGameQuantity(normalizedBuyQuantity)} 매수`}

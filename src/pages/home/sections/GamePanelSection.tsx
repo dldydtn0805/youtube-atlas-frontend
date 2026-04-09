@@ -2,6 +2,7 @@ import { useCallback, type Dispatch, type ReactNode, type SetStateAction } from 
 import type { AuthStatus } from '../../../features/auth/types';
 import type {
   GameCoinOverview,
+  GameCoinTierProgress,
   GameCurrentSeason,
   GameLeaderboardEntry,
   GamePosition,
@@ -25,6 +26,7 @@ interface GamePanelSectionProps {
   authStatus: AuthStatus;
   canShowGameActions: boolean;
   coinOverview?: GameCoinOverview;
+  coinTierProgress?: GameCoinTierProgress;
   computedWalletTotalAssetPoints: number | null;
   currentGameSeason?: GameCurrentSeason;
   favoriteStreamerVideoSection?: YouTubeCategorySection;
@@ -75,6 +77,7 @@ export default function GamePanelSection({
   authStatus,
   canShowGameActions,
   coinOverview,
+  coinTierProgress,
   computedWalletTotalAssetPoints,
   currentGameSeason,
   favoriteStreamerVideoSection,
@@ -214,6 +217,7 @@ export default function GamePanelSection({
       activeGameTab={activeGameTab}
       dividendOverview={
         <RankingGameCoinOverview
+          coinTierProgress={coinTierProgress}
           onOpenDetails={onOpenCoinModal}
           overview={coinOverview}
           season={currentGameSeason}

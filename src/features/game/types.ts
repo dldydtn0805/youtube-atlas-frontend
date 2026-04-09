@@ -57,6 +57,34 @@ export interface GameCoinRank {
   coinRatePercent: number;
 }
 
+export interface GameCoinTier {
+  tierCode: string;
+  displayName: string;
+  minCoinBalance: number;
+  badgeCode: string;
+  titleCode: string;
+  profileThemeCode: string;
+}
+
+export interface GameCoinTierProgress {
+  seasonId: number;
+  seasonName: string;
+  regionCode: string;
+  coinBalance: number;
+  currentTier: GameCoinTier;
+  nextTier: GameCoinTier | null;
+  tiers: GameCoinTier[];
+}
+
+export interface GameSeasonCoinResult {
+  seasonId: number;
+  seasonName: string;
+  regionCode: string;
+  finalCoinBalance: number;
+  finalTier: GameCoinTier;
+  finalizedAt: string;
+}
+
 export interface GameCoinPosition {
   positionId: number;
   videoId: string;

@@ -2,6 +2,7 @@ import './RankingGamePanel.css';
 import type { ReactNode } from 'react';
 import type {
   GameCoinOverview,
+  GameCoinTierProgress,
   GameCurrentSeason,
   GameLeaderboardEntry,
   GamePosition,
@@ -21,6 +22,7 @@ import {
   type OpenGameHolding,
 } from '../gameHelpers';
 import { formatSignedProfitRate } from '../utils';
+import GameCoinTierSummary from './GameCoinTierSummary';
 
 type GameTab = 'positions' | 'history' | 'leaderboard';
 
@@ -103,6 +105,7 @@ interface RankingGameHistoryTabProps {
 }
 
 interface RankingGameCoinOverviewProps {
+  coinTierProgress?: GameCoinTierProgress;
   onOpenDetails: () => void;
   overview?: GameCoinOverview;
   season?: GameCurrentSeason;
@@ -447,8 +450,13 @@ export function RankingGamePanelShell({
   );
 }
 
-export function RankingGameCoinOverview({ onOpenDetails, overview, season }: RankingGameCoinOverviewProps) {
-  if (!overview) {
+export function RankingGameCoinOverview({
+  coinTierProgress,
+  onOpenDetails,
+  overview,
+  season,
+}: RankingGameCoinOverviewProps) {
+  if (!overview && !coinTierProgress) {
     return null;
   }
 
@@ -457,42 +465,49 @@ export function RankingGameCoinOverview({ onOpenDetails, overview, season }: Ran
       <div className="app-shell__game-dividend-header">
         <div className="app-shell__game-dividend-copy">
           <p className="app-shell__game-dividend-eyebrow">Season Coin</p>
-          <h4 className="app-shell__game-dividend-title">Top {overview.eligibleRankCutoff} 코인 생산 구간</h4>
+          <h4 className="app-shell__game-dividend-title">
+            {overview ? `Top ${overview.eligibleRankCutoff} 코인 생산 구간` : '시즌 코인 티어'}
+          </h4>
         </div>
       </div>
       <div className="app-shell__game-dividend-actions">
-        <div className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview" aria-label="코인 요약">
-          <span className="app-shell__game-dividend-metric">
-            <span className="app-shell__game-dividend-metric-label">내 예상 생산</span>
-            <strong
-              className="app-shell__game-dividend-metric-value"
-              title={formatFullPoints(overview.myEstimatedCoinYield)}
-            >
-              {formatPoints(overview.myEstimatedCoinYield)}
-            </strong>
-          </span>
-          <span className="app-shell__game-dividend-metric">
-            <span className="app-shell__game-dividend-metric-label">보유 코인</span>
-            <strong
-              className="app-shell__game-dividend-metric-value"
-              title={season ? formatFullPoints(season.wallet.coinBalance) : undefined}
-            >
-              {season ? formatPoints(season.wallet.coinBalance) : '-'}
-            </strong>
-          </span>
-          <span className="app-shell__game-dividend-metric">
-            <span className="app-shell__game-dividend-metric-label">생산 중</span>
-            <strong className="app-shell__game-dividend-metric-value">{overview.myActiveProducerCount}개</strong>
-          </span>
-          <span className="app-shell__game-dividend-metric">
-            <span className="app-shell__game-dividend-metric-label">준비 중</span>
-            <strong className="app-shell__game-dividend-metric-value">{overview.myWarmingUpPositionCount}개</strong>
-          </span>
-        </div>
+        {overview ? (
+          <div className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview" aria-label="코인 요약">
+            <span className="app-shell__game-dividend-metric">
+              <span className="app-shell__game-dividend-metric-label">내 예상 생산</span>
+              <strong
+                className="app-shell__game-dividend-metric-value"
+                title={formatFullPoints(overview.myEstimatedCoinYield)}
+              >
+                {formatPoints(overview.myEstimatedCoinYield)}
+              </strong>
+            </span>
+            <span className="app-shell__game-dividend-metric">
+              <span className="app-shell__game-dividend-metric-label">보유 코인</span>
+              <strong
+                className="app-shell__game-dividend-metric-value"
+                title={formatFullPoints(coinTierProgress?.coinBalance ?? season?.wallet.coinBalance ?? 0)}
+              >
+                {typeof (coinTierProgress?.coinBalance ?? season?.wallet.coinBalance) === 'number'
+                  ? formatPoints(coinTierProgress?.coinBalance ?? season?.wallet.coinBalance ?? 0)
+                  : '-'}
+              </strong>
+            </span>
+            <span className="app-shell__game-dividend-metric">
+              <span className="app-shell__game-dividend-metric-label">생산 중</span>
+              <strong className="app-shell__game-dividend-metric-value">{overview.myActiveProducerCount}개</strong>
+            </span>
+            <span className="app-shell__game-dividend-metric">
+              <span className="app-shell__game-dividend-metric-label">준비 중</span>
+              <strong className="app-shell__game-dividend-metric-value">{overview.myWarmingUpPositionCount}개</strong>
+            </span>
+          </div>
+        ) : null}
         <button className="app-shell__game-panel-action" onClick={onOpenDetails} type="button">
-          코인 표 보기
+          코인·티어 보기
         </button>
       </div>
+      <GameCoinTierSummary progress={coinTierProgress} title="내 시즌 티어" />
     </section>
   );
 }

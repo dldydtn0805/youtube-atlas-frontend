@@ -2,11 +2,13 @@ import { fetchApi } from '../../lib/api';
 import type {
   CreateGamePositionInput,
   GameCoinOverview,
+  GameCoinTierProgress,
   GameCurrentSeason,
   GameLeaderboardEntry,
   GameMarketVideo,
   GamePosition,
   GamePositionRankHistory,
+  GameSeasonCoinResult,
   SellGamePositionsInput,
   SellGamePositionResponse,
 } from './types';
@@ -43,6 +45,20 @@ export async function fetchGameCoinOverview(accessToken: string, regionCode: str
   const params = new URLSearchParams({ regionCode });
 
   return fetchApi<GameCoinOverview>(`/api/game/coins/overview?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchGameCoinTierProgress(accessToken: string, regionCode: string) {
+  const params = new URLSearchParams({ regionCode });
+
+  return fetchApi<GameCoinTierProgress>(`/api/game/tiers/current?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchMySeasonCoinResult(accessToken: string, seasonId: number) {
+  return fetchApi<GameSeasonCoinResult>(`/api/game/seasons/${seasonId}/results/me`, {
     headers: createAuthorizationHeader(accessToken),
   });
 }
