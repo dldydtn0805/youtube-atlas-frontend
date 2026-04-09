@@ -20,38 +20,11 @@
   margin-bottom: 0;
 }
 
-.app-shell__filter-summary-text {
-  align-items: center;
+.app-shell__filter-helper-text {
   color: var(--text-muted);
-  display: inline-flex;
-  font-size: 0.78rem;
-  font-weight: 700;
-  gap: 0.35rem;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-  margin: 0;
-  text-transform: uppercase;
-}
-
-.app-shell__filter-summary-button {
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  margin: 0;
-  padding: 0;
-  text-transform: inherit;
-}
-
-.app-shell__filter-summary-button:hover,
-.app-shell__filter-summary-button:focus-visible {
-  color: var(--text);
-  outline: none;
-}
-
-.app-shell__filter-summary-separator {
-  opacity: 0.72;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0 0 8px;
 }
 
 .app-shell__filter-fields {
@@ -149,9 +122,6 @@
     flex-direction: column;
   }
 
-  .app-shell__filter-summary-text {
-    flex-wrap: wrap;
-  }
 }
 
 @media (max-width: 480px) {

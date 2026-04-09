@@ -20,7 +20,6 @@ interface FilterBarProps {
   onSelectView: (viewId: string, triggerElement?: HTMLButtonElement) => void;
   selectedCountryName: string;
   selectedViewId: string;
-  selectedViewLabel: string;
   viewOptions: ViewOption[];
 }
 
@@ -112,7 +111,6 @@ export function FilterBar({
   onSelectView,
   selectedCountryName,
   selectedViewId,
-  selectedViewLabel,
   viewOptions,
 }: FilterBarProps) {
   return (
@@ -121,17 +119,16 @@ export function FilterBar({
         <div className="app-shell__section-heading-copy">
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Explore</p>
-            <h2 className="app-shell__section-title">탐색 필터</h2>
+            <h2 className="app-shell__section-title">
+              <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
+                {selectedCountryName}
+              </button>{' '}
+              탐색 필터
+            </h2>
           </div>
-          <div className="app-shell__filter-summary-text">
-            <button className="app-shell__filter-summary-button" onClick={onOpenRegionModal} type="button">
-              {selectedCountryName}
-            </button>
-            <span aria-hidden="true" className="app-shell__filter-summary-separator">
-              ·
-            </span>
-            <span>{selectedViewLabel}</span>
-          </div>
+          <p className="app-shell__filter-helper-text">
+            국가명을 클릭하면 다른 국가 차트로 바꿀 수 있어요.
+          </p>
         </div>
       </div>
       <div className="app-shell__filter-fields">

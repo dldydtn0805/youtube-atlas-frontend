@@ -1,14 +1,6 @@
 .app-shell__panel--player {
   padding: 28px 28px 22px;
   scroll-margin-top: 16px;
-  transition:
-    width 0.32s ease,
-    padding 0.32s ease,
-    background 0.32s ease,
-    border-color 0.32s ease,
-    box-shadow 0.32s ease,
-    transform 0.32s ease,
-    border-radius 0.32s ease;
 }
 
 .app-shell__player-viewport {

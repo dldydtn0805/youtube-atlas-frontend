@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import {
   MOBILE_BREAKPOINT,
   exitElementFullscreen,
@@ -25,7 +25,6 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
-  const shouldScrollOnModeChangeRef = useRef(false);
   const isCinematicModeActive = isCinematicMode;
   const isDarkMode = themeMode === 'dark';
   const cinematicToggleLabel = isCinematicModeActive ? '기본 보기' : '시네마틱 모드';
@@ -87,9 +86,7 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
     }
 
     const handleFullscreenChange = () => {
-      if (getFullscreenElement() !== playerStageRef.current) {
-        setIsCinematicMode(false);
-      }
+      setIsCinematicMode(getFullscreenElement() === playerStageRef.current);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -101,27 +98,6 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
     };
   }, [isMobileLayout, playerStageRef]);
 
-  useEffect(() => {
-    if (!isCinematicModeActive || isMobileLayout || !shouldScrollOnModeChangeRef.current) {
-      return;
-    }
-
-    shouldScrollOnModeChangeRef.current = false;
-
-    window.setTimeout(() => {
-      const playerSection = playerSectionRef.current;
-
-      if (!playerSection) {
-        return;
-      }
-
-      playerSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }, 0);
-  }, [isCinematicModeActive, isMobileLayout, playerSectionRef]);
-
   async function handleToggleCinematicMode() {
     if (isMobileLayout) {
       setIsCinematicMode((currentMode) => !currentMode);
@@ -130,7 +106,11 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
 
     if (isCinematicModeActive) {
       try {
-        await exitElementFullscreen();
+        const didExitFullscreen = await exitElementFullscreen();
+
+        if (!didExitFullscreen || getFullscreenElement() !== null) {
+          setIsCinematicMode(false);
+        }
       } catch {
         setIsCinematicMode(false);
       }
@@ -138,21 +118,29 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
       return;
     }
 
-    shouldScrollOnModeChangeRef.current = true;
-    setIsCinematicMode(true);
+    const playerStage = playerStageRef.current;
 
-    window.setTimeout(() => {
-      const playerStage = playerStageRef.current;
+    if (!playerStage) {
+      return;
+    }
 
-      if (!playerStage) {
-        setIsCinematicMode(false);
-        return;
+    try {
+      const didEnterFullscreen = await requestElementFullscreen(playerStage);
+
+      if (!didEnterFullscreen || getFullscreenElement() !== playerStage) {
+        setIsCinematicMode(true);
+        playerSectionRef.current?.scrollIntoView({
+          behavior: 'auto',
+          block: 'start',
+        });
       }
-
-      void requestElementFullscreen(playerStage).catch(() => {
-        setIsCinematicMode(false);
+    } catch {
+      setIsCinematicMode(true);
+      playerSectionRef.current?.scrollIntoView({
+        behavior: 'auto',
+        block: 'start',
       });
-    }, 0);
+    }
   }
 
   function handleToggleThemeMode() {

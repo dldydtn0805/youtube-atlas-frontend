@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
 import AppHeader from './sections/AppHeader';
 import { SelectedVideoGameActionsBundle } from './sections/GameActionContent';
@@ -32,6 +33,7 @@ import {
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
   filterVideoSection,
+  getFullscreenElement,
   getVideoThumbnailUrl,
   mapGamePositionToVideoItem,
   mergeSections,
@@ -900,6 +902,30 @@ function HomePage() {
     isDividendModalOpen ||
     isBuyTradeModalOpen ||
     isSellTradeModalOpen;
+  const buyableVideoSearchOverlay =
+    isBuyableVideoSearchLoading && !isAnyModalOpen ? (
+      <div className="app-shell__fullscreen-loading" role="status" aria-live="polite" aria-modal="true">
+        <div className="app-shell__fullscreen-loading-card">
+          <span className="app-shell__fullscreen-loading-spinner" aria-hidden="true" />
+          <p className="app-shell__fullscreen-loading-eyebrow">Buyable Scan</p>
+          <p className="app-shell__fullscreen-loading-title">매수 가능 영상 탐색 중</p>
+          <p className="app-shell__fullscreen-loading-copy">
+            상위 차트 영상을 순차적으로 확인하고 있습니다. 잠시만 기다려 주세요.
+          </p>
+          {buyableVideoSearchStatus ? (
+            <p className="app-shell__fullscreen-loading-status">{buyableVideoSearchStatus}</p>
+          ) : null}
+        </div>
+      </div>
+    ) : null;
+  const buyableVideoSearchOverlayContainer =
+    typeof document === 'undefined'
+      ? null
+      : (() => {
+          const fullscreenElement = getFullscreenElement();
+
+          return fullscreenElement instanceof HTMLElement ? fullscreenElement : document.body;
+        })();
 
   return (
     <div className="app-shell">
@@ -950,7 +976,6 @@ function HomePage() {
             onSelectView: handleSelectChartView,
             selectedCountryName,
             selectedViewId: effectiveChartView,
-            selectedViewLabel: selectedChartViewOption.label,
             viewOptions: chartViewOptions,
           }}
           playerStageProps={{
@@ -1105,21 +1130,9 @@ function HomePage() {
         title={selectedGameActionTitle}
         unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? selectedVideoSellSummary.settledPoints ?? 0)}
       />
-      {isBuyableVideoSearchLoading && !isAnyModalOpen ? (
-        <div className="app-shell__fullscreen-loading" role="status" aria-live="polite" aria-modal="true">
-          <div className="app-shell__fullscreen-loading-card">
-            <span className="app-shell__fullscreen-loading-spinner" aria-hidden="true" />
-            <p className="app-shell__fullscreen-loading-eyebrow">Buyable Scan</p>
-            <p className="app-shell__fullscreen-loading-title">매수 가능 영상 탐색 중</p>
-            <p className="app-shell__fullscreen-loading-copy">
-              상위 차트 영상을 순차적으로 확인하고 있습니다. 잠시만 기다려 주세요.
-            </p>
-            {buyableVideoSearchStatus ? (
-              <p className="app-shell__fullscreen-loading-status">{buyableVideoSearchStatus}</p>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      {buyableVideoSearchOverlay && buyableVideoSearchOverlayContainer
+        ? createPortal(buyableVideoSearchOverlay, buyableVideoSearchOverlayContainer)
+        : null}
     </div>
   );
 }
