@@ -447,10 +447,13 @@
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-card {
-  background:
-    linear-gradient(180deg, rgba(var(--game-tier-accent-rgb), 0.18), rgba(15, 23, 42, 0.82)),
-    rgba(15, 23, 42, 0.8);
-  border-color: rgba(var(--game-tier-accent-rgb), 0.22);
+  background: rgba(var(--game-tier-accent-rgb), 0.24);
+  border-color: rgba(var(--game-tier-accent-rgb), 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.08),
+    0 18px 36px rgba(2, 6, 23, 0.28),
+    0 0 28px rgba(var(--game-tier-accent-rgb), 0.12);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-step {
@@ -458,36 +461,55 @@
     linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.12), rgba(15, 23, 42, 0.82)),
     rgba(15, 23, 42, 0.8);
   border-color: rgba(var(--game-tier-step-rgb), 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 18px rgba(2, 6, 23, 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-step[data-current='true'] {
   background:
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.34), rgba(30, 41, 59, 0.84)),
+    radial-gradient(circle at 50% -10%, rgba(var(--game-tier-step-rgb), 0.52), transparent 62%),
+    radial-gradient(circle at 50% 50%, rgba(var(--game-tier-step-rgb), 0.18), transparent 72%),
+    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.62), rgba(30, 41, 59, 0.84)),
     rgba(15, 23, 42, 0.8);
-  border-color: rgba(var(--game-tier-step-rgb), 0.32);
+  border-color: rgba(var(--game-tier-step-rgb), 0.56);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(var(--game-tier-step-rgb), 0.18),
+    0 0 0 1px rgba(var(--game-tier-step-rgb), 0.24),
+    0 22px 42px rgba(var(--game-tier-step-rgb), 0.3),
+    0 0 34px rgba(var(--game-tier-step-rgb), 0.3),
+    0 0 52px rgba(var(--game-tier-step-rgb), 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-step[data-reached='true'] {
   background:
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.22), rgba(15, 23, 42, 0.84)),
+    radial-gradient(circle at 50% -10%, rgba(var(--game-tier-step-rgb), 0.34), transparent 60%),
+    radial-gradient(circle at 50% 45%, rgba(var(--game-tier-step-rgb), 0.1), transparent 74%),
+    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.42), rgba(15, 23, 42, 0.84)),
     rgba(15, 23, 42, 0.8);
-  border-color: rgba(var(--game-tier-step-rgb), 0.24);
+  border-color: rgba(var(--game-tier-step-rgb), 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(var(--game-tier-step-rgb), 0.12),
+    0 16px 32px rgba(var(--game-tier-step-rgb), 0.2),
+    0 0 22px rgba(var(--game-tier-step-rgb), 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-name,
 :root[data-theme='dark'] .app-shell__game-tier-balance,
 :root[data-theme='dark'] .app-shell__game-tier-step-value {
-  color: #f8fafc;
+  color: #fffdf8;
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-description,
 :root[data-theme='dark'] .app-shell__game-tier-progress-scale,
 :root[data-theme='dark'] .app-shell__game-tier-step-name {
-  color: rgba(226, 232, 240, 0.74);
+  color: rgba(241, 245, 249, 0.82);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-progress {
-  background: rgba(var(--game-tier-accent-rgb), 0.18);
+  background: rgba(var(--game-tier-accent-rgb), 0.26);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-rank-label,

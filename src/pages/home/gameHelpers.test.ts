@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  calculateEstimatedCoinYieldAfterBuy,
   formatCoins,
   formatCompactCoins,
   formatCompactPoints,
@@ -30,6 +31,11 @@ describe('gameHelpers', () => {
     expect(formatCoins(365_558)).toBe('365,558C');
     expect(formatCompactCoins(1_234_567_890_123_456)).toBe('1,234조 5,678억C');
     expect(formatFullCoins(1_234_567_890_123_456)).toBe('1,234,567,890,123,456C');
+  });
+
+  it('calculates estimated coin yield from post-buy evaluation value', () => {
+    expect(calculateEstimatedCoinYieldAfterBuy(3_500, 1_500, 2.5)).toBe(125);
+    expect(calculateEstimatedCoinYieldAfterBuy(undefined, 1_500, 2.5)).toBeNull();
   });
 
   it('uses the compact point balance copy in helper text contexts', () => {

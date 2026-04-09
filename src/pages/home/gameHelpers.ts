@@ -195,6 +195,23 @@ export function calculateEstimatedCoinYield(currentValuePoints?: number | null, 
   return Math.round((currentValuePoints * coinRatePercent) / 100);
 }
 
+export function calculateEstimatedCoinYieldAfterBuy(
+  currentEvaluationPoints?: number | null,
+  buyPoints?: number | null,
+  coinRatePercent?: number | null,
+) {
+  if (
+    typeof currentEvaluationPoints !== 'number' ||
+    !Number.isFinite(currentEvaluationPoints) ||
+    typeof buyPoints !== 'number' ||
+    !Number.isFinite(buyPoints)
+  ) {
+    return null;
+  }
+
+  return calculateEstimatedCoinYield(currentEvaluationPoints + buyPoints, coinRatePercent);
+}
+
 export function formatPointBalance(points: number) {
   return `${formatCompactKoreanNumber(points)} 포인트`;
 }

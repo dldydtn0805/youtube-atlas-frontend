@@ -11,7 +11,9 @@ import GameTradeModal from './sections/GameTradeModal';
 import HomePlaybackSection from './sections/HomePlaybackSection';
 import {
   buildOpenGameHoldings,
+  calculateEstimatedCoinYieldAfterBuy,
   formatGameQuantity,
+  formatCoins,
   formatPoints,
   formatRank,
   getPointTone,
@@ -675,6 +677,35 @@ function HomePage() {
     totalSelectedVideoBuyPoints,
   });
 
+  const selectedVideoBuyCoinSummary = useMemo(() => {
+    if (!gameCoinOverview || typeof totalSelectedVideoBuyPoints !== 'number') {
+      return null;
+    }
+
+    const matchingRank = gameCoinOverview.ranks.find((rank) => rank.rank === selectedVideoCurrentChartRank);
+
+    if (!matchingRank) {
+      return {
+        estimatedCoinYield: null,
+        nextEvaluationPoints: selectedVideoOpenPositionSummary.evaluationPoints + totalSelectedVideoBuyPoints,
+      };
+    }
+
+    return {
+      estimatedCoinYield: calculateEstimatedCoinYieldAfterBuy(
+        selectedVideoOpenPositionSummary.evaluationPoints,
+        totalSelectedVideoBuyPoints,
+        matchingRank.coinRatePercent,
+      ),
+      nextEvaluationPoints: selectedVideoOpenPositionSummary.evaluationPoints + totalSelectedVideoBuyPoints,
+    };
+  }, [
+    gameCoinOverview,
+    selectedVideoCurrentChartRank,
+    selectedVideoOpenPositionSummary.evaluationPoints,
+    totalSelectedVideoBuyPoints,
+  ]);
+
   async function handleToggleFavoriteStreamer() {
     if (authStatus !== 'authenticated' || !resolvedSelectedVideo || !selectedChannelId) {
       return;
@@ -1093,6 +1124,21 @@ function HomePage() {
           { label: '수량', value: formatGameQuantity(normalizedBuyQuantity) },
           { label: '1개당 가격', value: formatPoints(selectedVideoUnitPricePoints ?? 0) },
           { label: '총 매수', value: formatPoints(totalSelectedVideoBuyPoints ?? (selectedVideoUnitPricePoints ?? 0)) },
+          ...(selectedVideoBuyCoinSummary
+            ? [
+                {
+                  label: '매수 후 총 평가',
+                  value: formatPoints(selectedVideoBuyCoinSummary.nextEvaluationPoints),
+                },
+                {
+                  label: '예상 코인 생산량',
+                  value:
+                    typeof selectedVideoBuyCoinSummary.estimatedCoinYield === 'number'
+                      ? formatCoins(selectedVideoBuyCoinSummary.estimatedCoinYield)
+                      : `Top ${gameCoinOverview?.eligibleRankCutoff ?? 0} 진입 시 반영`,
+                },
+              ]
+            : []),
         ]}
         summaryNote={undefined}
         thumbnailUrl={selectedVideoTradeThumbnailUrl}
