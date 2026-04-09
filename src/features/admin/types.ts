@@ -81,6 +81,15 @@ export interface AdminPlaybackProgress {
   updatedAt: string;
 }
 
+export interface AdminCoinTierSummary {
+  tierCode: string;
+  displayName: string;
+  minCoinBalance: number;
+  badgeCode: string;
+  titleCode: string;
+  profileThemeCode: string;
+}
+
 export interface AdminUserGameSummary {
   seasonId: number;
   seasonName: string;
@@ -88,7 +97,10 @@ export interface AdminUserGameSummary {
   balancePoints: number | null;
   reservedPoints: number | null;
   realizedPnlPoints: number | null;
+  coinBalance: number | null;
   totalAssetPoints: number | null;
+  currentCoinTier: AdminCoinTierSummary | null;
+  nextCoinTier: AdminCoinTierSummary | null;
   openPositionCount: number;
   closedPositionCount: number;
 }
@@ -117,4 +129,5 @@ export interface AdminWalletUpdateRequest {
   balancePoints: number;
   reservedPoints: number;
   realizedPnlPoints: number;
+  coinBalance: number;
 }
