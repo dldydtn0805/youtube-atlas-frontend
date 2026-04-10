@@ -176,7 +176,7 @@
 }
 
 .app-shell__game-tier-eyebrow {
-  color: var(--game-tier-accent);
+  color: color-mix(in srgb, var(--text-muted) 74%, var(--game-tier-accent) 26%);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -192,14 +192,14 @@
 
 .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.08), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(var(--game-tier-accent-rgb), 0.08)),
-    rgba(255, 255, 255, 0.88);
+    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.06), transparent 36%),
+    linear-gradient(180deg, rgba(255, 252, 248, 0.96), rgba(255, 255, 255, 0.92)),
+    rgba(255, 255, 255, 0.9);
   border: 1px solid var(--game-tier-border);
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 14px 28px rgba(15, 23, 42, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 8px 18px rgba(148, 163, 184, 0.06);
   display: grid;
   gap: 10px;
   padding: 12px;
@@ -207,13 +207,13 @@
 
 .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(242, 166, 109, 0.14), transparent 28%),
-    linear-gradient(180deg, rgba(255, 249, 244, 0.98), rgba(255, 241, 232, 0.92)),
+    radial-gradient(circle at top left, rgba(242, 166, 109, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(255, 250, 246, 0.97), rgba(255, 243, 236, 0.92)),
     rgba(255, 255, 255, 0.92);
-  border-color: rgba(194, 104, 50, 0.22);
+  border-color: rgba(194, 104, 50, 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 14px 28px rgba(194, 104, 50, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 18px rgba(194, 104, 50, 0.08);
 }
 
 .app-shell__game-tier-head {
@@ -231,11 +231,92 @@
 
 .app-shell__game-tier-name,
 .app-shell__game-tier-balance {
-  color: color-mix(in srgb, var(--text) 84%, var(--game-tier-accent) 16%);
+  color: color-mix(in srgb, var(--text) 88%, var(--game-tier-accent) 12%);
   display: block;
   font-size: 0.88rem;
   font-weight: 800;
   line-height: 1.3;
+}
+
+.app-shell__game-leaderboard-tier {
+  --leaderboard-tier-accent-rgb: 234, 179, 8;
+  --leaderboard-tier-accent: #eab308;
+  --leaderboard-tier-accent-strong: #facc15;
+  align-items: center;
+  background:
+    radial-gradient(circle at top left, rgba(var(--leaderboard-tier-accent-rgb), 0.18), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(var(--leaderboard-tier-accent-rgb), 0.12));
+  border: 1px solid rgba(var(--leaderboard-tier-accent-rgb), 0.24);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 6px 14px rgba(var(--leaderboard-tier-accent-rgb), 0.12);
+  color: color-mix(in srgb, var(--text) 72%, var(--leaderboard-tier-accent) 28%);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  gap: 6px;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  padding: 5px 8px;
+  text-transform: uppercase;
+}
+
+.app-shell__game-leaderboard-tier::before {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), transparent 38%),
+    linear-gradient(135deg, var(--leaderboard-tier-accent-strong), var(--leaderboard-tier-accent));
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 0 1px rgba(var(--leaderboard-tier-accent-rgb), 0.18);
+  content: '';
+  display: block;
+  height: 8px;
+  width: 8px;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='BRONZE'] {
+  --leaderboard-tier-accent-rgb: 194, 104, 50;
+  --leaderboard-tier-accent: #c26832;
+  --leaderboard-tier-accent-strong: #f2a66d;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='SILVER'] {
+  --leaderboard-tier-accent-rgb: 148, 163, 184;
+  --leaderboard-tier-accent: #94a3b8;
+  --leaderboard-tier-accent-strong: #cbd5e1;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='GOLD'] {
+  --leaderboard-tier-accent-rgb: 234, 179, 8;
+  --leaderboard-tier-accent: #eab308;
+  --leaderboard-tier-accent-strong: #facc15;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='PLATINUM'] {
+  --leaderboard-tier-accent-rgb: 20, 184, 166;
+  --leaderboard-tier-accent: #14b8a6;
+  --leaderboard-tier-accent-strong: #5eead4;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='DIAMOND'] {
+  --leaderboard-tier-accent-rgb: 96, 165, 250;
+  --leaderboard-tier-accent: #60a5fa;
+  --leaderboard-tier-accent-strong: #93c5fd;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='MASTER'] {
+  --leaderboard-tier-accent-rgb: 168, 85, 247;
+  --leaderboard-tier-accent: #a855f7;
+  --leaderboard-tier-accent-strong: #d8b4fe;
+}
+
+.app-shell__game-leaderboard-tier[data-tier-code='LEGEND'] {
+  --leaderboard-tier-accent-rgb: 244, 63, 94;
+  --leaderboard-tier-accent: #f43f5e;
+  --leaderboard-tier-accent-strong: #fda4af;
 }
 
 .app-shell__game-tier-description,
@@ -246,6 +327,17 @@
   line-height: 1.45;
 }
 
+.app-shell__game-tier-head-copy > .app-shell__game-leaderboard-tier {
+  font-size: 0.62rem;
+  gap: 5px;
+  padding: 4px 7px;
+}
+
+.app-shell__game-tier-head-copy > .app-shell__game-leaderboard-tier::before {
+  height: 7px;
+  width: 7px;
+}
+
 .app-shell__game-tier-balance {
   flex-shrink: 0;
   font-size: 0.8rem;
@@ -253,29 +345,38 @@
 }
 
 .app-shell__game-tier-progress {
-  background: linear-gradient(180deg, rgba(var(--game-tier-accent-rgb), 0.08), rgba(var(--game-tier-accent-rgb), 0.14));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 45%),
+    linear-gradient(180deg, rgba(var(--game-tier-accent-rgb), 0.06), rgba(148, 163, 184, 0.12));
   border-radius: 999px;
   height: 10px;
   overflow: hidden;
+  box-shadow:
+    inset 0 1px 2px rgba(148, 163, 184, 0.14),
+    0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.08);
 }
 
 .app-shell__game-tier-progress-fill {
   background: linear-gradient(90deg, var(--game-tier-accent), var(--game-tier-accent-strong));
   border-radius: inherit;
-  box-shadow: 0 0 18px var(--game-tier-shadow);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 4px 12px rgba(var(--game-tier-accent-rgb), 0.16);
   height: 100%;
   min-width: 10px;
 }
 
 .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-progress {
-  background: linear-gradient(180deg, rgba(194, 104, 50, 0.1), rgba(194, 104, 50, 0.18));
+  background:
+    linear-gradient(180deg, rgba(255, 250, 244, 0.42), transparent 45%),
+    linear-gradient(180deg, rgba(194, 104, 50, 0.06), rgba(194, 104, 50, 0.14));
 }
 
 .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-progress-fill {
   background: linear-gradient(90deg, #c26832, #eda06a);
   box-shadow:
-    0 0 12px rgba(194, 104, 50, 0.18),
-    0 0 24px rgba(237, 160, 106, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 4px 12px rgba(194, 104, 50, 0.16);
 }
 
 .app-shell__game-tier-progress-scale {
@@ -519,33 +620,85 @@
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-eyebrow {
-  color: var(--game-tier-accent-strong);
+  color: color-mix(in srgb, rgba(226, 232, 240, 0.74) 76%, var(--game-tier-accent-strong) 24%);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.18), transparent 34%),
-    linear-gradient(180deg, rgba(var(--game-tier-accent-rgb), 0.28), rgba(17, 24, 39, 0.88)),
-    rgba(15, 23, 42, 0.82);
-  border-color: rgba(var(--game-tier-accent-rgb), 0.4);
+    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 20%),
+    linear-gradient(180deg, rgba(var(--game-tier-accent-rgb), 0.12), rgba(10, 18, 32, 0.9)),
+    rgba(10, 18, 32, 0.88);
+  border-color: rgba(var(--game-tier-accent-rgb), 0.22);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.08),
-    0 18px 36px rgba(2, 6, 23, 0.28),
-    0 0 28px rgba(var(--game-tier-accent-rgb), 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.04),
+    0 14px 26px rgba(2, 6, 23, 0.22),
+    0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.04);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(242, 166, 109, 0.18), transparent 30%),
-    linear-gradient(180deg, rgba(194, 104, 50, 0.32), rgba(69, 38, 24, 0.94)),
-    rgba(43, 25, 19, 0.92);
-  border-color: rgba(242, 166, 109, 0.34);
+    radial-gradient(circle at top left, rgba(242, 166, 109, 0.1), transparent 36%),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.04), transparent 22%),
+    linear-gradient(180deg, rgba(194, 104, 50, 0.12), rgba(24, 18, 16, 0.92)),
+    rgba(20, 17, 16, 0.9);
+  border-color: rgba(242, 166, 109, 0.22);
   box-shadow:
-    inset 0 1px 0 rgba(255, 244, 230, 0.12),
-    inset 0 0 0 1px rgba(242, 166, 109, 0.08),
-    0 20px 40px rgba(2, 6, 23, 0.32),
-    0 0 30px rgba(194, 104, 50, 0.14);
+    inset 0 1px 0 rgba(255, 244, 230, 0.05),
+    inset 0 0 0 1px rgba(242, 166, 109, 0.04),
+    0 14px 26px rgba(2, 6, 23, 0.24),
+    0 0 0 1px rgba(194, 104, 50, 0.04);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-name,
+:root[data-theme='dark'] .app-shell__game-tier-balance {
+  color: color-mix(in srgb, #f8fafc 88%, var(--game-tier-accent) 12%);
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-tier {
+  background:
+    radial-gradient(circle at top left, rgba(var(--leaderboard-tier-accent-rgb), 0.1), transparent 52%),
+    linear-gradient(180deg, rgba(var(--leaderboard-tier-accent-rgb), 0.18), rgba(15, 23, 42, 0.78));
+  border-color: rgba(var(--leaderboard-tier-accent-rgb), 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 10px rgba(2, 6, 23, 0.22),
+    0 0 0 1px rgba(var(--leaderboard-tier-accent-rgb), 0.06);
+  color: color-mix(in srgb, #f8fafc 82%, var(--leaderboard-tier-accent) 18%);
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-tier::before {
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.38), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--leaderboard-tier-accent-strong) 72%, white 28%), var(--leaderboard-tier-accent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 1px rgba(var(--leaderboard-tier-accent-rgb), 0.12);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-description,
+:root[data-theme='dark'] .app-shell__game-tier-progress-scale {
+  color: color-mix(in srgb, rgba(226, 232, 240, 0.8) 92%, var(--game-tier-accent) 8%);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-progress {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 48%),
+    linear-gradient(180deg, rgba(51, 65, 85, 0.78), rgba(30, 41, 59, 0.86)),
+    rgba(var(--game-tier-accent-rgb), 0.05);
+  box-shadow:
+    inset 0 1px 2px rgba(2, 6, 23, 0.28),
+    inset 0 -1px 1px rgba(15, 23, 42, 0.24),
+    0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.08);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-progress-fill {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--game-tier-accent) 88%, white 12%), var(--game-tier-accent-strong));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 6px 14px rgba(var(--game-tier-accent-rgb), 0.14);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-step {

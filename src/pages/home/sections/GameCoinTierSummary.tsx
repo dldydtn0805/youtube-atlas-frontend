@@ -48,7 +48,9 @@ export default function GameCoinTierSummary({
       <div className="app-shell__game-tier-card" data-tier-code={progress.currentTier.tierCode}>
         <div className="app-shell__game-tier-head">
           <div className="app-shell__game-tier-head-copy">
-            <strong className="app-shell__game-tier-name">{progress.currentTier.displayName}</strong>
+            <span className="app-shell__game-leaderboard-tier" data-tier-code={progress.currentTier.tierCode}>
+              {progress.currentTier.displayName}
+            </span>
             <p className="app-shell__game-tier-description">
               {progress.nextTier
                 ? `${progress.nextTier.displayName}까지 ${formatCoins(remainingToNextTier)} 남음`
