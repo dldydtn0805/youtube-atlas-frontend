@@ -3,6 +3,7 @@ import { formatCoins } from '../gameHelpers';
 
 interface GameCoinTierSummaryProps {
   progress?: GameCoinTierProgress;
+  surfaceVariant?: 'default' | 'season-coin';
   title?: string;
   showLadder?: boolean;
 }
@@ -22,6 +23,7 @@ function getTierProgressPercent(progress: GameCoinTierProgress) {
 
 export default function GameCoinTierSummary({
   progress,
+  surfaceVariant = 'default',
   title = '현재 티어',
   showLadder = true,
 }: GameCoinTierSummaryProps) {
@@ -39,6 +41,7 @@ export default function GameCoinTierSummary({
       aria-label="시즌 코인 티어 진행도"
       className="app-shell__game-tier"
       data-current-tier={progress.currentTier.tierCode}
+      data-surface-variant={surfaceVariant}
     >
       <div className="app-shell__game-tier-copy">
         <p className="app-shell__game-tier-eyebrow">티어</p>

@@ -597,7 +597,11 @@ export function RankingGameCoinOverview({
   const productionSummary = overview ? getCoinProductionSummary(overview.positions) : null;
 
   return (
-    <section className="app-shell__game-dividend" aria-label="시즌 코인 미리보기">
+    <section
+      className="app-shell__game-dividend app-shell__game-dividend--preview"
+      aria-label="시즌 코인 미리보기"
+      data-current-tier={coinTierProgress?.currentTier.tierCode}
+    >
       <div className="app-shell__game-dividend-header">
         <div className="app-shell__game-dividend-copy">
           <p className="app-shell__game-dividend-eyebrow">Season Coin</p>
@@ -651,7 +655,7 @@ export function RankingGameCoinOverview({
           상세 보기
         </button>
       </div>
-      <GameCoinTierSummary progress={coinTierProgress} showLadder={false} title="현재 티어" />
+      <GameCoinTierSummary progress={coinTierProgress} showLadder={false} surfaceVariant="season-coin" title="현재 티어" />
     </section>
   );
 }

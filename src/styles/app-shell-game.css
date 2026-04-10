@@ -1,6 +1,6 @@
 .app-shell__game-dividend {
   background:
-    linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(255, 255, 255, 0.96)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.96)),
     radial-gradient(circle at top right, rgba(250, 204, 21, 0.1), transparent 36%),
     radial-gradient(circle at bottom left, rgba(194, 104, 50, 0.06), transparent 30%);
   border: 1px solid rgba(234, 179, 8, 0.16);
@@ -11,6 +11,90 @@
   display: grid;
   gap: 12px;
   padding: 14px;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview {
+  --season-coin-accent-rgb: 234, 179, 8;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 10%, rgba(255, 255, 255, 0.98)),
+      rgba(255, 255, 255, 0.96)
+    ),
+    radial-gradient(circle at top right, rgba(var(--season-coin-accent-rgb), 0.18), transparent 42%),
+    radial-gradient(circle at bottom left, rgba(var(--season-coin-accent-rgb), 0.12), transparent 36%);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    inset 0 -1px 0 rgba(var(--season-coin-accent-rgb), 0.05),
+    0 12px 22px rgba(15, 23, 42, 0.05),
+    0 18px 34px rgba(15, 23, 42, 0.08);
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='BRONZE'] {
+  --season-coin-accent-rgb: 194, 104, 50;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='SILVER'] {
+  --season-coin-accent-rgb: 148, 163, 184;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='GOLD'] {
+  --season-coin-accent-rgb: 234, 179, 8;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='PLATINUM'] {
+  --season-coin-accent-rgb: 20, 184, 166;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='DIAMOND'] {
+  --season-coin-accent-rgb: 96, 165, 250;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='MASTER'] {
+  --season-coin-accent-rgb: 168, 85, 247;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview[data-current-tier='LEGEND'] {
+  --season-coin-accent-rgb: 244, 63, 94;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview::before,
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 58%),
+    radial-gradient(circle at top center, rgba(255, 255, 255, 0.18), transparent 62%);
+  inset: 0 0 auto;
+  height: 96px;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview::after {
+  background:
+    radial-gradient(circle at 18% 24%, rgba(var(--season-coin-accent-rgb), 0.1), transparent 28%),
+    radial-gradient(circle at 84% 78%, rgba(var(--season-coin-accent-rgb), 0.06), transparent 24%),
+    linear-gradient(180deg, transparent 68%, rgba(15, 23, 42, 0.04));
+  inset: 0;
+  opacity: 0.7;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview > * {
+  position: relative;
+  z-index: 1;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-dividend-eyebrow,
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-dividend-metric-label {
+  color: color-mix(in srgb, var(--text-muted) 64%, rgb(var(--season-coin-accent-rgb)) 36%);
 }
 
 .app-shell__game-dividend-header {
@@ -56,7 +140,7 @@
 
 .app-shell__game-dividend-metric {
   background:
-    linear-gradient(180deg, rgba(255, 251, 245, 0.98), rgba(255, 255, 255, 0.94)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94)),
     rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(234, 179, 8, 0.14);
   border-radius: 14px;
@@ -68,6 +152,21 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
   padding: 10px 12px;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-dividend-metric {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 8%, rgba(255, 255, 255, 0.98)),
+      rgba(255, 255, 255, 0.94)
+    ),
+    rgba(255, 255, 255, 0.96);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -1px 0 rgba(var(--season-coin-accent-rgb), 0.04),
+    0 8px 14px rgba(15, 23, 42, 0.04);
 }
 
 .app-shell__game-dividend-metric-label {
@@ -108,6 +207,37 @@
   display: flex;
   gap: 12px;
   justify-content: space-between;
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-panel-action {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 8%, rgba(255, 255, 255, 0.96)),
+      rgba(255, 255, 255, 0.92)
+    ),
+    rgba(255, 255, 255, 0.92);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -1px 0 rgba(var(--season-coin-accent-rgb), 0.05),
+    0 8px 16px rgba(15, 23, 42, 0.05);
+  color: color-mix(in srgb, var(--text) 56%, rgb(var(--season-coin-accent-rgb)) 44%);
+}
+
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-panel-action:hover,
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-panel-action:focus-visible {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 12%, rgba(255, 255, 255, 0.98)),
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 10%, rgba(255, 255, 255, 0.94))
+    ),
+    rgba(255, 255, 255, 0.94);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 10px 18px rgba(15, 23, 42, 0.07);
 }
 
 .app-shell__game-tier {
@@ -205,15 +335,26 @@
   padding: 12px;
 }
 
-.app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-card {
-  background:
-    radial-gradient(circle at top left, rgba(242, 166, 109, 0.1), transparent 30%),
-    linear-gradient(180deg, rgba(255, 250, 246, 0.97), rgba(255, 243, 236, 0.92)),
-    rgba(255, 255, 255, 0.92);
-  border-color: rgba(194, 104, 50, 0.18);
+:root:not([data-theme='dark']) .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-card {
+  background: color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 7%, rgba(255, 255, 255, 0.96));
+  border-color: rgba(var(--game-tier-accent-rgb), 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 8px 18px rgba(194, 104, 50, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.03),
+    0 10px 18px rgba(15, 23, 42, 0.05);
+}
+
+:root:not([data-theme='dark']) .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress {
+  box-shadow:
+    inset 0 2px 3px rgba(15, 23, 42, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.48),
+    0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+:root:not([data-theme='dark']) .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress-fill {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 6px 14px rgba(var(--game-tier-accent-rgb), 0.18);
 }
 
 .app-shell__game-tier-head {
@@ -324,6 +465,7 @@
 .app-shell__game-tier-step-name {
   color: var(--text-muted);
   font-size: 0.74rem;
+  font-weight: 800;
   line-height: 1.45;
 }
 
@@ -361,19 +503,6 @@
   min-width: 10px;
 }
 
-.app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-progress {
-  background:
-    linear-gradient(180deg, rgba(255, 250, 244, 0.42), transparent 45%),
-    linear-gradient(180deg, rgba(194, 104, 50, 0.06), rgba(194, 104, 50, 0.14));
-}
-
-.app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-progress-fill {
-  background: linear-gradient(90deg, #c26832, #eda06a);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 4px 12px rgba(194, 104, 50, 0.16);
-}
-
 .app-shell__game-tier-progress-scale {
   display: flex;
   font-weight: 700;
@@ -393,12 +522,54 @@
   --game-tier-step-rgb: 148, 163, 184;
   --game-tier-step-accent: #94a3b8;
   --game-tier-step-strong: #cbd5e1;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(var(--game-tier-step-rgb), 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(248, 250, 252, 0.7)),
+    rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 14px;
   display: grid;
   gap: 3px;
+  isolation: isolate;
+  overflow: hidden;
   padding: 10px 11px;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 6px 14px rgba(148, 163, 184, 0.05);
+}
+
+.app-shell__game-tier-step::before,
+.app-shell__game-tier-step::after {
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 180ms ease;
+}
+
+.app-shell__game-tier-step::before {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.52) 18%,
+    rgba(255, 255, 255, 0.92) 50%,
+    rgba(255, 255, 255, 0.46) 82%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  height: 1px;
+  inset: 0 0 auto;
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.08);
+  z-index: 1;
+}
+
+.app-shell__game-tier-step::after {
+  background: radial-gradient(circle at top right, rgba(var(--game-tier-step-rgb), 0.12), transparent 48%);
+  inset: 0;
+}
+
+.app-shell__game-tier-step > * {
+  position: relative;
+  z-index: 1;
 }
 
 .app-shell__game-tier-step[data-tier-code='BRONZE'] {
@@ -443,37 +614,68 @@
   --game-tier-step-strong: #fda4af;
 }
 
-.app-shell__game-tier-step[data-reached='true'] {
+.app-shell__game-tier-step[data-reached='true']:not([data-current='true']) {
   background:
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.12), rgba(255, 255, 255, 0.82)),
-    rgba(255, 255, 255, 0.62);
-  border-color: rgba(var(--game-tier-step-rgb), 0.24);
-  box-shadow: 0 8px 18px rgba(var(--game-tier-step-rgb), 0.1);
+    radial-gradient(circle at top left, rgba(var(--game-tier-step-rgb), 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.82)),
+    color-mix(in srgb, var(--game-tier-step-accent) 11%, rgba(255, 255, 255, 0.96));
+  border-color: rgba(var(--game-tier-step-rgb), 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(var(--game-tier-step-rgb), 0.05),
+    0 12px 22px rgba(var(--game-tier-step-rgb), 0.1),
+    0 4px 10px rgba(15, 23, 42, 0.05);
+}
+
+.app-shell__game-tier-step[data-reached='true']:not([data-current='true'])::before {
+  opacity: 0.48;
+}
+
+.app-shell__game-tier-step[data-reached='true']:not([data-current='true'])::after {
+  opacity: 0.42;
 }
 
 .app-shell__game-tier-step[data-current='true'] {
   background:
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.2), rgba(255, 255, 255, 0.92)),
-    rgba(255, 255, 255, 0.88);
-  border-color: rgba(var(--game-tier-step-rgb), 0.34);
-  box-shadow: 0 12px 26px rgba(var(--game-tier-step-rgb), 0.14);
+    radial-gradient(circle at top left, rgba(var(--game-tier-step-rgb), 0.1), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.84)),
+    color-mix(in srgb, var(--game-tier-step-accent) 14%, rgba(255, 255, 255, 0.96));
+  border-color: rgba(var(--game-tier-step-rgb), 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(var(--game-tier-step-rgb), 0.05),
+    0 12px 24px rgba(15, 23, 42, 0.07);
 }
 
-.app-shell__game-tier-step[data-reached='true'] .app-shell__game-tier-step-name,
+.app-shell__game-tier-step[data-current='true']::before {
+  opacity: 0.62;
+}
+
+.app-shell__game-tier-step[data-current='true']::after {
+  opacity: 0.54;
+}
+
+.app-shell__game-tier-step[data-reached='true']:not([data-current='true']) .app-shell__game-tier-step-name {
+  color: color-mix(in srgb, var(--text-muted) 58%, var(--game-tier-step-accent) 42%);
+}
+
 .app-shell__game-tier-step[data-current='true'] .app-shell__game-tier-step-name {
-  color: color-mix(in srgb, var(--text-muted) 55%, var(--game-tier-step-accent) 45%);
+  color: color-mix(in srgb, var(--text-muted) 50%, var(--game-tier-step-accent) 50%);
 }
 
 .app-shell__game-tier-step-value {
   color: var(--text);
   font-size: 0.8rem;
-  font-weight: 800;
+  font-weight: 900;
   line-height: 1.2;
 }
 
-.app-shell__game-tier-step[data-reached='true'] .app-shell__game-tier-step-value,
+.app-shell__game-tier-step[data-reached='true']:not([data-current='true']) .app-shell__game-tier-step-value {
+  color: color-mix(in srgb, var(--text) 86%, var(--game-tier-step-accent) 14%);
+}
+
 .app-shell__game-tier-step[data-current='true'] .app-shell__game-tier-step-value {
-  color: color-mix(in srgb, var(--text) 70%, var(--game-tier-step-accent) 30%);
+  color: color-mix(in srgb, var(--text) 80%, var(--game-tier-step-accent) 20%);
 }
 
 .app-shell__game-dividend-ladder {
@@ -488,9 +690,9 @@
 .app-shell__game-dividend-rank {
   align-items: start;
   background:
-    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(255, 255, 255, 0.92)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92)),
     rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 14px;
   display: grid;
   gap: 3px;
@@ -499,25 +701,25 @@
 
 .app-shell__game-dividend .app-shell__game-panel-action {
   background:
-    linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(255, 248, 238, 0.96)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.96)),
     rgba(255, 255, 255, 0.96);
-  border-color: rgba(234, 179, 8, 0.18);
+  border-color: rgba(148, 163, 184, 0.18);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 10px 20px rgba(148, 163, 184, 0.08);
-  color: #7c460f;
+  color: var(--text);
 }
 
 .app-shell__game-dividend .app-shell__game-panel-action:hover,
 .app-shell__game-dividend .app-shell__game-panel-action:focus-visible {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 1), rgba(255, 241, 224, 0.98)),
-    rgba(255, 248, 236, 0.98);
-  border-color: rgba(217, 119, 6, 0.26);
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.98)),
+    rgba(255, 255, 255, 0.98);
+  border-color: rgba(100, 116, 139, 0.26);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 12px 24px rgba(194, 104, 50, 0.1);
-  color: #92400e;
+    0 12px 24px rgba(148, 163, 184, 0.1);
+  color: var(--text);
 }
 
 .app-shell__game-dividend-rank-label,
@@ -601,7 +803,7 @@
 
 :root[data-theme='dark'] .app-shell__game-dividend {
   background:
-    linear-gradient(180deg, rgba(25, 21, 12, 0.96), rgba(10, 15, 26, 0.94)),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(2, 6, 23, 0.94)),
     radial-gradient(circle at top right, rgba(251, 191, 36, 0.16), transparent 40%),
     radial-gradient(circle at bottom left, rgba(194, 104, 50, 0.1), transparent 36%);
   border-color: rgba(245, 158, 11, 0.24);
@@ -610,8 +812,66 @@
     0 18px 38px rgba(2, 6, 23, 0.28);
 }
 
+:root[data-theme='dark'] .app-shell__game-dividend--preview {
+  --season-coin-accent-rgb: 234, 179, 8;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 10%, rgba(2, 6, 23, 0.96)),
+      rgba(2, 6, 23, 0.94)
+    ),
+    radial-gradient(circle at top right, rgba(var(--season-coin-accent-rgb), 0.18), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(var(--season-coin-accent-rgb), 0.12), transparent 36%);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(var(--season-coin-accent-rgb), 0.05),
+    0 14px 28px rgba(2, 6, 23, 0.22),
+    0 0 0 1px rgba(var(--season-coin-accent-rgb), 0.04);
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='BRONZE'] {
+  --season-coin-accent-rgb: 194, 104, 50;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='SILVER'] {
+  --season-coin-accent-rgb: 148, 163, 184;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='GOLD'] {
+  --season-coin-accent-rgb: 234, 179, 8;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='PLATINUM'] {
+  --season-coin-accent-rgb: 20, 184, 166;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='DIAMOND'] {
+  --season-coin-accent-rgb: 96, 165, 250;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='MASTER'] {
+  --season-coin-accent-rgb: 168, 85, 247;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview[data-current-tier='LEGEND'] {
+  --season-coin-accent-rgb: 244, 63, 94;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview::after {
+  background:
+    radial-gradient(circle at 18% 24%, rgba(var(--season-coin-accent-rgb), 0.1), transparent 28%),
+    radial-gradient(circle at 84% 78%, rgba(var(--season-coin-accent-rgb), 0.06), transparent 24%),
+    linear-gradient(180deg, transparent 68%, rgba(2, 6, 23, 0.08));
+}
+
 :root[data-theme='dark'] .app-shell__game-dividend-eyebrow {
   color: #fbbf24;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-eyebrow,
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-metric-label {
+  color: color-mix(in srgb, rgba(226, 232, 240, 0.72) 64%, rgb(var(--season-coin-accent-rgb)) 36%);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-eyebrow {
@@ -632,18 +892,20 @@
     0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.04);
 }
 
-:root[data-theme='dark'] .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-card {
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(242, 166, 109, 0.1), transparent 36%),
-    linear-gradient(180deg, rgba(255, 248, 236, 0.04), transparent 22%),
-    linear-gradient(180deg, rgba(194, 104, 50, 0.12), rgba(24, 18, 16, 0.92)),
-    rgba(20, 17, 16, 0.9);
-  border-color: rgba(242, 166, 109, 0.22);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 10%, rgba(2, 6, 23, 0.9)),
+      rgba(2, 6, 23, 0.88)
+    ),
+    rgba(2, 6, 23, 0.88);
+  border-color: rgba(var(--game-tier-accent-rgb), 0.2);
   box-shadow:
-    inset 0 1px 0 rgba(255, 244, 230, 0.05),
-    inset 0 0 0 1px rgba(242, 166, 109, 0.04),
-    0 14px 26px rgba(2, 6, 23, 0.24),
-    0 0 0 1px rgba(194, 104, 50, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(var(--game-tier-accent-rgb), 0.05),
+    0 10px 18px rgba(2, 6, 23, 0.18),
+    0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.04);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-name,
@@ -688,6 +950,13 @@
     0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.08);
 }
 
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 48%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(var(--game-tier-accent-rgb), 0.22)),
+    rgba(2, 6, 23, 0.86);
+}
+
 :root[data-theme='dark'] .app-shell__game-tier-progress-fill {
   background: linear-gradient(90deg, color-mix(in srgb, var(--game-tier-accent) 88%, white 12%), var(--game-tier-accent-strong));
   box-shadow:
@@ -698,42 +967,69 @@
 
 :root[data-theme='dark'] .app-shell__game-tier-step {
   background:
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.12), rgba(15, 23, 42, 0.82)),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.76)),
     rgba(15, 23, 42, 0.8);
-  border-color: rgba(var(--game-tier-step-rgb), 0.18);
+  border-color: rgba(148, 163, 184, 0.16);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 18px rgba(2, 6, 23, 0.18);
+    inset 0 -1px 0 rgba(2, 6, 23, 0.14),
+    0 8px 16px rgba(2, 6, 23, 0.16);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-step::before {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.44) 18%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.36) 82%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-step::after {
+  background:
+    radial-gradient(circle at top right, rgba(var(--game-tier-step-rgb), 0.16), transparent 46%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-step[data-current='true'] {
   background:
-    radial-gradient(circle at 50% -10%, rgba(var(--game-tier-step-rgb), 0.52), transparent 62%),
-    radial-gradient(circle at 50% 50%, rgba(var(--game-tier-step-rgb), 0.18), transparent 72%),
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.62), rgba(30, 41, 59, 0.84)),
-    rgba(15, 23, 42, 0.8);
-  border-color: rgba(var(--game-tier-step-rgb), 0.56);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 20%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--game-tier-step-rgb)) 9%, rgba(2, 6, 23, 0.92)),
+      rgba(10, 18, 32, 0.9)
+    ),
+    rgba(10, 18, 32, 0.88);
+  border-color: rgba(var(--game-tier-step-rgb), 0.24);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1px rgba(var(--game-tier-step-rgb), 0.18),
-    0 0 0 1px rgba(var(--game-tier-step-rgb), 0.24),
-    0 22px 42px rgba(var(--game-tier-step-rgb), 0.3),
-    0 0 34px rgba(var(--game-tier-step-rgb), 0.3),
-    0 0 52px rgba(var(--game-tier-step-rgb), 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(var(--game-tier-step-rgb), 0.05),
+    0 0 0 1px rgba(var(--game-tier-step-rgb), 0.06),
+    0 12px 24px rgba(2, 6, 23, 0.18),
+    0 4px 14px rgba(255, 255, 255, 0.05);
 }
 
-:root[data-theme='dark'] .app-shell__game-tier-step[data-reached='true'] {
+:root[data-theme='dark'] .app-shell__game-tier-step[data-reached='true']:not([data-current='true']) {
   background:
-    radial-gradient(circle at 50% -10%, rgba(var(--game-tier-step-rgb), 0.34), transparent 60%),
-    radial-gradient(circle at 50% 45%, rgba(var(--game-tier-step-rgb), 0.1), transparent 74%),
-    linear-gradient(180deg, rgba(var(--game-tier-step-rgb), 0.42), rgba(15, 23, 42, 0.84)),
-    rgba(15, 23, 42, 0.8);
-  border-color: rgba(var(--game-tier-step-rgb), 0.42);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 20%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--game-tier-step-rgb)) 7%, rgba(2, 6, 23, 0.9)),
+      rgba(10, 18, 32, 0.88)
+    ),
+    rgba(10, 18, 32, 0.86);
+  border-color: rgba(var(--game-tier-step-rgb), 0.24);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 0 0 1px rgba(var(--game-tier-step-rgb), 0.12),
-    0 16px 32px rgba(var(--game-tier-step-rgb), 0.2),
-    0 0 22px rgba(var(--game-tier-step-rgb), 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(var(--game-tier-step-rgb), 0.05),
+    0 0 0 1px rgba(var(--game-tier-step-rgb), 0.04),
+    0 14px 24px rgba(2, 6, 23, 0.18),
+    0 4px 12px rgba(255, 255, 255, 0.045);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-name,
@@ -748,19 +1044,24 @@
   color: rgba(241, 245, 249, 0.82);
 }
 
+:root[data-theme='dark'] .app-shell__game-tier-step[data-reached='true']:not([data-current='true']) .app-shell__game-tier-step-name {
+  color: color-mix(in srgb, rgba(248, 250, 252, 0.88) 70%, var(--game-tier-step-accent) 30%);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-step[data-current='true'] .app-shell__game-tier-step-name {
+  color: color-mix(in srgb, rgba(248, 250, 252, 0.9) 62%, var(--game-tier-step-accent) 38%);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-step[data-reached='true']:not([data-current='true']) .app-shell__game-tier-step-value {
+  color: color-mix(in srgb, #f8fafc 84%, var(--game-tier-step-accent) 16%);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier-step[data-current='true'] .app-shell__game-tier-step-value {
+  color: color-mix(in srgb, #f8fafc 78%, var(--game-tier-step-accent) 22%);
+}
+
 :root[data-theme='dark'] .app-shell__game-tier-progress {
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(var(--game-tier-accent-rgb), 0.3));
-}
-
-:root[data-theme='dark'] .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-progress {
-  background: linear-gradient(180deg, rgba(91, 49, 28, 0.72), rgba(140, 72, 38, 0.5));
-}
-
-:root[data-theme='dark'] .app-shell__game-tier[data-current-tier='BRONZE'] .app-shell__game-tier-progress-fill {
-  background: linear-gradient(90deg, #d97706, #f2a66d);
-  box-shadow:
-    0 0 20px rgba(217, 119, 6, 0.32),
-    0 0 36px rgba(242, 166, 109, 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-rank-label,
@@ -770,13 +1071,30 @@
 
 :root[data-theme='dark'] .app-shell__game-dividend-metric {
   background:
-    linear-gradient(180deg, rgba(43, 31, 12, 0.82), rgba(15, 23, 42, 0.78)),
-    rgba(15, 23, 42, 0.82);
-  border-color: rgba(251, 191, 36, 0.18);
+    linear-gradient(180deg, rgba(2, 6, 23, 0.88), rgba(15, 23, 42, 0.82)),
+    rgba(2, 6, 23, 0.86);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 26px rgba(2, 6, 23, 0.2);
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-metric {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 10%, rgba(2, 6, 23, 0.9)),
+      rgba(15, 23, 42, 0.84)
+    ),
+    rgba(2, 6, 23, 0.86);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 18px rgba(2, 6, 23, 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-metric-label {
-  color: rgba(252, 211, 77, 0.78);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-metric-value,
@@ -784,34 +1102,80 @@
   color: #f8fafc;
 }
 
+:root[data-theme='dark'] .app-shell__game-dividend-metric-detail {
+  color: rgba(226, 232, 240, 0.68);
+}
+
 :root[data-theme='dark'] .app-shell__game-dividend-rank {
   background:
-    linear-gradient(180deg, rgba(42, 29, 10, 0.72), rgba(15, 23, 42, 0.72)),
-    rgba(15, 23, 42, 0.74);
+    linear-gradient(180deg, rgba(2, 6, 23, 0.82), rgba(15, 23, 42, 0.78)),
+    rgba(2, 6, 23, 0.78);
   border-color: rgba(251, 191, 36, 0.16);
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-rank {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 8%, rgba(2, 6, 23, 0.84)),
+      rgba(15, 23, 42, 0.8)
+    ),
+    rgba(2, 6, 23, 0.8);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-panel-action {
   background:
-    linear-gradient(180deg, rgba(41, 28, 10, 0.96), rgba(17, 24, 39, 0.92)),
-    rgba(17, 24, 39, 0.92);
+    linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(15, 23, 42, 0.92)),
+    rgba(2, 6, 23, 0.92);
   border-color: rgba(251, 191, 36, 0.24);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 14px 28px rgba(2, 6, 23, 0.24);
-  color: #fff3c4;
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-panel-action {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 10%, rgba(2, 6, 23, 0.96)),
+      rgba(15, 23, 42, 0.92)
+    ),
+    rgba(2, 6, 23, 0.92);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 18px rgba(2, 6, 23, 0.2);
+  color: color-mix(in srgb, #f8fafc 72%, rgb(var(--season-coin-accent-rgb)) 28%);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-panel-action:hover,
 :root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-panel-action:focus-visible {
   background:
-    linear-gradient(180deg, rgba(61, 40, 10, 0.98), rgba(26, 34, 50, 0.94)),
-    rgba(22, 31, 48, 0.94);
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94)),
+    rgba(15, 23, 42, 0.94);
   border-color: rgba(252, 211, 77, 0.34);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 16px 32px rgba(2, 6, 23, 0.28),
     0 0 24px rgba(251, 191, 36, 0.08);
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-panel-action:hover,
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-panel-action:focus-visible {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, rgb(var(--season-coin-accent-rgb)) 14%, rgba(15, 23, 42, 0.98)),
+      rgba(30, 41, 59, 0.94)
+    ),
+    rgba(15, 23, 42, 0.94);
+  border-color: rgba(var(--season-coin-accent-rgb), 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 22px rgba(2, 6, 23, 0.22),
+    0 0 14px rgba(var(--season-coin-accent-rgb), 0.06);
 }
 
 :root[data-theme='dark'] .app-shell__game-position-sell {

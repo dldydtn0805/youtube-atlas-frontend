@@ -3,8 +3,26 @@
   width: min(880px, 100%);
 }
 
+.app-shell__modal--dividend .app-shell__game-dividend-metric {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94)),
+    rgba(255, 255, 255, 0.96);
+  border-color: rgba(148, 163, 184, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 20px rgba(148, 163, 184, 0.06);
+}
+
+.app-shell__modal--dividend .app-shell__game-dividend-metric-label {
+  color: var(--text-muted);
+}
+
+.app-shell__modal--dividend .app-shell__game-dividend-metric-detail {
+  color: var(--text-muted);
+}
+
 .app-shell__game-dividend-rule-block {
-  background: rgba(148, 163, 184, 0.08);
+  background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 18px;
   display: grid;
@@ -45,9 +63,9 @@
 
 .app-shell__game-dividend-rate-example {
   background:
-    linear-gradient(180deg, rgba(255, 251, 245, 0.96), rgba(255, 255, 255, 0.92)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92)),
     rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 14px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
@@ -59,7 +77,7 @@
 }
 
 .app-shell__game-dividend-rate-example-rank {
-  color: color-mix(in srgb, var(--text-muted) 84%, #a16207 16%);
+  color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1.2;
@@ -67,7 +85,7 @@
 }
 
 .app-shell__game-dividend-rate-example-value {
-  color: #a16207;
+  color: var(--text);
   display: block;
   font-size: 0.95rem;
   font-weight: 900;
@@ -85,9 +103,12 @@
 
 .app-shell__game-dividend-position {
   align-items: center;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(234, 179, 8, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 10px 20px rgba(148, 163, 184, 0.06);
   display: grid;
   gap: 12px;
   grid-template-columns: 64px minmax(0, 1fr);
@@ -138,11 +159,21 @@
   color: rgba(226, 232, 240, 0.72);
 }
 
+:root[data-theme='dark'] .app-shell__modal--dividend .app-shell__game-dividend-metric {
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+:root[data-theme='dark'] .app-shell__modal--dividend .app-shell__game-dividend-metric-label {
+  color: rgba(226, 232, 240, 0.72);
+}
+
 .app-shell__coin-boost-badge {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(251, 191, 36, 0.34));
-  border: 1px solid rgba(217, 119, 6, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92)),
+    rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 999px;
-  color: #b45309;
+  color: var(--text);
   display: inline-flex;
   flex: 0 0 auto;
   font-size: 0.68rem;
@@ -158,14 +189,17 @@
 
 :root[data-theme='dark'] .app-shell__game-dividend-position {
   background:
-    linear-gradient(180deg, rgba(29, 24, 12, 0.78), rgba(15, 23, 42, 0.78)),
-    rgba(15, 23, 42, 0.78);
-  border-color: rgba(251, 191, 36, 0.16);
+    linear-gradient(180deg, rgba(2, 6, 23, 0.88), rgba(15, 23, 42, 0.82)),
+    rgba(2, 6, 23, 0.84);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 28px rgba(2, 6, 23, 0.22);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-rule-block {
-  background: rgba(15, 23, 42, 0.7);
-  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(2, 6, 23, 0.72);
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-rule-title {
@@ -178,26 +212,28 @@
 
 :root[data-theme='dark'] .app-shell__game-dividend-rate-example {
   background:
-    linear-gradient(180deg, rgba(44, 31, 12, 0.82), rgba(15, 23, 42, 0.82)),
-    rgba(15, 23, 42, 0.82);
-  border-color: rgba(251, 191, 36, 0.22);
+    linear-gradient(180deg, rgba(2, 6, 23, 0.88), rgba(15, 23, 42, 0.82)),
+    rgba(2, 6, 23, 0.84);
+  border-color: rgba(148, 163, 184, 0.18);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 14px 26px rgba(2, 6, 23, 0.2);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-rate-example-rank {
-  color: rgba(252, 211, 77, 0.78);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 :root[data-theme='dark'] .app-shell__game-dividend-rate-example-value {
-  color: #fde68a;
+  color: #f8fafc;
 }
 
 :root[data-theme='dark'] .app-shell__coin-boost-badge {
-  background: linear-gradient(135deg, rgba(180, 83, 9, 0.34), rgba(251, 191, 36, 0.24));
-  border-color: rgba(252, 211, 77, 0.2);
-  color: #fde68a;
+  background:
+    linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.88)),
+    rgba(15, 23, 42, 0.88);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #f8fafc;
 }
 
 @media (max-width: 768px) {

@@ -123,7 +123,7 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
                   <p className="app-shell__section-eyebrow">티어 현황</p>
                   <h3 className="app-shell__modal-field-title">코인 티어 진행 현황</h3>
                 </div>
-                <GameCoinTierSummary progress={tierProgress} title="현재 티어" />
+                <GameCoinTierSummary progress={tierProgress} surfaceVariant="season-coin" title="현재 티어" />
               </section>
             ) : null}
 
