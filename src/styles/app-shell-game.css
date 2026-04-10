@@ -327,15 +327,10 @@
   line-height: 1.45;
 }
 
-.app-shell__game-tier-head-copy > .app-shell__game-leaderboard-tier {
-  font-size: 0.62rem;
-  gap: 5px;
-  padding: 4px 7px;
-}
-
-.app-shell__game-tier-head-copy > .app-shell__game-leaderboard-tier::before {
-  height: 7px;
-  width: 7px;
+.app-shell__game-tier-head-copy > .app-shell__game-tier-name {
+  font-size: 1.18rem;
+  justify-self: start;
+  line-height: 1.2;
 }
 
 .app-shell__game-tier-balance {

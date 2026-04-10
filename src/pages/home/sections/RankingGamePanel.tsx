@@ -132,6 +132,22 @@ function formatSignedPoints(points?: number | null) {
   return '0P';
 }
 
+function formatSignedPercent(value?: number | null) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '집계 중';
+  }
+
+  if (value > 0) {
+    return `+${formatPercent(value)}`;
+  }
+
+  if (value < 0) {
+    return `-${formatPercent(Math.abs(value))}`;
+  }
+
+  return '0%';
+}
+
 function getHoldingRankDiffBadge(holding: Pick<OpenGameHolding, 'buyRank' | 'currentRank' | 'chartOut'>) {
   if (holding.chartOut || typeof holding.currentRank !== 'number') {
     return null;
@@ -248,10 +264,7 @@ function LeaderboardPositionList({
                   <span className="app-shell__game-rank-emphasis">
                     {formatRank(position.currentRank, { chartOut: position.chartOut })}
                   </span>{' '}
-                  · 평가 금액 {formatMaybePoints(position.currentPricePoints)}
-                </p>
-                <p className="app-shell__game-leaderboard-position-meta">
-                  매수 금액 {formatPoints(position.stakePoints)} · 손익률{' '}
+                  · 손익률{' '}
                   <span data-tone={getPointTone(position.profitPoints)}>
                     {formatSignedProfitRate(position.profitPoints, position.stakePoints)}
                   </span>
@@ -380,8 +393,7 @@ function LeaderboardRow({
             </p>
           </div>
           <p className="app-shell__game-leaderboard-meta">
-            총자산 {formatPoints(entry.totalAssetPoints)} · 실현손익{' '}
-            <span data-tone={getPointTone(entry.realizedPnlPoints)}>{formatSignedPoints(entry.realizedPnlPoints)}</span>
+            실시간 수익률 <span data-tone={getPointTone(entry.unrealizedPnlPoints)}>{formatSignedPercent(entry.profitRatePercent)}</span>
           </p>
         </div>
         <span className="app-shell__game-leaderboard-expand" aria-hidden="true">

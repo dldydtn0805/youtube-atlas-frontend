@@ -48,6 +48,9 @@ export interface GameLeaderboardEntry {
   totalAssetPoints: number;
   balancePoints: number;
   reservedPoints: number;
+  totalStakePoints: number;
+  totalEvaluationPoints: number;
+  profitRatePercent: number | null;
   realizedPnlPoints: number;
   unrealizedPnlPoints: number;
   openPositionCount: number;
