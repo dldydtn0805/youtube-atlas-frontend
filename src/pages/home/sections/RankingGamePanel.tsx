@@ -95,8 +95,8 @@ interface RankingGamePositionsTabProps {
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
   holdings: OpenGameHolding[];
-  onSelectVideo: (videoId: string) => void;
-  selectedVideoId?: string;
+  onSelectPosition: (position: GamePosition) => void;
+  selectedPositionId?: number | null;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
 }
 
@@ -792,8 +792,8 @@ export function RankingGamePositionsTab({
   favoriteTrendSignalsByVideoId,
   gameMarketSignalsByVideoId,
   holdings,
-  onSelectVideo,
-  selectedVideoId,
+  onSelectPosition,
+  selectedPositionId,
   trendSignalsByVideoId,
 }: RankingGamePositionsTabProps) {
   if (holdings.length === 0) {
@@ -803,13 +803,13 @@ export function RankingGamePositionsTab({
   return (
     <ul className="app-shell__game-positions">
       {holdings.map((holding) => {
-        const isSelectedPosition = holding.videoId === selectedVideoId;
+        const isSelectedPosition = holding.positionId === selectedPositionId;
         const holdingRankTrendBadge = getPrimaryVideoTrendBadge(
           gameMarketSignalsByVideoId[holding.videoId] ??
             trendSignalsByVideoId[holding.videoId] ??
             favoriteTrendSignalsByVideoId[holding.videoId],
         );
-        const coinPositions = coinOverview?.positions.filter((position) => position.videoId === holding.videoId) ?? [];
+        const coinPositions = coinOverview?.positions.filter((position) => position.positionId === holding.positionId) ?? [];
         const coinSummary = getCoinProductionSummary(coinPositions);
         const maxHoldBoostPercent = coinPositions.reduce(
           (highest, position) => Math.max(highest, position.productionActive ? position.holdBoostPercent : 0),
@@ -817,10 +817,30 @@ export function RankingGamePositionsTab({
         );
 
         return (
-          <li key={holding.videoId} className="app-shell__game-position" data-selected={isSelectedPosition}>
+          <li key={holding.positionId} className="app-shell__game-position" data-selected={isSelectedPosition}>
             <button
               className="app-shell__game-position-select"
-              onClick={() => onSelectVideo(holding.videoId)}
+              onClick={() =>
+                onSelectPosition({
+                  id: holding.positionId,
+                  videoId: holding.videoId,
+                  title: holding.title,
+                  channelTitle: holding.channelTitle,
+                  thumbnailUrl: holding.thumbnailUrl,
+                  buyRank: holding.currentRank ?? 0,
+                  currentRank: holding.currentRank,
+                  rankDiff: null,
+                  quantity: holding.quantity,
+                  stakePoints: holding.stakePoints,
+                  currentPricePoints: holding.currentPricePoints,
+                  profitPoints: holding.profitPoints,
+                  chartOut: holding.chartOut,
+                  status: 'OPEN',
+                  buyCapturedAt: holding.createdAt,
+                  createdAt: holding.createdAt,
+                  closedAt: null,
+                })
+              }
               type="button"
             >
               <img

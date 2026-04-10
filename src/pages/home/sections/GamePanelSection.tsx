@@ -50,7 +50,7 @@ interface GamePanelSectionProps {
   newChartEntriesSection?: YouTubeCategorySection;
   onOpenCoinModal: () => void;
   onSelectGameHistoryVideo: (position: GamePosition, playbackQueueId?: string) => void | Promise<void>;
-  onSelectGamePositionVideo: (videoId: string) => void;
+  onSelectGamePositionVideo: (position: GamePosition) => void;
   onSelectLeaderboardPositionVideo: (position: GamePosition, playbackQueueId?: string) => void | Promise<void>;
   onSelectTab: (tab: GameTab) => void;
   onToggleCollapse: () => void;
@@ -65,6 +65,7 @@ interface GamePanelSectionProps {
   selectedLeaderboardPositions: GamePosition[];
   selectedLeaderboardPositionsError: unknown;
   selectedLeaderboardUserId: number | null;
+  selectedPositionId?: number | null;
   selectedPlaybackSection?: YouTubeCategorySection;
   selectedVideoActions?: ReactNode;
   selectedVideoId?: string;
@@ -116,6 +117,7 @@ export default function GamePanelSection({
   selectedLeaderboardPositions,
   selectedLeaderboardPositionsError,
   selectedLeaderboardUserId,
+  selectedPositionId,
   selectedPlaybackSection,
   selectedVideoActions,
   selectedVideoId,
@@ -186,8 +188,8 @@ export default function GamePanelSection({
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}
       holdings={openGameHoldings}
-      onSelectVideo={onSelectGamePositionVideo}
-      selectedVideoId={selectedVideoId}
+      onSelectPosition={onSelectGamePositionVideo}
+      selectedPositionId={selectedPositionId}
       trendSignalsByVideoId={trendSignalsByVideoId}
     />
   );

@@ -42,6 +42,7 @@ interface UseSelectedVideoGameStateOptions {
   openGameHoldings: OpenGameHolding[];
   openGamePositions: GamePosition[];
   resolvedSelectedVideo?: YouTubeVideoItem;
+  selectedOpenPositionId?: number | null;
   selectedCategoryId: string;
   selectedCategoryLabel?: string;
   selectedCountryName: string;
@@ -151,6 +152,7 @@ export default function useSelectedVideoGameState({
   openGameHoldings,
   openGamePositions,
   resolvedSelectedVideo,
+  selectedOpenPositionId,
   selectedCategoryId,
   selectedCategoryLabel,
   selectedCountryName,
@@ -161,11 +163,29 @@ export default function useSelectedVideoGameState({
   buyQuantity,
   getRemainingHoldSeconds,
 }: UseSelectedVideoGameStateOptions): UseSelectedVideoGameStateResult {
-  const selectedVideoOpenPositions = useMemo(
+  const selectedVideoOpenPositionsForVideo = useMemo(
     () => (selectedVideoId ? openGamePositions.filter((position) => position.videoId === selectedVideoId) : []),
     [openGamePositions, selectedVideoId],
   );
-  const selectedVideoOpenPosition = selectedVideoOpenPositions[0];
+  const selectedVideoOpenPosition = useMemo(
+    () => {
+      const matchedPosition =
+        selectedOpenPositionId != null
+          ? openGamePositions.find((position) => position.id === selectedOpenPositionId)
+          : undefined;
+
+      if (matchedPosition && (!selectedVideoId || matchedPosition.videoId === selectedVideoId)) {
+        return matchedPosition;
+      }
+
+      return selectedVideoOpenPositionsForVideo[0];
+    },
+    [openGamePositions, selectedOpenPositionId, selectedVideoId, selectedVideoOpenPositionsForVideo],
+  );
+  const selectedVideoOpenPositions = useMemo(
+    () => (selectedVideoOpenPosition ? [selectedVideoOpenPosition] : selectedVideoOpenPositionsForVideo),
+    [selectedVideoOpenPosition, selectedVideoOpenPositionsForVideo],
+  );
   const selectedVideoMarketEntry = selectedVideoId
     ? gameMarket.find((marketVideo) => marketVideo.videoId === selectedVideoId)
     : undefined;
@@ -201,7 +221,7 @@ export default function useSelectedVideoGameState({
     [selectedVideoOpenPositions],
   );
   const selectedVideoUnitPricePoints = selectedVideoMarketEntry?.currentPricePoints ?? null;
-  const selectedVideoAlreadyOwned = selectedVideoOpenPositionCount > 0;
+  const selectedVideoAlreadyOwned = selectedVideoOpenPositionsForVideo.length > 0;
   const openDistinctVideoCount = new Set(openGamePositions.map((position) => position.videoId)).size;
   const remainingOpenPositionSlots = currentGameSeason
     ? Math.max(0, currentGameSeason.maxOpenPositions - openDistinctVideoCount)
@@ -277,16 +297,19 @@ export default function useSelectedVideoGameState({
   );
   const selectedGameActionTitle =
     selectedVideoOpenPosition?.title ?? resolvedSelectedVideo?.snippet.title ?? '선택한 영상';
-  const selectedOpenHolding = selectedVideoId
-    ? openGameHoldings.find((holding) => holding.videoId === selectedVideoId)
-    : undefined;
+  const selectedOpenHolding =
+    selectedOpenPositionId != null
+      ? openGameHoldings.find((holding) => holding.positionId === selectedOpenPositionId)
+      : selectedVideoId
+        ? openGameHoldings.find((holding) => holding.videoId === selectedVideoId)
+        : undefined;
   const selectedOpenHoldingLockedQuantity = selectedOpenHolding?.lockedQuantity ?? 0;
   const selectedOpenHoldingNextSellableInSeconds = selectedOpenHolding?.nextSellableInSeconds ?? null;
   const sellModalHelperText =
     maxSellQuantity > 0
       ? selectedOpenHoldingLockedQuantity > 0 && selectedOpenHoldingNextSellableInSeconds !== null
         ? `지금 ${formatGameQuantity(maxSellQuantity)} 매도 가능하고, 나머지 ${formatGameQuantity(selectedOpenHoldingLockedQuantity)}는 ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 가능합니다.`
-        : `지금 매도 가능한 수량은 ${formatGameQuantity(maxSellQuantity)}이며 오래된 순서부터 정리됩니다.`
+        : `지금 매도 가능한 수량은 ${formatGameQuantity(maxSellQuantity)}입니다.`
       : selectedOpenHoldingNextSellableInSeconds !== null
         ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
         : '지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.';

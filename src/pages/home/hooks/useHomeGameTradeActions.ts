@@ -28,6 +28,7 @@ interface UseHomeGameTradeActionsOptions {
   maxSellQuantity: number;
   mutateBuyGamePosition: (input: CreateGamePositionInput) => Promise<unknown>;
   mutateSellGamePositions: (input: SellGamePositionsInput) => Promise<SellGamePositionResponse[]>;
+  selectedOpenPositionId?: number | null;
   selectedGameActionTitle: string;
   selectedVideoId?: string;
   selectedVideoMarketEntry?: GameMarketVideo;
@@ -60,6 +61,7 @@ export default function useHomeGameTradeActions({
   maxSellQuantity,
   mutateBuyGamePosition,
   mutateSellGamePositions,
+  selectedOpenPositionId,
   selectedGameActionTitle,
   selectedVideoId,
   selectedVideoMarketEntry,
@@ -220,9 +222,10 @@ export default function useHomeGameTradeActions({
       tradeRequestLockRef.current = 'sell';
       setActiveTradeRequest('sell');
       const soldPositions = await mutateSellGamePositions({
+        positionId: selectedOpenPositionId ?? undefined,
         quantity: clampedSellQuantity,
         regionCode: selectedRegionCode,
-        videoId: selectedVideoId,
+        videoId: selectedOpenPositionId == null ? selectedVideoId : undefined,
       });
       const totalSettledPoints = soldPositions.reduce((sum, response) => sum + response.settledPoints, 0);
       const totalSellPricePoints = soldPositions.reduce((sum, response) => sum + response.sellPricePoints, 0);
@@ -260,6 +263,7 @@ export default function useHomeGameTradeActions({
     logout,
     maxSellQuantity,
     mutateSellGamePositions,
+    selectedOpenPositionId,
     selectedGameActionTitle,
     selectedRegionCode,
     selectedVideoId,

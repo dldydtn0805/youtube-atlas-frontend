@@ -128,6 +128,7 @@ function getNextCoinRefreshSeconds(remainingSecondsList: Array<number | null | u
 function HomePage() {
   const queryClient = useQueryClient();
   const { accessToken, isLoggingOut, logout, status: authStatus, user } = useAuth();
+  const [selectedOpenPositionId, setSelectedOpenPositionId] = useState<number | null>(null);
   const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'leaderboard'>('positions');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
   const [collapsedHomeSectionIds, setCollapsedHomeSectionIds] = useState(getInitialCollapsedHomeSectionIds);
@@ -614,7 +615,7 @@ function HomePage() {
     authStatus,
     currentGameSeason,
     openGamePositions,
-    selectedVideoId,
+    selectedVideoId: selectedOpenPositionId != null ? `${selectedVideoId ?? ''}:${selectedOpenPositionId}` : selectedVideoId,
   });
   const openDistinctVideoCount = new Set(openGamePositions.map((position) => position.videoId)).size;
   const isRankingGameCollapsed = collapsedHomeSectionIds.includes(RANKING_GAME_SECTION_ID);
@@ -662,10 +663,22 @@ function HomePage() {
       return;
     }
 
+    setSelectedOpenPositionId(null);
     setActiveGameTab('positions');
     setHistoryPlaybackLoadingVideoId(null);
     setHistoryPlaybackVideo(null);
   }, [authStatus]);
+
+  useEffect(() => {
+    if (selectedOpenPositionId == null) {
+      return;
+    }
+
+    const hasSelectedOpenPosition = openGamePositions.some((position) => position.id === selectedOpenPositionId);
+    if (!hasSelectedOpenPosition) {
+      setSelectedOpenPositionId(null);
+    }
+  }, [openGamePositions, selectedOpenPositionId]);
 
   useEffect(() => {
     if (isBuyableOnlyFilterAvailable) {
@@ -746,6 +759,7 @@ function HomePage() {
     openGameHoldings,
     openGamePositions,
     resolvedSelectedVideo,
+    selectedOpenPositionId,
     selectedCategoryId,
     selectedCategoryLabel: selectedChartViewOption.label,
     selectedCountryName,
@@ -773,6 +787,7 @@ function HomePage() {
     maxSellQuantity,
     mutateBuyGamePosition: buyGamePositionMutation.mutateAsync,
     mutateSellGamePositions: sellGamePositionsMutation.mutateAsync,
+    selectedOpenPositionId,
     selectedGameActionTitle,
     selectedVideoId,
     selectedVideoMarketEntry,
@@ -857,9 +872,10 @@ function HomePage() {
   }, [isMobileLayout]);
 
   const handleSelectGamePositionVideo = useCallback(
-    (videoId: string) => {
+    (position: GamePosition) => {
+      setSelectedOpenPositionId(position.id);
       scrollToPlayerStage();
-      handleSelectVideo(videoId, gamePortfolioSection.categoryId);
+      handleSelectVideo(position.videoId, gamePortfolioSection.categoryId);
     },
     [gamePortfolioSection.categoryId, handleSelectVideo, scrollToPlayerStage],
   );
@@ -869,6 +885,7 @@ function HomePage() {
 
       if (playbackQueueId) {
         setGameActionStatus(null);
+        setSelectedOpenPositionId(position.id);
         handleSelectVideo(position.videoId, playbackQueueId);
         return;
       }
@@ -879,6 +896,7 @@ function HomePage() {
         const video = await fetchVideoById(position.videoId);
         setHistoryPlaybackVideo(video);
         setGameActionStatus(null);
+        setSelectedOpenPositionId(position.id);
         handleSelectVideo(video.id, HISTORY_PLAYBACK_QUEUE_ID);
       } catch (error) {
         setGameActionStatus(
@@ -898,6 +916,7 @@ function HomePage() {
 
       if (playbackQueueId) {
         setGameActionStatus(null);
+        setSelectedOpenPositionId(position.id);
         handleSelectVideo(position.videoId, playbackQueueId);
         return;
       }
@@ -908,6 +927,7 @@ function HomePage() {
         const video = await fetchVideoById(position.videoId);
         setHistoryPlaybackVideo(video);
         setGameActionStatus(null);
+        setSelectedOpenPositionId(position.id);
         handleSelectVideo(video.id, HISTORY_PLAYBACK_QUEUE_ID);
       } catch (error) {
         setGameActionStatus(
@@ -1032,6 +1052,7 @@ function HomePage() {
       selectedLeaderboardUserId={selectedLeaderboardUserId}
       selectedPlaybackSection={selectedPlaybackSection}
       selectedVideoActions={selectedVideoActionsContent}
+      selectedPositionId={selectedOpenPositionId}
       selectedVideoId={selectedVideoId}
       setSelectedLeaderboardUserId={setSelectedLeaderboardUserId}
       trendSignalsByVideoId={chartTrendSignalsByVideoId}

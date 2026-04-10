@@ -22,6 +22,7 @@ export const DEFAULT_GAME_QUANTITY = GAME_QUANTITY_SCALE;
 const KOREAN_LARGE_NUMBER_UNITS = ['', '만', '억', '조', '경', '해'];
 
 export interface OpenGameHolding {
+  positionId: number;
   videoId: string;
   title: string;
   channelTitle: string;
@@ -35,7 +36,7 @@ export interface OpenGameHolding {
   stakePoints: number;
   currentPricePoints: number | null;
   profitPoints: number | null;
-  latestCreatedAt: string;
+  createdAt: string;
 }
 
 export interface GamePositionSummary {
@@ -364,19 +365,17 @@ export function buildOpenGameHoldings(
   openGamePositions: GamePosition[],
   getRemainingHoldSeconds: (position: GamePosition) => number,
 ) {
-  const holdingByVideoId = new Map<string, OpenGameHolding>();
+  return openGamePositions
+    .map<OpenGameHolding>((position) => {
+      const quantity = getGamePositionQuantity(position);
+      const remainingHoldSeconds = getRemainingHoldSeconds(position);
+      const currentPricePoints = resolveEvaluationPoints(position);
+      const profitPoints = resolveProfitPoints(position, currentPricePoints);
+      const sellableQuantity = remainingHoldSeconds <= 0 ? quantity : 0;
+      const lockedQuantity = Math.max(0, quantity - sellableQuantity);
 
-  for (const position of openGamePositions) {
-    const quantity = getGamePositionQuantity(position);
-    const remainingHoldSeconds = getRemainingHoldSeconds(position);
-    const currentPricePoints = resolveEvaluationPoints(position);
-    const profitPoints = resolveProfitPoints(position, currentPricePoints);
-    const sellableQuantity = remainingHoldSeconds <= 0 ? quantity : 0;
-    const lockedQuantity = Math.max(0, quantity - sellableQuantity);
-    const existingHolding = holdingByVideoId.get(position.videoId);
-
-    if (!existingHolding) {
-      holdingByVideoId.set(position.videoId, {
+      return {
+        positionId: position.id,
         videoId: position.videoId,
         title: position.title,
         channelTitle: position.channelTitle,
@@ -390,39 +389,10 @@ export function buildOpenGameHoldings(
         stakePoints: position.stakePoints,
         currentPricePoints,
         profitPoints,
-        latestCreatedAt: position.createdAt,
-      });
-      continue;
-    }
-
-    existingHolding.quantity += quantity;
-    existingHolding.sellableQuantity += sellableQuantity;
-    existingHolding.lockedQuantity += lockedQuantity;
-    existingHolding.stakePoints += position.stakePoints;
-    existingHolding.currentPricePoints = (existingHolding.currentPricePoints ?? 0) + currentPricePoints;
-    existingHolding.profitPoints = (existingHolding.profitPoints ?? 0) + profitPoints;
-
-    if (lockedQuantity > 0) {
-      existingHolding.nextSellableInSeconds =
-        existingHolding.nextSellableInSeconds === null
-          ? remainingHoldSeconds
-          : Math.min(existingHolding.nextSellableInSeconds, remainingHoldSeconds);
-    }
-
-    if (new Date(position.createdAt).getTime() > new Date(existingHolding.latestCreatedAt).getTime()) {
-      existingHolding.latestCreatedAt = position.createdAt;
-    }
-
-    if (typeof existingHolding.currentRank !== 'number' && typeof position.currentRank === 'number') {
-      existingHolding.currentRank = position.currentRank;
-    }
-
-    existingHolding.chartOut = existingHolding.chartOut || position.chartOut;
-  }
-
-  return [...holdingByVideoId.values()].sort(
-    (left, right) => new Date(right.latestCreatedAt).getTime() - new Date(left.latestCreatedAt).getTime(),
-  );
+        createdAt: position.createdAt,
+      };
+    })
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
 export function buildSellCandidates(
