@@ -388,8 +388,8 @@ function LeaderboardRow({
                 {entry.currentTier.displayName}
               </span>
             </div>
-            <p className="app-shell__game-leaderboard-total" title={`코인 ${formatFullCoins(entry.coinBalance)}`}>
-              코인 {formatCoins(entry.coinBalance)}
+            <p className="app-shell__game-leaderboard-total" title={formatFullCoins(entry.coinBalance)}>
+              {formatCoins(entry.coinBalance)}
             </p>
           </div>
           <p className="app-shell__game-leaderboard-meta">
