@@ -106,14 +106,12 @@ export default function GameDividendModal({ isOpen, onClose, overview, tierProgr
                   <ul className="app-shell__game-dividend-rule-list">
                     <li>Top {overview.eligibleRankCutoff} 안에 든 포지션만 코인 채굴 대상이 됩니다.</li>
                     <li>{formatHoldCountdown(overview.minimumHoldSeconds)} 이상 보유하면 채굴 대기 상태에서 채굴 진행 중으로 전환됩니다.</li>
-                    <li>채굴 시작 후에는 보유 시간이 길수록 10분마다 추가 부스트가 붙습니다.</li>
-                    <li>보유 시간 부스트는 최대 100%까지 누적되어 최종 채굴 효율은 최대 2배가 됩니다.</li>
-                    <li>코인은 5분마다 한 번씩 채굴됩니다.</li>
+                    <li>채굴 시작 후에는 10분마다 10% 채굴 부스트가 붙습니다.</li>
+                    <li>채굴 부스트는 최대 100%까지 누적되어 최종 채굴 효율은 최대 2배가 됩니다.</li>
+                    <li>코인은 10분마다 한 번씩 채굴됩니다.</li>
                     <li>채굴 시점의 최신 차트와 평가금액 기준으로 코인이 계산됩니다.</li>
                     <li>예를 들어 1위는 평가금액의 {formatPercent(topRate)}, {overview.eligibleRankCutoff}위는 {formatPercent(bottomRate)}가 채굴됩니다.</li>
                     <li>순위가 높을수록 채굴률이 더 가파르게 올라가며, 특히 상위권일수록 보상이 크게 커집니다.</li>
-                    <li>같은 5분 채굴 슬롯에서는 같은 포지션이 한 번만 반영됩니다.</li>
-                    <li>여러 포지션이 조건을 만족하면 채굴량이 합산됩니다.</li>
                   </ul>
                 </div>
               </section>
