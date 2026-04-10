@@ -917,7 +917,10 @@ export function RankingGamePositionsTab({
                     생산 진행 중 · 예상 생산량 {formatCoins(coinSummary.activeCoinYield)}
                   </p>
                 ) : coinSummary.hasWarmingPositions ? (
-                  <p className="app-shell__game-position-meta">생산 대기 중</p>
+                  <p className="app-shell__game-position-meta">
+                    생산 대기 중
+                    {coinSummary.warmingMetricDetail ? ` · ${coinSummary.warmingMetricDetail}` : ''}
+                  </p>
                 ) : coinPositions.length > 0 ? (
                   <p className="app-shell__game-position-meta">
                     코인 생산 대상 · 기본 {formatPercent(coinSummary.baseRatePercent)} 생산
