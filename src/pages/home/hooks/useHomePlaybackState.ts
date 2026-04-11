@@ -27,6 +27,7 @@ interface UseHomePlaybackStateOptions {
   logout: () => Promise<void>;
   newChartEntriesSection?: YouTubeCategorySection;
   realtimeSurgingSection?: YouTubeCategorySection;
+  scrollToPlayerTop: () => void;
   selectedCategoryId: string;
   selectedPlaybackSection?: YouTubeCategorySection;
   setSelectedCategoryId: (categoryId: string) => void;
@@ -91,6 +92,7 @@ export default function useHomePlaybackState({
   logout,
   newChartEntriesSection,
   realtimeSurgingSection,
+  scrollToPlayerTop,
   selectedCategoryId,
   selectedPlaybackSection,
   setSelectedCategoryId,
@@ -148,6 +150,7 @@ export default function useHomePlaybackState({
     newChartEntriesSection,
     realtimeSurgingSection,
     restoredPlaybackVideo,
+    scrollToPlayerTop,
     selectedCategoryId,
     selectedSection: selectedPlaybackSection,
     setSelectedCategoryId,

@@ -55,7 +55,7 @@ import {
 } from '../../constants/videoCategories';
 import { useAuth } from '../../features/auth/useAuth';
 import {
-  gameQueryKeys,
+  invalidateGameQueries,
   useBuyGamePosition,
   useCurrentGameSeason,
   useGameCoinOverview,
@@ -161,6 +161,32 @@ function HomePage() {
   useEffect(() => {
     persistCollapsedHomeSectionIds(collapsedHomeSectionIds);
   }, [collapsedHomeSectionIds]);
+
+  const scrollToPlayerStage = useCallback(() => {
+    window.setTimeout(() => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      const fullscreenElement = getFullscreenElement();
+
+      if (fullscreenElement instanceof HTMLElement) {
+        if (typeof fullscreenElement.scrollTo === 'function') {
+          fullscreenElement.scrollTo({
+            behavior: 'smooth',
+            top: 0,
+          });
+        } else {
+          fullscreenElement.scrollTop = 0;
+        }
+      }
+
+      window.scrollTo({
+        behavior: 'smooth',
+        top: 0,
+      });
+    }, 0);
+  }, []);
 
   const {
     data: videoCategories = [],
@@ -323,26 +349,11 @@ function HomePage() {
 
     lastCoinAutoRefreshAtRef.current = gameCoinOverviewUpdatedAt;
 
-    void Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: gameQueryKeys.currentSeason(accessToken, selectedRegionCode),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: gameQueryKeys.coinOverview(accessToken, selectedRegionCode),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: gameQueryKeys.coinTierProgress(accessToken, selectedRegionCode),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: gameQueryKeys.leaderboard(accessToken, selectedRegionCode),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: gameQueryKeys.positions(accessToken, selectedRegionCode, 'OPEN'),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: ['game', 'positions', accessToken, selectedRegionCode],
-      }),
-    ]);
+    void invalidateGameQueries(queryClient, {
+      accessToken,
+      includeLeaderboardPositions: true,
+      regionCode: selectedRegionCode,
+    });
   }, [
     accessToken,
     gameCoinOverviewUpdatedAt,
@@ -583,6 +594,7 @@ function HomePage() {
     isMobileLayout,
     logout,
     realtimeSurgingSection,
+    scrollToPlayerTop: scrollToPlayerStage,
     selectedCategoryId,
     selectedPlaybackSection,
     setSelectedCategoryId,
@@ -841,19 +853,6 @@ function HomePage() {
     }
   }
 
-  const scrollToPlayerStage = useCallback(() => {
-    window.setTimeout(() => {
-      if (typeof window === 'undefined') {
-        return;
-      }
-
-      window.scrollTo({
-        behavior: 'smooth',
-        top: 0,
-      });
-    }, 0);
-  }, []);
-
   const handleSelectGamePositionVideo = useCallback(
     (position: GamePosition) => {
       setSelectedOpenPositionId(position.id);
@@ -937,7 +936,7 @@ function HomePage() {
       ? '아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.'
       : '새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다.'
     : null;
-  const renderSelectedVideoActionsContent = (panelControls?: ReactNode) => (
+  const renderSelectedVideoActionsContent = (panelControls?: ReactNode, onHeaderClick?: () => void) => (
     <SelectedVideoGameActionsBundle
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
@@ -947,7 +946,9 @@ function HomePage() {
       isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
       isSelectedVideoSellDisabled={isSelectedVideoSellDisabled}
       isSellSubmitting={isSellSubmitting}
+      maxSellQuantity={maxSellQuantity}
       mode="panel"
+      onHeaderClick={onHeaderClick}
       onOpenBuyTradeModal={openBuyTradeModal}
       onOpenRankHistory={handleOpenSelectedVideoRankHistory}
       onOpenSellTradeModal={openSellTradeModal}
@@ -1179,23 +1180,6 @@ function HomePage() {
             renderSelectedVideoActionsContent(
               <>
                 <button
-                  aria-label="선택한 영상 패널을 맨 위로 이동"
-                  className="app-shell__game-panel-action-utility"
-                  onClick={onScrollToTop}
-                  title="맨 위로"
-                  type="button"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M12 18V6M12 6l-4 4M12 6l4 4"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                    />
-                  </svg>
-                </button>
-                <button
                   aria-label="선택한 영상 패널 접기"
                   className="app-shell__game-panel-action-utility"
                   onClick={onToggleCollapse}
@@ -1212,7 +1196,25 @@ function HomePage() {
                     />
                   </svg>
                 </button>
+                <button
+                  aria-label="선택한 영상 패널을 맨 위로 이동"
+                  className="app-shell__game-panel-action-utility"
+                  onClick={onScrollToTop}
+                  title="맨 위로"
+                  type="button"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M7.5 14.5 12 10l4.5 4.5"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                </button>
               </>,
+              onToggleCollapse,
             )
           }
         />

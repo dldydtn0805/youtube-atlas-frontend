@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from
 import { ChartPanel, CommunityPanel } from './ContentPanels';
 import { FilterBar } from './FilterPanels';
 import PlayerStage from './PlayerStage';
+import { getFullscreenElement } from '../utils';
 import './HomePlaybackSection.css';
 
 const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
 const STICKY_SELECTED_VIDEO_RELEASE_GAP = 16;
+const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
 
 interface StickySelectedVideoControls {
   onScrollToTop: () => void;
@@ -25,6 +27,14 @@ function getCinematicChartClassName(className?: string) {
   return className ? `${className} app-shell__panel--chart-cinematic` : 'app-shell__panel--chart-cinematic';
 }
 
+function getInitialStickySelectedVideoCollapsed() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.localStorage.getItem(STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY) === 'true';
+}
+
 export default function HomePlaybackSection({
   chartPanelProps,
   communityPanelProps,
@@ -34,7 +44,9 @@ export default function HomePlaybackSection({
   stickySelectedVideoLabel = 'Selected Video',
 }: HomePlaybackSectionProps) {
   const [isStickySelectedVideoVisible, setIsStickySelectedVideoVisible] = useState(false);
-  const [isStickySelectedVideoCollapsed, setIsStickySelectedVideoCollapsed] = useState(false);
+  const [isStickySelectedVideoCollapsed, setIsStickySelectedVideoCollapsed] = useState(
+    getInitialStickySelectedVideoCollapsed,
+  );
   const stickySelectedVideoSlotRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -43,8 +55,7 @@ export default function HomePlaybackSection({
     if (
       typeof window === 'undefined' ||
       !playerViewport ||
-      !stickySelectedVideoContent ||
-      playerStageProps.isCinematicModeActive
+      !stickySelectedVideoContent
     ) {
       setIsStickySelectedVideoVisible(false);
       return;
@@ -102,20 +113,37 @@ export default function HomePlaybackSection({
       window.removeEventListener('scroll', scheduleStickyVisibilityUpdate);
     };
   }, [
-    playerStageProps.isCinematicModeActive,
     playerStageProps.playerViewportRef,
     stickySelectedVideoContent,
   ]);
 
   useEffect(() => {
-    if (!isStickySelectedVideoVisible) {
-      setIsStickySelectedVideoCollapsed(false);
+    if (typeof window === 'undefined') {
+      return;
     }
-  }, [isStickySelectedVideoVisible]);
+
+    window.localStorage.setItem(
+      STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY,
+      isStickySelectedVideoCollapsed ? 'true' : 'false',
+    );
+  }, [isStickySelectedVideoCollapsed]);
 
   const handleScrollToTop = () => {
     if (typeof window === 'undefined') {
       return;
+    }
+
+    const fullscreenElement = getFullscreenElement();
+
+    if (fullscreenElement instanceof HTMLElement) {
+      if (typeof fullscreenElement.scrollTo === 'function') {
+        fullscreenElement.scrollTo({
+          behavior: 'smooth',
+          top: 0,
+        });
+      } else {
+        fullscreenElement.scrollTop = 0;
+      }
     }
 
     window.scrollTo({
@@ -130,42 +158,32 @@ export default function HomePlaybackSection({
           onToggleCollapse: () => setIsStickySelectedVideoCollapsed(true),
         })
       : stickySelectedVideoContent;
-
-  const renderFilterBar = () => <FilterBar {...filterBarProps} />;
-  const renderChartPanel = (isCinematic = false) => (
-    <ChartPanel
-      {...chartPanelProps}
-      className={isCinematic ? getCinematicChartClassName(chartPanelProps.className) : chartPanelProps.className}
-    />
-  );
-
-  return (
-    <>
-      {stickySelectedVideoContent && !playerStageProps.isCinematicModeActive && isStickySelectedVideoVisible ? (
-        <div ref={stickySelectedVideoSlotRef} className="app-shell__sticky-selected-video-slot">
-          <div className="app-shell__sticky-selected-video-frame">
-            {isStickySelectedVideoCollapsed ? (
-              <div className="app-shell__game-panel-actions app-shell__game-panel-actions--collapsed">
-                <div className="app-shell__game-panel-actions-header">
-                  <p className="app-shell__game-panel-actions-eyebrow">{stickySelectedVideoLabel}</p>
-                  <div className="app-shell__game-panel-actions-utility">
-                  <button
-                    aria-label="선택한 영상 패널을 맨 위로 이동"
-                    className="app-shell__game-panel-action-utility"
-                    onClick={handleScrollToTop}
-                    title="맨 위로"
-                    type="button"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M12 18V6M12 6l-4 4M12 6l4 4"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                  </button>
+  const stickySelectedVideoSlot =
+    stickySelectedVideoContent && isStickySelectedVideoVisible ? (
+      <div ref={stickySelectedVideoSlotRef} className="app-shell__sticky-selected-video-slot">
+        <div className="app-shell__sticky-selected-video-frame">
+          {isStickySelectedVideoCollapsed ? (
+            <div className="app-shell__game-panel-actions app-shell__game-panel-actions--collapsed">
+              <div
+                aria-expanded="false"
+                className="app-shell__game-panel-actions-header"
+                data-clickable="true"
+                onClick={() => setIsStickySelectedVideoCollapsed(false)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setIsStickySelectedVideoCollapsed(false);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <p className="app-shell__game-panel-actions-eyebrow">{stickySelectedVideoLabel}</p>
+                <div
+                  className="app-shell__game-panel-actions-utility"
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
                   <button
                     aria-expanded="false"
                     aria-label="선택한 영상 패널 펼치기"
@@ -184,19 +202,49 @@ export default function HomePlaybackSection({
                       />
                     </svg>
                   </button>
-                  </div>
+                  <button
+                    aria-label="선택한 영상 패널을 맨 위로 이동"
+                    className="app-shell__game-panel-action-utility"
+                    onClick={handleScrollToTop}
+                    title="맨 위로"
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M7.5 14.5 12 10l4.5 4.5"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                      />
+                    </svg>
+                  </button>
                 </div>
               </div>
-            ) : (
-              renderedStickySelectedVideoContent
-            )}
-          </div>
+            </div>
+          ) : (
+            renderedStickySelectedVideoContent
+          )}
         </div>
-      ) : null}
+      </div>
+    ) : null;
+
+  const renderFilterBar = () => <FilterBar {...filterBarProps} />;
+  const renderChartPanel = (isCinematic = false) => (
+    <ChartPanel
+      {...chartPanelProps}
+      className={isCinematic ? getCinematicChartClassName(chartPanelProps.className) : chartPanelProps.className}
+    />
+  );
+
+  return (
+    <>
+      {!playerStageProps.isCinematicModeActive ? stickySelectedVideoSlot : null}
       <PlayerStage
         {...playerStageProps}
         chartContent={renderChartPanel(true)}
         filterContent={renderFilterBar()}
+        topContent={playerStageProps.isCinematicModeActive ? stickySelectedVideoSlot : null}
       />
       {!playerStageProps.isCinematicModeActive ? renderFilterBar() : null}
       {!playerStageProps.isCinematicModeActive ? renderChartPanel() : null}

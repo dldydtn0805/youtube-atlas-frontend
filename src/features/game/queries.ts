@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   buyGamePosition,
   fetchCurrentGameSeason,
@@ -35,6 +35,100 @@ export const gameQueryKeys = {
   seasonCoinResult: (accessToken: string | null, seasonId: number | null) =>
     ['game', 'seasonCoinResult', accessToken, seasonId] as const,
 };
+
+interface InvalidateGameQueriesOptions {
+  accessToken: string | null;
+  includeLeaderboardPositions?: boolean;
+  regionCode?: string | null;
+  seasonId?: number | null;
+}
+
+export async function invalidateGameQueries(
+  queryClient: QueryClient,
+  { accessToken, includeLeaderboardPositions = false, regionCode = null, seasonId = null }: InvalidateGameQueriesOptions,
+) {
+  if (!accessToken) {
+    return;
+  }
+
+  const invalidations = [];
+
+  if (regionCode) {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.currentSeason(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.coinOverview(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.coinTierProgress(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.leaderboard(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.market(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'positions', accessToken, regionCode],
+        refetchType: 'active',
+      }),
+    );
+  } else {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'currentSeason', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'coinOverview', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'coinTierProgress', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'leaderboard', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'market', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'positions', accessToken],
+        refetchType: 'active',
+      }),
+    );
+  }
+
+  if (includeLeaderboardPositions) {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'leaderboardPositions', accessToken],
+        refetchType: 'active',
+      }),
+    );
+  }
+
+  if (typeof seasonId === 'number') {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.seasonCoinResult(accessToken, seasonId),
+        refetchType: 'active',
+      }),
+    );
+  }
+
+  await Promise.all(invalidations);
+}
 
 export function useCurrentGameSeason(accessToken: string | null, regionCode: string, enabled = true) {
   return useQuery({
@@ -145,15 +239,12 @@ export function useBuyGamePosition(accessToken: string | null) {
 
       return buyGamePosition(accessToken, input);
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['game', 'currentSeason', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'coinOverview', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'coinTierProgress', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'leaderboard', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'market', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'positions', accessToken] }),
-      ]);
+    onSuccess: async (_data, input) => {
+      await invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+        regionCode: input.regionCode,
+      });
     },
   });
 }
@@ -170,14 +261,10 @@ export function useSellGamePosition(accessToken: string | null) {
       return sellGamePosition(accessToken, positionId);
     },
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['game', 'currentSeason', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'coinOverview', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'coinTierProgress', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'leaderboard', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'market', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'positions', accessToken] }),
-      ]);
+      await invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+      });
     },
   });
 }
@@ -193,15 +280,12 @@ export function useSellGamePositions(accessToken: string | null) {
 
       return sellGamePositions(accessToken, input);
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['game', 'currentSeason', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'coinOverview', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'coinTierProgress', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'leaderboard', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'market', accessToken] }),
-        queryClient.invalidateQueries({ queryKey: ['game', 'positions', accessToken] }),
-      ]);
+    onSuccess: async (_data, input) => {
+      await invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+        regionCode: input.regionCode,
+      });
     },
   });
 }

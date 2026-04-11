@@ -10,6 +10,10 @@
   width: min(var(--app-content-max-width), 100%);
 }
 
+.app-shell__stage-stack[data-cinematic='true'] .app-shell__sticky-selected-video-frame {
+  width: min(var(--app-cinematic-max-width), 100%);
+}
+
 .app-shell__sticky-selected-video-frame > * {
   width: 100%;
 }

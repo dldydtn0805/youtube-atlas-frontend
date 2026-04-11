@@ -65,6 +65,7 @@ interface RankingGameSelectedVideoActionsProps {
   isChartDisabled: boolean;
   isSellDisabled: boolean;
   isSellSubmitting: boolean;
+  onHeaderClick?: () => void;
   onOpenBuyTradeModal: () => void;
   onOpenRankHistory: () => void;
   onOpenSellTradeModal: () => void;
@@ -716,6 +717,7 @@ export function RankingGameSelectedVideoActions({
   isChartDisabled,
   isSellDisabled,
   isSellSubmitting,
+  onHeaderClick,
   onOpenBuyTradeModal,
   onOpenRankHistory,
   onOpenSellTradeModal,
@@ -728,11 +730,36 @@ export function RankingGameSelectedVideoActions({
 }: RankingGameSelectedVideoActionsProps) {
   return (
     <div className="app-shell__game-panel-actions">
-      <div className="app-shell__game-panel-actions-header">
+      <div
+        aria-expanded={onHeaderClick ? 'true' : undefined}
+        className="app-shell__game-panel-actions-header"
+        data-clickable={onHeaderClick ? 'true' : undefined}
+        onClick={onHeaderClick}
+        onKeyDown={
+          onHeaderClick
+            ? (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onHeaderClick();
+                }
+              }
+            : undefined
+        }
+        role={onHeaderClick ? 'button' : undefined}
+        tabIndex={onHeaderClick ? 0 : undefined}
+      >
         <p className="app-shell__game-panel-actions-eyebrow">
           {selectedVideoOpenPositionCount > 0 ? 'Selected Positions' : 'Selected Video'}
         </p>
-        {panelControls ? <div className="app-shell__game-panel-actions-utility">{panelControls}</div> : null}
+        {panelControls ? (
+          <div
+            className="app-shell__game-panel-actions-utility"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            {panelControls}
+          </div>
+        ) : null}
       </div>
       <div className="app-shell__game-panel-actions-content">
         <div className="app-shell__game-panel-actions-main">
@@ -954,7 +981,7 @@ export function RankingGamePositionsTab({
         );
         const activeCoinYieldText = coinSummary.hasActiveProduction ? formatCoins(coinSummary.activeCoinYield) : null;
         const positionStatusBadge = holding.chartOut
-          ? null
+          ? '차트 아웃'
           : coinSummary.hasActiveProduction
             ? coinSummary.activeMetricDetail ?? '채굴 중'
             : coinSummary.hasWarmingPositions
@@ -963,7 +990,7 @@ export function RankingGamePositionsTab({
                 ? '채굴 대상'
                 : null;
         const positionDetailCopy = holding.chartOut
-          ? '차트 아웃 상태라 코인 채굴이 중지되었습니다.'
+          ? null
           : coinSummary.hasActiveProduction
             ? null
             : coinSummary.hasWarmingPositions
@@ -971,7 +998,20 @@ export function RankingGamePositionsTab({
               : coinPositions.length > 0
                 ? `기본 채굴률 ${formatPercent(coinSummary.baseRatePercent)}`
                 : null;
-        const hasDetailBadges = Boolean(holdingRankTrendBadge || positionStatusBadge || hasCoinBoostBadge);
+        const sellableStatusBadge = !canShowGameActions
+          ? '전체 카테고리에서 매도 가능'
+          : holding.sellableQuantity > 0
+            ? `${formatGameQuantity(holding.sellableQuantity)} 매도 가능`
+            : holding.nextSellableInSeconds !== null
+              ? `${formatHoldCountdown(holding.nextSellableInSeconds)} 후 매도 가능`
+              : '아직 매도 가능 수량 없음';
+        const hasDetailBadges = Boolean(
+          holdingRankTrendBadge || positionStatusBadge || hasCoinBoostBadge || sellableStatusBadge,
+        );
+        const holdStatusText =
+          canShowGameActions && holding.sellableQuantity > 0 && holding.lockedQuantity > 0 && holding.nextSellableInSeconds !== null
+            ? `${formatGameQuantity(holding.lockedQuantity)}는 ${formatHoldCountdown(holding.nextSellableInSeconds)} 후 매도 가능`
+            : null;
 
         return (
           <li key={holding.positionId} className="app-shell__game-position" data-selected={isSelectedPosition}>
@@ -1049,6 +1089,11 @@ export function RankingGamePositionsTab({
                               {positionStatusBadge}
                             </span>
                           ) : null}
+                          {sellableStatusBadge ? (
+                            <span className="app-shell__game-position-trend" data-tone="steady">
+                              {sellableStatusBadge}
+                            </span>
+                          ) : null}
                           {hasCoinBoostBadge ? (
                             <span
                               className="app-shell__coin-boost-badge"
@@ -1067,17 +1112,7 @@ export function RankingGamePositionsTab({
               </div>
             </button>
             <div className="app-shell__game-position-side">
-              <span className="app-shell__game-position-hold">
-                {canShowGameActions
-                  ? holding.sellableQuantity > 0
-                    ? holding.lockedQuantity > 0 && holding.nextSellableInSeconds !== null
-                      ? `지금 ${formatGameQuantity(holding.sellableQuantity)} 매도 가능 · ${formatGameQuantity(holding.lockedQuantity)}는 ${formatHoldCountdown(holding.nextSellableInSeconds)} 후`
-                      : `지금 ${formatGameQuantity(holding.sellableQuantity)} 매도 가능`
-                    : holding.nextSellableInSeconds !== null
-                      ? `${formatHoldCountdown(holding.nextSellableInSeconds)} 후 매도 가능`
-                      : '아직 매도 가능 수량 없음'
-                  : '전체 카테고리에서 매도 가능'}
-              </span>
+              {holdStatusText ? <span className="app-shell__game-position-hold">{holdStatusText}</span> : null}
             </div>
           </li>
         );

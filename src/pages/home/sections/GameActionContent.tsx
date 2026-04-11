@@ -4,6 +4,7 @@ import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
   calculateEstimatedCoinYield,
   formatCoins,
+  formatGameQuantity,
   formatHoldCountdown,
   formatPercent,
   formatPoints,
@@ -17,6 +18,7 @@ import './GameActionContent.css';
 
 interface GameSelectedVideoPriceSummaryProps {
   gameCoinOverview?: GameCoinOverview;
+  maxSellQuantity?: number;
   selectedVideoCurrentChartRank: number | null | undefined;
   selectedVideoId?: string;
   selectedVideoIsChartOut: boolean;
@@ -48,7 +50,9 @@ interface SelectedVideoGameActionsBundleProps {
   isSelectedVideoBuyDisabled: boolean;
   isSelectedVideoSellDisabled: boolean;
   isSellSubmitting?: boolean;
+  maxSellQuantity?: number;
   mode: 'panel' | 'stage';
+  onHeaderClick?: () => void;
   onOpenBuyTradeModal: () => void;
   onOpenRankHistory: () => void;
   onOpenSellTradeModal: () => void;
@@ -106,6 +110,7 @@ function formatTrendBadgeLabel(badge: VideoTrendBadge) {
 
 export function GameSelectedVideoPriceSummary({
   gameCoinOverview,
+  maxSellQuantity = 0,
   selectedVideoCurrentChartRank,
   selectedVideoId,
   selectedVideoIsChartOut,
@@ -139,8 +144,9 @@ export function GameSelectedVideoPriceSummary({
       0,
     );
     const hasBoostBadge = !selectedVideoIsChartOut && selectedVideoCoinPositions.length > 0;
+    const sellableStatusBadge = maxSellQuantity > 0 ? `${formatGameQuantity(maxSellQuantity)} 매도 가능` : null;
     const statusBadge = selectedVideoIsChartOut
-      ? null
+      ? '차트 아웃'
       : positionCoinYield > 0
         ? nearestPayoutInSeconds !== null
           ? `${formatHoldCountdown(nearestPayoutInSeconds)} 뒤 채굴`
@@ -151,7 +157,7 @@ export function GameSelectedVideoPriceSummary({
             ? '채굴 대상'
             : null;
     const detailCopy = selectedVideoIsChartOut
-      ? '차트 아웃 상태에서는 코인 채굴이 진행되지 않습니다.'
+      ? null
       : !matchingRank
         ? `Top ${gameCoinOverview?.eligibleRankCutoff ?? 0} 안에 들면 시즌 코인 채굴이 시작됩니다.`
         : positionCoinYield > 0
@@ -193,9 +199,12 @@ export function GameSelectedVideoPriceSummary({
             </>
           ) : null}
         </p>
-        {selectedVideoTrendBadges.length > 0 || statusBadge || hasBoostBadge ? (
+        {selectedVideoTrendBadges.length > 0 || statusBadge || hasBoostBadge || sellableStatusBadge ? (
           <p className="app-shell__game-selected-summary-badges">
             <TrendBadges badges={selectedPositionTrendBadges} />
+            {sellableStatusBadge ? (
+              <span className="app-shell__game-selected-status-badge">{sellableStatusBadge}</span>
+            ) : null}
             {statusBadge ? <span className="app-shell__game-selected-status-badge">{statusBadge}</span> : null}
             {hasBoostBadge ? (
               <span className="app-shell__game-selected-status-badge">
@@ -377,7 +386,9 @@ export function SelectedVideoGameActionsBundle({
   isSelectedVideoBuyDisabled,
   isSelectedVideoSellDisabled,
   isSellSubmitting = false,
+  maxSellQuantity = 0,
   mode,
+  onHeaderClick,
   onOpenBuyTradeModal,
   onOpenRankHistory,
   onOpenSellTradeModal,
@@ -397,6 +408,7 @@ export function SelectedVideoGameActionsBundle({
   const currentVideoGamePriceSummary = (
     <GameSelectedVideoPriceSummary
       gameCoinOverview={gameCoinOverview}
+      maxSellQuantity={maxSellQuantity}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
       selectedVideoId={selectedVideoId}
       selectedVideoIsChartOut={selectedVideoIsChartOut}
@@ -438,6 +450,7 @@ export function SelectedVideoGameActionsBundle({
       isChartDisabled={isChartDisabled}
       isSellDisabled={isSelectedVideoSellDisabled}
       isSellSubmitting={isSellSubmitting}
+      onHeaderClick={onHeaderClick}
       onOpenBuyTradeModal={onOpenBuyTradeModal}
       onOpenRankHistory={onOpenRankHistory}
       onOpenSellTradeModal={onOpenSellTradeModal}

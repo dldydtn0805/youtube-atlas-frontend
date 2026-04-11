@@ -48,6 +48,7 @@ describe('usePlaybackQueue', () => {
         isMobileLayout: false,
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
+        scrollToPlayerTop: vi.fn(),
         selectedCategoryId: '0',
         selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
         setSelectedCategoryId,
@@ -69,6 +70,7 @@ describe('usePlaybackQueue', () => {
         isMobileLayout: false,
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
+        scrollToPlayerTop: vi.fn(),
         selectedCategoryId,
         selectedSection,
         setSelectedCategoryId: (categoryId) => {
@@ -107,6 +109,7 @@ describe('usePlaybackQueue', () => {
         isMobileLayout: false,
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
+        scrollToPlayerTop: vi.fn(),
         selectedCategoryId,
         selectedSection,
         setSelectedCategoryId: (categoryId) => {
@@ -134,12 +137,9 @@ describe('usePlaybackQueue', () => {
   });
 
   it('scrolls to the player immediately when a category is selected', () => {
-    vi.useFakeTimers();
-
     const setSelectedCategoryId = vi.fn();
     let selectedCategoryId = '0';
-    const scrollTo = vi.fn();
-    vi.stubGlobal('scrollTo', scrollTo);
+    const scrollToPlayerTop = vi.fn();
 
     const { result } = renderHook(() =>
       usePlaybackQueue({
@@ -147,6 +147,7 @@ describe('usePlaybackQueue', () => {
         isMobileLayout: false,
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
+        scrollToPlayerTop,
         selectedCategoryId,
         selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
         setSelectedCategoryId: (categoryId) => {
@@ -161,17 +162,7 @@ describe('usePlaybackQueue', () => {
       result.current.handleSelectCategory('10');
     });
 
-    act(() => {
-      vi.runAllTimers();
-    });
-
-    expect(scrollTo).toHaveBeenCalledWith({
-      behavior: 'smooth',
-      top: 0,
-    });
-
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
+    expect(scrollToPlayerTop).toHaveBeenCalledTimes(1);
   });
 
   it('keeps a history playback selection instead of falling back to the first chart video', async () => {
@@ -184,6 +175,7 @@ describe('usePlaybackQueue', () => {
         isMobileLayout: false,
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
+        scrollToPlayerTop: vi.fn(),
         selectedCategoryId: '0',
         selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
         setSelectedCategoryId,

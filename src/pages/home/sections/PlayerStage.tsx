@@ -39,6 +39,7 @@ interface PlayerStageProps {
   stageActionContent?: ReactNode;
   stageMetadataContent?: ReactNode;
   supplementalContent?: ReactNode;
+  topContent?: ReactNode;
   toggleFavoriteStreamerPending: boolean;
 }
 
@@ -77,6 +78,7 @@ function PlayerStage({
   stageActionContent,
   stageMetadataContent,
   supplementalContent,
+  topContent,
   toggleFavoriteStreamerPending,
 }: PlayerStageProps) {
   const hasSelectedVideo = Boolean(selectedVideoId);
@@ -84,6 +86,7 @@ function PlayerStage({
   return (
     <div ref={playerStageRef} className="app-shell__stage" data-cinematic={isCinematicModeActive}>
       <div className="app-shell__stage-stack" data-cinematic={isCinematicModeActive}>
+        {isCinematicModeActive ? topContent : null}
         <section
           ref={playerSectionRef}
           className="app-shell__panel app-shell__panel--player"

@@ -12,6 +12,7 @@ interface UsePlaybackQueueOptions {
   newChartEntriesSection?: YouTubeCategorySection;
   realtimeSurgingSection?: YouTubeCategorySection;
   restoredPlaybackVideo?: YouTubeVideoItem;
+  scrollToPlayerTop: () => void;
   selectedCategoryId: string;
   selectedSection?: YouTubeCategorySection;
   setSelectedCategoryId: (categoryId: string) => void;
@@ -26,6 +27,7 @@ function usePlaybackQueue({
   newChartEntriesSection,
   realtimeSurgingSection,
   restoredPlaybackVideo,
+  scrollToPlayerTop,
   selectedCategoryId,
   selectedSection,
   setSelectedCategoryId,
@@ -244,17 +246,8 @@ function usePlaybackQueue({
 
     shouldScrollToPlayerRef.current = false;
 
-    window.setTimeout(() => {
-      if (typeof window === 'undefined') {
-        return;
-      }
-
-      window.scrollTo({
-        behavior: 'smooth',
-        top: 0,
-      });
-    }, 0);
-  }, [scrollRequestKey]);
+    scrollToPlayerTop();
+  }, [scrollRequestKey, scrollToPlayerTop]);
 
   return {
     canPlayNextVideo,

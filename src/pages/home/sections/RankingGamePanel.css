@@ -287,6 +287,10 @@
   min-height: 72px;
 }
 
+.app-shell__game-panel-metric--capacity .app-shell__game-panel-metric-meter {
+  max-width: none;
+}
+
 .app-shell__game-panel-metric + .app-shell__game-panel-metric {
   border-top: 1px solid rgba(203, 213, 225, 0.22);
 }
@@ -400,10 +404,22 @@
 
 .app-shell__game-panel-actions-header {
   align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   display: flex;
   gap: 12px;
   justify-content: space-between;
   min-width: 0;
+  padding-bottom: 10px;
+}
+
+.app-shell__game-panel-actions-header[data-clickable='true'] {
+  cursor: pointer;
+}
+
+.app-shell__game-panel-actions-header[data-clickable='true']:hover,
+.app-shell__game-panel-actions-header[data-clickable='true']:focus-visible {
+  border-bottom-color: rgba(148, 163, 184, 0.28);
+  outline: none;
 }
 
 .app-shell__game-panel-actions-utility {
@@ -1674,6 +1690,10 @@
     min-height: 64px;
   }
 
+  .app-shell__game-panel-metric--capacity .app-shell__game-panel-metric-meter {
+    max-width: none;
+  }
+
   .app-shell__game-panel-metric-meta {
     white-space: normal;
   }
@@ -1695,31 +1715,32 @@
   .app-shell__game-panel-actions-header {
     align-items: flex-start;
     gap: 8px;
+    padding-bottom: 8px;
   }
 
   .app-shell__game-panel-actions-main {
-    align-items: stretch;
-    gap: 8px;
-    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: start;
+    display: block;
+    min-height: 0;
+    position: static;
   }
 
   .app-shell__game-panel-actions-content {
-    align-items: end;
+    align-items: start;
     gap: 10px;
     grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 0;
+    position: static;
   }
 
   .app-shell__game-panel-actions-thumb {
-    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 68%, transparent 100%);
-    mask-image: linear-gradient(90deg, #000 0, #000 68%, transparent 100%);
-    border-radius: 10px;
-    height: 100%;
-    min-height: 100%;
-    width: 48px;
+    display: none;
   }
 
   .app-shell__game-panel-actions-body {
     gap: 5px;
+    min-height: 0;
+    padding-right: 0;
   }
 
   .app-shell__game-panel-actions-eyebrow {
@@ -1741,31 +1762,37 @@
   }
 
   .app-shell__game-panel-actions-buttons {
+    align-items: start;
+    display: grid;
+    grid-auto-flow: row;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: start;
     justify-self: end;
+    margin-top: 0;
+    position: static;
     width: fit-content;
   }
 
   .app-shell__game-panel-action-item {
+    justify-items: center;
     gap: 4px;
   }
 
   .app-shell__game-panel-action {
-    height: 36px;
-    min-height: 36px;
-    min-width: 36px;
-    width: 36px;
+    height: 30px;
+    min-height: 30px;
+    min-width: 30px;
+    width: 30px;
   }
 
   .app-shell__game-panel-action-caption {
-    font-size: 0.61rem;
+    font-size: 0.56rem;
   }
 
   .app-shell__game-panel-action-icon,
   .app-shell__game-panel-action-icon svg {
-    height: 14px;
-    width: 14px;
+    height: 12px;
+    width: 12px;
   }
 
   .app-shell__game-panel-action-utility {

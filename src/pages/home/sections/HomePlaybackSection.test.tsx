@@ -16,11 +16,14 @@ vi.mock('./PlayerStage', () => ({
   default: ({
     playerSectionRef,
     playerViewportRef,
+    topContent,
   }: {
     playerSectionRef: React.RefObject<HTMLElement | null>;
     playerViewportRef: React.RefObject<HTMLDivElement | null>;
+    topContent?: React.ReactNode;
   }) => (
     <div data-testid="player-stage">
+      {topContent}
       <section ref={playerSectionRef} data-testid="player-section" />
       <div ref={playerViewportRef} data-testid="player-viewport" />
     </div>
@@ -210,6 +213,147 @@ describe('HomePlaybackSection', () => {
     fireEvent.click(screen.getByRole('button', { name: '선택한 영상 패널 펼치기' }));
 
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+  });
+
+  it('remembers the sticky selected video collapsed state', async () => {
+    const playerStageProps = {
+      isCinematicModeActive: false,
+      isMobileLayout: false,
+      playerSectionRef: createRef<HTMLElement>(),
+      playerStageRef: createRef<HTMLDivElement>(),
+      playerViewportRef: createRef<HTMLDivElement>(),
+    } as never;
+
+    const { unmount } = render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={playerStageProps}
+        stickySelectedVideoContent={({ onToggleCollapse }) => (
+          <div>
+            <button onClick={onToggleCollapse} type="button">
+              접기
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    vi.spyOn(playerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+          width: 0,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '접기' }));
+    expect(window.localStorage.getItem('youtube-atlas-sticky-selected-video-collapsed')).toBe('true');
+
+    unmount();
+
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+        stickySelectedVideoContent={<div>Selected video actions</div>}
+      />,
+    );
+
+    const nextPlayerViewport = screen.getByTestId('player-viewport');
+
+    vi.spyOn(nextPlayerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+          width: 0,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected Video')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
+  });
+
+  it('shows the sticky selected video panel in cinematic mode as well', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: true,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+        stickySelectedVideoContent={<div>Selected video actions</div>}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    vi.spyOn(playerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+          width: 0,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
   });
 
   it('scrolls to the player stage when the top button is pressed', async () => {
