@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { GameCoinOverview, GameMarketVideo } from '../../../features/game/types';
 import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
@@ -51,6 +52,7 @@ interface SelectedVideoGameActionsBundleProps {
   onOpenBuyTradeModal: () => void;
   onOpenRankHistory: () => void;
   onOpenSellTradeModal: () => void;
+  panelControls?: ReactNode;
   selectedGameActionChannelTitle?: string;
   selectedGameActionTitle?: string;
   selectedVideoCurrentChartRank: number | null | undefined;
@@ -84,7 +86,7 @@ function TrendBadges({ badges }: { badges: VideoTrendBadge[] }) {
   );
 }
 
-function formatSelectedPositionTrendBadgeLabel(badge: VideoTrendBadge) {
+function formatTrendBadgeLabel(badge: VideoTrendBadge) {
   if (badge.tone === 'steady') {
     return '유지';
   }
@@ -115,7 +117,7 @@ export function GameSelectedVideoPriceSummary({
   if (selectedVideoOpenPositionCount > 0) {
     const selectedPositionTrendBadges = selectedVideoTrendBadges.map((badge) => ({
       ...badge,
-      label: formatSelectedPositionTrendBadgeLabel(badge),
+      label: formatTrendBadgeLabel(badge),
     }));
     const selectedVideoCoinPositions =
       selectedVideoId && gameCoinOverview
@@ -155,7 +157,7 @@ export function GameSelectedVideoPriceSummary({
         : positionCoinYield > 0
           ? null
           : typeof warmingUpPosition?.nextProductionInSeconds === 'number'
-            ? '채굴 준비 중'
+            ? null
             : `기본 채굴률 ${formatPercent(matchingRank.coinRatePercent)}`;
 
     return (
@@ -214,6 +216,10 @@ export function GameSelectedVideoPriceSummary({
   const selectedVideoMatchingRank = gameCoinOverview?.ranks.find(
     (rank) => rank.rank === selectedVideoMarketEntry.currentRank,
   );
+  const selectedVideoFormattedTrendBadges = selectedVideoTrendBadges.map((badge) => ({
+    ...badge,
+    label: formatTrendBadgeLabel(badge),
+  }));
   const selectedVideoCoinYield =
     gameCoinOverview && !selectedVideoIsChartOut && selectedVideoMatchingRank
       ? calculateEstimatedCoinYield(
@@ -221,6 +227,13 @@ export function GameSelectedVideoPriceSummary({
           selectedVideoMatchingRank.coinRatePercent,
         ) ?? 0
       : 0;
+  const selectedVideoMiningBadge = selectedVideoIsChartOut
+    ? '채굴 중지'
+    : selectedVideoMatchingRank
+      ? `채굴률 ${formatPercent(selectedVideoMatchingRank.coinRatePercent)}`
+      : gameCoinOverview?.eligibleRankCutoff
+        ? `Top ${gameCoinOverview.eligibleRankCutoff} 밖`
+        : null;
 
   return (
     <div className="app-shell__game-selected-summary" aria-label="선택한 영상 현재 가격">
@@ -236,6 +249,14 @@ export function GameSelectedVideoPriceSummary({
         {' · '}<span className="app-shell__game-selected-summary-label">채굴량</span>{' '}
         <span className="app-shell__game-selected-summary-value">{formatCoins(selectedVideoCoinYield)}</span>
       </p>
+      {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoMiningBadge ? (
+        <p className="app-shell__game-selected-summary-badges">
+          <TrendBadges badges={selectedVideoFormattedTrendBadges} />
+          {selectedVideoMiningBadge ? (
+            <span className="app-shell__game-selected-status-badge">{selectedVideoMiningBadge}</span>
+          ) : null}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -360,6 +381,7 @@ export function SelectedVideoGameActionsBundle({
   onOpenBuyTradeModal,
   onOpenRankHistory,
   onOpenSellTradeModal,
+  panelControls,
   selectedGameActionChannelTitle,
   selectedGameActionTitle,
   selectedVideoCurrentChartRank,
@@ -419,6 +441,7 @@ export function SelectedVideoGameActionsBundle({
       onOpenBuyTradeModal={onOpenBuyTradeModal}
       onOpenRankHistory={onOpenRankHistory}
       onOpenSellTradeModal={onOpenSellTradeModal}
+      panelControls={panelControls}
       selectedGameActionChannelTitle={selectedGameActionChannelTitle}
       selectedGameActionTitle={selectedGameActionTitle}
       selectedVideoOpenPositionCount={selectedVideoOpenPositionCount}

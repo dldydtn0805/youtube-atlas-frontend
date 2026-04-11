@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HomePlaybackSection from './HomePlaybackSection';
 
@@ -13,8 +13,15 @@ vi.mock('./FilterPanels', () => ({
 }));
 
 vi.mock('./PlayerStage', () => ({
-  default: ({ playerViewportRef }: { playerViewportRef: React.RefObject<HTMLDivElement | null> }) => (
+  default: ({
+    playerSectionRef,
+    playerViewportRef,
+  }: {
+    playerSectionRef: React.RefObject<HTMLElement | null>;
+    playerViewportRef: React.RefObject<HTMLDivElement | null>;
+  }) => (
     <div data-testid="player-stage">
+      <section ref={playerSectionRef} data-testid="player-section" />
       <div ref={playerViewportRef} data-testid="player-viewport" />
     </div>
   ),
@@ -31,6 +38,8 @@ class MockIntersectionObserver {
 
 describe('HomePlaybackSection', () => {
   const originalOffsetHeightDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+  const originalScrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollIntoView');
+  const originalScrollYDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollY');
   let animationFrameCallbacks = new Map<number, FrameRequestCallback>();
   let nextAnimationFrameId = 1;
 
@@ -66,6 +75,14 @@ describe('HomePlaybackSection', () => {
   afterEach(() => {
     if (originalOffsetHeightDescriptor) {
       Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalOffsetHeightDescriptor);
+    }
+
+    if (originalScrollIntoViewDescriptor) {
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', originalScrollIntoViewDescriptor);
+    }
+
+    if (originalScrollYDescriptor) {
+      Object.defineProperty(window, 'scrollY', originalScrollYDescriptor);
     }
 
     vi.unstubAllGlobals();
@@ -132,6 +149,126 @@ describe('HomePlaybackSection', () => {
 
     await waitFor(() => {
       expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
+    });
+  });
+
+  it('can collapse and expand the sticky selected video panel', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+        stickySelectedVideoContent={({ onToggleCollapse }) => (
+          <div>
+            <button onClick={onToggleCollapse} type="button">
+              접기
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    vi.spyOn(playerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+          width: 0,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '접기' }));
+
+    expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
+    expect(screen.getByText('Selected Video')).toBeInTheDocument();
+    expect(screen.queryByText('선택한 영상 패널을 잠시 접어두었습니다.')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '선택한 영상 패널 펼치기' }));
+
+    expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+  });
+
+  it('scrolls to the player stage when the top button is pressed', async () => {
+    const scrollTo = vi.fn();
+
+    vi.stubGlobal('scrollTo', scrollTo);
+
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+        stickySelectedVideoContent={({ onScrollToTop }) => (
+          <div>
+            <button onClick={onScrollToTop} type="button">
+              맨 위로
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+    vi.spyOn(playerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+          width: 0,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '맨 위로' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '맨 위로' }));
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      top: 0,
     });
   });
 });

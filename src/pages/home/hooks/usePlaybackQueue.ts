@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ALL_VIDEO_CATEGORY_ID } from '../../../constants/videoCategories';
-import { getCategoryPlaybackQueueId, getPlaybackQueueItems, scrollElementToViewportCenter } from '../utils';
+import { getCategoryPlaybackQueueId, getPlaybackQueueItems } from '../utils';
 import type { VideoCategory } from '../../../constants/videoCategories';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
 
@@ -10,8 +10,6 @@ interface UsePlaybackQueueOptions {
   historyPlaybackSection?: YouTubeCategorySection;
   isMobileLayout: boolean;
   newChartEntriesSection?: YouTubeCategorySection;
-  playerSectionRef: RefObject<HTMLElement | null>;
-  playerViewportRef: RefObject<HTMLDivElement | null>;
   realtimeSurgingSection?: YouTubeCategorySection;
   restoredPlaybackVideo?: YouTubeVideoItem;
   selectedCategoryId: string;
@@ -26,8 +24,6 @@ function usePlaybackQueue({
   historyPlaybackSection,
   isMobileLayout,
   newChartEntriesSection,
-  playerSectionRef,
-  playerViewportRef,
   realtimeSurgingSection,
   restoredPlaybackVideo,
   selectedCategoryId,
@@ -249,23 +245,16 @@ function usePlaybackQueue({
     shouldScrollToPlayerRef.current = false;
 
     window.setTimeout(() => {
-      const playerSection = isMobileLayout ? playerViewportRef.current : playerSectionRef.current;
-
-      if (!playerSection) {
+      if (typeof window === 'undefined') {
         return;
       }
 
-      if (isMobileLayout) {
-        scrollElementToViewportCenter(playerSection);
-        return;
-      }
-
-      playerSection.scrollIntoView({
+      window.scrollTo({
         behavior: 'smooth',
-        block: 'start',
+        top: 0,
       });
     }, 0);
-  }, [isMobileLayout, playerSectionRef, playerViewportRef, scrollRequestKey]);
+  }, [scrollRequestKey]);
 
   return {
     canPlayNextVideo,

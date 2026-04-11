@@ -1,5 +1,4 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { VideoCategory } from '../../../constants/videoCategories';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
@@ -47,8 +46,6 @@ describe('usePlaybackQueue', () => {
       usePlaybackQueue({
         favoriteStreamerVideoSection: undefined,
         isMobileLayout: false,
-        playerSectionRef: createRef<HTMLElement>(),
-        playerViewportRef: createRef<HTMLDivElement>(),
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
         selectedCategoryId: '0',
@@ -70,8 +67,6 @@ describe('usePlaybackQueue', () => {
       usePlaybackQueue({
         favoriteStreamerVideoSection: undefined,
         isMobileLayout: false,
-        playerSectionRef: createRef<HTMLElement>(),
-        playerViewportRef: createRef<HTMLDivElement>(),
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
         selectedCategoryId,
@@ -110,8 +105,6 @@ describe('usePlaybackQueue', () => {
         favoriteStreamerVideoSection: undefined,
         gamePortfolioSection: createSection(GAME_PORTFOLIO_QUEUE_ID, ['video-owned']),
         isMobileLayout: false,
-        playerSectionRef: createRef<HTMLElement>(),
-        playerViewportRef: createRef<HTMLDivElement>(),
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
         selectedCategoryId,
@@ -145,19 +138,13 @@ describe('usePlaybackQueue', () => {
 
     const setSelectedCategoryId = vi.fn();
     let selectedCategoryId = '0';
-    const scrollIntoView = vi.fn();
-    const playerSectionRef = {
-      current: {
-        scrollIntoView,
-      } as unknown as HTMLElement,
-    };
+    const scrollTo = vi.fn();
+    vi.stubGlobal('scrollTo', scrollTo);
 
     const { result } = renderHook(() =>
       usePlaybackQueue({
         favoriteStreamerVideoSection: undefined,
         isMobileLayout: false,
-        playerSectionRef,
-        playerViewportRef: createRef<HTMLDivElement>(),
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
         selectedCategoryId,
@@ -178,11 +165,12 @@ describe('usePlaybackQueue', () => {
       vi.runAllTimers();
     });
 
-    expect(scrollIntoView).toHaveBeenCalledWith({
+    expect(scrollTo).toHaveBeenCalledWith({
       behavior: 'smooth',
-      block: 'start',
+      top: 0,
     });
 
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -194,8 +182,6 @@ describe('usePlaybackQueue', () => {
         favoriteStreamerVideoSection: undefined,
         historyPlaybackSection: createSection(HISTORY_PLAYBACK_QUEUE_ID, ['video-history']),
         isMobileLayout: false,
-        playerSectionRef: createRef<HTMLElement>(),
-        playerViewportRef: createRef<HTMLDivElement>(),
         realtimeSurgingSection: undefined,
         restoredPlaybackVideo: undefined,
         selectedCategoryId: '0',

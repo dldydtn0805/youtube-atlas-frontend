@@ -26,8 +26,6 @@ interface UseHomePlaybackStateOptions {
   isMobileLayout: boolean;
   logout: () => Promise<void>;
   newChartEntriesSection?: YouTubeCategorySection;
-  playerSectionRef: RefObject<HTMLElement | null>;
-  playerViewportRef: RefObject<HTMLDivElement | null>;
   realtimeSurgingSection?: YouTubeCategorySection;
   selectedCategoryId: string;
   selectedPlaybackSection?: YouTubeCategorySection;
@@ -92,8 +90,6 @@ export default function useHomePlaybackState({
   isMobileLayout,
   logout,
   newChartEntriesSection,
-  playerSectionRef,
-  playerViewportRef,
   realtimeSurgingSection,
   selectedCategoryId,
   selectedPlaybackSection,
@@ -150,8 +146,6 @@ export default function useHomePlaybackState({
     historyPlaybackSection,
     isMobileLayout,
     newChartEntriesSection,
-    playerSectionRef,
-    playerViewportRef,
     realtimeSurgingSection,
     restoredPlaybackVideo,
     selectedCategoryId,

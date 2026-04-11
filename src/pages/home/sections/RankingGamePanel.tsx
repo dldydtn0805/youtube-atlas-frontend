@@ -41,14 +41,11 @@ interface RankingGamePanelShellProps {
   activeGameTab: GameTab;
   coinTierProgress?: GameCoinTierProgress;
   dividendOverview?: ReactNode;
-  helperText: string;
   isCollapsed: boolean;
-  isHelperWarning: boolean;
   onSelectTab: (tab: GameTab) => void;
   onToggleCollapse: () => void;
   season?: GameCurrentSeason;
   selectedVideoActions?: ReactNode;
-  statusMessage?: string | null;
   summary: {
     computedWalletTotalAssetPoints: number | null;
     openDistinctVideoCount: number;
@@ -71,6 +68,7 @@ interface RankingGameSelectedVideoActionsProps {
   onOpenBuyTradeModal: () => void;
   onOpenRankHistory: () => void;
   onOpenSellTradeModal: () => void;
+  panelControls?: ReactNode;
   selectedGameActionChannelTitle?: string;
   selectedGameActionTitle: string;
   selectedVideoOpenPositionCount: number;
@@ -444,14 +442,11 @@ export function RankingGamePanelShell({
   activeGameTab,
   coinTierProgress,
   dividendOverview,
-  helperText,
   isCollapsed,
-  isHelperWarning,
   onSelectTab,
   onToggleCollapse,
   season,
   selectedVideoActions,
-  statusMessage,
   summary,
   tabContent,
 }: RankingGamePanelShellProps) {
@@ -535,18 +530,6 @@ export function RankingGamePanelShell({
                     </span>
                     <span className="app-shell__game-panel-metric-meta">잔액 + 현재 평가 금액</span>
                   </span>
-                  <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero app-shell__game-panel-metric--capacity">
-                    <span className="app-shell__game-panel-metric-label">보유</span>
-                    <span className="app-shell__game-panel-metric-value">
-                      {`${summary.openDistinctVideoCount}/${season?.maxOpenPositions ?? '-'}`}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">
-                      {remainingOpenSlots !== null ? `남은 슬롯 ${remainingOpenSlots}개` : '보유 가능한 슬롯 집계 중'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meter" aria-hidden="true">
-                      <span style={{ width: `${holdingCapacityPercent}%` }} />
-                    </span>
-                  </span>
                   <span className="app-shell__game-panel-metric">
                     <span className="app-shell__game-panel-metric-label">손익률</span>
                     <span className="app-shell__game-panel-metric-value" data-tone={profitPointsTone}>
@@ -554,9 +537,14 @@ export function RankingGamePanelShell({
                         ? formatSignedProfitRate(summary.openPositionsProfitPoints, summary.openPositionsBuyPoints)
                         : '-'}
                     </span>
-                    <span className="app-shell__game-panel-metric-meta" data-tone={profitPointsTone}>
-                      평가 손익 {formatSignedPoints(summary.openPositionsProfitPoints)}
+                    <span className="app-shell__game-panel-metric-meta">현재 평가 기준 수익률</span>
+                  </span>
+                  <span className="app-shell__game-panel-metric">
+                    <span className="app-shell__game-panel-metric-label">평가 손익</span>
+                    <span className="app-shell__game-panel-metric-value" data-tone={profitPointsTone}>
+                      {season ? formatSignedPoints(summary.openPositionsProfitPoints) : '-'}
                     </span>
+                    <span className="app-shell__game-panel-metric-meta">현재 평가 금액 - 총 매수 금액</span>
                   </span>
                   <span className="app-shell__game-panel-metric">
                     <span className="app-shell__game-panel-metric-label">총 매수 금액</span>
@@ -578,11 +566,19 @@ export function RankingGamePanelShell({
                     </span>
                     <span className="app-shell__game-panel-metric-meta">최신 시세 기준 평가</span>
                   </span>
+                  <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero app-shell__game-panel-metric--capacity">
+                    <span className="app-shell__game-panel-metric-label">보유</span>
+                    <span className="app-shell__game-panel-metric-value">
+                      {`${summary.openDistinctVideoCount}/${season?.maxOpenPositions ?? '-'}`}
+                    </span>
+                    <span className="app-shell__game-panel-metric-meta">
+                      {remainingOpenSlots !== null ? `남은 슬롯 ${remainingOpenSlots}개` : '보유 가능한 슬롯 집계 중'}
+                    </span>
+                    <span className="app-shell__game-panel-metric-meter" aria-hidden="true">
+                      <span style={{ width: `${holdingCapacityPercent}%` }} />
+                    </span>
+                  </span>
                 </div>
-                <p className="app-shell__game-panel-helper" data-tone={isHelperWarning ? 'warning' : undefined}>
-                  {helperText}
-                </p>
-                {statusMessage ? <p className="app-shell__game-panel-status">{statusMessage}</p> : null}
               </section>
             </div>
             {selectedVideoActions ? (
@@ -663,7 +659,7 @@ export function RankingGameCoinOverview({
             {overview ? `Top ${overview.eligibleRankCutoff} 코인 채굴 현황` : '시즌 코인 티어'}
           </h4>
         </div>
-        <button className="app-shell__game-panel-action" onClick={onOpenDetails} type="button">
+        <button className="app-shell__game-dividend-action" onClick={onOpenDetails} type="button">
           상세 보기
         </button>
       </div>
@@ -723,6 +719,7 @@ export function RankingGameSelectedVideoActions({
   onOpenBuyTradeModal,
   onOpenRankHistory,
   onOpenSellTradeModal,
+  panelControls,
   selectedGameActionChannelTitle,
   selectedGameActionTitle,
   selectedVideoOpenPositionCount,
@@ -731,10 +728,13 @@ export function RankingGameSelectedVideoActions({
 }: RankingGameSelectedVideoActionsProps) {
   return (
     <div className="app-shell__game-panel-actions">
-      <div className="app-shell__game-panel-actions-copy">
+      <div className="app-shell__game-panel-actions-header">
         <p className="app-shell__game-panel-actions-eyebrow">
           {selectedVideoOpenPositionCount > 0 ? 'Selected Positions' : 'Selected Video'}
         </p>
+        {panelControls ? <div className="app-shell__game-panel-actions-utility">{panelControls}</div> : null}
+      </div>
+      <div className="app-shell__game-panel-actions-content">
         <div className="app-shell__game-panel-actions-main">
           {selectedVideoTradeThumbnailUrl ? (
             <img
@@ -752,43 +752,95 @@ export function RankingGameSelectedVideoActions({
             {currentVideoGamePriceSummary}
           </div>
         </div>
-      </div>
-      <div className="app-shell__game-panel-actions-buttons">
-        <button
-          className="app-shell__game-panel-action"
-          disabled={isChartDisabled}
-          onClick={onOpenRankHistory}
-          title={
-            !canShowGameActions
-              ? '전체 카테고리에서만 차트를 볼 수 있습니다.'
-              : '선택한 영상의 랭킹 차트를 엽니다.'
-          }
-          type="button"
-        >
-          차트
-        </button>
-        <button
-          className="app-shell__game-panel-action"
-          data-variant="buy"
-          disabled={!canShowGameActions || isBuyDisabled}
-          onClick={onOpenBuyTradeModal}
-          title={!canShowGameActions ? '전체 카테고리에서만 매수할 수 있습니다.' : buyActionTitle}
-          type="button"
-        >
-          {isBuySubmitting ? '매수 중...' : '매수'}
-        </button>
-        {selectedVideoOpenPositionCount > 0 ? (
-          <button
-            className="app-shell__game-panel-action"
-            data-variant="sell"
-            disabled={isSellDisabled}
-            onClick={onOpenSellTradeModal}
-            title={sellActionTitle}
-            type="button"
-          >
-            {isSellSubmitting ? '매도 중...' : '매도'}
-          </button>
-        ) : null}
+        <div className="app-shell__game-panel-actions-buttons">
+          {selectedVideoOpenPositionCount === 0 ? (
+            <div className="app-shell__game-panel-action-item">
+              <button
+                aria-label="선택한 영상 차트"
+                className="app-shell__game-panel-action"
+                data-variant="chart"
+                disabled={isChartDisabled}
+                onClick={onOpenRankHistory}
+                title={
+                  !canShowGameActions
+                    ? '전체 카테고리에서만 차트를 볼 수 있습니다.'
+                    : '선택한 영상의 랭킹 차트를 엽니다.'
+                }
+                type="button"
+              >
+                <span className="app-shell__game-panel-action-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5.75 17.25 10 12.5l2.75 2.75 5.5-6"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.8"
+                    />
+                    <path
+                      d="M15.5 9.25H18.5v3"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <span className="app-shell__game-panel-action-caption">차트</span>
+            </div>
+          ) : null}
+          <div className="app-shell__game-panel-action-item">
+            <button
+              aria-label={isBuySubmitting ? '선택한 영상 매수 중' : '선택한 영상 매수'}
+              className="app-shell__game-panel-action"
+              data-variant="buy"
+              disabled={!canShowGameActions || isBuyDisabled}
+              onClick={onOpenBuyTradeModal}
+              title={!canShowGameActions ? '전체 카테고리에서만 매수할 수 있습니다.' : buyActionTitle}
+              type="button"
+            >
+              <span className="app-shell__game-panel-action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 18V6M12 6l-4 4M12 6l4 4"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.8"
+                  />
+                </svg>
+              </span>
+            </button>
+            <span className="app-shell__game-panel-action-caption">{isBuySubmitting ? '매수 중' : '매수'}</span>
+          </div>
+          {selectedVideoOpenPositionCount > 0 ? (
+            <div className="app-shell__game-panel-action-item">
+              <button
+                aria-label={isSellSubmitting ? '선택한 영상 매도 중' : '선택한 영상 매도'}
+                className="app-shell__game-panel-action"
+                data-variant="sell"
+                disabled={isSellDisabled}
+                onClick={onOpenSellTradeModal}
+                title={sellActionTitle}
+                type="button"
+              >
+                <span className="app-shell__game-panel-action-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 6v12M12 18l-4-4M12 18l4-4"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                </span>
+              </button>
+              <span className="app-shell__game-panel-action-caption">{isSellSubmitting ? '매도 중' : '매도'}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -915,7 +967,7 @@ export function RankingGamePositionsTab({
           : coinSummary.hasActiveProduction
             ? null
             : coinSummary.hasWarmingPositions
-              ? '채굴 준비 중'
+              ? null
               : coinPositions.length > 0
                 ? `기본 채굴률 ${formatPercent(coinSummary.baseRatePercent)}`
                 : null;

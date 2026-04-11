@@ -31,7 +31,6 @@ interface GamePanelSectionProps {
   currentGameSeason?: GameCurrentSeason;
   favoriteStreamerVideoSection?: YouTubeCategorySection;
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
-  gameActionStatus: string | null;
   gameHistoryPositions: GamePosition[];
   gameLeaderboard: GameLeaderboardEntry[];
   gameLeaderboardError: unknown;
@@ -40,7 +39,6 @@ interface GamePanelSectionProps {
   hasApiConfigured: boolean;
   historyPlaybackLoadingVideoId: string | null;
   historyPlaybackSection?: YouTubeCategorySection;
-  isCurrentVideoGameHelperWarning: boolean;
   isGameHistoryLoading: boolean;
   isGameLeaderboardError: boolean;
   isGameLeaderboardLoading: boolean;
@@ -61,7 +59,6 @@ interface GamePanelSectionProps {
   openPositionsProfitPoints: number;
   positionsEmptyMessage: string | null;
   realtimeSurgingSection?: YouTubeCategorySection;
-  seasonStatusMessage: string;
   selectedLeaderboardPositions: GamePosition[];
   selectedLeaderboardPositionsError: unknown;
   selectedLeaderboardUserId: number | null;
@@ -83,7 +80,6 @@ export default function GamePanelSection({
   currentGameSeason,
   favoriteStreamerVideoSection,
   favoriteTrendSignalsByVideoId,
-  gameActionStatus,
   gameHistoryPositions,
   gameLeaderboard,
   gameLeaderboardError,
@@ -92,7 +88,6 @@ export default function GamePanelSection({
   hasApiConfigured,
   historyPlaybackLoadingVideoId,
   historyPlaybackSection,
-  isCurrentVideoGameHelperWarning,
   isGameHistoryLoading,
   isGameLeaderboardError,
   isGameLeaderboardLoading,
@@ -113,7 +108,6 @@ export default function GamePanelSection({
   openPositionsProfitPoints,
   positionsEmptyMessage,
   realtimeSurgingSection,
-  seasonStatusMessage,
   selectedLeaderboardPositions,
   selectedLeaderboardPositionsError,
   selectedLeaderboardUserId,
@@ -227,14 +221,11 @@ export default function GamePanelSection({
           season={currentGameSeason}
         />
       }
-      helperText={seasonStatusMessage}
       isCollapsed={isCollapsed}
-      isHelperWarning={isCurrentVideoGameHelperWarning}
       onSelectTab={onSelectTab}
       onToggleCollapse={onToggleCollapse}
       season={currentGameSeason}
       selectedVideoActions={selectedVideoActions}
-      statusMessage={gameActionStatus}
       summary={{
         computedWalletTotalAssetPoints,
         openDistinctVideoCount,

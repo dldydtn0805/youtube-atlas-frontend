@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
@@ -41,7 +41,6 @@ import {
   mapGamePositionToVideoItem,
   mergeSections,
   relabelVideoSection,
-  scrollElementToViewportCenter,
   sortedCountryCodes,
   type RegionCode,
 } from './utils';
@@ -583,8 +582,6 @@ function HomePage() {
     newChartEntriesSection,
     isMobileLayout,
     logout,
-    playerSectionRef,
-    playerViewportRef,
     realtimeSurgingSection,
     selectedCategoryId,
     selectedPlaybackSection,
@@ -599,7 +596,6 @@ function HomePage() {
     closeCoinModal,
     closeRankHistoryModal,
     closeTradeModal,
-    gameActionStatus,
     getRemainingHoldSeconds,
     isCoinModalOpen,
     openCoinModal,
@@ -710,11 +706,9 @@ function HomePage() {
   const {
     buyActionTitle,
     buyModalHelperText,
-    currentVideoGameHelperText,
     favoriteToggleLabel,
     gameSeasonRegionMismatch,
     isChartActionDisabled,
-    isCurrentVideoGameHelperWarning,
     isSelectedChannelFavorited,
     isSelectedVideoBuyDisabled,
     isSelectedVideoSellDisabled,
@@ -849,23 +843,16 @@ function HomePage() {
 
   const scrollToPlayerStage = useCallback(() => {
     window.setTimeout(() => {
-      const playerSection = isMobileLayout ? playerViewportRef.current : playerSectionRef.current;
-
-      if (!playerSection) {
+      if (typeof window === 'undefined') {
         return;
       }
 
-      if (isMobileLayout) {
-        scrollElementToViewportCenter(playerSection);
-        return;
-      }
-
-      playerSection.scrollIntoView({
+      window.scrollTo({
         behavior: 'smooth',
-        block: 'start',
+        top: 0,
       });
     }, 0);
-  }, [isMobileLayout]);
+  }, []);
 
   const handleSelectGamePositionVideo = useCallback(
     (position: GamePosition) => {
@@ -945,19 +932,12 @@ function HomePage() {
   const handleOpenSelectedVideoRankHistory = useCallback(() => {
     openRankHistoryModal(selectedVideoId, selectedVideoHistoryTargetPosition);
   }, [openRankHistoryModal, selectedVideoHistoryTargetPosition, selectedVideoId]);
-  const rankingGameHelperText = currentGameSeason
-    ? currentVideoGameHelperText
-    : isCurrentGameSeasonLoading
-      ? '게임 시즌을 불러오는 중입니다.'
-      : currentGameSeasonError instanceof Error
-        ? currentGameSeasonError.message
-        : '다음 게임 시즌을 준비 중입니다.';
   const positionsEmptyMessage = currentGameSeason
     ? canShowGameActions
       ? '아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.'
       : '새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다.'
     : null;
-  const renderSelectedVideoActionsContent = () => (
+  const renderSelectedVideoActionsContent = (panelControls?: ReactNode) => (
     <SelectedVideoGameActionsBundle
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
@@ -971,6 +951,7 @@ function HomePage() {
       onOpenBuyTradeModal={openBuyTradeModal}
       onOpenRankHistory={handleOpenSelectedVideoRankHistory}
       onOpenSellTradeModal={openSellTradeModal}
+      panelControls={panelControls}
       selectedGameActionChannelTitle={selectedGameActionChannelTitle}
       selectedGameActionTitle={selectedGameActionTitle}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
@@ -1031,7 +1012,6 @@ function HomePage() {
       currentGameSeason={currentGameSeason}
       favoriteStreamerVideoSection={favoriteStreamerVideoSection}
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
-      gameActionStatus={gameActionStatus}
       gameHistoryPositions={gameHistoryPositions}
       gameLeaderboard={gameLeaderboard}
       gameLeaderboardError={gameLeaderboardError}
@@ -1041,7 +1021,6 @@ function HomePage() {
       historyPlaybackLoadingVideoId={historyPlaybackLoadingVideoId}
       historyPlaybackSection={historyPlaybackSection}
       isCollapsed={isRankingGameCollapsed}
-      isCurrentVideoGameHelperWarning={isCurrentVideoGameHelperWarning}
       isGameHistoryLoading={isGameHistoryLoading}
       isGameLeaderboardError={isGameLeaderboardError}
       isGameLeaderboardLoading={isGameLeaderboardLoading}
@@ -1061,7 +1040,6 @@ function HomePage() {
       openPositionsProfitPoints={openPositionsProfitPoints}
       positionsEmptyMessage={positionsEmptyMessage}
       realtimeSurgingSection={realtimeSurgingSection}
-      seasonStatusMessage={rankingGameHelperText}
       selectedLeaderboardPositions={selectedLeaderboardPositions}
       selectedLeaderboardPositionsError={selectedLeaderboardPositionsError}
       selectedLeaderboardUserId={selectedLeaderboardUserId}
@@ -1196,7 +1174,47 @@ function HomePage() {
             supplementalContent: portfolioContent,
             toggleFavoriteStreamerPending: toggleFavoriteStreamerMutation.isPending,
           }}
-          stickySelectedVideoContent={renderSelectedVideoActionsContent()}
+          stickySelectedVideoLabel={selectedVideoOpenPositionCount > 0 ? 'Selected Positions' : 'Selected Video'}
+          stickySelectedVideoContent={({ onScrollToTop, onToggleCollapse }) =>
+            renderSelectedVideoActionsContent(
+              <>
+                <button
+                  aria-label="선택한 영상 패널을 맨 위로 이동"
+                  className="app-shell__game-panel-action-utility"
+                  onClick={onScrollToTop}
+                  title="맨 위로"
+                  type="button"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M12 18V6M12 6l-4 4M12 6l4 4"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                </button>
+                <button
+                  aria-label="선택한 영상 패널 접기"
+                  className="app-shell__game-panel-action-utility"
+                  onClick={onToggleCollapse}
+                  title="접기"
+                  type="button"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M6 12h12"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.8"
+                    />
+                  </svg>
+                </button>
+              </>,
+            )
+          }
         />
       </main>
       <GameRankHistoryModal

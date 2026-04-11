@@ -69,6 +69,47 @@
   justify-content: space-between;
 }
 
+.app-shell__game-dividend-action {
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.96)),
+    rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 20px rgba(148, 163, 184, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background 0.22s ease,
+    color 0.22s ease;
+}
+
+.app-shell__game-dividend-action:hover,
+.app-shell__game-dividend-action:focus-visible {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.98)),
+    rgba(255, 255, 255, 0.98);
+  border-color: rgba(100, 116, 139, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 12px 24px rgba(148, 163, 184, 0.1);
+  color: var(--text);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .app-shell__game-dividend-copy {
   display: grid;
   gap: 4px;
@@ -198,7 +239,7 @@
   visibility: hidden;
 }
 
-:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-panel-action {
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-dividend-action {
   background:
     linear-gradient(
       180deg,
@@ -214,8 +255,8 @@
   color: color-mix(in srgb, var(--text) 56%, rgb(var(--season-coin-accent-rgb)) 44%);
 }
 
-:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-panel-action:hover,
-:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-panel-action:focus-visible {
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-dividend-action:hover,
+:root:not([data-theme='dark']) .app-shell__game-dividend--preview .app-shell__game-dividend-action:focus-visible {
   background:
     linear-gradient(
       180deg,
@@ -717,29 +758,6 @@
   padding: 10px 11px;
 }
 
-.app-shell__game-dividend .app-shell__game-panel-action {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.96)),
-    rgba(255, 255, 255, 0.96);
-  border-color: rgba(148, 163, 184, 0.18);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 20px rgba(148, 163, 184, 0.08);
-  color: var(--text);
-}
-
-.app-shell__game-dividend .app-shell__game-panel-action:hover,
-.app-shell__game-dividend .app-shell__game-panel-action:focus-visible {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.98)),
-    rgba(255, 255, 255, 0.98);
-  border-color: rgba(100, 116, 139, 0.26);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 12px 24px rgba(148, 163, 184, 0.1);
-  color: var(--text);
-}
-
 .app-shell__game-dividend-rank-label,
 .app-shell__game-dividend-rank-weight {
   color: var(--text-muted);
@@ -1165,7 +1183,7 @@
   border-color: rgba(var(--season-coin-accent-rgb), 0.18);
 }
 
-:root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-panel-action {
+:root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-dividend-action {
   background:
     linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(15, 23, 42, 0.92)),
     rgba(2, 6, 23, 0.92);
@@ -1176,7 +1194,7 @@
   color: #f8fafc;
 }
 
-:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-panel-action {
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-action {
   background:
     linear-gradient(
       180deg,
@@ -1191,8 +1209,8 @@
   color: color-mix(in srgb, #f8fafc 72%, rgb(var(--season-coin-accent-rgb)) 28%);
 }
 
-:root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-panel-action:hover,
-:root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-panel-action:focus-visible {
+:root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-dividend-action:hover,
+:root[data-theme='dark'] .app-shell__game-dividend .app-shell__game-dividend-action:focus-visible {
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94)),
     rgba(15, 23, 42, 0.94);
@@ -1203,8 +1221,8 @@
     0 0 24px rgba(251, 191, 36, 0.08);
 }
 
-:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-panel-action:hover,
-:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-panel-action:focus-visible {
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-action:hover,
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-action:focus-visible {
   background:
     linear-gradient(
       180deg,

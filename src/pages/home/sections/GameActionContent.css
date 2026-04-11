@@ -67,13 +67,21 @@
 
 @media (max-width: 768px) {
   .app-shell__game-selected-summary-line {
-    font-size: 0.76rem;
-    line-height: 1.5;
+    font-size: 0.68rem;
+    line-height: 1.35;
   }
 
   .app-shell__game-trend-badges {
     display: inline-flex;
     flex-wrap: wrap;
-    margin-left: 4px;
+    gap: 4px;
+    margin-left: 2px;
+  }
+
+  .app-shell__game-trend-badge,
+  .app-shell__game-selected-status-badge {
+    font-size: 0.6rem;
+    min-height: 18px;
+    padding: 0 6px;
   }
 }

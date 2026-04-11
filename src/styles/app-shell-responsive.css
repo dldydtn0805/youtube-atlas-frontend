@@ -34,7 +34,8 @@
   }
 
   .app-shell__game-dividend-header {
-    grid-template-columns: 1fr;
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .app-shell__game-dividend-metrics--preview {
