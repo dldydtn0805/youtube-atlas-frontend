@@ -102,18 +102,20 @@ function PlayerStage({
                 {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ''}
               </h2>
             </div>
-            <div className="app-shell__player-actions">
-              <button
-                aria-label={cinematicToggleLabel}
-                className="app-shell__mode-toggle"
-                data-active={isCinematicModeActive}
-                onClick={onToggleCinematicMode}
-                title={cinematicToggleLabel}
-                type="button"
-              >
-                {cinematicToggleLabel}
-              </button>
-            </div>
+            {!isMobileLayout ? (
+              <div className="app-shell__player-actions">
+                <button
+                  aria-label={cinematicToggleLabel}
+                  className="app-shell__mode-toggle"
+                  data-active={isCinematicModeActive}
+                  onClick={onToggleCinematicMode}
+                  title={cinematicToggleLabel}
+                  type="button"
+                >
+                  {cinematicToggleLabel}
+                </button>
+              </div>
+            ) : null}
           </div>
           <div ref={playerViewportRef} className="app-shell__player-viewport">
             <VideoPlayer

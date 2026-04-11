@@ -81,10 +81,6 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   }, [themeMode]);
 
   useEffect(() => {
-    if (isMobileLayout) {
-      return;
-    }
-
     const handleFullscreenChange = () => {
       setIsCinematicMode(getFullscreenElement() === playerStageRef.current);
     };
@@ -96,14 +92,9 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
     };
-  }, [isMobileLayout, playerStageRef]);
+  }, [playerStageRef]);
 
   async function handleToggleCinematicMode() {
-    if (isMobileLayout) {
-      setIsCinematicMode((currentMode) => !currentMode);
-      return;
-    }
-
     if (isCinematicModeActive) {
       try {
         const didExitFullscreen = await exitElementFullscreen();
