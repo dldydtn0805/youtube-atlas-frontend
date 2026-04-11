@@ -16,8 +16,13 @@
 
 .app-shell__stage-stack[data-cinematic='true'] .app-shell__sticky-selected-video-slot {
   bottom: auto;
+  justify-self: stretch;
+  left: auto;
+  position: sticky;
   top: 12px;
-  width: min(calc(100% - 24px), var(--app-cinematic-max-width));
+  transform: none;
+  width: 100%;
+  z-index: 6;
 }
 
 .app-shell__stage-stack[data-cinematic='true'] .app-shell__sticky-selected-video-frame {

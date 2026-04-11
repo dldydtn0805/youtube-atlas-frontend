@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import { ChartPanel, CommunityPanel } from './ContentPanels';
 import { FilterBar } from './FilterPanels';
 import PlayerStage from './PlayerStage';
@@ -6,7 +6,7 @@ import { getFullscreenElement } from '../utils';
 import './HomePlaybackSection.css';
 
 const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
-const STICKY_SELECTED_VIDEO_RELEASE_GAP = 16;
+const STICKY_SELECTED_VIDEO_RELEASE_GAP = 72;
 const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
 
 interface StickySelectedVideoControls {
@@ -47,7 +47,6 @@ export default function HomePlaybackSection({
   const [isStickySelectedVideoCollapsed, setIsStickySelectedVideoCollapsed] = useState(
     getInitialStickySelectedVideoCollapsed,
   );
-  const stickySelectedVideoSlotRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!playerStageProps.isCinematicModeActive) {
@@ -56,6 +55,7 @@ export default function HomePlaybackSection({
     }
 
     const playerViewport = playerStageProps.playerViewportRef.current;
+    const playerStage = playerStageProps.playerStageRef.current;
 
     if (
       typeof window === 'undefined' ||
@@ -67,14 +67,15 @@ export default function HomePlaybackSection({
     }
 
     let animationFrameId: number | null = null;
+    const scrollTarget: HTMLElement | Window = playerStage ?? window;
 
-    const syncStickyVisibility = (playerViewportBottom: number) => {
+    const syncStickyVisibility = () => {
       setIsStickySelectedVideoVisible((currentValue) => {
-        const releaseThreshold =
-          STICKY_SELECTED_VIDEO_TOP_OFFSET +
-          (currentValue
-            ? (stickySelectedVideoSlotRef.current?.offsetHeight ?? 0) + STICKY_SELECTED_VIDEO_RELEASE_GAP
-            : 0);
+        const rootTop = playerStage ? playerStage.getBoundingClientRect().top : 0;
+        const playerViewportBottom = playerViewport.getBoundingClientRect().bottom - rootTop;
+        const releaseThreshold = currentValue
+          ? STICKY_SELECTED_VIDEO_TOP_OFFSET + STICKY_SELECTED_VIDEO_RELEASE_GAP
+          : STICKY_SELECTED_VIDEO_TOP_OFFSET;
         const nextIsVisible = playerViewportBottom <= releaseThreshold;
 
         return currentValue === nextIsVisible ? currentValue : nextIsVisible;
@@ -83,7 +84,7 @@ export default function HomePlaybackSection({
 
     const updateStickyVisibility = () => {
       animationFrameId = null;
-      syncStickyVisibility(playerViewport.getBoundingClientRect().bottom);
+      syncStickyVisibility();
     };
 
     const scheduleStickyVisibilityUpdate = () => {
@@ -95,30 +96,19 @@ export default function HomePlaybackSection({
     };
 
     scheduleStickyVisibilityUpdate();
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        syncStickyVisibility(entry.boundingClientRect.bottom);
-      },
-      {
-        threshold: 0,
-      },
-    );
-
-    observer.observe(playerViewport);
     window.addEventListener('resize', scheduleStickyVisibilityUpdate);
-    window.addEventListener('scroll', scheduleStickyVisibilityUpdate, { passive: true });
+    scrollTarget.addEventListener('scroll', scheduleStickyVisibilityUpdate, { passive: true });
 
     return () => {
-      observer.disconnect();
       if (animationFrameId !== null) {
         window.cancelAnimationFrame(animationFrameId);
       }
       window.removeEventListener('resize', scheduleStickyVisibilityUpdate);
-      window.removeEventListener('scroll', scheduleStickyVisibilityUpdate);
+      scrollTarget.removeEventListener('scroll', scheduleStickyVisibilityUpdate);
     };
   }, [
     playerStageProps.isCinematicModeActive,
+    playerStageProps.playerStageRef,
     playerStageProps.playerViewportRef,
     stickySelectedVideoContent,
   ]);
@@ -167,7 +157,6 @@ export default function HomePlaybackSection({
   const stickySelectedVideoSlot =
     stickySelectedVideoContent && isStickySelectedVideoVisible ? (
       <div
-        ref={stickySelectedVideoSlotRef}
         className="app-shell__sticky-selected-video-slot"
         data-cinematic={playerStageProps.isCinematicModeActive}
       >
