@@ -276,6 +276,11 @@ export function calculateGameOrderPoints(unitPricePoints: number, quantity: numb
   return Math.floor((unitPricePoints * normalizedQuantity + GAME_QUANTITY_SCALE / 2) / GAME_QUANTITY_SCALE);
 }
 
+export function calculateGameUnitPricePoints(totalPoints: number, quantity: number) {
+  const normalizedQuantity = normalizeGameQuantity(quantity);
+  return Math.floor((totalPoints * GAME_QUANTITY_SCALE + normalizedQuantity / 2) / normalizedQuantity);
+}
+
 export function formatMaybePoints(points?: number | null) {
   return typeof points === 'number' ? formatPoints(points) : '집계 중';
 }

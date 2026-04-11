@@ -999,6 +999,7 @@ function HomePage() {
     <GameSelectedVideoPriceSummary
       gameCoinOverview={liveGameCoinOverview}
       maxSellQuantity={maxSellQuantity}
+      preferMarketSummary
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
       selectedVideoId={selectedVideoId}
       selectedVideoIsChartOut={selectedVideoIsChartOut}

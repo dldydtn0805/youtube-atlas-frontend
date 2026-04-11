@@ -10,6 +10,7 @@ import type {
 } from '../../../features/game/types';
 import type { VideoTrendSignal } from '../../../features/trending/types';
 import {
+  calculateGameUnitPricePoints,
   formatCoins,
   formatFullCoins,
   formatFullPoints,
@@ -1006,6 +1007,10 @@ export function RankingGamePositionsTab({
           0,
         );
         const activeCoinYieldText = coinSummary.hasActiveProduction ? formatCoins(coinSummary.activeCoinYield) : null;
+        const currentUnitPricePoints =
+          typeof holding.currentPricePoints === 'number'
+            ? calculateGameUnitPricePoints(holding.currentPricePoints, holding.quantity)
+            : null;
         const positionStatusBadge = holding.chartOut
           ? '차트 아웃'
           : coinSummary.hasActiveProduction
@@ -1086,6 +1091,7 @@ export function RankingGamePositionsTab({
                       })}
                     </span>
                     {' · '}<span className="app-shell__game-position-meta-label">평가 금액</span> {formatMaybePoints(holding.currentPricePoints)}
+                    {' · '}<span className="app-shell__game-position-meta-label">현재 단가</span> {formatMaybePoints(currentUnitPricePoints)}
                     {' · '}<span className="app-shell__game-position-meta-label">손익률</span>{' '}
                     <span data-tone={holding.chartOut ? undefined : getPointTone(holding.profitPoints)}>
                       {formatSignedProfitRate(holding.profitPoints, holding.stakePoints, {

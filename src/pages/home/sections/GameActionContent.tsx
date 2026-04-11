@@ -18,7 +18,9 @@ import './GameActionContent.css';
 
 interface GameSelectedVideoPriceSummaryProps {
   gameCoinOverview?: GameCoinOverview;
+  hideEvaluationPoints?: boolean;
   maxSellQuantity?: number;
+  preferMarketSummary?: boolean;
   selectedVideoCurrentChartRank: number | null | undefined;
   selectedVideoId?: string;
   selectedVideoIsChartOut: boolean;
@@ -111,7 +113,9 @@ function formatTrendBadgeLabel(badge: VideoTrendBadge) {
 
 export function GameSelectedVideoPriceSummary({
   gameCoinOverview,
+  hideEvaluationPoints = false,
   maxSellQuantity = 0,
+  preferMarketSummary = false,
   selectedVideoCurrentChartRank,
   selectedVideoId,
   selectedVideoIsChartOut,
@@ -120,7 +124,7 @@ export function GameSelectedVideoPriceSummary({
   selectedVideoOpenPositionSummary,
   selectedVideoTrendBadges,
 }: GameSelectedVideoPriceSummaryProps) {
-  if (selectedVideoOpenPositionCount > 0) {
+  if (selectedVideoOpenPositionCount > 0 && !preferMarketSummary) {
     const selectedPositionTrendBadges = selectedVideoTrendBadges.map((badge) => ({
       ...badge,
       label: formatTrendBadgeLabel(badge),
@@ -177,10 +181,14 @@ export function GameSelectedVideoPriceSummary({
               chartOut: selectedVideoIsChartOut,
             })}
           </span>
-          {' · '}<span className="app-shell__game-selected-summary-label">평가 금액</span>{' '}
-          <span className="app-shell__game-selected-summary-value">
-            {formatPoints(selectedVideoOpenPositionSummary.evaluationPoints)}
-          </span>
+          {!hideEvaluationPoints ? (
+            <>
+              {' · '}<span className="app-shell__game-selected-summary-label">평가 금액</span>{' '}
+              <span className="app-shell__game-selected-summary-value">
+                {formatPoints(selectedVideoOpenPositionSummary.evaluationPoints)}
+              </span>
+            </>
+          ) : null}
           {' · '}<span className="app-shell__game-selected-summary-label">손익률</span>{' '}
           <span
             className="app-shell__game-selected-summary-value"
