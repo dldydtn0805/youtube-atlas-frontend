@@ -62,6 +62,13 @@ declare namespace YT {
 }
 
 interface Window {
+  __emitGameRealtimeTest?: (event?: {
+    eventType?: string;
+    regionCode?: string | null;
+    seasonId?: number | null;
+    capturedAt?: string | null;
+    occurredAt?: string | null;
+  }) => void;
   google?: {
     accounts?: {
       oauth2?: {

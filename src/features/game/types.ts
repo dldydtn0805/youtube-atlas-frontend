@@ -195,3 +195,11 @@ export interface SellGamePositionResponse {
   balancePoints: number;
   closedAt: string;
 }
+
+export interface GameRealtimeEvent {
+  eventType: string;
+  regionCode: string;
+  seasonId: number | null;
+  capturedAt: string | null;
+  occurredAt: string | null;
+}

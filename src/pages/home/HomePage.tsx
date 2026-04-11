@@ -67,6 +67,7 @@ import {
   useMyGamePositions,
   useSellGamePositions,
 } from '../../features/game/queries';
+import { useGameRealtimeInvalidation } from '../../features/game/realtime';
 import type { GamePosition } from '../../features/game/types';
 import {
   useFavoriteStreamerVideos,
@@ -203,6 +204,8 @@ function HomePage() {
     label: `${country.code} · ${country.name}`,
   }));
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
+  useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
+
   const {
     data: currentGameSeason,
     error: currentGameSeasonError,
@@ -226,6 +229,33 @@ function HomePage() {
     data: gameCoinTierProgress,
     error: gameCoinTierProgressError,
   } = useGameCoinTierProgress(accessToken, selectedRegionCode, shouldLoadGame);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === 'undefined') {
+      return;
+    }
+
+    window.__emitGameRealtimeTest = (event) => {
+      const regionCode = event?.regionCode ?? selectedRegionCode;
+      const seasonId = event?.seasonId ?? currentGameSeason?.seasonId ?? null;
+
+      void invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+        regionCode,
+        seasonId,
+      });
+    };
+
+    return () => {
+      delete window.__emitGameRealtimeTest;
+    };
+  }, [
+    accessToken,
+    currentGameSeason?.seasonId,
+    queryClient,
+    selectedRegionCode,
+  ]);
   const gameMarketSignalsByVideoId = useMemo(
     () =>
       Object.fromEntries(
