@@ -610,30 +610,36 @@
   }
 
   .app-shell__stage-meta {
-    align-items: stretch;
-    display: block;
-    flex-direction: column;
-    gap: 0;
-    justify-content: flex-start;
+    align-items: start;
+    display: grid;
+    gap: 6px 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'headline headline'
+      'channel channel'
+      'summary-line summary-line'
+      'badges side';
+    justify-content: space-between;
     padding-top: 12px;
   }
 
   .app-shell__stage-side {
-    align-items: flex-end;
-    display: block;
+    align-items: start;
+    display: grid;
     gap: 0;
+    grid-area: side;
     justify-items: end;
     margin-left: 0;
-    margin-top: 10px;
+    margin-top: 4px;
     min-width: 0;
-    width: 100%;
+    width: fit-content;
   }
 
   .app-shell__stage-actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
     justify-content: flex-end;
-    width: 100%;
+    width: fit-content;
   }
 
   .app-shell__stage-action-item {
@@ -646,13 +652,14 @@
   }
 
   .app-shell__stage-copy {
-    gap: 2px;
+    display: contents;
   }
 
   .app-shell__stage-channel-row {
     align-items: center;
     flex-wrap: nowrap;
     gap: 8px;
+    grid-area: channel;
   }
 
   .app-shell__stage-channel-favorite {
@@ -666,6 +673,29 @@
 
   .app-shell__stage-summary .app-shell__game-selected-summary-line {
     font-size: 0.82rem;
+  }
+
+  .app-shell__stage-headline {
+    grid-area: headline;
+  }
+
+  .app-shell__stage-summary {
+    display: contents;
+  }
+
+  .app-shell__stage-summary .app-shell__game-selected-summary {
+    display: contents;
+    gap: 6px;
+  }
+
+  .app-shell__stage-summary .app-shell__game-selected-summary-line {
+    grid-area: summary-line;
+  }
+
+  .app-shell__stage-summary .app-shell__game-selected-summary-badges {
+    align-self: start;
+    grid-area: badges;
+    gap: 4px;
   }
 
   .app-shell__stage-helper {

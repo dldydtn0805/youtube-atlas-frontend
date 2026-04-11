@@ -247,7 +247,7 @@ export function GameSelectedVideoPriceSummary({
         ) ?? 0
       : 0;
   const selectedVideoMiningBadge = selectedVideoIsChartOut
-    ? '채굴 중지'
+    ? '차트 아웃'
     : selectedVideoMatchingRank
       ? `채굴률 ${formatPercent(selectedVideoMatchingRank.coinRatePercent)}`
       : gameCoinOverview?.eligibleRankCutoff
