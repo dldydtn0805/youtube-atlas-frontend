@@ -14,6 +14,7 @@ function toRealtimeEventKey(event: GameRealtimeEvent) {
     event.regionCode,
     event.seasonId ?? 'season',
     event.capturedAt ?? 'captured',
+    event.occurredAt ?? 'occurred',
   ].join(':');
 }
 

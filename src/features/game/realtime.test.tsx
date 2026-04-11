@@ -94,7 +94,7 @@ describe('game realtime', () => {
     });
   });
 
-  it('coalesces duplicate wallet updates for the same capture slot', async () => {
+  it('coalesces only exact duplicate wallet updates', async () => {
     const { useGameRealtimeInvalidation } = await import('./realtime');
 
     function HookHarness() {
@@ -129,10 +129,52 @@ describe('game realtime', () => {
         regionCode: 'KR',
         seasonId: 12,
         capturedAt: '2026-04-11T10:00:00Z',
-        occurredAt: '2026-04-11T10:00:05Z',
+        occurredAt: '2026-04-11T10:00:01Z',
       }),
     });
 
     expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not coalesce distinct wallet updates within the same capture slot', async () => {
+    const { useGameRealtimeInvalidation } = await import('./realtime');
+
+    function HookHarness() {
+      useGameRealtimeInvalidation('token-1', 'KR');
+      return null;
+    }
+
+    const queryClient = new QueryClient();
+
+    render(<HookHarness />, {
+      wrapper: createWrapper(queryClient),
+    });
+
+    const client = clientInstances.at(-1);
+    client?.onConnect?.();
+    const callback = client?.subscribe.mock.calls.at(0)?.at(1) as
+      | ((message: { body: string }) => void)
+      | undefined;
+
+    callback?.({
+      body: JSON.stringify({
+        eventType: 'wallet-updated',
+        regionCode: 'KR',
+        seasonId: 12,
+        capturedAt: '2026-04-11T10:00:00Z',
+        occurredAt: '2026-04-11T10:00:01Z',
+      }),
+    });
+    callback?.({
+      body: JSON.stringify({
+        eventType: 'wallet-updated',
+        regionCode: 'KR',
+        seasonId: 12,
+        capturedAt: '2026-04-11T10:00:00Z',
+        occurredAt: '2026-04-11T10:05:01Z',
+      }),
+    });
+
+    expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(2);
   });
 });
