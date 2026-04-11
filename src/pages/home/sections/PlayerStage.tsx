@@ -160,7 +160,7 @@ function PlayerStage({
                   <div className="app-shell__stage-action-item">
                     <button
                       aria-label={manualPlaybackSaveButtonLabel}
-                      className="app-shell__stage-action-button"
+                      className="app-shell__stage-action-button app-shell__stage-action-button--save"
                       disabled={isManualPlaybackSaveDisabled}
                       onClick={onManualPlaybackSave}
                       title={manualPlaybackSaveButtonLabel}

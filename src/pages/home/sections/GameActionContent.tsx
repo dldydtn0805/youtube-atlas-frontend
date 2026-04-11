@@ -338,6 +338,54 @@ export function GameStageActions({
     <>
       <div className="app-shell__stage-action-item">
         <button
+          aria-label="선택한 영상 매수"
+          className="app-shell__stage-action-button app-shell__stage-action-button--game"
+          data-variant="buy"
+          disabled={!canShowGameActions || isSelectedVideoBuyDisabled}
+          onClick={onOpenBuyTradeModal}
+          title={!canShowGameActions ? '전체 카테고리에서만 매수할 수 있습니다.' : buyActionTitle}
+          type="button"
+        >
+          <span className="app-shell__stage-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 18V6M12 6l-4 4M12 6l4 4"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
+          </span>
+        </button>
+        <span className="app-shell__stage-action-caption">매수</span>
+      </div>
+      <div className="app-shell__stage-action-item">
+        <button
+          aria-label="선택한 영상 매도"
+          className="app-shell__stage-action-button app-shell__stage-action-button--game"
+          data-variant="sell"
+          disabled={isSelectedVideoSellDisabled || selectedVideoOpenPositionCount <= 0}
+          onClick={onOpenSellTradeModal}
+          title={selectedVideoOpenPositionCount > 0 ? sellActionTitle : '보유 수량이 있을 때만 매도할 수 있습니다.'}
+          type="button"
+        >
+          <span className="app-shell__stage-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 6v12M12 18l-4-4M12 18l4-4"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
+          </span>
+        </button>
+        <span className="app-shell__stage-action-caption">매도</span>
+      </div>
+      <div className="app-shell__stage-action-item">
+        <button
           aria-label="선택한 영상 차트"
           className="app-shell__stage-action-button app-shell__stage-action-button--game"
           data-variant="chart"
@@ -371,56 +419,6 @@ export function GameStageActions({
         </button>
         <span className="app-shell__stage-action-caption">차트</span>
       </div>
-      <div className="app-shell__stage-action-item">
-        <button
-          aria-label="선택한 영상 매수"
-          className="app-shell__stage-action-button app-shell__stage-action-button--game"
-          data-variant="buy"
-          disabled={!canShowGameActions || isSelectedVideoBuyDisabled}
-          onClick={onOpenBuyTradeModal}
-          title={!canShowGameActions ? '전체 카테고리에서만 매수할 수 있습니다.' : buyActionTitle}
-          type="button"
-        >
-          <span className="app-shell__stage-action-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 18V6M12 6l-4 4M12 6l4 4"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-              />
-            </svg>
-          </span>
-        </button>
-        <span className="app-shell__stage-action-caption">매수</span>
-      </div>
-      {selectedVideoOpenPositionCount > 0 ? (
-        <div className="app-shell__stage-action-item">
-          <button
-            aria-label="선택한 영상 매도"
-            className="app-shell__stage-action-button app-shell__stage-action-button--game"
-            data-variant="sell"
-            disabled={isSelectedVideoSellDisabled}
-            onClick={onOpenSellTradeModal}
-            title={sellActionTitle}
-            type="button"
-          >
-            <span className="app-shell__stage-action-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 6v12M12 18l-4-4M12 18l4-4"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                />
-              </svg>
-            </span>
-          </button>
-          <span className="app-shell__stage-action-caption">매도</span>
-        </div>
-      ) : null}
     </>
   );
 }
