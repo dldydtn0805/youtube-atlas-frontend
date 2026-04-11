@@ -391,61 +391,61 @@
 }
 
 .app-shell__stage-action-button--game[data-variant='buy'] {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.19), rgba(220, 38, 38, 0.11));
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.33), rgba(220, 38, 38, 0.19));
   border-color: transparent;
-  color: #b91c1c;
+  color: #991b1b;
 }
 
 .app-shell__stage-action-button--game[data-variant='chart'] {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.23), rgba(234, 179, 8, 0.13));
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.36), rgba(234, 179, 8, 0.21));
   border-color: transparent;
-  color: #a16207;
+  color: #854d0e;
 }
 
 .app-shell__stage-action-button--game[data-variant='chart']:hover,
 .app-shell__stage-action-button--game[data-variant='chart']:focus-visible {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.29), rgba(234, 179, 8, 0.17));
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.42), rgba(234, 179, 8, 0.25));
   border-color: transparent;
 }
 
 .app-shell__stage-action-button--game[data-variant='chart']:disabled {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.18), rgba(234, 179, 8, 0.1));
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.18), rgba(100, 116, 139, 0.1));
   border-color: transparent;
-  color: #a16207;
+  color: #6b7280;
   cursor: not-allowed;
   opacity: 0.62;
 }
 
 .app-shell__stage-action-button--game[data-variant='buy']:hover,
 .app-shell__stage-action-button--game[data-variant='buy']:focus-visible {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.25), rgba(220, 38, 38, 0.15));
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.39), rgba(220, 38, 38, 0.23));
   border-color: transparent;
 }
 
 .app-shell__stage-action-button--game[data-variant='buy']:disabled {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.16), rgba(220, 38, 38, 0.08));
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.18), rgba(100, 116, 139, 0.1));
   border-color: transparent;
-  color: #b91c1c;
+  color: #6b7280;
   cursor: not-allowed;
   opacity: 0.62;
 }
 
 .app-shell__stage-action-button--game[data-variant='sell'] {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.23), rgba(6, 182, 212, 0.15));
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.33), rgba(6, 182, 212, 0.19));
   border-color: transparent;
-  color: #0f766e;
+  color: #155e75;
 }
 
 .app-shell__stage-action-button--game[data-variant='sell']:hover,
 .app-shell__stage-action-button--game[data-variant='sell']:focus-visible {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.29), rgba(6, 182, 212, 0.17));
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.39), rgba(6, 182, 212, 0.23));
   border-color: transparent;
 }
 
 .app-shell__stage-action-button--game[data-variant='sell']:disabled {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.19), rgba(6, 182, 212, 0.1));
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.18), rgba(100, 116, 139, 0.1));
   border-color: transparent;
-  color: #0f766e;
+  color: #6b7280;
   cursor: not-allowed;
   opacity: 0.62;
 }
@@ -467,21 +467,21 @@
 }
 
 .app-shell__stage-action-button--save {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.21), rgba(22, 163, 74, 0.13));
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.31), rgba(22, 163, 74, 0.19));
   border-color: transparent;
-  color: #15803d;
+  color: #166534;
 }
 
 .app-shell__stage-action-button--save:hover,
 .app-shell__stage-action-button--save:focus-visible {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.27), rgba(22, 163, 74, 0.17));
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.37), rgba(22, 163, 74, 0.23));
   border-color: transparent;
 }
 
 .app-shell__stage-action-button--save:disabled {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.17), rgba(22, 163, 74, 0.09));
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.18), rgba(100, 116, 139, 0.1));
   border-color: transparent;
-  color: #15803d;
+  color: #6b7280;
   cursor: not-allowed;
   opacity: 0.62;
 }
@@ -528,9 +528,9 @@
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='buy'] {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.22), rgba(220, 38, 38, 0.12));
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.3), rgba(220, 38, 38, 0.18));
   border-color: transparent;
-  color: #fee2e2;
+  color: #fff1f2;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game .app-shell__stage-action-icon,
@@ -539,33 +539,33 @@
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='chart'] {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.26), rgba(234, 179, 8, 0.14));
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.34), rgba(234, 179, 8, 0.2));
   border-color: transparent;
-  color: #fef3c7;
+  color: #fef9c3;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='chart']:disabled {
-  background: linear-gradient(180deg, rgba(250, 204, 21, 0.18), rgba(234, 179, 8, 0.1));
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.34), rgba(51, 65, 85, 0.24));
   border-color: transparent;
-  color: #fde68a;
+  color: #cbd5e1;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='buy']:disabled {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.18), rgba(220, 38, 38, 0.1));
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.34), rgba(51, 65, 85, 0.24));
   border-color: transparent;
-  color: #fecaca;
+  color: #cbd5e1;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='sell'] {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.24), rgba(6, 182, 212, 0.14));
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.32), rgba(6, 182, 212, 0.18));
   border-color: transparent;
-  color: #cffafe;
+  color: #ecfeff;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='sell']:disabled {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.18), rgba(6, 182, 212, 0.1));
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.34), rgba(51, 65, 85, 0.24));
   border-color: transparent;
-  color: #a5f3fc;
+  color: #cbd5e1;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--favorite[data-active='true'] {
@@ -575,15 +575,15 @@
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--save {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.3), rgba(22, 163, 74, 0.18));
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.38), rgba(22, 163, 74, 0.22));
   border-color: transparent;
-  color: #dcfce7;
+  color: #f0fdf4;
 }
 
 :root[data-theme='dark'] .app-shell__stage-action-button--save:disabled {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.22), rgba(22, 163, 74, 0.12));
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.34), rgba(51, 65, 85, 0.24));
   border-color: transparent;
-  color: #bbf7d0;
+  color: #cbd5e1;
 }
 
 :root[data-theme='dark'] .app-shell__stage-channel-favorite {
