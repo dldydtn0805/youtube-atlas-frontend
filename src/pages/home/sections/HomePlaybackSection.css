@@ -1,13 +1,16 @@
 .app-shell__sticky-selected-video-slot {
   bottom: max(12px, env(safe-area-inset-bottom));
   left: 50%;
+  min-width: 0;
   position: fixed;
   transform: translateX(-50%);
-  width: min(calc(100% - 24px), var(--app-content-max-width));
+  width: min(calc(100% - (var(--app-shell-inline-padding, 20px) * 2)), var(--app-content-max-width));
   z-index: 14;
 }
 
 .app-shell__sticky-selected-video-frame {
+  min-width: 0;
+  overflow-x: clip;
   width: 100%;
 }
 
@@ -68,7 +71,7 @@
 @media (max-width: 768px) {
   .app-shell__sticky-selected-video-slot {
     bottom: max(8px, env(safe-area-inset-bottom));
-    width: calc(100% - 16px);
+    width: min(calc(100% - (var(--app-shell-inline-padding, 12px) * 2)), var(--app-content-max-width));
   }
 
   .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions {

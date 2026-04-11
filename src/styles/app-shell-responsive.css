@@ -1,5 +1,6 @@
 @media (max-width: 768px) {
   .app-shell {
+    --app-shell-inline-padding: 12px;
     overflow-x: clip;
     padding: 16px 12px 36px;
   }

@@ -54,7 +54,7 @@ describe('useAppPreferences', () => {
     if (originalFullscreenElementDescriptor) {
       Object.defineProperty(document, 'fullscreenElement', originalFullscreenElementDescriptor);
     } else {
-      delete (document as Document & { fullscreenElement?: Element | null }).fullscreenElement;
+      Reflect.deleteProperty(document, 'fullscreenElement');
     }
 
     window.matchMedia = originalMatchMedia;

@@ -5,6 +5,7 @@
 .app-shell {
   --app-content-max-width: 1240px;
   --app-cinematic-max-width: 1820px;
+  --app-shell-inline-padding: 20px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
