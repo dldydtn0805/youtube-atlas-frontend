@@ -642,12 +642,17 @@
   color: var(--text);
 }
 
+.app-shell__game-panel-action-utility--preview-toggle[data-active='true'] {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: var(--text);
+}
+
 .app-shell__game-panel-action-utility svg {
   display: block;
   height: 14px;
   width: 14px;
 }
-
 
 .app-shell__game-panel-action {
   align-items: center;

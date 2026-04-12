@@ -253,8 +253,7 @@ export default function HomePlaybackSection({
 
   useEffect(() => {
     setIsMobilePlayerPreviewVisible(false);
-    setIsMobilePlayerPreviewCollapsed(true);
-    setIsMobilePlayerPreviewEnabled(false);
+    setIsMobilePlayerPreviewCollapsed(false);
   }, [mobilePlayerPreviewVideoId]);
 
   useEffect(() => {
@@ -416,10 +415,6 @@ export default function HomePlaybackSection({
         playerViewportRect.top < 0 &&
         playerViewportRect.bottom <= MOBILE_PLAYER_PREVIEW_TRIGGER_OFFSET;
 
-      if (nextIsVisible && !isMobilePlayerPreviewEnabled) {
-        setIsMobilePlayerPreviewEnabled(true);
-      }
-
       if (!nextIsVisible) {
         setIsMobilePlayerPreviewCollapsed(false);
       }
@@ -455,7 +450,6 @@ export default function HomePlaybackSection({
       scrollTarget.removeEventListener('scroll', schedulePreviewVisibilityUpdate);
     };
   }, [
-    isMobilePlayerPreviewEnabled,
     playerStageProps.isCinematicModeActive,
     playerStageProps.isMobileLayout,
     playerStageProps.playerViewportRef,

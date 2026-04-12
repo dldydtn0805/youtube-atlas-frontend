@@ -1427,45 +1427,75 @@ function HomePage() {
           stickySelectedVideoContent={({
             desktopPlayerDockSlotRef,
             isDesktopPlayerDockEnabled,
+            isMobilePlayerPreviewEnabled,
             onScrollToTop,
             onToggleCollapse,
+            onToggleMobilePlayerPreviewEnabled,
           }) =>
             renderSelectedVideoActionsContent(
               <>
-                <button
-                  aria-label="선택한 영상 패널 접기"
-                  className="app-shell__game-panel-action-utility"
-                  onClick={onToggleCollapse}
-                  title="접기"
-                  type="button"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M6 12h12"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                    />
-                  </svg>
-                </button>
-                <button
-                  aria-label="선택한 영상 패널을 맨 위로 이동"
-                  className="app-shell__game-panel-action-utility"
-                  onClick={onScrollToTop}
-                  title="맨 위로"
-                  type="button"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M7.5 14.5 12 10l4.5 4.5"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="1.8"
-                    />
-                  </svg>
-                </button>
+                {isMobileLayout ? (
+                  <button
+                    aria-label={
+                      isMobilePlayerPreviewEnabled
+                        ? '도킹 대상 위치 프리뷰 패널 끄기'
+                        : '도킹 대상 위치 프리뷰 패널 켜기'
+                    }
+                    className="app-shell__game-panel-action-utility app-shell__game-panel-action-utility--preview-toggle"
+                    data-active={isMobilePlayerPreviewEnabled ? 'true' : 'false'}
+                    onClick={onToggleMobilePlayerPreviewEnabled}
+                    title={isMobilePlayerPreviewEnabled ? '프리뷰 끄기' : '프리뷰 켜기'}
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M6 6h12v12H6z"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                      />
+                    </svg>
+                  </button>
+                ) : null}
+                {!isMobileLayout ? (
+                  <>
+                    <button
+                      aria-label="선택한 영상 패널 접기"
+                      className="app-shell__game-panel-action-utility"
+                      onClick={onToggleCollapse}
+                      title="접기"
+                      type="button"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M6 12h12"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      aria-label="선택한 영상 패널을 맨 위로 이동"
+                      className="app-shell__game-panel-action-utility"
+                      onClick={onScrollToTop}
+                      title="맨 위로"
+                      type="button"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M7.5 14.5 12 10l4.5 4.5"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                ) : null}
               </>,
               onToggleCollapse,
               onScrollToTop,
