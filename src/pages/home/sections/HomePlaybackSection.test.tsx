@@ -155,7 +155,7 @@ describe('HomePlaybackSection', () => {
           height: 0,
           left: 0,
           right: 0,
-          top: 0,
+          top: -20,
           width: 0,
           x: 0,
           y: 0,
@@ -215,7 +215,7 @@ describe('HomePlaybackSection', () => {
           height: 0,
           left: 0,
           right: 0,
-          top: 0,
+          top: -20,
           width: 0,
           x: 0,
           y: 0,
@@ -319,6 +319,76 @@ describe('HomePlaybackSection', () => {
     await waitFor(() => {
       expect(screen.getByText('Selected video actions')).toBeInTheDocument();
     });
+  });
+
+  it('shows the mobile player preview above selected video only after the player is hidden', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: true,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+            selectedVideoChannelTitle: 'Preview Channel',
+            selectedVideoId: 'preview-video',
+            selectedVideoTitle: 'Preview Title',
+          } as never
+        }
+        stickySelectedVideoContent={<div>Selected video actions</div>}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    const getBoundingClientRectMock = vi.spyOn(playerViewport, 'getBoundingClientRect');
+
+    getBoundingClientRectMock.mockImplementation(
+      () =>
+        ({
+          bottom: 180,
+          height: 180,
+          left: 0,
+          right: 0,
+          top: 20,
+          width: 320,
+          x: 0,
+          y: 20,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+    expect(screen.queryByText('Preview Title')).not.toBeInTheDocument();
+
+    getBoundingClientRectMock.mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 180,
+          left: 0,
+          right: 0,
+          top: -180,
+          width: 320,
+          x: 0,
+          y: -180,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    window.dispatchEvent(new Event('scroll'));
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Preview Title')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Preview Channel')).toBeInTheDocument();
+    expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
 
   it('scrolls to the player stage when the top button is pressed', async () => {

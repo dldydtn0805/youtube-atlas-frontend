@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
 import { ChartPanel, CommunityPanel } from './ContentPanels';
 import { FilterBar } from './FilterPanels';
+import MiniVideoPreview from './MiniVideoPreview';
 import PlayerStage from './PlayerStage';
 import { getFullscreenElement } from '../utils';
 import './HomePlaybackSection.css';
@@ -8,6 +9,7 @@ import './HomePlaybackSection.css';
 const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
 const STICKY_SELECTED_VIDEO_RELEASE_GAP = 72;
 const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
+const MOBILE_PLAYER_PREVIEW_TRIGGER_OFFSET = 8;
 
 interface StickySelectedVideoControls {
   onScrollToTop: () => void;
@@ -47,6 +49,7 @@ export default function HomePlaybackSection({
   const [isStickySelectedVideoCollapsed, setIsStickySelectedVideoCollapsed] = useState(
     getInitialStickySelectedVideoCollapsed,
   );
+  const [isMobilePlayerPreviewVisible, setIsMobilePlayerPreviewVisible] = useState(false);
 
   useEffect(() => {
     if (!playerStageProps.isCinematicModeActive) {
@@ -67,7 +70,7 @@ export default function HomePlaybackSection({
     }
 
     let animationFrameId: number | null = null;
-    const scrollTarget: HTMLElement | Window = playerStage ?? window;
+    const scrollTarget: HTMLElement | Window = playerStageProps.isCinematicModeActive ? (playerStage ?? window) : window;
 
     const syncStickyVisibility = () => {
       setIsStickySelectedVideoVisible((currentValue) => {
@@ -124,6 +127,66 @@ export default function HomePlaybackSection({
     );
   }, [isStickySelectedVideoCollapsed]);
 
+  useEffect(() => {
+    const playerViewport = playerStageProps.playerViewportRef.current;
+
+    if (
+      typeof window === 'undefined' ||
+      playerStageProps.isCinematicModeActive ||
+      !playerStageProps.isMobileLayout ||
+      !playerStageProps.selectedVideoId ||
+      !playerViewport
+    ) {
+      setIsMobilePlayerPreviewVisible(false);
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+    const scrollTarget: Window = window;
+
+    const syncPreviewVisibility = () => {
+      const playerViewportRect = playerViewport.getBoundingClientRect();
+      const nextIsVisible =
+        playerViewportRect.top < 0 &&
+        playerViewportRect.bottom <= MOBILE_PLAYER_PREVIEW_TRIGGER_OFFSET;
+
+      setIsMobilePlayerPreviewVisible((currentValue) =>
+        currentValue === nextIsVisible ? currentValue : nextIsVisible,
+      );
+    };
+
+    const updatePreviewVisibility = () => {
+      animationFrameId = null;
+      syncPreviewVisibility();
+    };
+
+    const schedulePreviewVisibilityUpdate = () => {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updatePreviewVisibility);
+    };
+
+    schedulePreviewVisibilityUpdate();
+    window.addEventListener('resize', schedulePreviewVisibilityUpdate);
+    scrollTarget.addEventListener('scroll', schedulePreviewVisibilityUpdate, { passive: true });
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener('resize', schedulePreviewVisibilityUpdate);
+      scrollTarget.removeEventListener('scroll', schedulePreviewVisibilityUpdate);
+    };
+  }, [
+    playerStageProps.isCinematicModeActive,
+    playerStageProps.isMobileLayout,
+    playerStageProps.playerViewportRef,
+    playerStageProps.selectedVideoId,
+  ]);
+
   const handleScrollToTop = () => {
     if (typeof window === 'undefined') {
       return;
@@ -154,6 +217,40 @@ export default function HomePlaybackSection({
           onToggleCollapse: () => setIsStickySelectedVideoCollapsed(true),
         })
       : stickySelectedVideoContent;
+  const stickyPlayerPreview =
+    !playerStageProps.isCinematicModeActive &&
+    playerStageProps.isMobileLayout &&
+    isMobilePlayerPreviewVisible &&
+    playerStageProps.selectedVideoId ? (
+      <button
+        className="app-shell__sticky-player-preview"
+        onClick={handleScrollToTop}
+        type="button"
+      >
+        <MiniVideoPreview
+          containerClassName="app-shell__sticky-player-preview-thumb app-shell__sticky-player-preview-thumb--player"
+          frameClassName="app-shell__sticky-player-preview-frame"
+          mainPlayerRef={playerStageProps.playerRef}
+          selectedVideoId={playerStageProps.selectedVideoId}
+        />
+        <div className="app-shell__sticky-player-preview-copy">
+          <p className="app-shell__sticky-player-preview-eyebrow">Now Playing</p>
+          <p className="app-shell__sticky-player-preview-title">
+            {playerStageProps.selectedVideoTitle ?? '재생 중인 영상'}
+          </p>
+          {playerStageProps.selectedVideoChannelTitle ? (
+            <p className="app-shell__sticky-player-preview-channel">
+              {playerStageProps.selectedVideoChannelTitle}
+            </p>
+          ) : null}
+        </div>
+      </button>
+    ) : null;
+  const mobilePlayerPreviewSlot = stickyPlayerPreview ? (
+    <div className="app-shell__mobile-player-preview-slot">
+      {stickyPlayerPreview}
+    </div>
+  ) : null;
   const stickySelectedVideoSlot =
     stickySelectedVideoContent && isStickySelectedVideoVisible ? (
       <div
@@ -238,6 +335,7 @@ export default function HomePlaybackSection({
 
   return (
     <>
+      {mobilePlayerPreviewSlot}
       {!playerStageProps.isCinematicModeActive ? stickySelectedVideoSlot : null}
       <PlayerStage
         {...playerStageProps}

@@ -1,3 +1,7 @@
+.app-shell__mobile-player-preview-slot {
+  display: none;
+}
+
 .app-shell__sticky-selected-video-slot {
   bottom: max(12px, env(safe-area-inset-bottom));
   left: 50%;
@@ -12,6 +16,71 @@
   min-width: 0;
   overflow-x: clip;
   width: 100%;
+}
+
+.app-shell__sticky-player-preview {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 18px;
+  box-shadow:
+    0 14px 34px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+  min-width: 0;
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.app-shell__sticky-player-preview-thumb {
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  display: block;
+  flex: 0 0 112px;
+  object-fit: cover;
+  width: 112px;
+}
+
+.app-shell__sticky-player-preview-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-shell__sticky-player-preview-eyebrow {
+  color: rgba(71, 85, 105, 0.86);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.app-shell__sticky-player-preview-title,
+.app-shell__sticky-player-preview-channel {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell__sticky-player-preview-title {
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.app-shell__sticky-player-preview-channel {
+  color: #475569;
+  font-size: 0.8rem;
 }
 
 .app-shell__stage-stack[data-cinematic='true'] .app-shell__sticky-selected-video-slot {
@@ -75,10 +144,59 @@
     0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
+:root[data-theme='dark'] .app-shell__sticky-player-preview {
+  background:
+    linear-gradient(180deg, rgba(20, 20, 20, 0.9), rgba(8, 8, 8, 0.82)),
+    rgba(10, 10, 10, 0.72);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+:root[data-theme='dark'] .app-shell__sticky-player-preview-eyebrow {
+  color: rgba(203, 213, 225, 0.72);
+}
+
+:root[data-theme='dark'] .app-shell__sticky-player-preview-title {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .app-shell__sticky-player-preview-channel {
+  color: #cbd5e1;
+}
+
 @media (max-width: 768px) {
+  .app-shell__mobile-player-preview-slot {
+    display: block;
+    left: 50%;
+    pointer-events: none;
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    transform: translateX(-50%);
+    width: min(calc(100% - (var(--app-shell-inline-padding, 12px) * 2)), var(--app-content-max-width));
+    z-index: 15;
+  }
+
+  .app-shell__mobile-player-preview-slot .app-shell__sticky-player-preview {
+    pointer-events: auto;
+  }
+
   .app-shell__sticky-selected-video-slot {
     bottom: max(8px, env(safe-area-inset-bottom));
     width: min(calc(100% - (var(--app-shell-inline-padding, 12px) * 2)), var(--app-content-max-width));
+  }
+
+  .app-shell__sticky-player-preview {
+    border-radius: 14px;
+    gap: 10px;
+    padding: 8px;
+  }
+
+  .app-shell__sticky-player-preview-thumb {
+    border-radius: 10px;
+    flex-basis: 96px;
+    width: 96px;
   }
 
   .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions {
