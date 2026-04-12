@@ -9,7 +9,7 @@
   overflow-y: auto;
   padding: 24px;
   position: fixed;
-  z-index: 30;
+  z-index: 1400;
 }
 
 .app-shell__modal {

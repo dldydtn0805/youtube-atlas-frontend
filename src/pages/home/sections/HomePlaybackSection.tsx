@@ -17,6 +17,7 @@ const MOBILE_PLAYER_PREVIEW_MAX_WIDTH = 360;
 const MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH = 120;
 const MOBILE_PLAYER_PREVIEW_ASPECT_RATIO = 16 / 9;
 const MOBILE_PLAYER_PREVIEW_MARGIN = 12;
+const MOBILE_PLAYER_PREVIEW_ANCHOR_GAP = 8;
 const MOBILE_PLAYER_PREVIEW_RESIZE_EDGE = 18;
 
 interface MobilePlayerPreviewLayout {
@@ -151,6 +152,10 @@ function clampMobilePlayerPreviewLayout(layout: MobilePlayerPreviewLayout) {
 }
 
 function getDefaultMobilePlayerPreviewLayout() {
+  return getAnchoredMobilePlayerPreviewLayout();
+}
+
+function getAnchoredMobilePlayerPreviewLayout(anchorRect?: DOMRect | null) {
   if (typeof window === 'undefined') {
     return {
       width: MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH,
@@ -164,6 +169,15 @@ function getDefaultMobilePlayerPreviewLayout() {
     MOBILE_PLAYER_PREVIEW_MIN_WIDTH,
     Math.min(MOBILE_PLAYER_PREVIEW_MAX_WIDTH, window.innerWidth - (MOBILE_PLAYER_PREVIEW_MARGIN * 2)),
   );
+  const height = getPreviewHeight(width);
+
+  if (anchorRect) {
+    return clampMobilePlayerPreviewLayout({
+      width,
+      x: anchorRect.left,
+      y: anchorRect.top - height - MOBILE_PLAYER_PREVIEW_ANCHOR_GAP,
+    });
+  }
 
   return clampMobilePlayerPreviewLayout({
     width,
@@ -205,6 +219,7 @@ export default function HomePlaybackSection({
     getInitialMobilePlayerPreviewLayout,
   );
   const desktopPlayerDockSlotRef = useRef<HTMLDivElement | null>(null);
+  const stickySelectedVideoFrameRef = useRef<HTMLDivElement | null>(null);
   const [desktopDockStyle, setDesktopDockStyle] = useState<{
     dockHeight: number;
     height: number;
@@ -359,6 +374,40 @@ export default function HomePlaybackSection({
       window.removeEventListener('resize', syncPreviewLayout);
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      playerStageProps.isCinematicModeActive ||
+      !playerStageProps.isMobileLayout ||
+      !stickySelectedVideoContent ||
+      !isStickySelectedVideoVisible
+    ) {
+      return;
+    }
+
+    const stickySelectedVideoFrame = stickySelectedVideoFrameRef.current;
+
+    if (!stickySelectedVideoFrame) {
+      return;
+    }
+
+    const nextLayout = getAnchoredMobilePlayerPreviewLayout(stickySelectedVideoFrame.getBoundingClientRect());
+
+    setMobilePlayerPreviewLayout((currentLayout) => (
+      currentLayout.width === nextLayout.width &&
+      currentLayout.x === nextLayout.x &&
+      currentLayout.y === nextLayout.y
+    )
+      ? currentLayout
+      : nextLayout);
+  }, [
+    isStickySelectedVideoVisible,
+    mobilePlayerPreviewVideoId,
+    playerStageProps.isCinematicModeActive,
+    playerStageProps.isMobileLayout,
+    stickySelectedVideoContent,
+  ]);
 
   useEffect(() => {
     const playerViewport = playerStageProps.playerViewportRef.current;
@@ -793,7 +842,7 @@ export default function HomePlaybackSection({
         className="app-shell__sticky-selected-video-slot"
         data-cinematic={playerStageProps.isCinematicModeActive}
       >
-        <div className="app-shell__sticky-selected-video-frame">
+        <div className="app-shell__sticky-selected-video-frame" ref={stickySelectedVideoFrameRef}>
           {isStickySelectedVideoCollapsed ? (
             <div className="app-shell__game-panel-actions app-shell__game-panel-actions--collapsed">
               <div

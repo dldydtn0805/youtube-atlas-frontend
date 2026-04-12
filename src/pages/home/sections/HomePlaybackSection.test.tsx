@@ -419,6 +419,25 @@ describe('HomePlaybackSection', () => {
       }),
     );
 
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockGetBoundingClientRect() {
+      if ((this as HTMLElement).classList.contains('app-shell__sticky-selected-video-frame')) {
+        return {
+          bottom: 720,
+          height: 140,
+          left: 24,
+          right: 344,
+          top: 580,
+          width: 320,
+          x: 24,
+          y: 580,
+          toJSON: () => ({}),
+        } as DOMRect;
+      }
+
+      return originalGetBoundingClientRect.call(this);
+    });
+
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -442,8 +461,10 @@ describe('HomePlaybackSection', () => {
 
     const previewShell = document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-shell');
 
-    expect(previewShell?.style.left).toBe('12px');
-    expect(previewShell?.style.top).toBe('12px');
+    await waitFor(() => {
+      expect(previewShell?.style.left).toBe('24px');
+      expect(previewShell?.style.top).toBe('504px');
+    });
     expect(window.localStorage.getItem('youtube-atlas-mobile-player-preview-layout')).toBeNull();
   });
 
