@@ -534,10 +534,10 @@
 
 .app-shell__game-panel-actions-eyebrow {
   align-items: center;
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--text) 78%, var(--text-muted) 22%);
   display: inline-flex;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.08em;
   min-height: 30px;
   text-transform: uppercase;

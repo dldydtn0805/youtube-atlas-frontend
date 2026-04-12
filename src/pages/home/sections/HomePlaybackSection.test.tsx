@@ -150,6 +150,7 @@ describe('HomePlaybackSection', () => {
             playerSectionRef: createRef<HTMLElement>(),
             playerStageRef: createRef<HTMLDivElement>(),
             playerViewportRef: createRef<HTMLDivElement>(),
+            selectedVideoTitle: 'A very long selected video title for collapsed header',
           } as never
         }
         stickySelectedVideoContent={({ isMobilePlayerPreviewEnabled, onToggleCollapse, onToggleMobilePlayerPreviewEnabled }) => (
@@ -193,9 +194,10 @@ describe('HomePlaybackSection', () => {
 
     expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
     expect(screen.getByText('Now Playing')).toBeInTheDocument();
+    expect(screen.getByText('A very long selected video title for collapsed header')).toBeInTheDocument();
     expect(screen.queryByText('선택한 영상 패널을 잠시 접어두었습니다.')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Now Playing' }));
+    fireEvent.click(screen.getByRole('button', { name: /Now Playing/ }));
 
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
@@ -729,7 +731,7 @@ describe('HomePlaybackSection', () => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Now Playing' }));
+    fireEvent.click(screen.getByRole('button', { name: /Now Playing/ }));
     flushAnimationFrames();
 
     await waitFor(() => {

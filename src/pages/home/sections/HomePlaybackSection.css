@@ -176,6 +176,33 @@
   gap: 0;
 }
 
+.app-shell__sticky-selected-video-collapsed-copy {
+  align-items: baseline;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+.app-shell__sticky-selected-video-collapsed-copy .app-shell__game-panel-actions-eyebrow {
+  flex: 0 0 auto;
+}
+
+.app-shell__sticky-selected-video-collapsed-title {
+  color: var(--text);
+  flex: 0 1 14rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+  max-width: min(14rem, 45vw);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 :root[data-theme='dark'] .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions {
   background:
     linear-gradient(180deg, rgba(20, 20, 20, 0.9), rgba(8, 8, 8, 0.82)),
@@ -236,6 +263,11 @@
 
   .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions {
     border-radius: 14px;
+  }
+
+  .app-shell__sticky-selected-video-collapsed-title {
+    font-size: 0.62rem;
+    max-width: min(11rem, 42vw);
   }
 
   .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions-utility {
