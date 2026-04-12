@@ -86,29 +86,27 @@ function isPreBuyPoint(
   return 'buyPoint' in point && buyPointIndex > 0 && index < buyPointIndex;
 }
 
-function isInactiveGapPoint(
-  points: Array<GamePositionRankHistoryPoint | VideoRankHistory['points'][number]>,
-  index: number,
-) {
+function getInactiveGapFlags(points: Array<GamePositionRankHistoryPoint | VideoRankHistory['points'][number]>) {
+  const inactiveFlags = new Array<boolean>(points.length);
   let isHolding = false;
 
-  for (let currentIndex = 0; currentIndex <= index; currentIndex += 1) {
-    const point = points[currentIndex];
+  for (let index = 0; index < points.length; index += 1) {
+    const point = points[index];
+    const isBuyPoint = 'buyPoint' in point && point.buyPoint;
+    const isSellPoint = 'sellPoint' in point && point.sellPoint;
 
-    if ('buyPoint' in point && point.buyPoint) {
+    if (isBuyPoint) {
       isHolding = true;
     }
 
-    if (currentIndex === index) {
-      return !isHolding && !('buyPoint' in point && point.buyPoint) && !('sellPoint' in point && point.sellPoint);
-    }
+    inactiveFlags[index] = !isHolding && !isBuyPoint && !isSellPoint;
 
-    if ('sellPoint' in point && point.sellPoint) {
+    if (isSellPoint) {
       isHolding = false;
     }
   }
 
-  return false;
+  return inactiveFlags;
 }
 
 function getEventLabel(point: GamePositionRankHistoryPoint | VideoRankHistory['points'][number]) {
@@ -137,6 +135,7 @@ function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoR
   const baselineY = padding.top + plotHeight;
   const rankedPoints = points.filter((point) => typeof point.rank === 'number');
   const buyPointIndex = getBuyPointIndex(points);
+  const inactiveGapFlags = getInactiveGapFlags(points);
   const xForIndex = (index: number) =>
     padding.left +
     (points.length === 1 ? plotWidth / 2 : (index / Math.max(points.length - 1, 1)) * plotWidth);
@@ -149,7 +148,7 @@ function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoR
       markers: points.map((point, index) => ({
         chartOut: point.chartOut,
         eventLabel: getEventLabel(point),
-        isInactive: isInactiveGapPoint(points, index),
+        isInactive: inactiveGapFlags[index],
         isPreBuy: isPreBuyPoint(point, index, buyPointIndex),
         rank: point.rank,
         x: xForIndex(index),
@@ -180,7 +179,7 @@ function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoR
     return {
       chartOut: point.chartOut,
       eventLabel: getEventLabel(point),
-      isInactive: isInactiveGapPoint(points, index),
+      isInactive: inactiveGapFlags[index],
       isPreBuy: isPreBuyPoint(point, index, buyPointIndex),
       rank: point.rank,
       x,

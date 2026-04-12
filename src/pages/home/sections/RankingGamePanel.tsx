@@ -1,5 +1,5 @@
 import './RankingGamePanel.css';
-import { memo, useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import { memo, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
 import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 import type {
   GameCoinOverview,
@@ -1187,6 +1187,22 @@ export function RankingGamePositionsTab({
   selectedPositionId,
   trendSignalsByVideoId: _trendSignalsByVideoId,
 }: RankingGamePositionsTabProps) {
+  const coinPositionsByPositionId = useMemo(() => {
+    const groupedPositions = new Map<number, GameCoinPosition[]>();
+
+    for (const position of coinOverview?.positions ?? []) {
+      const existingPositions = groupedPositions.get(position.positionId);
+
+      if (existingPositions) {
+        existingPositions.push(position);
+      } else {
+        groupedPositions.set(position.positionId, [position]);
+      }
+    }
+
+    return groupedPositions;
+  }, [coinOverview?.positions]);
+
   if (holdings.length === 0) {
     return emptyMessage ? <p className="app-shell__game-empty">{emptyMessage}</p> : null;
   }
@@ -1196,7 +1212,7 @@ export function RankingGamePositionsTab({
       {holdings.map((holding) => {
         const isSelectedPosition = holding.positionId === selectedPositionId;
         const holdingRankTrendBadge = getHoldingRankDiffBadge(holding);
-        const coinPositions = coinOverview?.positions.filter((position) => position.positionId === holding.positionId) ?? [];
+        const coinPositions = coinPositionsByPositionId.get(holding.positionId) ?? [];
         const coinSummary = getCoinProductionSummary(coinPositions);
         const hasCoinBoostBadge = !holding.chartOut && coinPositions.length > 0;
         const maxHoldBoostPercent = coinPositions.reduce(

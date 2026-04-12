@@ -187,6 +187,7 @@ function VideoList({
                     ) : null}
                   </div>
                   <img
+                    loading="lazy"
                     className="video-card__thumbnail"
                     src={item.snippet.thumbnails.high.url}
                     alt={item.snippet.title}
