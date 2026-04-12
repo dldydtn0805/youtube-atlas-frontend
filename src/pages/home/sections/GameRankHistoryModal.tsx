@@ -229,16 +229,17 @@ export default function GameRankHistoryModal({
   position,
 }: GameRankHistoryModalProps) {
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
+    if (isOpen && !wasOpenRef.current) {
+      modalBodyRef.current?.scrollTo({
+        top: 0,
+      });
     }
 
-    modalBodyRef.current?.scrollTo({
-      top: 0,
-    });
-  }, [history, isOpen, position?.id]);
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
