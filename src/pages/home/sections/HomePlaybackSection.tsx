@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentProps, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { ChartPanel, CommunityPanel } from './ContentPanels';
 import { FilterBar } from './FilterPanels';
 import MiniVideoPreview from './MiniVideoPreview';
@@ -10,7 +10,19 @@ const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
 const STICKY_SELECTED_VIDEO_RELEASE_GAP = 72;
 const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
 const MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-enabled';
+const MOBILE_PLAYER_PREVIEW_LAYOUT_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-layout';
 const MOBILE_PLAYER_PREVIEW_TRIGGER_OFFSET = 8;
+const MOBILE_PLAYER_PREVIEW_MIN_WIDTH = 96;
+const MOBILE_PLAYER_PREVIEW_MAX_WIDTH = 220;
+const MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH = 120;
+const MOBILE_PLAYER_PREVIEW_ASPECT_RATIO = 16 / 9;
+const MOBILE_PLAYER_PREVIEW_MARGIN = 12;
+
+interface MobilePlayerPreviewLayout {
+  width: number;
+  x: number;
+  y: number;
+}
 
 interface StickySelectedVideoControls {
   isMobilePlayerPreviewEnabled: boolean;
@@ -48,6 +60,90 @@ function getInitialMobilePlayerPreviewEnabled() {
   return window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY) !== 'false';
 }
 
+function clampValue(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getPreviewHeight(width: number) {
+  return Math.round(width / MOBILE_PLAYER_PREVIEW_ASPECT_RATIO);
+}
+
+function clampMobilePlayerPreviewLayout(layout: MobilePlayerPreviewLayout) {
+  if (typeof window === 'undefined') {
+    return layout;
+  }
+
+  const width = clampValue(
+    layout.width,
+    MOBILE_PLAYER_PREVIEW_MIN_WIDTH,
+    Math.min(MOBILE_PLAYER_PREVIEW_MAX_WIDTH, window.innerWidth - (MOBILE_PLAYER_PREVIEW_MARGIN * 2)),
+  );
+  const height = getPreviewHeight(width);
+  const maxX = Math.max(MOBILE_PLAYER_PREVIEW_MARGIN, window.innerWidth - width - MOBILE_PLAYER_PREVIEW_MARGIN);
+  const maxY = Math.max(MOBILE_PLAYER_PREVIEW_MARGIN, window.innerHeight - height - MOBILE_PLAYER_PREVIEW_MARGIN);
+
+  return {
+    width,
+    x: clampValue(layout.x, MOBILE_PLAYER_PREVIEW_MARGIN, maxX),
+    y: clampValue(layout.y, MOBILE_PLAYER_PREVIEW_MARGIN, maxY),
+  };
+}
+
+function getDefaultMobilePlayerPreviewLayout() {
+  if (typeof window === 'undefined') {
+    return {
+      width: MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH,
+      x: MOBILE_PLAYER_PREVIEW_MARGIN,
+      y: MOBILE_PLAYER_PREVIEW_MARGIN,
+    };
+  }
+
+  const width = clampValue(
+    MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH,
+    MOBILE_PLAYER_PREVIEW_MIN_WIDTH,
+    Math.min(MOBILE_PLAYER_PREVIEW_MAX_WIDTH, window.innerWidth - (MOBILE_PLAYER_PREVIEW_MARGIN * 2)),
+  );
+  const height = getPreviewHeight(width);
+
+  return clampMobilePlayerPreviewLayout({
+    width,
+    x: MOBILE_PLAYER_PREVIEW_MARGIN,
+    y: window.innerHeight - height - 116,
+  });
+}
+
+function getInitialMobilePlayerPreviewLayout() {
+  if (typeof window === 'undefined') {
+    return getDefaultMobilePlayerPreviewLayout();
+  }
+
+  const rawLayout = window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_LAYOUT_STORAGE_KEY);
+
+  if (!rawLayout) {
+    return getDefaultMobilePlayerPreviewLayout();
+  }
+
+  try {
+    const parsedLayout = JSON.parse(rawLayout) as Partial<MobilePlayerPreviewLayout>;
+
+    if (
+      typeof parsedLayout.width !== 'number' ||
+      typeof parsedLayout.x !== 'number' ||
+      typeof parsedLayout.y !== 'number'
+    ) {
+      return getDefaultMobilePlayerPreviewLayout();
+    }
+
+    return clampMobilePlayerPreviewLayout({
+      width: parsedLayout.width,
+      x: parsedLayout.x,
+      y: parsedLayout.y,
+    });
+  } catch {
+    return getDefaultMobilePlayerPreviewLayout();
+  }
+}
+
 export default function HomePlaybackSection({
   chartPanelProps,
   communityPanelProps,
@@ -65,6 +161,22 @@ export default function HomePlaybackSection({
   );
   const [isMobilePlayerPreviewVisible, setIsMobilePlayerPreviewVisible] = useState(false);
   const [isMobilePlayerPreviewCollapsed, setIsMobilePlayerPreviewCollapsed] = useState(false);
+  const [mobilePlayerPreviewLayout, setMobilePlayerPreviewLayout] = useState(
+    getInitialMobilePlayerPreviewLayout,
+  );
+  const dragStateRef = useRef<
+    | {
+        mode: 'drag' | 'resize';
+        originPointerX: number;
+        originPointerY: number;
+        originX: number;
+        originY: number;
+        originWidth: number;
+        pointerId: number;
+      }
+    | null
+  >(null);
+  const suppressPreviewClickRef = useRef(false);
 
   useEffect(() => {
     if (!playerStageProps.isCinematicModeActive) {
@@ -152,6 +264,43 @@ export default function HomePlaybackSection({
       isMobilePlayerPreviewEnabled ? 'true' : 'false',
     );
   }, [isMobilePlayerPreviewEnabled]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      MOBILE_PLAYER_PREVIEW_LAYOUT_STORAGE_KEY,
+      JSON.stringify(mobilePlayerPreviewLayout),
+    );
+  }, [mobilePlayerPreviewLayout]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const syncPreviewLayout = () => {
+      setMobilePlayerPreviewLayout((currentLayout) => {
+        const nextLayout = clampMobilePlayerPreviewLayout(currentLayout);
+
+        return (
+          nextLayout.width === currentLayout.width &&
+          nextLayout.x === currentLayout.x &&
+          nextLayout.y === currentLayout.y
+        )
+          ? currentLayout
+          : nextLayout;
+      });
+    };
+
+    window.addEventListener('resize', syncPreviewLayout);
+
+    return () => {
+      window.removeEventListener('resize', syncPreviewLayout);
+    };
+  }, []);
 
   useEffect(() => {
     const playerViewport = playerStageProps.playerViewportRef.current;
@@ -272,14 +421,92 @@ export default function HomePlaybackSection({
     playerStageProps.isMobileLayout &&
     isMobilePlayerPreviewEnabled &&
     isMobilePlayerPreviewVisible &&
-    !isStickySelectedVideoCollapsed &&
     !isMobilePlayerPreviewCollapsed &&
     playerStageProps.selectedVideoId ? (
-      <div className="app-shell__sticky-player-preview-shell">
+      <div
+        className="app-shell__sticky-player-preview-shell"
+        style={
+          {
+            '--sticky-player-preview-height': `${getPreviewHeight(mobilePlayerPreviewLayout.width)}px`,
+            '--sticky-player-preview-width': `${mobilePlayerPreviewLayout.width}px`,
+            left: `${mobilePlayerPreviewLayout.x}px`,
+            top: `${mobilePlayerPreviewLayout.y}px`,
+          } as CSSProperties
+        }
+        onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => {
+          const resizeHandle = (event.target as HTMLElement).closest('.app-shell__sticky-player-preview-resize');
+
+          dragStateRef.current = {
+            mode: resizeHandle ? 'resize' : 'drag',
+            originPointerX: event.clientX,
+            originPointerY: event.clientY,
+            originWidth: mobilePlayerPreviewLayout.width,
+            originX: mobilePlayerPreviewLayout.x,
+            originY: mobilePlayerPreviewLayout.y,
+            pointerId: event.pointerId,
+          };
+          suppressPreviewClickRef.current = false;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event: ReactPointerEvent<HTMLDivElement>) => {
+          const dragState = dragStateRef.current;
+
+          if (!dragState || dragState.pointerId !== event.pointerId) {
+            return;
+          }
+
+          const deltaX = event.clientX - dragState.originPointerX;
+          const deltaY = event.clientY - dragState.originPointerY;
+
+          if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+            suppressPreviewClickRef.current = true;
+          }
+
+          if (dragState.mode === 'drag') {
+            setMobilePlayerPreviewLayout((currentLayout) =>
+              clampMobilePlayerPreviewLayout({
+                width: currentLayout.width,
+                x: dragState.originX + deltaX,
+                y: dragState.originY + deltaY,
+              }),
+            );
+
+            return;
+          }
+
+          setMobilePlayerPreviewLayout((currentLayout) =>
+            clampMobilePlayerPreviewLayout({
+              width: dragState.originWidth + deltaX,
+              x: currentLayout.x,
+              y: currentLayout.y,
+            }),
+          );
+        }}
+        onPointerUp={(event: ReactPointerEvent<HTMLDivElement>) => {
+          if (dragStateRef.current?.pointerId === event.pointerId) {
+            dragStateRef.current = null;
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+        }}
+        onPointerCancel={(event: ReactPointerEvent<HTMLDivElement>) => {
+          if (dragStateRef.current?.pointerId === event.pointerId) {
+            dragStateRef.current = null;
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+        }}
+      >
         <button
           aria-label="상단 미니 플레이어로 이동"
           className="app-shell__sticky-player-preview"
-          onClick={handleScrollToTop}
+          onClick={(event) => {
+            if (suppressPreviewClickRef.current) {
+              suppressPreviewClickRef.current = false;
+              event.preventDefault();
+              return;
+            }
+
+            handleScrollToTop();
+          }}
           type="button"
         >
           <MiniVideoPreview
@@ -289,6 +516,10 @@ export default function HomePlaybackSection({
             selectedVideoId={playerStageProps.selectedVideoId}
           />
         </button>
+        <span
+          aria-hidden="true"
+          className="app-shell__sticky-player-preview-resize"
+        />
       </div>
     ) : null;
   const stickySelectedVideoSlot =
@@ -298,7 +529,6 @@ export default function HomePlaybackSection({
         data-cinematic={playerStageProps.isCinematicModeActive}
       >
         <div className="app-shell__sticky-selected-video-frame">
-          {stickyPlayerPreview}
           {isStickySelectedVideoCollapsed ? (
             <div className="app-shell__game-panel-actions app-shell__game-panel-actions--collapsed">
               <div
@@ -376,6 +606,7 @@ export default function HomePlaybackSection({
 
   return (
     <>
+      {stickyPlayerPreview}
       {!playerStageProps.isCinematicModeActive ? stickySelectedVideoSlot : null}
       <PlayerStage
         {...playerStageProps}

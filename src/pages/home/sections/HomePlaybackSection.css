@@ -28,7 +28,10 @@
   margin-bottom: 10px;
   max-width: max-content;
   padding: 6px;
+  position: fixed;
+  touch-action: none;
   width: auto;
+  z-index: 20;
 }
 
 .app-shell__sticky-player-preview {
@@ -50,27 +53,41 @@
   border-radius: 10px;
   display: block;
   flex: 0 0 auto;
-  height: 72px;
+  height: var(--sticky-player-preview-height, 72px);
   line-height: 0;
   object-fit: cover;
-  width: 128px;
+  width: var(--sticky-player-preview-width, 128px);
 }
 
 .app-shell__sticky-player-preview-frame {
   border-radius: 10px;
   display: block;
   flex: 0 0 auto;
-  height: 72px;
+  height: var(--sticky-player-preview-height, 72px);
   line-height: 0;
   overflow: hidden;
-  width: 128px;
+  width: var(--sticky-player-preview-width, 128px);
 }
 
 .app-shell__sticky-player-preview-frame > div,
 .app-shell__sticky-player-preview-frame iframe {
   display: block;
   height: 100%;
+  pointer-events: none;
   width: 100%;
+}
+
+.app-shell__sticky-player-preview-resize {
+  background:
+    linear-gradient(135deg, transparent 0 38%, rgba(71, 85, 105, 0.3) 38% 46%, transparent 46% 56%, rgba(71, 85, 105, 0.3) 56% 64%, transparent 64% 100%);
+  border-bottom-right-radius: 10px;
+  bottom: 6px;
+  cursor: nwse-resize;
+  height: 18px;
+  pointer-events: auto;
+  position: absolute;
+  right: 6px;
+  width: 18px;
 }
 
 .app-shell__stage-stack[data-cinematic='true'] .app-shell__sticky-selected-video-slot {
@@ -90,6 +107,10 @@
 
 .app-shell__sticky-selected-video-frame > * {
   width: 100%;
+}
+
+.app-shell__sticky-selected-video-frame > .app-shell__sticky-player-preview-shell {
+  width: auto;
 }
 
 .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions {
@@ -169,16 +190,6 @@
   .app-shell__sticky-player-preview-shell {
     margin-bottom: 8px;
     padding: 5px;
-  }
-
-  .app-shell__sticky-player-preview-thumb {
-    height: 68px;
-    width: 120px;
-  }
-
-  .app-shell__sticky-player-preview-frame {
-    height: 68px;
-    width: 120px;
   }
 
   .app-shell__sticky-selected-video-frame .app-shell__game-panel-actions {
