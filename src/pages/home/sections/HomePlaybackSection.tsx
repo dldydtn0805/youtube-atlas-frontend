@@ -816,41 +816,45 @@ export default function HomePlaybackSection({
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
                 >
-                  <button
-                    aria-expanded="false"
-                    aria-label="선택한 영상 패널 펼치기"
-                    className="app-shell__game-panel-action-utility"
-                    onClick={handleExpandStickySelectedVideo}
-                    title="펼치기"
-                    type="button"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M12 6v12M6 12h12"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    aria-label="선택한 영상 패널을 맨 위로 이동"
-                    className="app-shell__game-panel-action-utility"
-                    onClick={handleScrollToTop}
-                    title="맨 위로"
-                    type="button"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M7.5 14.5 12 10l4.5 4.5"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                  </button>
+                  {!playerStageProps.isMobileLayout ? (
+                    <button
+                      aria-expanded="false"
+                      aria-label="선택한 영상 패널 펼치기"
+                      className="app-shell__game-panel-action-utility"
+                      onClick={handleExpandStickySelectedVideo}
+                      title="펼치기"
+                      type="button"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M12 6v12M6 12h12"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </button>
+                  ) : null}
+                  {!playerStageProps.isMobileLayout ? (
+                    <button
+                      aria-label="선택한 영상 패널을 맨 위로 이동"
+                      className="app-shell__game-panel-action-utility"
+                      onClick={handleScrollToTop}
+                      title="맨 위로"
+                      type="button"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M7.5 14.5 12 10l4.5 4.5"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>

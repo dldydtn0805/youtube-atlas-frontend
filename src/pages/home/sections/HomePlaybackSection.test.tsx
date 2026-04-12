@@ -189,7 +189,7 @@ describe('HomePlaybackSection', () => {
     expect(screen.getByText('Selected Video')).toBeInTheDocument();
     expect(screen.queryByText('선택한 영상 패널을 잠시 접어두었습니다.')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '선택한 영상 패널 펼치기' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Selected Video' }));
 
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
@@ -604,7 +604,7 @@ describe('HomePlaybackSection', () => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: '선택한 영상 패널 펼치기' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Selected Video' }));
 
     await waitFor(() => {
       expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();

@@ -1427,37 +1427,11 @@ function HomePage() {
           stickySelectedVideoContent={({
             desktopPlayerDockSlotRef,
             isDesktopPlayerDockEnabled,
-            isMobilePlayerPreviewEnabled,
             onScrollToTop,
             onToggleCollapse,
-            onToggleMobilePlayerPreviewEnabled,
           }) =>
             renderSelectedVideoActionsContent(
               <>
-                {isMobileLayout ? (
-                  <button
-                    aria-label={
-                      isMobilePlayerPreviewEnabled
-                        ? '도킹 대상 위치 프리뷰 패널 끄기'
-                        : '도킹 대상 위치 프리뷰 패널 켜기'
-                    }
-                    className="app-shell__game-panel-action-utility app-shell__game-panel-action-utility--preview-toggle"
-                    data-active={isMobilePlayerPreviewEnabled ? 'true' : 'false'}
-                    onClick={onToggleMobilePlayerPreviewEnabled}
-                    title={isMobilePlayerPreviewEnabled ? '프리뷰 끄기' : '프리뷰 켜기'}
-                    type="button"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M6 6h12v12H6z"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                  </button>
-                ) : null}
                 {!isMobileLayout ? (
                   <>
                     <button
