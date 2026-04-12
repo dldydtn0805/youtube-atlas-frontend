@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
+import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 import type { GameCoinOverview, GameMarketVideo } from '../../../features/game/types';
 import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
@@ -48,11 +49,13 @@ interface SelectedVideoGameActionsBundleProps {
   buyActionTitle: string;
   canShowGameActions: boolean;
   gameCoinOverview?: GameCoinOverview;
+  isDesktopMiniPlayerEnabled?: boolean;
   isBuySubmitting?: boolean;
   isChartDisabled?: boolean;
   isSelectedVideoBuyDisabled: boolean;
   isSelectedVideoSellDisabled: boolean;
   isSellSubmitting?: boolean;
+  mainPlayerRef?: RefObject<VideoPlayerHandle | null>;
   maxSellQuantity?: number;
   onContentClick?: () => void;
   mode: 'panel' | 'stage';
@@ -427,11 +430,13 @@ export function SelectedVideoGameActionsBundle({
   buyActionTitle,
   canShowGameActions,
   gameCoinOverview,
+  isDesktopMiniPlayerEnabled = false,
   isBuySubmitting = false,
   isChartDisabled = false,
   isSelectedVideoBuyDisabled,
   isSelectedVideoSellDisabled,
   isSellSubmitting = false,
+  mainPlayerRef,
   maxSellQuantity = 0,
   onContentClick,
   mode,
@@ -492,6 +497,8 @@ export function SelectedVideoGameActionsBundle({
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
       currentVideoGamePriceSummary={currentVideoGamePriceSummary}
+      isDesktopMiniPlayerEnabled={isDesktopMiniPlayerEnabled}
+      mainPlayerRef={mainPlayerRef}
       isBuyDisabled={isSelectedVideoBuyDisabled}
       isBuySubmitting={isBuySubmitting}
       isChartDisabled={isChartDisabled}
@@ -505,6 +512,7 @@ export function SelectedVideoGameActionsBundle({
       panelControls={panelControls}
       selectedGameActionChannelTitle={selectedGameActionChannelTitle}
       selectedGameActionTitle={selectedGameActionTitle}
+      selectedVideoId={selectedVideoId}
       selectedVideoOpenPositionCount={selectedVideoOpenPositionCount}
       selectedVideoTradeThumbnailUrl={selectedVideoTradeThumbnailUrl}
       sellActionTitle={sellActionTitle}

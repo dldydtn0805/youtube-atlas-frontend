@@ -975,11 +975,13 @@ function HomePage() {
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
       gameCoinOverview={liveGameCoinOverview}
+      isDesktopMiniPlayerEnabled={!isMobileLayout}
       isBuySubmitting={isBuySubmitting}
       isChartDisabled={isChartActionDisabled}
       isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
       isSelectedVideoSellDisabled={isSelectedVideoSellDisabled}
       isSellSubmitting={isSellSubmitting}
+      mainPlayerRef={videoPlayerRef}
       maxSellQuantity={maxSellQuantity}
       onContentClick={onContentClick}
       mode="panel"

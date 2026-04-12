@@ -1,5 +1,6 @@
 import './RankingGamePanel.css';
-import { memo, type ReactNode } from 'react';
+import { memo, useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 import type {
   GameCoinOverview,
   GameCoinPosition,
@@ -70,6 +71,8 @@ interface RankingGameSelectedVideoActionsProps {
   buyActionTitle: string;
   canShowGameActions: boolean;
   currentVideoGamePriceSummary: ReactNode;
+  isDesktopMiniPlayerEnabled?: boolean;
+  mainPlayerRef?: RefObject<VideoPlayerHandle | null>;
   isBuyDisabled: boolean;
   isBuySubmitting: boolean;
   isChartDisabled: boolean;
@@ -83,9 +86,175 @@ interface RankingGameSelectedVideoActionsProps {
   panelControls?: ReactNode;
   selectedGameActionChannelTitle?: string;
   selectedGameActionTitle: string;
+  selectedVideoId?: string;
   selectedVideoOpenPositionCount: number;
   selectedVideoTradeThumbnailUrl?: string | null;
   sellActionTitle: string;
+}
+
+let selectedVideoMiniPlayerApiPromise: Promise<void> | undefined;
+
+function loadSelectedVideoMiniPlayerApi() {
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  if (window.YT?.Player) {
+    return Promise.resolve();
+  }
+
+  if (selectedVideoMiniPlayerApiPromise) {
+    return selectedVideoMiniPlayerApiPromise;
+  }
+
+  selectedVideoMiniPlayerApiPromise = new Promise<void>((resolve) => {
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src="https://www.youtube.com/iframe_api"]',
+    );
+
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      document.head.append(script);
+    }
+
+    const previousCallback = window.onYouTubeIframeAPIReady;
+
+    window.onYouTubeIframeAPIReady = () => {
+      previousCallback?.();
+      resolve();
+    };
+  });
+
+  return selectedVideoMiniPlayerApiPromise;
+}
+
+function SelectedVideoMiniPlayer({
+  mainPlayerRef,
+  selectedVideoId,
+}: {
+  mainPlayerRef?: RefObject<VideoPlayerHandle | null>;
+  selectedVideoId: string;
+}) {
+  const playerHostRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<YT.Player | null>(null);
+  const isReadyRef = useRef(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function initializePlayer() {
+      await loadSelectedVideoMiniPlayerApi();
+
+      if (
+        isCancelled ||
+        !selectedVideoId ||
+        !playerHostRef.current ||
+        !window.YT?.Player ||
+        playerRef.current
+      ) {
+        return;
+      }
+
+      playerRef.current = new window.YT.Player(playerHostRef.current, {
+        height: '100%',
+        width: '100%',
+        videoId: selectedVideoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          loop: 1,
+          modestbranding: 1,
+          mute: 1,
+          playsinline: 1,
+          playlist: selectedVideoId,
+          rel: 0,
+        },
+        events: {
+          onReady: (event) => {
+            isReadyRef.current = true;
+            const readyPlayer = event.target as YT.Player & { mute?: () => void };
+            readyPlayer.mute?.();
+          },
+        },
+      });
+    }
+
+    void initializePlayer();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedVideoId]);
+
+  useEffect(() => {
+    const player = playerRef.current;
+
+    if (!player || !isReadyRef.current || typeof player.loadVideoById !== 'function') {
+      return;
+    }
+
+    player.loadVideoById({
+      startSeconds: 0,
+      videoId: selectedVideoId,
+    });
+    (player as YT.Player & { mute?: () => void }).mute?.();
+  }, [selectedVideoId]);
+
+  useEffect(() => {
+    if (
+      !selectedVideoId ||
+      !mainPlayerRef?.current
+    ) {
+      return;
+    }
+
+    const syncPlayback = () => {
+      const miniPlayer = playerRef.current;
+      const snapshot = mainPlayerRef.current?.readPlaybackSnapshot();
+
+      if (
+        !miniPlayer ||
+        !isReadyRef.current ||
+        !snapshot ||
+        snapshot.videoId !== selectedVideoId ||
+        typeof miniPlayer.getCurrentTime !== 'function' ||
+        typeof miniPlayer.seekTo !== 'function'
+      ) {
+        return;
+      }
+
+      const miniPlayerPosition = miniPlayer.getCurrentTime();
+      const positionDelta = Math.abs(snapshot.positionSeconds - miniPlayerPosition);
+
+      if (positionDelta >= 1.5) {
+        miniPlayer.seekTo(Math.max(0, snapshot.positionSeconds), true);
+      }
+    };
+
+    syncPlayback();
+    const intervalId = window.setInterval(syncPlayback, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [mainPlayerRef, selectedVideoId]);
+
+  useEffect(() => {
+    return () => {
+      isReadyRef.current = false;
+      playerRef.current?.destroy();
+      playerRef.current = null;
+    };
+  }, []);
+
+  return (
+    <div className="app-shell__game-panel-actions-thumb app-shell__game-panel-actions-thumb-player">
+      <div ref={playerHostRef} className="app-shell__game-panel-actions-thumb-frame" />
+    </div>
+  );
 }
 
 interface RankingGameLeaderboardTabProps {
@@ -740,6 +909,8 @@ export function RankingGameSelectedVideoActions({
   buyActionTitle,
   canShowGameActions,
   currentVideoGamePriceSummary,
+  isDesktopMiniPlayerEnabled = false,
+  mainPlayerRef,
   isBuyDisabled,
   isBuySubmitting,
   isChartDisabled,
@@ -754,6 +925,7 @@ export function RankingGameSelectedVideoActions({
   selectedGameActionChannelTitle,
   selectedGameActionTitle,
   selectedVideoOpenPositionCount,
+  selectedVideoId,
   selectedVideoTradeThumbnailUrl,
   sellActionTitle,
 }: RankingGameSelectedVideoActionsProps) {
@@ -809,7 +981,9 @@ export function RankingGameSelectedVideoActions({
         tabIndex={onContentClick ? 0 : undefined}
       >
         <div className="app-shell__game-panel-actions-main">
-          {selectedVideoTradeThumbnailUrl ? (
+          {isDesktopMiniPlayerEnabled && selectedVideoId ? (
+            <SelectedVideoMiniPlayer mainPlayerRef={mainPlayerRef} selectedVideoId={selectedVideoId} />
+          ) : selectedVideoTradeThumbnailUrl ? (
             <img
               alt=""
               className="app-shell__game-panel-actions-thumb"
