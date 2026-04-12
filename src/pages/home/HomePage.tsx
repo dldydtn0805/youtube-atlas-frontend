@@ -1087,13 +1087,12 @@ function HomePage() {
   const handleOpenSelectedVideoRankHistory = useCallback(() => {
     openRankHistoryModal(
       selectedVideoId,
-      selectedVideoOpenPositionCount > 0 ? selectedVideoHistoryTargetPosition : null,
+      selectedVideoHistoryTargetPosition,
     );
   }, [
     openRankHistoryModal,
     selectedVideoHistoryTargetPosition,
     selectedVideoId,
-    selectedVideoOpenPositionCount,
   ]);
   const positionsEmptyMessage = currentGameSeason
     ? canShowGameActions

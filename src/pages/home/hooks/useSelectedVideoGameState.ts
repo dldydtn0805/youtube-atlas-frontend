@@ -165,15 +165,84 @@ export default function useSelectedVideoGameState({
   buyQuantity,
   getRemainingHoldSeconds,
 }: UseSelectedVideoGameStateOptions): UseSelectedVideoGameStateResult {
+  const groupPositionsByVideoId = (positions: GamePosition[]) => {
+    const positionsByVideoId = new Map<string, GamePosition[]>();
+
+    for (const position of positions) {
+      const existingPositions = positionsByVideoId.get(position.videoId);
+
+      if (existingPositions) {
+        existingPositions.push(position);
+      } else {
+        positionsByVideoId.set(position.videoId, [position]);
+      }
+    }
+
+    return positionsByVideoId;
+  };
+  const groupHoldingsByVideoId = (holdings: OpenGameHolding[]) => {
+    const holdingsByVideoId = new Map<string, OpenGameHolding[]>();
+
+    for (const holding of holdings) {
+      const existingHoldings = holdingsByVideoId.get(holding.videoId);
+
+      if (existingHoldings) {
+        existingHoldings.push(holding);
+      } else {
+        holdingsByVideoId.set(holding.videoId, [holding]);
+      }
+    }
+
+    return holdingsByVideoId;
+  };
+  const openGamePositionsById = useMemo(() => {
+    const positionsById = new Map<number, GamePosition>();
+
+    for (const position of openGamePositions) {
+      positionsById.set(position.id, position);
+    }
+
+    return positionsById;
+  }, [openGamePositions]);
+  const openGamePositionsByVideoId = useMemo(
+    () => groupPositionsByVideoId(openGamePositions),
+    [openGamePositions],
+  );
+  const gameHistoryPositionsById = useMemo(() => {
+    const positionsById = new Map<number, GamePosition>();
+
+    for (const position of gameHistoryPositions) {
+      positionsById.set(position.id, position);
+    }
+
+    return positionsById;
+  }, [gameHistoryPositions]);
+  const gameHistoryPositionsByVideoId = useMemo(
+    () => groupPositionsByVideoId(gameHistoryPositions),
+    [gameHistoryPositions],
+  );
+  const openGameHoldingsByPositionId = useMemo(() => {
+    const holdingsByPositionId = new Map<number, OpenGameHolding>();
+
+    for (const holding of openGameHoldings) {
+      holdingsByPositionId.set(holding.positionId, holding);
+    }
+
+    return holdingsByPositionId;
+  }, [openGameHoldings]);
+  const openGameHoldingsByVideoId = useMemo(
+    () => groupHoldingsByVideoId(openGameHoldings),
+    [openGameHoldings],
+  );
   const selectedVideoOpenPositionsForVideo = useMemo(
-    () => (selectedVideoId ? openGamePositions.filter((position) => position.videoId === selectedVideoId) : []),
-    [openGamePositions, selectedVideoId],
+    () => (selectedVideoId ? openGamePositionsByVideoId.get(selectedVideoId) ?? [] : []),
+    [openGamePositionsByVideoId, selectedVideoId],
   );
   const selectedVideoOpenPosition = useMemo(
     () => {
       const matchedPosition =
         selectedOpenPositionId != null
-          ? openGamePositions.find((position) => position.id === selectedOpenPositionId)
+          ? openGamePositionsById.get(selectedOpenPositionId)
           : undefined;
 
       if (matchedPosition && (!selectedVideoId || matchedPosition.videoId === selectedVideoId)) {
@@ -182,7 +251,7 @@ export default function useSelectedVideoGameState({
 
       return selectedVideoOpenPositionsForVideo[0];
     },
-    [openGamePositions, selectedOpenPositionId, selectedVideoId, selectedVideoOpenPositionsForVideo],
+    [openGamePositionsById, selectedOpenPositionId, selectedVideoId, selectedVideoOpenPositionsForVideo],
   );
   const selectedVideoOpenPositions = useMemo(
     () => (selectedVideoOpenPosition ? [selectedVideoOpenPosition] : selectedVideoOpenPositionsForVideo),
@@ -197,15 +266,15 @@ export default function useSelectedVideoGameState({
   const selectedHistoricalPosition = useMemo(() => {
     const matchedPosition =
       selectedOpenPositionId != null
-        ? gameHistoryPositions.find((position) => position.id === selectedOpenPositionId)
+        ? gameHistoryPositionsById.get(selectedOpenPositionId)
         : undefined;
 
     if (matchedPosition && (!selectedVideoId || matchedPosition.videoId === selectedVideoId)) {
       return matchedPosition;
     }
 
-    return selectedVideoId ? gameHistoryPositions.find((position) => position.videoId === selectedVideoId) : undefined;
-  }, [gameHistoryPositions, selectedOpenPositionId, selectedVideoId]);
+    return selectedVideoId ? gameHistoryPositionsByVideoId.get(selectedVideoId)?.[0] : undefined;
+  }, [gameHistoryPositionsByVideoId, gameHistoryPositionsById, selectedOpenPositionId, selectedVideoId]);
   const selectedVideoHistoryTargetPosition = useMemo(() => {
     const candidatePositions = [...selectedVideoOpenPositions];
 
@@ -310,9 +379,9 @@ export default function useSelectedVideoGameState({
     selectedVideoOpenPosition?.title ?? resolvedSelectedVideo?.snippet.title ?? '선택한 영상';
   const selectedOpenHolding =
     selectedOpenPositionId != null
-      ? openGameHoldings.find((holding) => holding.positionId === selectedOpenPositionId)
+      ? openGameHoldingsByPositionId.get(selectedOpenPositionId)
       : selectedVideoId
-        ? openGameHoldings.find((holding) => holding.videoId === selectedVideoId)
+        ? openGameHoldingsByVideoId.get(selectedVideoId)?.[0]
         : undefined;
   const selectedOpenHoldingLockedQuantity = selectedOpenHolding?.lockedQuantity ?? 0;
   const selectedOpenHoldingNextSellableInSeconds = selectedOpenHolding?.nextSellableInSeconds ?? null;
