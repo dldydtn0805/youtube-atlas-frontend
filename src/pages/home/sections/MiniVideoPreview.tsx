@@ -2,6 +2,12 @@ import { useEffect, useRef, type RefObject } from 'react';
 import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 
 let miniVideoPreviewApiPromise: Promise<void> | undefined;
+let miniVideoPreviewHostElement: HTMLDivElement | null = null;
+let miniVideoPreviewMountElement: HTMLDivElement | null = null;
+let miniVideoPreviewPlayer: YT.Player | null = null;
+let miniVideoPreviewRequestedVideoId: string | null = null;
+let miniVideoPreviewIsReady = false;
+let miniVideoPreviewOwnerElement: HTMLDivElement | null = null;
 
 function loadMiniVideoPreviewApi() {
   if (typeof window === 'undefined') {
@@ -38,6 +44,129 @@ function loadMiniVideoPreviewApi() {
   return miniVideoPreviewApiPromise;
 }
 
+function getMiniVideoPreviewHostElement(frameClassName: string) {
+  if (!miniVideoPreviewHostElement) {
+    miniVideoPreviewHostElement = document.createElement('div');
+    miniVideoPreviewMountElement = document.createElement('div');
+    miniVideoPreviewHostElement.append(miniVideoPreviewMountElement);
+  }
+
+  miniVideoPreviewHostElement.className = frameClassName;
+
+  return miniVideoPreviewHostElement;
+}
+
+function attachMiniVideoPreviewHost(container: HTMLDivElement, frameClassName: string) {
+  const hostElement = getMiniVideoPreviewHostElement(frameClassName);
+
+  if (hostElement.parentElement !== container) {
+    container.replaceChildren(hostElement);
+  }
+
+  miniVideoPreviewOwnerElement = container;
+}
+
+function detachMiniVideoPreviewHost(container: HTMLDivElement) {
+  if (miniVideoPreviewHostElement?.parentElement === container) {
+    container.removeChild(miniVideoPreviewHostElement);
+  }
+
+  if (miniVideoPreviewOwnerElement === container) {
+    miniVideoPreviewOwnerElement = null;
+  }
+}
+
+function readMiniVideoPreviewCurrentVideoId() {
+  if (
+    !miniVideoPreviewPlayer ||
+    !miniVideoPreviewIsReady ||
+    typeof miniVideoPreviewPlayer.getVideoData !== 'function'
+  ) {
+    return null;
+  }
+
+  const currentVideoId = miniVideoPreviewPlayer.getVideoData()?.video_id?.trim();
+
+  return currentVideoId || null;
+}
+
+function applyMiniVideoPreviewVideoSelection() {
+  if (
+    !miniVideoPreviewPlayer ||
+    !miniVideoPreviewIsReady ||
+    !miniVideoPreviewRequestedVideoId ||
+    typeof miniVideoPreviewPlayer.loadVideoById !== 'function'
+  ) {
+    return;
+  }
+
+  if (readMiniVideoPreviewCurrentVideoId() === miniVideoPreviewRequestedVideoId) {
+    return;
+  }
+
+  miniVideoPreviewPlayer.loadVideoById({
+    startSeconds: 0,
+    videoId: miniVideoPreviewRequestedVideoId,
+  });
+  (miniVideoPreviewPlayer as YT.Player & { mute?: () => void }).mute?.();
+}
+
+async function ensureMiniVideoPreviewPlayer(selectedVideoId: string, frameClassName: string) {
+  miniVideoPreviewRequestedVideoId = selectedVideoId;
+
+  await loadMiniVideoPreviewApi();
+
+  if (!window.YT?.Player) {
+    return;
+  }
+
+  getMiniVideoPreviewHostElement(frameClassName);
+
+  if (miniVideoPreviewPlayer || !miniVideoPreviewMountElement) {
+    applyMiniVideoPreviewVideoSelection();
+    return;
+  }
+
+  miniVideoPreviewIsReady = false;
+  miniVideoPreviewPlayer = new window.YT.Player(miniVideoPreviewMountElement, {
+    height: '100%',
+    width: '100%',
+    videoId: selectedVideoId,
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      disablekb: 1,
+      fs: 0,
+      loop: 1,
+      modestbranding: 1,
+      mute: 1,
+      playsinline: 1,
+      playlist: selectedVideoId,
+      rel: 0,
+    },
+    events: {
+      onReady: (event) => {
+        miniVideoPreviewIsReady = true;
+        const readyPlayer = event.target as YT.Player & { mute?: () => void };
+        readyPlayer.mute?.();
+        applyMiniVideoPreviewVideoSelection();
+      },
+    },
+  });
+}
+
+export function resetMiniVideoPreviewSingletonForTests() {
+  miniVideoPreviewPlayer?.destroy();
+  miniVideoPreviewHostElement?.remove();
+  miniVideoPreviewApiPromise = undefined;
+  miniVideoPreviewHostElement = null;
+  miniVideoPreviewMountElement = null;
+  miniVideoPreviewPlayer = null;
+  miniVideoPreviewRequestedVideoId = null;
+  miniVideoPreviewIsReady = false;
+  miniVideoPreviewOwnerElement = null;
+}
+
 interface MiniVideoPreviewProps {
   containerClassName: string;
   frameClassName: string;
@@ -51,72 +180,37 @@ export default function MiniVideoPreview({
   mainPlayerRef,
   selectedVideoId,
 }: MiniVideoPreviewProps) {
-  const playerHostRef = useRef<HTMLDivElement | null>(null);
-  const playerRef = useRef<YT.Player | null>(null);
-  const isReadyRef = useRef(false);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
+    const previewContainer = previewContainerRef.current;
 
     async function initializePlayer() {
-      await loadMiniVideoPreviewApi();
-
-      if (
-        isCancelled ||
-        !selectedVideoId ||
-        !playerHostRef.current ||
-        !window.YT?.Player ||
-        playerRef.current
-      ) {
+      if (isCancelled || !selectedVideoId || !previewContainer) {
         return;
       }
 
-      playerRef.current = new window.YT.Player(playerHostRef.current, {
-        height: '100%',
-        width: '100%',
-        videoId: selectedVideoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          loop: 1,
-          modestbranding: 1,
-          mute: 1,
-          playsinline: 1,
-          playlist: selectedVideoId,
-          rel: 0,
-        },
-        events: {
-          onReady: (event) => {
-            isReadyRef.current = true;
-            const readyPlayer = event.target as YT.Player & { mute?: () => void };
-            readyPlayer.mute?.();
-          },
-        },
-      });
+      attachMiniVideoPreviewHost(previewContainer, frameClassName);
+      await ensureMiniVideoPreviewPlayer(selectedVideoId, frameClassName);
+
+      if (isCancelled) {
+        return;
+      }
+
+      attachMiniVideoPreviewHost(previewContainer, frameClassName);
+      applyMiniVideoPreviewVideoSelection();
     }
 
     void initializePlayer();
 
     return () => {
       isCancelled = true;
+      if (previewContainer) {
+        detachMiniVideoPreviewHost(previewContainer);
+      }
     };
-  }, [selectedVideoId]);
-
-  useEffect(() => {
-    const player = playerRef.current;
-
-    if (!player || !isReadyRef.current || typeof player.loadVideoById !== 'function') {
-      return;
-    }
-
-    player.loadVideoById({
-      startSeconds: 0,
-      videoId: selectedVideoId,
-    });
-    (player as YT.Player & { mute?: () => void }).mute?.();
-  }, [selectedVideoId]);
+  }, [frameClassName, selectedVideoId]);
 
   useEffect(() => {
     if (!selectedVideoId || !mainPlayerRef?.current) {
@@ -124,14 +218,15 @@ export default function MiniVideoPreview({
     }
 
     const syncPlayback = () => {
-      const previewPlayer = playerRef.current;
+      const previewPlayer = miniVideoPreviewPlayer;
       const snapshot = mainPlayerRef.current?.readPlaybackSnapshot();
 
       if (
         !previewPlayer ||
-        !isReadyRef.current ||
+        !miniVideoPreviewIsReady ||
         !snapshot ||
         snapshot.videoId !== selectedVideoId ||
+        readMiniVideoPreviewCurrentVideoId() !== selectedVideoId ||
         typeof previewPlayer.getCurrentTime !== 'function' ||
         typeof previewPlayer.seekTo !== 'function'
       ) {
@@ -154,17 +249,7 @@ export default function MiniVideoPreview({
     };
   }, [mainPlayerRef, selectedVideoId]);
 
-  useEffect(() => {
-    return () => {
-      isReadyRef.current = false;
-      playerRef.current?.destroy();
-      playerRef.current = null;
-    };
-  }, []);
-
   return (
-    <div className={containerClassName}>
-      <div ref={playerHostRef} className={frameClassName} />
-    </div>
+    <div ref={previewContainerRef} className={containerClassName} />
   );
 }

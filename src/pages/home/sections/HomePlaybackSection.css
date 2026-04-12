@@ -66,8 +66,11 @@
   width: 128px;
 }
 
+.app-shell__sticky-player-preview-frame > div,
 .app-shell__sticky-player-preview-frame iframe {
   display: block;
+  height: 100%;
+  width: 100%;
 }
 
 .app-shell__sticky-player-preview-copy {

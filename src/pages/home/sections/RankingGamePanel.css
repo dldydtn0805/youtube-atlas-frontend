@@ -509,6 +509,13 @@
   width: 100%;
 }
 
+.app-shell__game-panel-actions-thumb-frame > div,
+.app-shell__game-panel-actions-thumb-frame iframe {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
 .app-shell__game-panel-actions-body {
   display: grid;
   gap: 8px;
