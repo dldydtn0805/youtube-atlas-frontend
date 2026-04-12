@@ -28,15 +28,18 @@ vi.mock('./MiniVideoPreview', () => ({
 
 vi.mock('./PlayerStage', () => ({
   default: ({
+    isVideoPlayerDocked,
     playerSectionRef,
     playerViewportRef,
     topContent,
   }: {
+    isVideoPlayerDocked?: boolean;
     playerSectionRef: React.RefObject<HTMLElement | null>;
     playerViewportRef: React.RefObject<HTMLDivElement | null>;
     topContent?: React.ReactNode;
   }) => (
     <div data-testid="player-stage">
+      <div data-testid="player-dock-state">{isVideoPlayerDocked ? 'docked' : 'undocked'}</div>
       {topContent}
       <section ref={playerSectionRef} data-testid="player-section" />
       <div ref={playerViewportRef} data-testid="player-viewport" />
@@ -332,6 +335,72 @@ describe('HomePlaybackSection', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
+  });
+
+  it('collapses the cinematic dock preview immediately when the selected video panel is collapsed', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: true,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+            selectedVideoId: 'preview-video',
+          } as never
+        }
+        stickySelectedVideoContent={({ desktopPlayerDockSlotRef, onToggleCollapse }) => (
+          <div>
+            <button onClick={onToggleCollapse} type="button">
+              접기
+            </button>
+            <div ref={desktopPlayerDockSlotRef}>Dock Slot</div>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    vi.spyOn(playerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 180,
+          left: 0,
+          right: 320,
+          top: -180,
+          width: 320,
+          x: 0,
+          y: -180,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('player-dock-state')).toHaveTextContent('docked');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '접기' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected Video')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('player-dock-state')).toHaveTextContent('undocked');
     });
   });
 

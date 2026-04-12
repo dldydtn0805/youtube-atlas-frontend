@@ -559,6 +559,7 @@ export default function HomePlaybackSection({
       scrollTarget.removeEventListener('scroll', scheduleDesktopDockStyleUpdate);
     };
   }, [
+    isStickySelectedVideoCollapsed,
     isStickySelectedVideoVisible,
     playerStageProps.isCinematicModeActive,
     playerStageProps.isMobileLayout,
