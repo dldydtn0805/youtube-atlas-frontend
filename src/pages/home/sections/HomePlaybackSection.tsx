@@ -220,9 +220,7 @@ export default function HomePlaybackSection({
   );
   const [isMobilePlayerPreviewVisible, setIsMobilePlayerPreviewVisible] = useState(false);
   const [isMobilePlayerPreviewCollapsed, setIsMobilePlayerPreviewCollapsed] = useState(false);
-  const [mobilePlayerPreviewVideoId, setMobilePlayerPreviewVideoId] = useState<string | undefined>(
-    preferredPreviewVideoId ?? playerStageProps.selectedVideoId,
-  );
+  const mobilePlayerPreviewVideoId = preferredPreviewVideoId ?? playerStageProps.selectedVideoId;
   const [mobilePlayerPreviewLayout, setMobilePlayerPreviewLayout] = useState(
     getInitialMobilePlayerPreviewLayout,
   );
@@ -241,10 +239,6 @@ export default function HomePlaybackSection({
     | null
   >(null);
   const suppressPreviewClickRef = useRef(false);
-
-  useEffect(() => {
-    setMobilePlayerPreviewVideoId(preferredPreviewVideoId ?? playerStageProps.selectedVideoId);
-  }, [playerStageProps.selectedVideoId, preferredPreviewVideoId]);
 
   useEffect(() => {
     setIsMobilePlayerPreviewVisible(false);
@@ -771,7 +765,6 @@ export default function HomePlaybackSection({
         </div>
       </div>
     ) : null;
-
   const renderFilterBar = () => <FilterBar {...filterBarProps} />;
   const renderChartPanel = (isCinematic = false) => (
     <ChartPanel

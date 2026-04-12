@@ -12,6 +12,20 @@ vi.mock('./FilterPanels', () => ({
   FilterBar: () => <div data-testid="filter-bar" />,
 }));
 
+vi.mock('./MiniVideoPreview', () => ({
+  default: ({
+    containerClassName,
+    frameClassName,
+  }: {
+    containerClassName: string;
+    frameClassName: string;
+  }) => (
+    <div className={containerClassName} data-testid="mini-video-preview">
+      <div className={frameClassName} />
+    </div>
+  ),
+}));
+
 vi.mock('./PlayerStage', () => ({
   default: ({
     playerSectionRef,
@@ -451,7 +465,7 @@ describe('HomePlaybackSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'now playing 끄기' }));
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview')).toBeNull();
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
     });
     expect(window.localStorage.getItem('youtube-atlas-mobile-player-preview-enabled')).toBe('false');
 
@@ -477,7 +491,7 @@ describe('HomePlaybackSection', () => {
     await waitFor(() => {
       expect(screen.getByText('now playing 꺼짐')).toBeInTheDocument();
     });
-    expect(document.querySelector('.app-shell__sticky-player-preview')).toBeNull();
+    expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
   });
 
   it('restores the mobile player preview after expanding the collapsed panel', async () => {
@@ -535,7 +549,7 @@ describe('HomePlaybackSection', () => {
     fireEvent.click(screen.getByRole('button', { name: '접기' }));
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview')).toBeNull();
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
     });
 
     fireEvent.click(screen.getByRole('button', { name: '선택한 영상 패널 펼치기' }));
