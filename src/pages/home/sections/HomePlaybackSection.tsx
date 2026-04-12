@@ -41,6 +41,7 @@ interface StickySelectedVideoControls {
   desktopPlayerDockSlotRef?: RefObject<HTMLDivElement | null>;
   isDesktopPlayerDockEnabled: boolean;
   isMobilePlayerPreviewEnabled: boolean;
+  onResetMobilePlayerPreviewLayout: () => void;
   onScrollToTop: () => void;
   onToggleMobilePlayerPreviewEnabled: () => void;
   onToggleCollapse: () => void;
@@ -525,6 +526,26 @@ export default function HomePlaybackSection({
       getAnchoredMobilePlayerPreviewLayout(stickySelectedVideoFrame?.getBoundingClientRect() ?? null);
   };
 
+  const handleResetMobilePlayerPreviewLayout = () => {
+    queueMobilePlayerPreviewLayoutReset();
+
+    if (typeof window !== 'undefined') {
+      pendingMobilePlayerPreviewResetRef.current = false;
+      const queuedLayout = queuedMobilePlayerPreviewResetLayoutRef.current;
+      queuedMobilePlayerPreviewResetLayoutRef.current = null;
+
+      window.requestAnimationFrame(() => {
+        if (queuedLayout) {
+          lastAnchoredMobilePreviewVideoIdRef.current = mobilePlayerPreviewVideoId ?? null;
+          setMobilePlayerPreviewLayout(queuedLayout);
+          return;
+        }
+
+        resetMobilePlayerPreviewLayout();
+      });
+    }
+  };
+
   useEffect(() => {
     const playerViewport = playerStageProps.playerViewportRef.current;
 
@@ -721,21 +742,6 @@ export default function HomePlaybackSection({
   const handleExpandStickySelectedVideo = () => {
     setIsStickySelectedVideoCollapsed(false);
 
-    if (pendingMobilePlayerPreviewResetRef.current && typeof window !== 'undefined') {
-      pendingMobilePlayerPreviewResetRef.current = false;
-      const queuedLayout = queuedMobilePlayerPreviewResetLayoutRef.current;
-      queuedMobilePlayerPreviewResetLayoutRef.current = null;
-      window.requestAnimationFrame(() => {
-        if (queuedLayout) {
-          lastAnchoredMobilePreviewVideoIdRef.current = mobilePlayerPreviewVideoId ?? null;
-          setMobilePlayerPreviewLayout(queuedLayout);
-          return;
-        }
-
-        resetMobilePlayerPreviewLayout();
-      });
-    }
-
     if (isMobilePlayerPreviewEnabled) {
       setIsMobilePlayerPreviewCollapsed(false);
     }
@@ -751,6 +757,7 @@ export default function HomePlaybackSection({
             playerStageProps.isCinematicModeActive &&
             isStickySelectedVideoVisible,
           isMobilePlayerPreviewEnabled,
+          onResetMobilePlayerPreviewLayout: handleResetMobilePlayerPreviewLayout,
           onScrollToTop: handleScrollToTop,
           onToggleMobilePlayerPreviewEnabled: () => {
             setIsMobilePlayerPreviewEnabled((currentValue) => !currentValue);
@@ -759,7 +766,6 @@ export default function HomePlaybackSection({
           onToggleCollapse: () => {
             setIsStickySelectedVideoCollapsed(true);
             setIsMobilePlayerPreviewCollapsed(true);
-            queueMobilePlayerPreviewLayoutReset();
           },
         })
       : stickySelectedVideoContent;
@@ -997,6 +1003,46 @@ export default function HomePlaybackSection({
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
                 >
+                  {playerStageProps.isMobileLayout && isMobilePlayerPreviewEnabled ? (
+                    <button
+                      aria-label="미니 플레이어 위치 초기화"
+                      className="app-shell__game-panel-action-utility"
+                      onClick={handleResetMobilePlayerPreviewLayout}
+                      title="프리뷰 위치 초기화"
+                      type="button"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path
+                          d="M6 8V4.75A.75.75 0 0 1 6.75 4h3.25"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                        <path
+                          d="M18 16v3.25a.75.75 0 0 1-.75.75H14"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                        <path
+                          d="M18 8V4.75A.75.75 0 0 0 17.25 4H14"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                        <path
+                          d="M6 16v3.25a.75.75 0 0 0 .75.75H10"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.8"
+                        />
+                      </svg>
+                    </button>
+                  ) : null}
                   {!playerStageProps.isMobileLayout ? (
                     <button
                       aria-expanded="false"
