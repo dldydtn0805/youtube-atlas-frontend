@@ -1427,53 +1427,11 @@ function HomePage() {
           stickySelectedVideoContent={({
             desktopPlayerDockSlotRef,
             isDesktopPlayerDockEnabled,
-            isMobilePlayerPreviewEnabled,
-            onResetMobilePlayerPreviewLayout,
             onScrollToTop,
             onToggleCollapse,
           }) =>
             renderSelectedVideoActionsContent(
               <>
-                {isMobileLayout && isMobilePlayerPreviewEnabled ? (
-                  <button
-                    aria-label="미니 플레이어 위치 초기화"
-                    className="app-shell__game-panel-action-utility"
-                    onClick={onResetMobilePlayerPreviewLayout}
-                    title="프리뷰 위치 초기화"
-                    type="button"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M6 8V4.75A.75.75 0 0 1 6.75 4h3.25"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                      <path
-                        d="M18 16v3.25a.75.75 0 0 1-.75.75H14"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                      <path
-                        d="M18 8V4.75A.75.75 0 0 0 17.25 4H14"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                      <path
-                        d="M6 16v3.25a.75.75 0 0 0 .75.75H10"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.8"
-                      />
-                    </svg>
-                  </button>
-                ) : null}
                 {!isMobileLayout ? (
                   <>
                     <button
