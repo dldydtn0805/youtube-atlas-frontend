@@ -787,9 +787,7 @@ export function RankingGameSelectedVideoActions({
         role={onHeaderClick ? 'button' : undefined}
         tabIndex={onHeaderClick ? 0 : undefined}
       >
-        <p className="app-shell__game-panel-actions-eyebrow">
-          {selectedVideoOpenPositionCount > 0 ? 'Selected Positions' : 'Selected Video'}
-        </p>
+        <p className="app-shell__game-panel-actions-eyebrow">Now Playing</p>
         {panelControls ? (
           <div
             className="app-shell__game-panel-actions-utility"

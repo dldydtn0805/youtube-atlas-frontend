@@ -152,8 +152,11 @@ describe('HomePlaybackSection', () => {
             playerViewportRef: createRef<HTMLDivElement>(),
           } as never
         }
-        stickySelectedVideoContent={({ onToggleCollapse }) => (
+        stickySelectedVideoContent={({ isMobilePlayerPreviewEnabled, onToggleCollapse, onToggleMobilePlayerPreviewEnabled }) => (
           <div>
+            <button onClick={onToggleMobilePlayerPreviewEnabled} type="button">
+              {isMobilePlayerPreviewEnabled ? 'now playing 끄기' : 'now playing 켜기'}
+            </button>
             <button onClick={onToggleCollapse} type="button">
               접기
             </button>
@@ -189,10 +192,10 @@ describe('HomePlaybackSection', () => {
     fireEvent.click(screen.getByRole('button', { name: '접기' }));
 
     expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
-    expect(screen.getByText('Selected Video')).toBeInTheDocument();
+    expect(screen.getByText('Now Playing')).toBeInTheDocument();
     expect(screen.queryByText('선택한 영상 패널을 잠시 접어두었습니다.')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Selected Video' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Now Playing' }));
 
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
@@ -212,8 +215,11 @@ describe('HomePlaybackSection', () => {
         communityPanelProps={{} as never}
         filterBarProps={{} as never}
         playerStageProps={playerStageProps}
-        stickySelectedVideoContent={({ onToggleCollapse }) => (
+        stickySelectedVideoContent={({ isMobilePlayerPreviewEnabled, onToggleCollapse, onToggleMobilePlayerPreviewEnabled }) => (
           <div>
+            <button onClick={onToggleMobilePlayerPreviewEnabled} type="button">
+              {isMobilePlayerPreviewEnabled ? 'now playing 끄기' : 'now playing 켜기'}
+            </button>
             <button onClick={onToggleCollapse} type="button">
               접기
             </button>
@@ -289,7 +295,7 @@ describe('HomePlaybackSection', () => {
     flushAnimationFrames();
 
     await waitFor(() => {
-      expect(screen.getByText('Selected Video')).toBeInTheDocument();
+      expect(screen.getByText('Now Playing')).toBeInTheDocument();
     });
 
     expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
@@ -396,7 +402,7 @@ describe('HomePlaybackSection', () => {
     fireEvent.click(screen.getByRole('button', { name: '접기' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Selected Video')).toBeInTheDocument();
+      expect(screen.getByText('Now Playing')).toBeInTheDocument();
     });
 
     await waitFor(() => {
@@ -404,7 +410,7 @@ describe('HomePlaybackSection', () => {
     });
   });
 
-  it('shows the mobile player preview above selected video only after the player is hidden', async () => {
+  it('keeps the mobile player preview hidden until it is manually enabled', async () => {
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -426,50 +432,55 @@ describe('HomePlaybackSection', () => {
       />,
     );
 
-    const playerViewport = screen.getByTestId('player-viewport');
+    flushAnimationFrames();
+    expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
 
-    const getBoundingClientRectMock = vi.spyOn(playerViewport, 'getBoundingClientRect');
+    await waitFor(() => {
+      expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();
+    });
+    expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
+  });
 
-    getBoundingClientRectMock.mockImplementation(
-      () =>
-        ({
-          bottom: 180,
-          height: 180,
-          left: 0,
-          right: 0,
-          top: 20,
-          width: 320,
-          x: 0,
-          y: 20,
-          toJSON: () => ({}),
-        }) as DOMRect,
+  it('shows the mobile player preview immediately after it is manually enabled', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: true,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+            selectedVideoChannelTitle: 'Preview Channel',
+            selectedVideoId: 'preview-video',
+            selectedVideoTitle: 'Preview Title',
+          } as never
+        }
+        stickySelectedVideoContent={({
+          isMobilePlayerPreviewEnabled,
+          onToggleMobilePlayerPreviewEnabled,
+        }) => (
+          <div>
+            <button onClick={onToggleMobilePlayerPreviewEnabled} type="button">
+              {isMobilePlayerPreviewEnabled ? 'now playing 끄기' : 'now playing 켜기'}
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
     );
 
     flushAnimationFrames();
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
 
-    getBoundingClientRectMock.mockImplementation(
-      () =>
-        ({
-          bottom: 0,
-          height: 180,
-          left: 0,
-          right: 0,
-          top: -180,
-          width: 320,
-          x: 0,
-          y: -180,
-          toJSON: () => ({}),
-        }) as DOMRect,
-    );
-
-    window.dispatchEvent(new Event('scroll'));
-    flushAnimationFrames();
+    fireEvent.click(screen.getByRole('button', { name: 'now playing 켜기' }));
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
     });
-    expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
 
     const stickyFrame = document.querySelector('.app-shell__sticky-selected-video-frame');
     expect(stickyFrame?.querySelector('.app-shell__sticky-player-preview')).toBeNull();
@@ -599,13 +610,7 @@ describe('HomePlaybackSection', () => {
     await waitFor(() => {
       expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();
     });
-
-    fireEvent.click(screen.getByRole('button', { name: 'now playing 끄기' }));
-
-    await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
-    });
-    expect(window.localStorage.getItem('youtube-atlas-mobile-player-preview-enabled')).toBe('false');
+    expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
 
     fireEvent.click(screen.getByRole('button', { name: 'now playing 켜기' }));
 
@@ -646,7 +651,7 @@ describe('HomePlaybackSection', () => {
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
   });
 
-  it('keeps the fixed mobile player preview position after expanding the collapsed panel', async () => {
+  it('keeps the mobile player preview visible while the mobile selected video panel is collapsed', async () => {
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -664,8 +669,11 @@ describe('HomePlaybackSection', () => {
             selectedVideoTitle: 'Preview Title',
           } as never
         }
-        stickySelectedVideoContent={({ onToggleCollapse }) => (
+        stickySelectedVideoContent={({ isMobilePlayerPreviewEnabled, onToggleCollapse, onToggleMobilePlayerPreviewEnabled }) => (
           <div>
+            <button onClick={onToggleMobilePlayerPreviewEnabled} type="button">
+              {isMobilePlayerPreviewEnabled ? 'now playing 끄기' : 'now playing 켜기'}
+            </button>
             <button onClick={onToggleCollapse} type="button">
               접기
             </button>
@@ -699,14 +707,29 @@ describe('HomePlaybackSection', () => {
     });
     expect(document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-shell')?.style.left).toBe('12px');
     expect(document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-shell')?.style.top).toBe('12px');
+    expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'now playing 켜기' }));
+
+    await waitFor(() => {
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: '접기' }));
+
+    await waitFor(() => {
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
+      expect(screen.getByText('Now Playing')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '미니 플레이어 숨기기' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '미니 플레이어 숨기기' }));
 
     await waitFor(() => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Selected Video' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Now Playing' }));
     flushAnimationFrames();
 
     await waitFor(() => {

@@ -1423,15 +1423,70 @@ function HomePage() {
             supplementalContent: portfolioContent,
             toggleFavoriteStreamerPending: toggleFavoriteStreamerMutation.isPending,
           }}
-          stickySelectedVideoLabel={selectedVideoOpenPositionCount > 0 ? 'Selected Positions' : 'Selected Video'}
+          stickySelectedVideoLabel="Now Playing"
           stickySelectedVideoContent={({
             desktopPlayerDockSlotRef,
             isDesktopPlayerDockEnabled,
+            isMobilePlayerPreviewEnabled,
             onScrollToTop,
+            onToggleMobilePlayerPreviewEnabled,
             onToggleCollapse,
           }) =>
             renderSelectedVideoActionsContent(
               <>
+                {isMobileLayout ? (
+                  <button
+                    aria-label={isMobilePlayerPreviewEnabled ? '미니 플레이어 숨기기' : '미니 플레이어 보기'}
+                    className="app-shell__game-panel-action-utility app-shell__game-panel-action-utility--preview-toggle"
+                    data-active={isMobilePlayerPreviewEnabled}
+                    onClick={onToggleMobilePlayerPreviewEnabled}
+                    title={isMobilePlayerPreviewEnabled ? '미니 플레이어 숨기기' : '미니 플레이어 보기'}
+                    type="button"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <rect
+                        x="3.5"
+                        y="5"
+                        width="17"
+                        height="11"
+                        rx="2.5"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      />
+                      <path
+                        d="M9 19h6"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                      />
+                      <path
+                        d="M12 16v3"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                      />
+                      <path
+                        d="M8 3.5 12 5.8 16 3.5"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.8"
+                      />
+                      <rect
+                        x="6.75"
+                        y="8"
+                        width="10.5"
+                        height="5.5"
+                        rx="1.25"
+                        stroke="currentColor"
+                        strokeOpacity="0.35"
+                        strokeWidth="1.4"
+                      />
+                    </svg>
+                  </button>
+                ) : null}
                 {!isMobileLayout ? (
                   <>
                     <button

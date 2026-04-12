@@ -11,7 +11,6 @@ const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
 const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
 const MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-enabled';
 const MOBILE_PLAYER_PREVIEW_LAYOUT_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-layout';
-const MOBILE_PLAYER_PREVIEW_TRIGGER_OFFSET = 8;
 const MOBILE_PLAYER_PREVIEW_MIN_WIDTH = 96;
 const MOBILE_PLAYER_PREVIEW_MAX_WIDTH = 360;
 const MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH = 120;
@@ -215,7 +214,7 @@ export default function HomePlaybackSection({
   playerStageProps,
   preferredPreviewVideoId,
   stickySelectedVideoContent,
-  stickySelectedVideoLabel = 'Selected Video',
+  stickySelectedVideoLabel = 'Now Playing',
 }: HomePlaybackSectionProps) {
   const [isStickySelectedVideoVisible, setIsStickySelectedVideoVisible] = useState(false);
   const [isStickySelectedVideoCollapsed, setIsStickySelectedVideoCollapsed] = useState(
@@ -224,7 +223,6 @@ export default function HomePlaybackSection({
   const [isMobilePlayerPreviewEnabled, setIsMobilePlayerPreviewEnabled] = useState(
     getInitialMobilePlayerPreviewEnabled,
   );
-  const [isMobilePlayerPreviewVisible, setIsMobilePlayerPreviewVisible] = useState(false);
   const [isMobilePlayerPreviewCollapsed, setIsMobilePlayerPreviewCollapsed] = useState(false);
   const mobilePlayerPreviewVideoId = preferredPreviewVideoId ?? playerStageProps.selectedVideoId;
   const [mobilePlayerPreviewLayout, setMobilePlayerPreviewLayout] = useState(
@@ -253,11 +251,8 @@ export default function HomePlaybackSection({
     | null
   >(null);
   const suppressPreviewClickRef = useRef(false);
-  const hasAutoEnabledMobilePlayerPreviewRef = useRef(false);
 
   useEffect(() => {
-    hasAutoEnabledMobilePlayerPreviewRef.current = false;
-    setIsMobilePlayerPreviewVisible(false);
     setIsMobilePlayerPreviewCollapsed(true);
     setIsMobilePlayerPreviewEnabled(false);
     setMobilePlayerPreviewLayout(getInitialMobilePlayerPreviewLayout());
@@ -399,82 +394,6 @@ export default function HomePlaybackSection({
   }, []);
 
   useEffect(() => {
-    const playerViewport = playerStageProps.playerViewportRef.current;
-
-    if (
-      typeof window === 'undefined' ||
-      playerStageProps.isCinematicModeActive ||
-      !playerStageProps.isMobileLayout ||
-      !playerStageProps.selectedVideoId ||
-      !playerViewport
-    ) {
-      setIsMobilePlayerPreviewVisible(false);
-      setIsMobilePlayerPreviewCollapsed(false);
-      return;
-    }
-
-    let animationFrameId: number | null = null;
-    const scrollTarget: Window = window;
-
-    const syncPreviewVisibility = () => {
-      const playerViewportRect = playerViewport.getBoundingClientRect();
-      const nextIsVisible =
-        playerViewportRect.top < 0 &&
-        playerViewportRect.bottom <= MOBILE_PLAYER_PREVIEW_TRIGGER_OFFSET;
-
-      if (
-        nextIsVisible &&
-        !isMobilePlayerPreviewEnabled &&
-        !hasAutoEnabledMobilePlayerPreviewRef.current
-      ) {
-        hasAutoEnabledMobilePlayerPreviewRef.current = true;
-        setIsMobilePlayerPreviewEnabled(true);
-      }
-
-      if (!nextIsVisible) {
-        hasAutoEnabledMobilePlayerPreviewRef.current = false;
-        setIsMobilePlayerPreviewCollapsed(false);
-      }
-
-      setIsMobilePlayerPreviewVisible((currentValue) =>
-        currentValue === nextIsVisible ? currentValue : nextIsVisible,
-      );
-    };
-
-    const updatePreviewVisibility = () => {
-      animationFrameId = null;
-      syncPreviewVisibility();
-    };
-
-    const schedulePreviewVisibilityUpdate = () => {
-      if (animationFrameId !== null) {
-        return;
-      }
-
-      animationFrameId = window.requestAnimationFrame(updatePreviewVisibility);
-    };
-
-    schedulePreviewVisibilityUpdate();
-    window.addEventListener('resize', schedulePreviewVisibilityUpdate);
-    scrollTarget.addEventListener('scroll', schedulePreviewVisibilityUpdate, { passive: true });
-
-    return () => {
-      if (animationFrameId !== null) {
-        window.cancelAnimationFrame(animationFrameId);
-      }
-
-      window.removeEventListener('resize', schedulePreviewVisibilityUpdate);
-      scrollTarget.removeEventListener('scroll', schedulePreviewVisibilityUpdate);
-    };
-  }, [
-    isMobilePlayerPreviewEnabled,
-    playerStageProps.isCinematicModeActive,
-    playerStageProps.isMobileLayout,
-    playerStageProps.playerViewportRef,
-    playerStageProps.selectedVideoId,
-  ]);
-
-  useEffect(() => {
     if (
       typeof window === 'undefined' ||
       !playerStageProps.isCinematicModeActive ||
@@ -600,6 +519,63 @@ export default function HomePlaybackSection({
     }
   };
 
+  const mobilePreviewToggleButton = playerStageProps.isMobileLayout ? (
+    <button
+      aria-label={isMobilePlayerPreviewEnabled ? '미니 플레이어 숨기기' : '미니 플레이어 보기'}
+      className="app-shell__game-panel-action-utility app-shell__game-panel-action-utility--preview-toggle"
+      data-active={isMobilePlayerPreviewEnabled}
+      onClick={() => {
+        setIsMobilePlayerPreviewEnabled((currentValue) => !currentValue);
+        setIsMobilePlayerPreviewCollapsed(false);
+      }}
+      title={isMobilePlayerPreviewEnabled ? '미니 플레이어 숨기기' : '미니 플레이어 보기'}
+      type="button"
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect
+          x="3.5"
+          y="5"
+          width="17"
+          height="11"
+          rx="2.5"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M9 19h6"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M12 16v3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M8 3.5 12 5.8 16 3.5"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <rect
+          x="6.75"
+          y="8"
+          width="10.5"
+          height="5.5"
+          rx="1.25"
+          stroke="currentColor"
+          strokeOpacity="0.35"
+          strokeWidth="1.4"
+        />
+      </svg>
+    </button>
+  ) : null;
+
   const renderedStickySelectedVideoContent =
     typeof stickySelectedVideoContent === 'function'
       ? stickySelectedVideoContent({
@@ -617,7 +593,10 @@ export default function HomePlaybackSection({
           },
           onToggleCollapse: () => {
             setIsStickySelectedVideoCollapsed(true);
-            setIsMobilePlayerPreviewCollapsed(true);
+
+            if (!playerStageProps.isMobileLayout) {
+              setIsMobilePlayerPreviewCollapsed(true);
+            }
           },
         })
       : stickySelectedVideoContent;
@@ -633,7 +612,7 @@ export default function HomePlaybackSection({
     shouldMountStickyPlayerPreview && mobilePlayerPreviewVideoId ? (
       <div
         className="app-shell__sticky-player-preview-shell"
-        data-visible={shouldShowStickyPlayerPreview && isMobilePlayerPreviewVisible ? 'true' : 'false'}
+        data-visible={shouldShowStickyPlayerPreview ? 'true' : 'false'}
         style={
           {
             '--sticky-player-preview-height': `${getPreviewHeight(mobilePlayerPreviewLayout.width)}px`,
@@ -855,6 +834,7 @@ export default function HomePlaybackSection({
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
                 >
+                  {mobilePreviewToggleButton}
                   {!playerStageProps.isMobileLayout ? (
                     <button
                       aria-expanded="false"
