@@ -786,6 +786,10 @@ describe('HomePlaybackSection', () => {
   });
 
   it('keeps the mobile player preview visible while the mobile selected video panel is collapsed', async () => {
+    const scrollTo = vi.fn();
+
+    vi.stubGlobal('scrollTo', scrollTo);
+
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -854,7 +858,15 @@ describe('HomePlaybackSection', () => {
     await waitFor(() => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
       expect(screen.getByText('Now Playing')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '페이지 맨 위로 즉시 이동' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '미니 플레이어 숨기기' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '페이지 맨 위로 즉시 이동' }));
+
+    expect(scrollTo).toHaveBeenCalledWith({
+      behavior: 'auto',
+      top: 0,
     });
 
     fireEvent.click(screen.getByRole('button', { name: '미니 플레이어 숨기기' }));

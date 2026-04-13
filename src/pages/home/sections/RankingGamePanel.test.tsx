@@ -38,7 +38,7 @@ describe('RankingGameSelectedVideoActions', () => {
     expect(onHeaderClick).not.toHaveBeenCalled();
     expect(onContentClick).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText('Video Title'));
+    fireEvent.click(screen.getByText('Video Title', { selector: 'p' }));
 
     expect(onContentClick).toHaveBeenCalledTimes(1);
     expect(onEyebrowClick).toHaveBeenCalledTimes(1);

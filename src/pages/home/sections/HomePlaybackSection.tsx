@@ -39,6 +39,7 @@ interface StickySelectedVideoControls {
   desktopPlayerDockSlotRef?: RefObject<HTMLDivElement | null>;
   isDesktopPlayerDockEnabled: boolean;
   isMobilePlayerPreviewEnabled: boolean;
+  onJumpToTop: () => void;
   onShowMobilePlayerPreview: () => void;
   onScrollToTop: () => void;
   onToggleMobilePlayerPreviewEnabled: () => void;
@@ -506,6 +507,30 @@ export default function HomePlaybackSection({
     });
   };
 
+  const handleJumpToTop = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const fullscreenElement = getFullscreenElement();
+
+    if (fullscreenElement instanceof HTMLElement) {
+      if (typeof fullscreenElement.scrollTo === 'function') {
+        fullscreenElement.scrollTo({
+          behavior: 'auto',
+          top: 0,
+        });
+      } else {
+        fullscreenElement.scrollTop = 0;
+      }
+    }
+
+    window.scrollTo({
+      behavior: 'auto',
+      top: 0,
+    });
+  };
+
   const handleExpandStickySelectedVideo = () => {
     setIsStickySelectedVideoCollapsed(false);
 
@@ -586,6 +611,38 @@ export default function HomePlaybackSection({
       </svg>
     </button>
   ) : null;
+  const mobileJumpToTopButton = playerStageProps.isMobileLayout ? (
+    <button
+      aria-label="페이지 맨 위로 즉시 이동"
+      className="app-shell__game-panel-action-utility"
+      onClick={handleJumpToTop}
+      title="맨 위로"
+      type="button"
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M7.5 13.5 12 9l4.5 4.5"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M12 9v10"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M7 5h10"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.8"
+        />
+      </svg>
+    </button>
+  ) : null;
 
   const renderedStickySelectedVideoContent =
     typeof stickySelectedVideoContent === 'function'
@@ -597,6 +654,7 @@ export default function HomePlaybackSection({
             playerStageProps.isCinematicModeActive &&
             isStickySelectedVideoVisible,
           isMobilePlayerPreviewEnabled,
+          onJumpToTop: handleJumpToTop,
           onShowMobilePlayerPreview: handleShowMobilePlayerPreview,
           onScrollToTop: handleScrollToTop,
           onToggleMobilePlayerPreviewEnabled: handleToggleMobilePlayerPreview,
@@ -862,6 +920,7 @@ export default function HomePlaybackSection({
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
                 >
+                  {mobileJumpToTopButton}
                   {mobilePreviewToggleButton}
                   {!playerStageProps.isMobileLayout ? (
                     <button
