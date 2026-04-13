@@ -218,6 +218,7 @@ export default function HomePlaybackSection({
   stickySelectedVideoLabel = 'Now Playing',
 }: HomePlaybackSectionProps) {
   const [isStickySelectedVideoVisible, setIsStickySelectedVideoVisible] = useState(false);
+  const [isDesktopPlayerDockActive, setIsDesktopPlayerDockActive] = useState(false);
   const [isStickySelectedVideoCollapsed, setIsStickySelectedVideoCollapsed] = useState(
     getInitialStickySelectedVideoCollapsed,
   );
@@ -348,6 +349,83 @@ export default function HomePlaybackSection({
   ]);
 
   useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      playerStageProps.isMobileLayout ||
+      !playerStageProps.selectedVideoId ||
+      !stickySelectedVideoContent
+    ) {
+      setIsDesktopPlayerDockActive(false);
+      return;
+    }
+
+    const playerViewport = playerStageProps.playerViewportRef.current;
+    const playerStage = playerStageProps.playerStageRef.current;
+
+    if (!playerViewport) {
+      setIsDesktopPlayerDockActive(false);
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+    const fullscreenElement = getFullscreenElement();
+    const scrollTargets: Array<HTMLElement | Window> = [window];
+
+    if (playerStage instanceof HTMLElement && !scrollTargets.includes(playerStage)) {
+      scrollTargets.push(playerStage);
+    }
+
+    if (fullscreenElement instanceof HTMLElement && !scrollTargets.includes(fullscreenElement)) {
+      scrollTargets.push(fullscreenElement);
+    }
+
+    const syncDesktopDockVisibility = () => {
+      setIsDesktopPlayerDockActive((currentValue) => {
+        const playerViewportRect = playerViewport.getBoundingClientRect();
+        const nextIsVisible = playerViewportRect.bottom <= STICKY_SELECTED_VIDEO_TOP_OFFSET;
+
+        return currentValue === nextIsVisible ? currentValue : nextIsVisible;
+      });
+    };
+
+    const updateDesktopDockVisibility = () => {
+      animationFrameId = null;
+      syncDesktopDockVisibility();
+    };
+
+    const scheduleDesktopDockVisibilityUpdate = () => {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateDesktopDockVisibility);
+    };
+
+    scheduleDesktopDockVisibilityUpdate();
+    window.addEventListener('resize', scheduleDesktopDockVisibilityUpdate);
+    scrollTargets.forEach((target) => {
+      target.addEventListener('scroll', scheduleDesktopDockVisibilityUpdate, { passive: true });
+    });
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener('resize', scheduleDesktopDockVisibilityUpdate);
+      scrollTargets.forEach((target) => {
+        target.removeEventListener('scroll', scheduleDesktopDockVisibilityUpdate);
+      });
+    };
+  }, [
+    playerStageProps.isMobileLayout,
+    playerStageProps.playerStageRef,
+    playerStageProps.playerViewportRef,
+    playerStageProps.selectedVideoId,
+    stickySelectedVideoContent,
+  ]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -409,10 +487,10 @@ export default function HomePlaybackSection({
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
-      !playerStageProps.isCinematicModeActive ||
       playerStageProps.isMobileLayout ||
       !playerStageProps.selectedVideoId ||
-      !isStickySelectedVideoVisible
+      !isDesktopPlayerDockActive ||
+      !stickySelectedVideoContent
     ) {
       setDesktopDockStyle(null);
       return;
@@ -491,13 +569,13 @@ export default function HomePlaybackSection({
       scrollTarget.removeEventListener('scroll', scheduleDesktopDockStyleUpdate);
     };
   }, [
+    isDesktopPlayerDockActive,
     isStickySelectedVideoCollapsed,
-    isStickySelectedVideoVisible,
-    playerStageProps.isCinematicModeActive,
     playerStageProps.isMobileLayout,
     playerStageProps.playerStageRef,
     playerStageProps.playerViewportRef,
     playerStageProps.selectedVideoId,
+    stickySelectedVideoContent,
   ]);
 
   useEffect(() => {
@@ -764,7 +842,8 @@ export default function HomePlaybackSection({
           desktopPlayerDockSlotRef,
           isDesktopPlayerDockEnabled:
             !playerStageProps.isMobileLayout &&
-            playerStageProps.isCinematicModeActive &&
+            isDesktopPlayerDockActive &&
+            Boolean(playerStageProps.selectedVideoId) &&
             isStickySelectedVideoVisible,
           isMobilePlayerPreviewEnabled,
           onJumpToTop: handleJumpToTop,

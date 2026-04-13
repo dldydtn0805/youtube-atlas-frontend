@@ -462,6 +462,81 @@ describe('HomePlaybackSection', () => {
     });
   });
 
+  it('docks the desktop player into the selected video slot in default mode', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+            selectedVideoId: 'preview-video',
+          } as never
+        }
+        stickySelectedVideoContent={({ desktopPlayerDockSlotRef }) => (
+          <div>
+            <div ref={desktopPlayerDockSlotRef}>Dock Slot</div>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    const getBoundingClientRect = vi.spyOn(playerViewport, 'getBoundingClientRect');
+
+    getBoundingClientRect.mockImplementation(
+      () =>
+        ({
+          bottom: 320,
+          height: 180,
+          left: 0,
+          right: 320,
+          top: 140,
+          width: 320,
+          x: 0,
+          y: 140,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('player-dock-state')).toHaveTextContent('undocked');
+
+    getBoundingClientRect.mockImplementation(
+      () =>
+        ({
+          bottom: 0,
+          height: 180,
+          left: 0,
+          right: 320,
+          top: -180,
+          width: 320,
+          x: 0,
+          y: -180,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
+    window.dispatchEvent(new Event('scroll'));
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('player-dock-state')).toHaveTextContent('docked');
+    });
+  });
+
   it('keeps the mobile player preview hidden until it is manually enabled', async () => {
     render(
       <HomePlaybackSection
