@@ -758,6 +758,46 @@ describe('HomePlaybackSection', () => {
     });
   });
 
+  it('does not cap the saved mobile player preview width at 360px', async () => {
+    window.localStorage.setItem(
+      'youtube-atlas-mobile-player-preview-layout',
+      JSON.stringify({
+        width: 900,
+        x: 99,
+        y: 88,
+      }),
+    );
+
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: true,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+            selectedVideoChannelTitle: 'Preview Channel',
+            selectedVideoId: 'preview-video',
+            selectedVideoTitle: 'Preview Title',
+          } as never
+        }
+        stickySelectedVideoContent={<div>Selected video actions</div>}
+      />,
+    );
+
+    const previewShell = document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-shell');
+
+    await waitFor(() => {
+      expect(previewShell?.style.getPropertyValue('--sticky-player-preview-width')).toBe('900px');
+      expect(previewShell?.style.left).toBe('99px');
+      expect(previewShell?.style.top).toBe('88px');
+    });
+  });
+
   it('starts the mobile player preview from the fixed top-left position when no saved position exists', async () => {
     render(
       <HomePlaybackSection
@@ -785,7 +825,7 @@ describe('HomePlaybackSection', () => {
     await waitFor(() => {
       expect(previewShell?.style.left).toBe('12px');
       expect(previewShell?.style.top).toBe('12px');
-      expect(previewShell?.style.getPropertyValue('--sticky-player-preview-width')).toBe(`${window.innerWidth - 24}px`);
+      expect(previewShell?.style.getPropertyValue('--sticky-player-preview-width')).toBe('360px');
     });
 
     expect(document.querySelector('.app-shell__sticky-player-preview-resize-handle--top-left')).not.toBeNull();
