@@ -9,7 +9,7 @@ import { RegionFilterModal } from './sections/FilterPanels';
 import GamePanelSection from './sections/GamePanelSection';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
-import HomePlaybackSection from './sections/HomePlaybackSection';
+import HomePlaybackSection, { MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY } from './sections/HomePlaybackSection';
 import {
   buildOpenGameHoldings,
   calculateEstimatedCoinYieldAfterBuy,
@@ -271,6 +271,14 @@ function HomePage() {
   }, [collapsedHomeSectionIds]);
 
   const scrollToPlayerStage = useCallback(() => {
+    if (
+      typeof window !== 'undefined' &&
+      isMobileLayout &&
+      window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY) === 'true'
+    ) {
+      return;
+    }
+
     window.setTimeout(() => {
       if (typeof window === 'undefined') {
         return;
@@ -294,7 +302,7 @@ function HomePage() {
         top: 0,
       });
     }, 0);
-  }, []);
+  }, [isMobileLayout]);
 
   const {
     data: videoCategories = [],

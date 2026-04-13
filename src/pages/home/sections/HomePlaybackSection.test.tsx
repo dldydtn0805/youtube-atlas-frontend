@@ -555,6 +555,74 @@ describe('HomePlaybackSection', () => {
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
 
+  it('keeps the mobile player preview visible when the selected video changes', async () => {
+    const playerStageProps = {
+      isCinematicModeActive: false,
+      isMobileLayout: true,
+      playerSectionRef: createRef<HTMLElement>(),
+      playerStageRef: createRef<HTMLDivElement>(),
+      playerViewportRef: createRef<HTMLDivElement>(),
+      selectedVideoChannelTitle: 'Preview Channel',
+      selectedVideoId: 'preview-video',
+      selectedVideoTitle: 'Preview Title',
+    };
+
+    const { rerender } = render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={playerStageProps as never}
+        stickySelectedVideoContent={({
+          isMobilePlayerPreviewEnabled,
+          onToggleMobilePlayerPreviewEnabled,
+        }) => (
+          <div>
+            <button onClick={onToggleMobilePlayerPreviewEnabled} type="button">
+              {isMobilePlayerPreviewEnabled ? 'now playing 끄기' : 'now playing 켜기'}
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'now playing 켜기' }));
+
+    await waitFor(() => {
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
+    });
+
+    rerender(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={{
+          ...playerStageProps,
+          selectedVideoId: 'next-preview-video',
+          selectedVideoTitle: 'Next Preview Title',
+        } as never}
+        stickySelectedVideoContent={({
+          isMobilePlayerPreviewEnabled,
+          onToggleMobilePlayerPreviewEnabled,
+        }) => (
+          <div>
+            <button onClick={onToggleMobilePlayerPreviewEnabled} type="button">
+              {isMobilePlayerPreviewEnabled ? 'now playing 끄기' : 'now playing 켜기'}
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
+    });
+    expect(window.localStorage.getItem('youtube-atlas-mobile-player-preview-enabled')).toBe('true');
+  });
+
   it('starts the mobile player preview from the saved position on mount when available', async () => {
     window.localStorage.setItem(
       'youtube-atlas-mobile-player-preview-layout',

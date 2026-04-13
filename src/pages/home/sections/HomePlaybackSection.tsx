@@ -9,7 +9,7 @@ import './HomePlaybackSection.css';
 
 const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
 const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
-const MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-enabled';
+export const MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-enabled';
 const MOBILE_PLAYER_PREVIEW_LAYOUT_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-layout';
 const MOBILE_PLAYER_PREVIEW_MIN_WIDTH = 96;
 const MOBILE_PLAYER_PREVIEW_MAX_WIDTH = 360;
@@ -68,10 +68,10 @@ function getInitialStickySelectedVideoCollapsed() {
 
 function getInitialMobilePlayerPreviewEnabled() {
   if (typeof window === 'undefined') {
-    return true;
+    return false;
   }
 
-  return window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY) !== 'false';
+  return window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY) === 'true';
 }
 
 function clampValue(value: number, min: number, max: number) {
@@ -251,12 +251,6 @@ export default function HomePlaybackSection({
     | null
   >(null);
   const suppressPreviewClickRef = useRef(false);
-
-  useEffect(() => {
-    setIsMobilePlayerPreviewCollapsed(true);
-    setIsMobilePlayerPreviewEnabled(false);
-    setMobilePlayerPreviewLayout(getInitialMobilePlayerPreviewLayout());
-  }, [mobilePlayerPreviewVideoId]);
 
   useEffect(() => {
     if (!playerStageProps.isCinematicModeActive) {
