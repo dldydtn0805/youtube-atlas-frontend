@@ -9,6 +9,7 @@ type MockPlayerApi = {
   getPlayerState: ReturnType<typeof vi.fn>;
   getVideoData: ReturnType<typeof vi.fn>;
   loadVideoById: ReturnType<typeof vi.fn>;
+  playVideo: ReturnType<typeof vi.fn>;
   seekTo: ReturnType<typeof vi.fn>;
   stopVideo: ReturnType<typeof vi.fn>;
 };
@@ -17,6 +18,7 @@ describe('VideoPlayer', () => {
   let currentTimeSeconds = 0;
   let currentPlaybackVideoId = 'video-a';
   let onReady: YT.PlayerEvents['onReady'];
+  let latestPlayerOptions: YT.PlayerOptions | undefined;
   let playerApi: MockPlayerApi;
   let playerConstructorCallCount = 0;
 
@@ -27,12 +29,14 @@ describe('VideoPlayer', () => {
     function Player(this: MockPlayerApi, _element: HTMLElement, configuration: YT.PlayerOptions) {
       playerConstructorCallCount += 1;
       onReady = configuration.events?.onReady;
+      latestPlayerOptions = configuration;
 
       this.destroy = vi.fn();
       this.getCurrentTime = vi.fn(() => currentTimeSeconds);
       this.getPlayerState = vi.fn(() => 1);
       this.getVideoData = vi.fn(() => ({ video_id: currentPlaybackVideoId }));
       this.loadVideoById = vi.fn();
+      this.playVideo = vi.fn();
       this.seekTo = vi.fn();
       this.stopVideo = vi.fn();
       playerApi = {
@@ -41,6 +45,7 @@ describe('VideoPlayer', () => {
         getPlayerState: this.getPlayerState,
         getVideoData: this.getVideoData,
         loadVideoById: this.loadVideoById,
+        playVideo: this.playVideo,
         seekTo: this.seekTo,
         stopVideo: this.stopVideo,
       };
@@ -78,7 +83,26 @@ describe('VideoPlayer', () => {
     rerender(<VideoPlayer selectedVideoId="video-b" />);
 
     await waitFor(() => expect(playerApi.loadVideoById).toHaveBeenCalledWith('video-b'));
+    expect(playerApi.playVideo).toHaveBeenCalled();
     expect(playerConstructorCallCount).toBe(1);
+  });
+
+  it('requests inline autoplay when the player becomes ready', async () => {
+    render(<VideoPlayer selectedVideoId="video-a" />);
+
+    await waitFor(() => expect(playerConstructorCallCount).toBe(1));
+
+    expect(latestPlayerOptions?.playerVars).toMatchObject({
+      autoplay: 1,
+      playsinline: 1,
+      rel: 0,
+    });
+
+    act(() => {
+      onReady?.({ target: playerApi as unknown as YT.Player });
+    });
+
+    expect(playerApi.playVideo).toHaveBeenCalled();
   });
 
   it('returns the current playback snapshot from the forwarded ref', async () => {

@@ -24,14 +24,8 @@ interface MobilePlayerPreviewLayout {
 }
 
 type MobilePlayerPreviewResizeDirection =
-  | 'top'
-  | 'right'
-  | 'bottom'
-  | 'left'
   | 'top-left'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-right';
+  | 'top-right';
 
 interface StickySelectedVideoControls {
   isDesktopPlayerDockActive: boolean;
@@ -92,7 +86,6 @@ function getResizeDirection(
   const isLeft = offsetX <= MOBILE_PLAYER_PREVIEW_RESIZE_EDGE;
   const isRight = offsetX >= width - MOBILE_PLAYER_PREVIEW_RESIZE_EDGE;
   const isTop = offsetY <= MOBILE_PLAYER_PREVIEW_RESIZE_EDGE;
-  const isBottom = offsetY >= height - MOBILE_PLAYER_PREVIEW_RESIZE_EDGE;
 
   if (isTop && isLeft) {
     return 'top-left';
@@ -100,30 +93,6 @@ function getResizeDirection(
 
   if (isTop && isRight) {
     return 'top-right';
-  }
-
-  if (isBottom && isLeft) {
-    return 'bottom-left';
-  }
-
-  if (isBottom && isRight) {
-    return 'bottom-right';
-  }
-
-  if (isTop) {
-    return 'top';
-  }
-
-  if (isRight) {
-    return 'right';
-  }
-
-  if (isBottom) {
-    return 'bottom';
-  }
-
-  if (isLeft) {
-    return 'left';
   }
 
   return null;
@@ -259,7 +228,11 @@ export default function HomePlaybackSection({
   } | null>(null);
   const dragStateRef = useRef<
     | {
+        frameHeightOffset: number;
+        frameWidthOffset: number;
         mode: 'drag' | 'resize';
+        originFrameHeight: number;
+        originFrameWidth: number;
         resizeDirection?: MobilePlayerPreviewResizeDirection;
         originHeight: number;
         originPointerX: number;
@@ -875,24 +848,33 @@ export default function HomePlaybackSection({
         onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => {
           const eventTarget = event.target as HTMLElement;
           const dragLayer = eventTarget.closest('.app-shell__sticky-player-preview-drag-layer');
+          const resizeHandle = eventTarget.closest<HTMLElement>('.app-shell__sticky-player-preview-resize-handle');
+          const dockSlot = eventTarget.closest('.app-shell__sticky-player-preview-dock-slot');
+          const previewFrame = eventTarget.closest<HTMLElement>('.app-shell__sticky-player-preview-frame');
           const previewShell = event.currentTarget;
           const previewRect = previewShell.getBoundingClientRect();
-          const offsetX = event.clientX - previewRect.left;
-          const offsetY = event.clientY - previewRect.top;
-          const resizeDirection = getResizeDirection(
-            offsetX,
-            offsetY,
-            previewRect.width,
-            previewRect.height,
+          const frameRect = previewFrame?.getBoundingClientRect() ?? previewRect;
+          const handleDirection = resizeHandle?.dataset.resizeDirection as MobilePlayerPreviewResizeDirection | undefined;
+          const resizeDirection = handleDirection ?? getResizeDirection(
+            event.clientX - frameRect.left,
+            event.clientY - frameRect.top,
+            frameRect.width,
+            frameRect.height,
           );
+          const canStartResize = Boolean(handleDirection);
+          const canStartDrag = Boolean(dragLayer || (previewFrame && !dockSlot));
 
-          if (!dragLayer && !resizeDirection) {
+          if (!canStartResize && !canStartDrag && (!previewFrame || !resizeDirection)) {
             return;
           }
 
           dragStateRef.current = {
-            mode: resizeDirection ? 'resize' : 'drag',
-            resizeDirection: resizeDirection ?? undefined,
+            frameHeightOffset: Math.max(0, frameRect.height - getPreviewHeight(mobilePlayerPreviewLayout.width)),
+            frameWidthOffset: Math.max(0, frameRect.width - mobilePlayerPreviewLayout.width),
+            mode: canStartResize || (resizeDirection && !canStartDrag) ? 'resize' : 'drag',
+            originFrameHeight: frameRect.height,
+            originFrameWidth: frameRect.width,
+            resizeDirection: canStartResize || (resizeDirection && !canStartDrag) ? resizeDirection ?? undefined : undefined,
             originHeight: getPreviewHeight(mobilePlayerPreviewLayout.width),
             originPointerX: event.clientX,
             originPointerY: event.clientY,
@@ -925,8 +907,8 @@ export default function HomePlaybackSection({
             return;
           }
 
-          const originRight = dragState.originX + dragState.originWidth;
-          const originBottom = dragState.originY + dragState.originHeight;
+          const originRight = dragState.originX + dragState.originFrameWidth;
+          const originBottom = dragState.originY + dragState.originFrameHeight;
           const widthFromHeightDelta = (nextHeightDelta: number) =>
             dragState.originWidth + (nextHeightDelta * MOBILE_PLAYER_PREVIEW_ASPECT_RATIO);
           const resizeDirection = dragState.resizeDirection;
@@ -940,18 +922,6 @@ export default function HomePlaybackSection({
           let nextY = dragState.originY;
 
           switch (resizeDirection) {
-            case 'right':
-              nextWidth = dragState.originWidth + deltaX;
-              break;
-            case 'left':
-              nextWidth = dragState.originWidth - deltaX;
-              break;
-            case 'bottom':
-              nextWidth = widthFromHeightDelta(deltaY);
-              break;
-            case 'top':
-              nextWidth = widthFromHeightDelta(-deltaY);
-              break;
             case 'top-left': {
               const widthByX = dragState.originWidth - deltaX;
               const widthByY = widthFromHeightDelta(-deltaY);
@@ -968,22 +938,6 @@ export default function HomePlaybackSection({
                 : widthByY;
               break;
             }
-            case 'bottom-left': {
-              const widthByX = dragState.originWidth - deltaX;
-              const widthByY = widthFromHeightDelta(deltaY);
-              nextWidth = Math.abs(widthByX - dragState.originWidth) >= Math.abs(widthByY - dragState.originWidth)
-                ? widthByX
-                : widthByY;
-              break;
-            }
-            case 'bottom-right': {
-              const widthByX = dragState.originWidth + deltaX;
-              const widthByY = widthFromHeightDelta(deltaY);
-              nextWidth = Math.abs(widthByX - dragState.originWidth) >= Math.abs(widthByY - dragState.originWidth)
-                ? widthByX
-                : widthByY;
-              break;
-            }
           }
 
           const clampedLayout = clampMobilePlayerPreviewLayout({
@@ -992,13 +946,15 @@ export default function HomePlaybackSection({
             y: dragState.originY,
           });
           const nextHeight = getPreviewHeight(clampedLayout.width);
+          const nextFrameWidth = clampedLayout.width + dragState.frameWidthOffset;
+          const nextFrameHeight = nextHeight + dragState.frameHeightOffset;
 
           if (resizeDirection.includes('left')) {
-            nextX = originRight - clampedLayout.width;
+            nextX = originRight - nextFrameWidth;
           }
 
           if (resizeDirection.includes('top')) {
-            nextY = originBottom - nextHeight;
+            nextY = originBottom - nextFrameHeight;
           }
 
           setMobilePlayerPreviewLayout(
@@ -1022,17 +978,29 @@ export default function HomePlaybackSection({
           }
         }}
       >
-        <div
-          ref={mobilePlayerDockSlotRef}
-          aria-hidden="true"
-          className="app-shell__sticky-player-preview-thumb app-shell__sticky-player-preview-thumb--player app-shell__sticky-player-preview-dock-slot"
-        />
-        <span
-          aria-hidden="true"
-          className="app-shell__sticky-player-preview-drag-layer"
-        >
-          <span className="app-shell__sticky-player-preview-drag-grip" />
-        </span>
+        <div className="app-shell__sticky-player-preview-frame">
+          <span
+            aria-hidden="true"
+            className="app-shell__sticky-player-preview-resize-handle app-shell__sticky-player-preview-resize-handle--top-left"
+            data-resize-direction="top-left"
+          />
+          <span
+            aria-hidden="true"
+            className="app-shell__sticky-player-preview-resize-handle app-shell__sticky-player-preview-resize-handle--top-right"
+            data-resize-direction="top-right"
+          />
+          <span
+            aria-hidden="true"
+            className="app-shell__sticky-player-preview-drag-layer"
+          >
+            <span className="app-shell__sticky-player-preview-drag-grip" />
+          </span>
+          <div
+            ref={mobilePlayerDockSlotRef}
+            aria-hidden="true"
+            className="app-shell__sticky-player-preview-thumb app-shell__sticky-player-preview-thumb--player app-shell__sticky-player-preview-dock-slot"
+          />
+        </div>
       </div>
     ) : null;
   const stickySelectedVideoSlot =

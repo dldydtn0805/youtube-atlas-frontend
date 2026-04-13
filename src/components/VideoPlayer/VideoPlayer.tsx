@@ -89,6 +89,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const playbackRestoreRef = useRef(playbackRestore);
   const lastAppliedRestoreIdRef = useRef<number | null>(null);
   const isPlayerReadyRef = useRef(false);
+  const autoplayRetryCleanupRef = useRef<(() => void) | null>(null);
 
   const setPlayerHost = useCallback((element: HTMLDivElement | null) => {
     if (playerHostRef.current === element) {
@@ -114,6 +115,48 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   useEffect(() => {
     onPlaybackRestoreAppliedRef.current = onPlaybackRestoreApplied;
   }, [onPlaybackRestoreApplied]);
+
+  const clearAutoplayRetry = useCallback(() => {
+    autoplayRetryCleanupRef.current?.();
+    autoplayRetryCleanupRef.current = null;
+  }, []);
+
+  const attemptPlaybackStart = useCallback(
+    (player: YT.Player | null, options?: { scheduleRetry?: boolean }) => {
+      if (!player || !isPlayerReadyRef.current || typeof player.playVideo !== 'function') {
+        return;
+      }
+
+      player.playVideo();
+
+      if (!options?.scheduleRetry || typeof document === 'undefined') {
+        return;
+      }
+
+      clearAutoplayRetry();
+
+      const retryPlayback = () => {
+        if (playerRef.current === player && isPlayerReadyRef.current) {
+          player.playVideo();
+        }
+
+        clearAutoplayRetry();
+      };
+
+      const listenerOptions = { capture: true, once: true } as const;
+
+      document.addEventListener('click', retryPlayback, listenerOptions);
+      document.addEventListener('pointerup', retryPlayback, listenerOptions);
+      document.addEventListener('touchend', retryPlayback, listenerOptions);
+
+      autoplayRetryCleanupRef.current = () => {
+        document.removeEventListener('click', retryPlayback, true);
+        document.removeEventListener('pointerup', retryPlayback, true);
+        document.removeEventListener('touchend', retryPlayback, true);
+      };
+    },
+    [clearAutoplayRetry],
+  );
 
   const readCurrentPlaybackPositionSeconds = useCallback(() => {
     const player = playerRef.current;
@@ -201,18 +244,20 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       const restoreStartSeconds = getRestoreStartSeconds(videoId);
       isPlayerReadyRef.current = false;
 
-      playerRef.current = new window.YT.Player(playerHostElement, {
+        playerRef.current = new window.YT.Player(playerHostElement, {
         height: '100%',
         width: '100%',
         videoId,
         playerVars: {
           autoplay: 1,
+          playsinline: 1,
           rel: 0,
           ...(restoreStartSeconds !== undefined ? { start: restoreStartSeconds } : {}),
         },
         events: {
           onReady: () => {
             isPlayerReadyRef.current = true;
+            attemptPlaybackStart(playerRef.current, { scheduleRetry: true });
 
             if (restoreStartSeconds !== undefined) {
               markPlaybackRestoreApplied(playbackRestoreRef.current?.restoreId);
@@ -232,7 +277,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     return () => {
       isCancelled = true;
     };
-  }, [playerHostElement, videoId]);
+  }, [attemptPlaybackStart, playerHostElement, videoId]);
 
   useEffect(() => {
     const player = playerRef.current;
@@ -242,6 +287,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     }
 
     if (!videoId) {
+      clearAutoplayRetry();
+
       if (typeof player.stopVideo === 'function') {
         player.stopVideo();
       }
@@ -261,10 +308,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       );
     }
 
+    attemptPlaybackStart(player, { scheduleRetry: true });
+
     if (restoreStartSeconds !== undefined) {
       markPlaybackRestoreApplied(playbackRestoreRef.current?.restoreId);
     }
-  }, [videoId]);
+  }, [attemptPlaybackStart, clearAutoplayRetry, videoId]);
 
   useEffect(() => {
     const restore = playbackRestore;
@@ -286,11 +335,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
 
   useEffect(() => {
     return () => {
+      clearAutoplayRetry();
       isPlayerReadyRef.current = false;
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, []);
+  }, [clearAutoplayRetry]);
 
   const playerFrame = (
     <div
