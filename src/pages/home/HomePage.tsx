@@ -902,7 +902,9 @@ function HomePage() {
     selectedVideoMarketEntry,
     selectedVideoOpenPositionCount,
     selectedVideoOpenPositionSummary,
+    selectedVideoRankLabel,
     selectedVideoSellSummary,
+    selectedVideoStatLabel,
     selectedVideoTradeThumbnailUrl,
     selectedVideoTrendBadges,
     selectedVideoUnitPricePoints,
@@ -1169,6 +1171,8 @@ function HomePage() {
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
       desktopPlayerDockSlotRef={options?.desktopPlayerDockSlotRef}
+      fallbackRankLabel={selectedVideoRankLabel}
+      fallbackViewCountLabel={selectedVideoStatLabel}
       gameCoinOverview={liveGameCoinOverview}
       isDesktopMiniPlayerEnabled={options?.isDesktopMiniPlayerEnabled ?? false}
       isBuySubmitting={isBuySubmitting}
@@ -1204,6 +1208,8 @@ function HomePage() {
     <SelectedVideoGameActionsBundle
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
+      fallbackRankLabel={selectedVideoRankLabel}
+      fallbackViewCountLabel={selectedVideoStatLabel}
       gameCoinOverview={liveGameCoinOverview}
       isBuySubmitting={isBuySubmitting}
       isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
@@ -1227,6 +1233,8 @@ function HomePage() {
   );
   const stageMetadataContent = (
     <GameSelectedVideoPriceSummary
+      fallbackRankLabel={selectedVideoRankLabel}
+      fallbackViewCountLabel={selectedVideoStatLabel}
       gameCoinOverview={liveGameCoinOverview}
       maxSellQuantity={maxSellQuantity}
       preferMarketSummary
@@ -1427,6 +1435,8 @@ function HomePage() {
             selectedCountryName,
             selectedVideoChannelTitle: resolvedSelectedVideo?.snippet.channelTitle,
             selectedVideoId,
+            selectedVideoRankLabel,
+            selectedVideoStatLabel,
             selectedVideoTitle: resolvedSelectedVideo?.snippet.title,
             stageActionContent: gameActionContent,
             stageMetadataContent,

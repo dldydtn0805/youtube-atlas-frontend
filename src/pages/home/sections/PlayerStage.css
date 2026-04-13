@@ -292,6 +292,19 @@
   font-weight: 600;
 }
 
+.app-shell__stage-summary-fallback {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.app-shell__stage-summary-fallback-label {
+  color: var(--text);
+  font-weight: 800;
+}
+
 .app-shell__stage-summary .app-shell__game-selected-summary-badges {
   gap: 6px;
 }

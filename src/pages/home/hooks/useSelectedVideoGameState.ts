@@ -339,7 +339,11 @@ export default function useSelectedVideoGameState({
     typeof selectedVideoUnitPricePoints === 'number'
       ? formatPoints(selectedVideoUnitPricePoints)
       : undefined;
-  const selectedVideoStatLabel = formatVideoViewCount(resolvedSelectedVideo?.statistics?.viewCount);
+  const selectedVideoStatLabel = formatVideoViewCount(
+    resolvedSelectedVideo?.statistics?.viewCount ??
+      selectedVideoTrendSignal?.currentViewCount?.toString() ??
+      selectedVideoMarketEntry?.currentViewCount?.toString(),
+  );
   const selectedChannelId = resolvedSelectedVideo?.snippet.channelId?.trim();
   const gameSeasonRegionMismatch =
     Boolean(currentGameSeason?.regionCode) &&

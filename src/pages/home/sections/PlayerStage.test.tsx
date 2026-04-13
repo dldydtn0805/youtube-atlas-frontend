@@ -66,4 +66,23 @@ describe('PlayerStage', () => {
     expect(container.querySelector('.app-shell__panel--player')?.getAttribute('data-cinematic')).toBe('false');
     expect(screen.getByTestId('video-player')).toHaveAttribute('data-cinematic', 'true');
   });
+
+  it('shows fallback rank and view count metadata when stage summary content is absent', () => {
+    render(
+      <PlayerStage
+        {...createProps({
+          selectedVideoChannelTitle: 'Channel',
+          selectedVideoId: 'video-1',
+          selectedVideoRankLabel: '3위',
+          selectedVideoStatLabel: '12.5만',
+          selectedVideoTitle: 'Video Title',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('순위')).toBeInTheDocument();
+    expect(screen.getByText('3위')).toBeInTheDocument();
+    expect(screen.getByText('조회수')).toBeInTheDocument();
+    expect(screen.getByText('12.5만')).toBeInTheDocument();
+  });
 });

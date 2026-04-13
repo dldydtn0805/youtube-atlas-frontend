@@ -36,6 +36,8 @@ interface PlayerStageProps {
   selectedCountryName: string;
   selectedVideoChannelTitle?: string;
   selectedVideoId?: string;
+  selectedVideoRankLabel?: string;
+  selectedVideoStatLabel?: string;
   selectedVideoTitle?: string;
   videoPlayerDockStyle?: CSSProperties;
   isVideoPlayerDocked?: boolean;
@@ -78,6 +80,8 @@ function PlayerStage({
   selectedCountryName,
   selectedVideoChannelTitle,
   selectedVideoId,
+  selectedVideoRankLabel,
+  selectedVideoStatLabel,
   selectedVideoTitle,
   videoPlayerDockStyle,
   isVideoPlayerDocked = false,
@@ -88,6 +92,7 @@ function PlayerStage({
   toggleFavoriteStreamerPending,
 }: PlayerStageProps) {
   const hasSelectedVideo = Boolean(selectedVideoId);
+  const hasFallbackMetadata = Boolean(selectedVideoRankLabel || selectedVideoStatLabel);
   const isVideoPlayerCinematic =
     isCinematicModeActive || (isMobileLayout && isVideoPlayerDocked);
 
@@ -177,7 +182,27 @@ function PlayerStage({
                     {toggleFavoriteStreamerPending ? '...' : isSelectedChannelFavorited ? '★' : '☆'}
                   </button>
                 </div>
-                {stageMetadataContent ? <div className="app-shell__stage-summary">{stageMetadataContent}</div> : null}
+                {stageMetadataContent ? (
+                  <div className="app-shell__stage-summary">{stageMetadataContent}</div>
+                ) : hasFallbackMetadata ? (
+                  <div className="app-shell__stage-summary">
+                    <p className="app-shell__stage-summary-fallback">
+                      {selectedVideoRankLabel ? (
+                        <>
+                          <span className="app-shell__stage-summary-fallback-label">순위</span>{' '}
+                          <span>{selectedVideoRankLabel}</span>
+                        </>
+                      ) : null}
+                      {selectedVideoRankLabel && selectedVideoStatLabel ? ' · ' : null}
+                      {selectedVideoStatLabel ? (
+                        <>
+                          <span className="app-shell__stage-summary-fallback-label">조회수</span>{' '}
+                          <span>{selectedVideoStatLabel}</span>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                ) : null}
               </div>
               <div className="app-shell__stage-side">
                 <div className="app-shell__stage-actions">

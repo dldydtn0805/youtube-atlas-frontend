@@ -19,6 +19,8 @@ import { RankingGameSelectedVideoActions } from './RankingGamePanel';
 import './GameActionContent.css';
 
 interface GameSelectedVideoPriceSummaryProps {
+  fallbackRankLabel?: string;
+  fallbackViewCountLabel?: string;
   gameCoinOverview?: GameCoinOverview;
   hideEvaluationPoints?: boolean;
   maxSellQuantity?: number;
@@ -50,6 +52,8 @@ interface SelectedVideoGameActionsBundleProps {
   buyActionTitle: string;
   canShowGameActions: boolean;
   desktopPlayerDockSlotRef?: RefObject<HTMLDivElement | null>;
+  fallbackRankLabel?: string;
+  fallbackViewCountLabel?: string;
   gameCoinOverview?: GameCoinOverview;
   isDesktopMiniPlayerEnabled?: boolean;
   mainPlayerRef?: RefObject<VideoPlayerHandle | null>;
@@ -108,18 +112,20 @@ function formatTrendBadgeLabel(badge: VideoTrendBadge) {
 
   if (badge.tone === 'up') {
     const matchedNumber = badge.label.match(/\d+/);
-    return matchedNumber ? `${matchedNumber[0]}위 상승` : badge.label;
+    return matchedNumber ? `${matchedNumber[0]}위 상승` : '순위 상승';
   }
 
   if (badge.tone === 'down') {
     const matchedNumber = badge.label.match(/\d+/);
-    return matchedNumber ? `${matchedNumber[0]}위 하락` : badge.label;
+    return matchedNumber ? `${matchedNumber[0]}위 하락` : '순위 하락';
   }
 
   return badge.label;
 }
 
 export function GameSelectedVideoPriceSummary({
+  fallbackRankLabel,
+  fallbackViewCountLabel,
   gameCoinOverview,
   hideEvaluationPoints = false,
   maxSellQuantity = 0,
@@ -360,7 +366,39 @@ export function GameSelectedVideoPriceSummary({
   }
 
   if (!selectedVideoMarketEntry) {
-    return null;
+    if (!fallbackRankLabel && !fallbackViewCountLabel) {
+      return null;
+    }
+
+    const fallbackTrendBadges = selectedVideoTrendBadges.map((badge) => ({
+      ...badge,
+      label: formatTrendBadgeLabel(badge),
+    }));
+
+    return (
+      <div className="app-shell__game-selected-summary" aria-label="선택한 영상 메타데이터">
+        <p className="app-shell__game-selected-summary-line">
+          {fallbackRankLabel ? (
+            <>
+              <span className="app-shell__game-selected-summary-label">순위</span>{' '}
+              <span className="app-shell__game-selected-summary-value">{fallbackRankLabel}</span>
+            </>
+          ) : null}
+          {fallbackRankLabel && fallbackViewCountLabel ? ' · ' : null}
+          {fallbackViewCountLabel ? (
+            <>
+              <span className="app-shell__game-selected-summary-label">조회수</span>{' '}
+              <span className="app-shell__game-selected-summary-value">{fallbackViewCountLabel}</span>
+            </>
+          ) : null}
+        </p>
+        {fallbackTrendBadges.length > 0 ? (
+          <p className="app-shell__game-selected-summary-badges">
+            <TrendBadges badges={fallbackTrendBadges} />
+          </p>
+        ) : null}
+      </div>
+    );
   }
 
   const selectedVideoMatchingRank = gameCoinOverview?.ranks.find(
@@ -520,6 +558,8 @@ export function SelectedVideoGameActionsBundle({
   buyActionTitle,
   canShowGameActions,
   desktopPlayerDockSlotRef,
+  fallbackRankLabel,
+  fallbackViewCountLabel,
   gameCoinOverview,
   isDesktopMiniPlayerEnabled = false,
   mainPlayerRef,
@@ -552,6 +592,8 @@ export function SelectedVideoGameActionsBundle({
 }: SelectedVideoGameActionsBundleProps) {
   const currentVideoGamePriceSummary = (
     <GameSelectedVideoPriceSummary
+      fallbackRankLabel={fallbackRankLabel}
+      fallbackViewCountLabel={fallbackViewCountLabel}
       gameCoinOverview={gameCoinOverview}
       maxSellQuantity={maxSellQuantity}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
