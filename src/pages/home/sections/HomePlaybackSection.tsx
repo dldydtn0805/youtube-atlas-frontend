@@ -33,17 +33,6 @@ type MobilePlayerPreviewResizeDirection =
   | 'bottom-left'
   | 'bottom-right';
 
-const MOBILE_PLAYER_PREVIEW_RESIZE_DIRECTIONS: MobilePlayerPreviewResizeDirection[] = [
-  'top',
-  'right',
-  'bottom',
-  'left',
-  'top-left',
-  'top-right',
-  'bottom-left',
-  'bottom-right',
-];
-
 interface StickySelectedVideoControls {
   isDesktopPlayerDockActive: boolean;
   desktopPlayerDockSlotRef?: RefObject<HTMLDivElement | null>;
@@ -886,28 +875,23 @@ export default function HomePlaybackSection({
         onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => {
           const eventTarget = event.target as HTMLElement;
           const dragLayer = eventTarget.closest('.app-shell__sticky-player-preview-drag-layer');
-          const resizeHandle = eventTarget.closest<HTMLElement>('.app-shell__sticky-player-preview-resize-handle');
           const previewShell = event.currentTarget;
           const previewRect = previewShell.getBoundingClientRect();
           const offsetX = event.clientX - previewRect.left;
           const offsetY = event.clientY - previewRect.top;
-          const resizeDirection =
-            (resizeHandle?.dataset.resizeDirection as MobilePlayerPreviewResizeDirection | undefined) ??
-            getResizeDirection(
-              offsetX,
-              offsetY,
-              previewRect.width,
-              previewRect.height,
-            );
+          const resizeDirection = getResizeDirection(
+            offsetX,
+            offsetY,
+            previewRect.width,
+            previewRect.height,
+          );
 
-          if (!dragLayer && !resizeHandle && !resizeDirection) {
+          if (!dragLayer && !resizeDirection) {
             return;
           }
 
-          const mode = dragLayer ? 'drag' : 'resize';
-
           dragStateRef.current = {
-            mode,
+            mode: resizeDirection ? 'resize' : 'drag',
             resizeDirection: resizeDirection ?? undefined,
             originHeight: getPreviewHeight(mobilePlayerPreviewLayout.width),
             originPointerX: event.clientX,
@@ -1049,14 +1033,6 @@ export default function HomePlaybackSection({
         >
           <span className="app-shell__sticky-player-preview-drag-grip" />
         </span>
-        {MOBILE_PLAYER_PREVIEW_RESIZE_DIRECTIONS.map((direction) => (
-          <span
-            key={direction}
-            aria-hidden="true"
-            className={`app-shell__sticky-player-preview-resize-handle app-shell__sticky-player-preview-resize-handle--${direction}`}
-            data-resize-direction={direction}
-          />
-        ))}
       </div>
     ) : null;
   const stickySelectedVideoSlot =
