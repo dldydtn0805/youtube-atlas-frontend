@@ -3,7 +3,6 @@ import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPla
 import type { GameCoinOverview, GameMarketVideo, GamePosition } from '../../../features/game/types';
 import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
-  calculateEstimatedCoinYield,
   formatCoins,
   formatGameQuantity,
   formatMiningStatusLabel,
@@ -139,6 +138,13 @@ export function GameSelectedVideoPriceSummary({
   selectedVideoOpenPositionSummary,
   selectedVideoTrendBadges,
 }: GameSelectedVideoPriceSummaryProps) {
+  const viewCountSummary = fallbackViewCountLabel ? (
+    <>
+      {' · '}<span className="app-shell__game-selected-summary-label">조회수</span>{' '}
+      <span className="app-shell__game-selected-summary-value">{fallbackViewCountLabel}</span>
+    </>
+  ) : null;
+
   if (!preferMarketSummary && selectedVideoOpenPositionCount <= 0 && selectedVideoHistoricalPosition) {
     const historicalStatusLabel =
       selectedVideoHistoricalPosition.status === 'AUTO_CLOSED' ? '자동 청산' : '매도 완료';
@@ -156,6 +162,7 @@ export function GameSelectedVideoPriceSummary({
               unavailableAsChartOut: true,
             })}
           </span>
+          {viewCountSummary}
           {' · '}<span className="app-shell__game-selected-summary-label">정산금</span>{' '}
           <span className="app-shell__game-selected-summary-value">
             {typeof selectedVideoHistoricalPosition.currentPricePoints === 'number'
@@ -197,6 +204,7 @@ export function GameSelectedVideoPriceSummary({
               unavailableAsChartOut: true,
             })}
           </span>
+          {viewCountSummary}
           {' · '}<span className="app-shell__game-selected-summary-label">정산금</span>{' '}
           <span className="app-shell__game-selected-summary-value">
             {typeof selectedVideoHistoricalPosition.currentPricePoints === 'number'
@@ -236,6 +244,7 @@ export function GameSelectedVideoPriceSummary({
               unavailableAsChartOut: true,
             })}
           </span>
+          {viewCountSummary}
           {!hideEvaluationPoints ? (
             <>
               {' · '}<span className="app-shell__game-selected-summary-label">평가 금액</span>{' '}
@@ -321,6 +330,7 @@ export function GameSelectedVideoPriceSummary({
               unavailableAsChartOut: selectedVideoIsChartOut,
             })}
           </span>
+          {viewCountSummary}
           {!hideEvaluationPoints ? (
             <>
               {' · '}<span className="app-shell__game-selected-summary-label">평가 금액</span>{' '}
@@ -408,13 +418,6 @@ export function GameSelectedVideoPriceSummary({
     ...badge,
     label: formatTrendBadgeLabel(badge),
   }));
-  const selectedVideoCoinYield =
-    gameCoinOverview && !selectedVideoIsChartOut && selectedVideoMatchingRank
-      ? calculateEstimatedCoinYield(
-          selectedVideoMarketEntry.currentPricePoints,
-          selectedVideoMatchingRank.coinRatePercent,
-        ) ?? 0
-      : 0;
   const selectedVideoMiningBadge = selectedVideoIsChartOut
     ? '차트 아웃'
     : selectedVideoMatchingRank
@@ -430,12 +433,11 @@ export function GameSelectedVideoPriceSummary({
         <span className="app-shell__game-selected-summary-value">
           {formatRank(selectedVideoMarketEntry.currentRank)}
         </span>
+        {viewCountSummary}
         {' · '}<span className="app-shell__game-selected-summary-label">현재 단가</span>{' '}
         <span className="app-shell__game-selected-summary-value">
           {formatPoints(selectedVideoMarketEntry.currentPricePoints)}
         </span>
-        {' · '}<span className="app-shell__game-selected-summary-label">개당 채굴량</span>{' '}
-        <span className="app-shell__game-selected-summary-value">{formatCoins(selectedVideoCoinYield)}</span>
       </p>
       {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoMiningBadge ? (
         <p className="app-shell__game-selected-summary-badges">

@@ -26,6 +26,48 @@ describe('GameSelectedVideoPriceSummary', () => {
     expect(screen.getByLabelText('선택한 영상 메타데이터')).toHaveTextContent('순위 3위 · 조회수 12.5만');
   });
 
+  it('shows view count next to rank when market data is available', () => {
+    render(
+      <GameSelectedVideoPriceSummary
+        fallbackRankLabel="3위"
+        fallbackViewCountLabel="12.5만"
+        preferMarketSummary
+        selectedVideoCurrentChartRank={3}
+        selectedVideoId="video-1"
+        selectedVideoIsChartOut={false}
+        selectedVideoMarketEntry={{
+          buyBlockedReason: null,
+          canBuy: true,
+          capturedAt: '2026-04-13T00:00:00.000Z',
+          channelTitle: '배도',
+          currentPricePoints: 1200,
+          currentRank: 3,
+          currentViewCount: 125000,
+          isNew: false,
+          previousRank: 4,
+          rankChange: 1,
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          title: '테스트 영상',
+          videoId: 'video-1',
+          viewCountDelta: 1000,
+        }}
+        selectedVideoOpenPositionCount={0}
+        selectedVideoOpenPositionSummary={{
+          evaluationPoints: 0,
+          profitPoints: 0,
+          quantity: 0,
+          stakePoints: 0,
+        }}
+        selectedVideoTrendBadges={[]}
+      />,
+    );
+
+    expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
+      '순위 3위 · 조회수 12.5만 · 현재 단가',
+    );
+    expect(screen.queryByText('개당 채굴량')).not.toBeInTheDocument();
+  });
+
   it('shows fallback trend badges when market data is unavailable', () => {
     render(
       <GameSelectedVideoPriceSummary
@@ -85,5 +127,60 @@ describe('GameSelectedVideoPriceSummary', () => {
     expect(screen.getByText('3위')).toBeInTheDocument();
     expect(screen.getByText('조회수')).toBeInTheDocument();
     expect(screen.getByText('12.5만')).toBeInTheDocument();
+  });
+
+  it('shows view count in the now playing panel bundle when market data is available', () => {
+    render(
+      <SelectedVideoGameActionsBundle
+        buyActionTitle="매수"
+        canShowGameActions
+        fallbackRankLabel="3위"
+        fallbackViewCountLabel="12.5만"
+        isBuySubmitting={false}
+        isChartDisabled={false}
+        isSelectedVideoBuyDisabled={false}
+        isSelectedVideoSellDisabled={false}
+        isSellSubmitting={false}
+        mode="panel"
+        onOpenBuyTradeModal={() => {}}
+        onOpenRankHistory={() => {}}
+        onOpenSellTradeModal={() => {}}
+        selectedGameActionChannelTitle="배도"
+        selectedGameActionTitle="테스트 영상"
+        selectedVideoCurrentChartRank={3}
+        selectedVideoId="video-1"
+        selectedVideoIsChartOut={false}
+        selectedVideoMarketEntry={{
+          buyBlockedReason: null,
+          canBuy: true,
+          capturedAt: '2026-04-13T00:00:00.000Z',
+          channelTitle: '배도',
+          currentPricePoints: 1200,
+          currentRank: 3,
+          currentViewCount: 125000,
+          isNew: false,
+          previousRank: 4,
+          rankChange: 1,
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          title: '테스트 영상',
+          videoId: 'video-1',
+          viewCountDelta: 1000,
+        }}
+        selectedVideoOpenPositionCount={0}
+        selectedVideoOpenPositionSummary={{
+          evaluationPoints: 0,
+          profitPoints: 0,
+          quantity: 0,
+          stakePoints: 0,
+        }}
+        selectedVideoTrendBadges={[]}
+        sellActionTitle="매도"
+      />,
+    );
+
+    expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
+      '순위 3위 · 조회수 12.5만 · 현재 단가',
+    );
+    expect(screen.queryByText('개당 채굴량')).not.toBeInTheDocument();
   });
 });
