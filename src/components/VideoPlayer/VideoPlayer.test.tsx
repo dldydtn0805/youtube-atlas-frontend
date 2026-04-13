@@ -100,4 +100,48 @@ describe('VideoPlayer', () => {
       videoId: 'video-a',
     });
   });
+
+  it('docks the existing player frame slot without recreating the player', async () => {
+    const { container, rerender } = render(<VideoPlayer selectedVideoId="video-a" />);
+
+    await waitFor(() => expect(playerConstructorCallCount).toBe(1));
+
+    const playerFrameSlot = container.querySelector<HTMLElement>('.video-player__frame-slot');
+    const playerFrame = container.querySelector('.video-player__frame');
+    const videoPlayer = container.querySelector('.video-player');
+
+    expect(playerFrameSlot).not.toBeNull();
+    expect(playerFrame).not.toBeNull();
+
+    rerender(
+      <VideoPlayer
+        dockStyle={{ height: '68px', left: '12px', top: '12px', width: '120px' }}
+        isDocked
+        selectedVideoId="video-a"
+      />,
+    );
+
+    expect(container.querySelector('.video-player__frame-slot')).toBe(playerFrameSlot);
+    expect(container.querySelector('.video-player__frame')).toBe(playerFrame);
+    expect(playerFrameSlot).not.toHaveStyle({
+      left: '12px',
+      top: '12px',
+    });
+    expect(videoPlayer).toHaveStyle({
+      height: '68px',
+      left: '12px',
+      position: 'fixed',
+      top: '12px',
+      width: '120px',
+    });
+    expect(playerConstructorCallCount).toBe(1);
+    expect(playerApi.destroy).not.toHaveBeenCalled();
+
+    rerender(<VideoPlayer selectedVideoId="video-a" />);
+
+    expect(container.querySelector('.video-player__frame-slot')).toBe(playerFrameSlot);
+    expect(container.querySelector('.video-player__frame')).toBe(playerFrame);
+    expect(playerConstructorCallCount).toBe(1);
+    expect(playerApi.destroy).not.toHaveBeenCalled();
+  });
 });

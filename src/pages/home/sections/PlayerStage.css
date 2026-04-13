@@ -3,15 +3,27 @@
   scroll-margin-top: 16px;
 }
 
-.app-shell__panel--player[data-player-docked='true'] {
+.app-shell__panel--player[data-player-docked='true']:not([data-cinematic='true']) {
   backdrop-filter: none;
   isolation: auto;
   overflow: visible;
 }
 
+.app-shell__panel--player[data-player-docked='true']:not([data-cinematic='true'])::before {
+  opacity: 0;
+}
+
+.app-shell__panel--player[data-player-docked='true']:not([data-cinematic='true']) > * {
+  z-index: auto;
+}
+
 .app-shell__player-viewport {
   scroll-margin-top: 12px;
   width: 100%;
+}
+
+.app-shell__player-viewport[data-docked='true'] {
+  overflow: visible;
 }
 
 .app-shell__section-heading.app-shell__section-heading--player {

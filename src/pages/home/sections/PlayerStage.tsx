@@ -88,10 +88,21 @@ function PlayerStage({
   toggleFavoriteStreamerPending,
 }: PlayerStageProps) {
   const hasSelectedVideo = Boolean(selectedVideoId);
+  const isVideoPlayerCinematic =
+    isCinematicModeActive || (isMobileLayout && isVideoPlayerDocked);
 
   return (
-    <div ref={playerStageRef} className="app-shell__stage" data-cinematic={isCinematicModeActive}>
-      <div className="app-shell__stage-stack" data-cinematic={isCinematicModeActive}>
+    <div
+      ref={playerStageRef}
+      className="app-shell__stage"
+      data-cinematic={isCinematicModeActive}
+      data-player-docked={isVideoPlayerDocked ? 'true' : 'false'}
+    >
+      <div
+        className="app-shell__stage-stack"
+        data-cinematic={isCinematicModeActive}
+        data-player-docked={isVideoPlayerDocked ? 'true' : 'false'}
+      >
         {isCinematicModeActive ? topContent : null}
         <section
           ref={playerSectionRef}
@@ -133,7 +144,7 @@ function PlayerStage({
             <VideoPlayer
               canNavigateVideos={canNavigateVideos}
               dockStyle={videoPlayerDockStyle}
-              isCinematic={isCinematicModeActive}
+              isCinematic={isVideoPlayerCinematic}
               isDocked={isVideoPlayerDocked}
               isLoading={isChartLoading}
               onNextVideo={onNextVideo}

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type CSSProperties, type ComponentProps, t
 import { createPortal } from 'react-dom';
 import { ChartPanel, CommunityPanel } from './ContentPanels';
 import { FilterBar } from './FilterPanels';
-import MiniVideoPreview from './MiniVideoPreview';
 import PlayerStage from './PlayerStage';
 import { getFullscreenElement } from '../utils';
 import './HomePlaybackSection.css';
@@ -227,15 +226,34 @@ export default function HomePlaybackSection({
   );
   const [isMobilePlayerPreviewCollapsed, setIsMobilePlayerPreviewCollapsed] = useState(false);
   const mobilePlayerPreviewVideoId = preferredPreviewVideoId ?? playerStageProps.selectedVideoId;
+  const shouldMountStickyPlayerPreview =
+    !playerStageProps.isCinematicModeActive &&
+    playerStageProps.isMobileLayout &&
+    Boolean(mobilePlayerPreviewVideoId);
+  const shouldShowStickyPlayerPreview =
+    shouldMountStickyPlayerPreview &&
+    isMobilePlayerPreviewEnabled &&
+    !isMobilePlayerPreviewCollapsed;
   const [mobilePlayerPreviewLayout, setMobilePlayerPreviewLayout] = useState(
     getInitialMobilePlayerPreviewLayout,
   );
   const desktopPlayerDockSlotRef = useRef<HTMLDivElement | null>(null);
+  const mobilePlayerDockSlotRef = useRef<HTMLDivElement | null>(null);
   const [desktopDockStyle, setDesktopDockStyle] = useState<{
     dockHeight: number;
     height: number;
     left: number;
     top: number;
+    width: number;
+  } | null>(null);
+  const [mobileDockStyle, setMobileDockStyle] = useState<{
+    height: number;
+    left: number;
+    top: number;
+    viewportHeight: number;
+    viewportLeft: number;
+    viewportTop: number;
+    viewportWidth: number;
     width: number;
   } | null>(null);
   const dragStateRef = useRef<
@@ -252,7 +270,6 @@ export default function HomePlaybackSection({
       }
     | null
   >(null);
-  const suppressPreviewClickRef = useRef(false);
 
   useEffect(() => {
     if (!playerStageProps.isCinematicModeActive) {
@@ -483,6 +500,102 @@ export default function HomePlaybackSection({
     playerStageProps.selectedVideoId,
   ]);
 
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !playerStageProps.isMobileLayout ||
+      !shouldShowStickyPlayerPreview ||
+      !playerStageProps.selectedVideoId
+    ) {
+      setMobileDockStyle(null);
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+
+    const syncMobileDockStyle = () => {
+      const dockSlot = mobilePlayerDockSlotRef.current;
+      const playerViewport = playerStageProps.playerViewportRef.current;
+
+      if (!dockSlot) {
+        setMobileDockStyle(null);
+        return;
+      }
+
+      const dockRect = dockSlot.getBoundingClientRect();
+      const viewportRect = playerViewport?.getBoundingClientRect();
+
+      if (dockRect.width <= 0 || dockRect.height <= 0) {
+        setMobileDockStyle(null);
+        return;
+      }
+
+      const viewportHeight =
+        viewportRect && viewportRect.height > 0 ? viewportRect.height : dockRect.height;
+      const viewportLeft = viewportRect?.left ?? dockRect.left;
+      const viewportTop = viewportRect?.top ?? dockRect.top;
+      const viewportWidth =
+        viewportRect && viewportRect.width > 0 ? viewportRect.width : dockRect.width;
+
+      setMobileDockStyle((currentStyle) => {
+        const nextStyle = {
+          height: dockRect.height,
+          left: dockRect.left,
+          top: dockRect.top,
+          viewportHeight,
+          viewportLeft,
+          viewportTop,
+          viewportWidth,
+          width: dockRect.width,
+        };
+
+        return currentStyle &&
+          currentStyle.height === nextStyle.height &&
+          currentStyle.left === nextStyle.left &&
+          currentStyle.top === nextStyle.top &&
+          currentStyle.viewportHeight === nextStyle.viewportHeight &&
+          currentStyle.viewportLeft === nextStyle.viewportLeft &&
+          currentStyle.viewportTop === nextStyle.viewportTop &&
+          currentStyle.viewportWidth === nextStyle.viewportWidth &&
+          currentStyle.width === nextStyle.width
+          ? currentStyle
+          : nextStyle;
+      });
+    };
+
+    const updateMobileDockStyle = () => {
+      animationFrameId = null;
+      syncMobileDockStyle();
+    };
+
+    const scheduleMobileDockStyleUpdate = () => {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateMobileDockStyle);
+    };
+
+    scheduleMobileDockStyleUpdate();
+    window.addEventListener('resize', scheduleMobileDockStyleUpdate);
+    window.addEventListener('scroll', scheduleMobileDockStyleUpdate, { passive: true });
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener('resize', scheduleMobileDockStyleUpdate);
+      window.removeEventListener('scroll', scheduleMobileDockStyleUpdate);
+    };
+  }, [
+    mobilePlayerPreviewLayout,
+    playerStageProps.isMobileLayout,
+    playerStageProps.playerViewportRef,
+    playerStageProps.selectedVideoId,
+    shouldShowStickyPlayerPreview,
+  ]);
+
   const handleScrollToTop = () => {
     if (typeof window === 'undefined') {
       return;
@@ -667,14 +780,6 @@ export default function HomePlaybackSection({
           },
         })
       : stickySelectedVideoContent;
-  const shouldMountStickyPlayerPreview =
-    !playerStageProps.isCinematicModeActive &&
-    playerStageProps.isMobileLayout &&
-    Boolean(mobilePlayerPreviewVideoId);
-  const shouldShowStickyPlayerPreview =
-    shouldMountStickyPlayerPreview &&
-    isMobilePlayerPreviewEnabled &&
-    !isMobilePlayerPreviewCollapsed;
   const stickyPlayerPreview =
     shouldMountStickyPlayerPreview && mobilePlayerPreviewVideoId ? (
       <div
@@ -717,7 +822,6 @@ export default function HomePlaybackSection({
             originY: mobilePlayerPreviewLayout.y,
             pointerId: event.pointerId,
           };
-          suppressPreviewClickRef.current = false;
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event: ReactPointerEvent<HTMLDivElement>) => {
@@ -729,10 +833,6 @@ export default function HomePlaybackSection({
 
           const deltaX = event.clientX - dragState.originPointerX;
           const deltaY = event.clientY - dragState.originPointerY;
-
-          if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
-            suppressPreviewClickRef.current = true;
-          }
 
           if (dragState.mode === 'drag') {
             setMobilePlayerPreviewLayout((currentLayout) =>
@@ -843,27 +943,11 @@ export default function HomePlaybackSection({
           }
         }}
       >
-        <button
-          aria-label="상단 미니 플레이어로 이동"
-          className="app-shell__sticky-player-preview"
-          onClick={(event) => {
-            if (suppressPreviewClickRef.current) {
-              suppressPreviewClickRef.current = false;
-              event.preventDefault();
-              return;
-            }
-
-            handleScrollToTop();
-          }}
-          type="button"
-        >
-          <MiniVideoPreview
-            containerClassName="app-shell__sticky-player-preview-thumb app-shell__sticky-player-preview-thumb--player"
-            frameClassName="app-shell__sticky-player-preview-frame"
-            mainPlayerRef={playerStageProps.playerRef}
-            selectedVideoId={mobilePlayerPreviewVideoId}
-          />
-        </button>
+        <div
+          ref={mobilePlayerDockSlotRef}
+          aria-hidden="true"
+          className="app-shell__sticky-player-preview-thumb app-shell__sticky-player-preview-thumb--player app-shell__sticky-player-preview-dock-slot"
+        />
         <span
           aria-hidden="true"
           className="app-shell__sticky-player-preview-drag-layer"
@@ -984,27 +1068,44 @@ export default function HomePlaybackSection({
     fullscreenElement instanceof HTMLElement
       ? createPortal(stickySelectedVideoSlot, fullscreenElement)
       : stickySelectedVideoSlot;
+  const renderedStickyPlayerPreview =
+    stickyPlayerPreview && typeof document !== 'undefined'
+      ? createPortal(stickyPlayerPreview, document.body)
+      : stickyPlayerPreview;
+  const videoPlayerDockStyle: CSSProperties | undefined = desktopDockStyle
+    ? {
+        height: `${desktopDockStyle.dockHeight}px`,
+        left: `${desktopDockStyle.left}px`,
+        position: 'fixed',
+        top: `${desktopDockStyle.top}px`,
+        width: `${desktopDockStyle.width}px`,
+      }
+    : mobileDockStyle
+      ? {
+          height: `${mobileDockStyle.height}px`,
+          left: `${mobileDockStyle.left}px`,
+          position: 'fixed',
+          top: `${mobileDockStyle.top}px`,
+          width: `${mobileDockStyle.width}px`,
+        }
+      : undefined;
+  const playerViewportStyle: CSSProperties | undefined = desktopDockStyle
+    ? { height: `${desktopDockStyle.height}px` }
+    : mobileDockStyle
+      ? { height: `${mobileDockStyle.viewportHeight}px` }
+      : undefined;
 
   return (
     <>
-      {stickyPlayerPreview}
+      {renderedStickyPlayerPreview}
       {renderedStickySelectedVideoSlot}
       <PlayerStage
         {...playerStageProps}
         chartContent={renderChartPanel(true)}
         filterContent={renderFilterBar()}
-        isVideoPlayerDocked={Boolean(desktopDockStyle)}
-        playerViewportStyle={desktopDockStyle ? { height: `${desktopDockStyle.height}px` } : undefined}
-        videoPlayerDockStyle={
-          desktopDockStyle
-            ? {
-                height: `${desktopDockStyle.dockHeight}px`,
-                left: `${desktopDockStyle.left}px`,
-                top: `${desktopDockStyle.top}px`,
-                width: `${desktopDockStyle.width}px`,
-              }
-            : undefined
-        }
+        isVideoPlayerDocked={Boolean(videoPlayerDockStyle)}
+        playerViewportStyle={playerViewportStyle}
+        videoPlayerDockStyle={videoPlayerDockStyle}
       />
       {!playerStageProps.isCinematicModeActive ? renderFilterBar() : null}
       {!playerStageProps.isCinematicModeActive ? renderChartPanel() : null}

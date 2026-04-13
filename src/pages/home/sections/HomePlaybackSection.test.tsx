@@ -12,20 +12,6 @@ vi.mock('./FilterPanels', () => ({
   FilterBar: () => <div data-testid="filter-bar" />,
 }));
 
-vi.mock('./MiniVideoPreview', () => ({
-  default: ({
-    containerClassName,
-    frameClassName,
-  }: {
-    containerClassName: string;
-    frameClassName: string;
-  }) => (
-    <div className={containerClassName} data-testid="mini-video-preview">
-      <div className={frameClassName} />
-    </div>
-  ),
-}));
-
 vi.mock('./PlayerStage', () => ({
   default: ({
     isVideoPlayerDocked,
@@ -502,7 +488,7 @@ describe('HomePlaybackSection', () => {
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();
+      expect(document.querySelector('.app-shell__sticky-player-preview-dock-slot')).not.toBeNull();
     });
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
   });
@@ -542,14 +528,49 @@ describe('HomePlaybackSection', () => {
     flushAnimationFrames();
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
 
+    const dockSlot = document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-dock-slot');
+    const playerViewport = screen.getByTestId('player-viewport');
+
+    expect(dockSlot).not.toBeNull();
+    vi.spyOn(dockSlot!, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 80,
+          height: 68,
+          left: 12,
+          right: 132,
+          top: 12,
+          width: 120,
+          x: 12,
+          y: 12,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+    vi.spyOn(playerViewport, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          bottom: 180,
+          height: 180,
+          left: 0,
+          right: 320,
+          top: 0,
+          width: 320,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+
     fireEvent.click(screen.getByRole('button', { name: 'now playing 켜기' }));
+    flushAnimationFrames();
 
     await waitFor(() => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
     });
+    expect(screen.getByTestId('player-dock-state')).toHaveTextContent('docked');
 
     const stickyFrame = document.querySelector('.app-shell__sticky-selected-video-frame');
-    expect(stickyFrame?.querySelector('.app-shell__sticky-player-preview')).toBeNull();
+    expect(stickyFrame?.querySelector('.app-shell__sticky-player-preview-dock-slot')).toBeNull();
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')).not.toBeNull();
     expect(screen.queryByText('Now Playing')).not.toBeInTheDocument();
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
@@ -742,7 +763,7 @@ describe('HomePlaybackSection', () => {
     flushAnimationFrames();
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();
+      expect(document.querySelector('.app-shell__sticky-player-preview-dock-slot')).not.toBeNull();
     });
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
 
@@ -841,7 +862,7 @@ describe('HomePlaybackSection', () => {
     flushAnimationFrames();
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-player-preview')).not.toBeNull();
+      expect(document.querySelector('.app-shell__sticky-player-preview-dock-slot')).not.toBeNull();
     });
     expect(document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-shell')?.style.left).toBe('12px');
     expect(document.querySelector<HTMLElement>('.app-shell__sticky-player-preview-shell')?.style.top).toBe('12px');

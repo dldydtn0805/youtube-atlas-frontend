@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import PlayerStage from './PlayerStage';
 
 vi.mock('../../../components/VideoPlayer/VideoPlayer', () => ({
-  default: () => <div data-testid="video-player" />,
+  default: ({ isCinematic }: { isCinematic?: boolean }) => (
+    <div data-cinematic={isCinematic ? 'true' : 'false'} data-testid="video-player" />
+  ),
 }));
 
 function createProps(overrides: Partial<React.ComponentProps<typeof PlayerStage>> = {}): React.ComponentProps<typeof PlayerStage> {
@@ -47,5 +49,21 @@ describe('PlayerStage', () => {
     render(<PlayerStage {...createProps({ isMobileLayout: true })} />);
 
     expect(screen.queryByRole('button', { name: '시네마틱 모드' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the mobile panel layout while only the docked video player uses the cinematic path', () => {
+    const { container } = render(
+      <PlayerStage
+        {...createProps({
+          isMobileLayout: true,
+          isVideoPlayerDocked: true,
+        })}
+      />,
+    );
+
+    expect(container.querySelector('.app-shell__stage')?.getAttribute('data-cinematic')).toBe('false');
+    expect(container.querySelector('.app-shell__stage-stack')?.getAttribute('data-cinematic')).toBe('false');
+    expect(container.querySelector('.app-shell__panel--player')?.getAttribute('data-cinematic')).toBe('false');
+    expect(screen.getByTestId('video-player')).toHaveAttribute('data-cinematic', 'true');
   });
 });

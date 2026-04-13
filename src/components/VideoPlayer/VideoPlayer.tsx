@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, type CSSProperties } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, type CSSProperties } from 'react';
 import './VideoPlayer.css';
 
 let youtubeIframeApiPromise: Promise<void> | undefined;
@@ -79,7 +79,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   onPlaybackRestoreApplied,
 }, ref) {
   const videoId = selectedVideoId;
+  const playerFrameRef = useRef<HTMLDivElement | null>(null);
   const playerHostRef = useRef<HTMLDivElement | null>(null);
+  const [playerHostElement, setPlayerHostElement] = useState<HTMLDivElement | null>(null);
   const playerRef = useRef<YT.Player | null>(null);
   const currentVideoIdRef = useRef(videoId);
   const onVideoEndRef = useRef(onVideoEnd);
@@ -87,6 +89,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const playbackRestoreRef = useRef(playbackRestore);
   const lastAppliedRestoreIdRef = useRef<number | null>(null);
   const isPlayerReadyRef = useRef(false);
+
+  const setPlayerHost = useCallback((element: HTMLDivElement | null) => {
+    if (playerHostRef.current === element) {
+      return;
+    }
+
+    playerHostRef.current = element;
+    setPlayerHostElement(element);
+  }, []);
 
   useEffect(() => {
     onVideoEndRef.current = onVideoEnd;
@@ -180,7 +191,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       if (
         isCancelled ||
         !videoId ||
-        !playerHostRef.current ||
+        !playerHostElement ||
         !window.YT?.Player ||
         playerRef.current
       ) {
@@ -190,7 +201,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       const restoreStartSeconds = getRestoreStartSeconds(videoId);
       isPlayerReadyRef.current = false;
 
-      playerRef.current = new window.YT.Player(playerHostRef.current, {
+      playerRef.current = new window.YT.Player(playerHostElement, {
         height: '100%',
         width: '100%',
         videoId,
@@ -221,7 +232,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     return () => {
       isCancelled = true;
     };
-  }, [videoId]);
+  }, [playerHostElement, videoId]);
 
   useEffect(() => {
     const player = playerRef.current;
@@ -281,6 +292,46 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
     };
   }, []);
 
+  const playerFrame = (
+    <div
+      ref={playerFrameRef}
+      className="video-player__frame"
+      data-docked={isDocked ? 'true' : 'false'}
+    >
+      <div className="video-player__embed-shell" data-visible={Boolean(videoId)}>
+        <div
+          ref={setPlayerHost}
+          className="video-player__embed"
+        />
+      </div>
+      {showOverlayNavigation && canNavigateVideos && videoId ? (
+        <div className="video-player__overlay-nav">
+          <button
+            aria-label="이전 영상"
+            className="video-player__overlay-button video-player__overlay-button--previous"
+            onClick={onPreviousVideo}
+            type="button"
+          >
+            <span className="video-player__overlay-icon">‹</span>
+          </button>
+          <button
+            aria-label="다음 영상"
+            className="video-player__overlay-button video-player__overlay-button--next"
+            onClick={onNextVideo}
+            type="button"
+          >
+            <span className="video-player__overlay-icon">›</span>
+          </button>
+        </div>
+      ) : null}
+      {!videoId ? (
+        <div className="video-player__placeholder">
+          {isLoading ? '선택한 카테고리 영상을 불러오는 중입니다.' : '재생할 영상을 선택해 주세요.'}
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
     <section
       className="video-player"
@@ -288,37 +339,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       data-docked={isDocked ? 'true' : 'false'}
       style={dockStyle}
     >
-      <div className="video-player__frame">
-        <div
-          ref={playerHostRef}
-          className="video-player__embed"
-          data-visible={Boolean(videoId)}
-        />
-        {showOverlayNavigation && canNavigateVideos && videoId ? (
-          <div className="video-player__overlay-nav">
-            <button
-              aria-label="이전 영상"
-              className="video-player__overlay-button video-player__overlay-button--previous"
-              onClick={onPreviousVideo}
-              type="button"
-            >
-              <span className="video-player__overlay-icon">‹</span>
-            </button>
-            <button
-              aria-label="다음 영상"
-              className="video-player__overlay-button video-player__overlay-button--next"
-              onClick={onNextVideo}
-              type="button"
-            >
-              <span className="video-player__overlay-icon">›</span>
-            </button>
-          </div>
-        ) : null}
-        {!videoId ? (
-          <div className="video-player__placeholder">
-            {isLoading ? '선택한 카테고리 영상을 불러오는 중입니다.' : '재생할 영상을 선택해 주세요.'}
-          </div>
-        ) : null}
+      <div
+        className="video-player__frame-slot"
+        data-docked={isDocked ? 'true' : 'false'}
+      >
+        {playerFrame}
       </div>
     </section>
   );

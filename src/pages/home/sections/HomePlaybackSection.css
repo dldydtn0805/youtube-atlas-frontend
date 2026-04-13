@@ -16,13 +16,11 @@
 
 .app-shell__sticky-player-preview-shell {
   align-items: center;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
   border-radius: 16px;
-  box-shadow:
-    0 12px 28px rgba(15, 23, 42, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+  box-shadow: none;
   display: flex;
   gap: 0;
   margin-bottom: 10px;
@@ -31,23 +29,8 @@
   position: fixed;
   touch-action: none;
   width: auto;
-  z-index: var(--layer-sticky-player-preview);
+  z-index: calc(var(--layer-modal-backdrop) - 2);
   cursor: nwse-resize;
-}
-
-.app-shell__sticky-player-preview {
-  background: transparent;
-  border: 0;
-  border-radius: 14px;
-  box-shadow: none;
-  color: inherit;
-  cursor: pointer;
-  display: block;
-  flex: 0 0 auto;
-  line-height: 0;
-  overflow: hidden;
-  padding: 0;
-  width: auto;
 }
 
 .app-shell__sticky-player-preview-shell[data-visible='false'] {
@@ -63,6 +46,7 @@
 }
 
 .app-shell__sticky-player-preview-thumb {
+  background: transparent;
   border-radius: 10px;
   display: block;
   flex: 0 0 auto;
@@ -72,29 +56,15 @@
   width: var(--sticky-player-preview-width, 128px);
 }
 
-.app-shell__sticky-player-preview-frame {
-  border-radius: 10px;
-  display: block;
-  flex: 0 0 auto;
-  height: var(--sticky-player-preview-height, 72px);
-  line-height: 0;
-  overflow: hidden;
-  width: var(--sticky-player-preview-width, 128px);
-}
-
-.app-shell__sticky-player-preview-frame > div,
-.app-shell__sticky-player-preview-frame iframe {
-  display: block;
-  height: 100%;
-  pointer-events: none;
-  width: 100%;
-}
-
 .app-shell__sticky-player-preview-drag-layer {
   align-items: flex-start;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 42%, rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 12px;
+  box-shadow:
+    0 12px 28px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.72) inset;
   cursor: grab;
   display: flex;
   inset: 6px;
@@ -102,7 +72,7 @@
   padding-top: 8px;
   pointer-events: auto;
   position: absolute;
-  z-index: 1;
+  z-index: 0;
   cursor: grab;
 }
 
@@ -229,23 +199,19 @@
     0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
-:root[data-theme='dark'] .app-shell__sticky-player-preview {
-  background: transparent;
-}
-
 :root[data-theme='dark'] .app-shell__sticky-player-preview-shell {
-  background:
-    linear-gradient(180deg, rgba(20, 20, 20, 0.9), rgba(8, 8, 8, 0.82)),
-    rgba(10, 10, 10, 0.72);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 :root[data-theme='dark'] .app-shell__sticky-player-preview-drag-layer {
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.34), rgba(15, 23, 42, 0.12) 42%, rgba(15, 23, 42, 0.06));
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 :root[data-theme='dark'] .app-shell__sticky-player-preview-drag-grip {
