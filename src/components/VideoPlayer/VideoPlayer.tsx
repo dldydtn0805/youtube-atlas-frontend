@@ -3,6 +3,10 @@ import './VideoPlayer.css';
 
 let youtubeIframeApiPromise: Promise<void> | undefined;
 
+type YouTubePlayerWithPlaybackControls = YT.Player & {
+  playVideo?: () => void;
+};
+
 function loadYouTubeIframeApi() {
   if (typeof window === 'undefined') {
     return Promise.resolve();
@@ -82,7 +86,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   const playerFrameRef = useRef<HTMLDivElement | null>(null);
   const playerHostRef = useRef<HTMLDivElement | null>(null);
   const [playerHostElement, setPlayerHostElement] = useState<HTMLDivElement | null>(null);
-  const playerRef = useRef<YT.Player | null>(null);
+  const playerRef = useRef<YouTubePlayerWithPlaybackControls | null>(null);
   const currentVideoIdRef = useRef(videoId);
   const onVideoEndRef = useRef(onVideoEnd);
   const onPlaybackRestoreAppliedRef = useRef(onPlaybackRestoreApplied);
@@ -122,12 +126,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   }, []);
 
   const attemptPlaybackStart = useCallback(
-    (player: YT.Player | null, options?: { scheduleRetry?: boolean }) => {
+    (player: YouTubePlayerWithPlaybackControls | null, options?: { scheduleRetry?: boolean }) => {
       if (!player || !isPlayerReadyRef.current || typeof player.playVideo !== 'function') {
         return;
       }
 
-      player.playVideo();
+      const playVideo = player.playVideo.bind(player);
+
+      playVideo();
 
       if (!options?.scheduleRetry || typeof document === 'undefined') {
         return;
@@ -137,7 +143,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
 
       const retryPlayback = () => {
         if (playerRef.current === player && isPlayerReadyRef.current) {
-          player.playVideo();
+          playVideo();
         }
 
         clearAutoplayRetry();
@@ -244,7 +250,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       const restoreStartSeconds = getRestoreStartSeconds(videoId);
       isPlayerReadyRef.current = false;
 
-        playerRef.current = new window.YT.Player(playerHostElement, {
+      playerRef.current = new window.YT.Player(playerHostElement, {
         height: '100%',
         width: '100%',
         videoId,
@@ -269,7 +275,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
             }
           },
         },
-      });
+      }) as YouTubePlayerWithPlaybackControls;
     }
 
     void initializePlayer();

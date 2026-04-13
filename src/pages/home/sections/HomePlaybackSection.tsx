@@ -81,7 +81,6 @@ function getResizeDirection(
   offsetX: number,
   offsetY: number,
   width: number,
-  height: number,
 ): MobilePlayerPreviewResizeDirection | null {
   const isLeft = offsetX <= MOBILE_PLAYER_PREVIEW_RESIZE_EDGE;
   const isRight = offsetX >= width - MOBILE_PLAYER_PREVIEW_RESIZE_EDGE;
@@ -859,7 +858,6 @@ export default function HomePlaybackSection({
             event.clientX - frameRect.left,
             event.clientY - frameRect.top,
             frameRect.width,
-            frameRect.height,
           );
           const canStartResize = Boolean(handleDirection);
           const canStartDrag = Boolean(dragLayer || (previewFrame && !dockSlot));
