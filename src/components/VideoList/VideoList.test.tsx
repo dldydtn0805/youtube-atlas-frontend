@@ -57,4 +57,21 @@ describe('VideoList', () => {
       expect.any(HTMLButtonElement),
     );
   });
+
+  it('shows a static playing badge for the selected video card', () => {
+    render(
+      <VideoList
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={baseSection}
+        selectedVideoId="video-1"
+      />,
+    );
+
+    expect(screen.getByText('재생 중')).toBeInTheDocument();
+  });
 });

@@ -1372,6 +1372,7 @@ function HomePage() {
             buyableVideoSearchStatus: activeChartBuyableVideoSearchStatus,
             chartErrorMessage: activeChartErrorMessage,
             collapsedFeaturedSectionIds,
+            currentTierCode: gameCoinTierProgress?.currentTier.tierCode,
             featuredSections: activeChartFeaturedSections,
             getRankLabel: activeChartRankLabel,
             hasNextPage: activeChartHasNextPage,

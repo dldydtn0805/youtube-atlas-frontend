@@ -11,6 +11,7 @@ interface ChartPanelProps {
   chartErrorMessage?: string;
   className?: string;
   collapsedFeaturedSectionIds?: string[];
+  currentTierCode?: string;
   featuredSections?: FeaturedVideoSection[];
   getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
   hasNextPage: boolean;
@@ -76,6 +77,7 @@ export function ChartPanel({
   chartErrorMessage,
   className,
   collapsedFeaturedSectionIds,
+  currentTierCode,
   featuredSections,
   getRankLabel,
   hasNextPage,
@@ -133,6 +135,7 @@ export function ChartPanel({
       </div>
       <VideoList
         collapsedSectionIds={collapsedFeaturedSectionIds}
+        currentTierCode={currentTierCode}
         errorMessage={chartErrorMessage}
         featuredSections={featuredSections}
         getRankLabel={getRankLabel}

@@ -1,7 +1,52 @@
 .video-list {
+  --video-list-tier-accent-rgb: 59, 130, 246;
+  --video-list-tier-accent: #3b82f6;
+  --video-list-tier-accent-strong: #93c5fd;
   display: grid;
   gap: 1.5rem;
   width: 100%;
+}
+
+.video-list[data-current-tier='BRONZE'] {
+  --video-list-tier-accent-rgb: 194, 104, 50;
+  --video-list-tier-accent: #c26832;
+  --video-list-tier-accent-strong: #f2a66d;
+}
+
+.video-list[data-current-tier='SILVER'] {
+  --video-list-tier-accent-rgb: 148, 163, 184;
+  --video-list-tier-accent: #94a3b8;
+  --video-list-tier-accent-strong: #cbd5e1;
+}
+
+.video-list[data-current-tier='GOLD'] {
+  --video-list-tier-accent-rgb: 234, 179, 8;
+  --video-list-tier-accent: #eab308;
+  --video-list-tier-accent-strong: #facc15;
+}
+
+.video-list[data-current-tier='PLATINUM'] {
+  --video-list-tier-accent-rgb: 20, 184, 166;
+  --video-list-tier-accent: #14b8a6;
+  --video-list-tier-accent-strong: #5eead4;
+}
+
+.video-list[data-current-tier='DIAMOND'] {
+  --video-list-tier-accent-rgb: 96, 165, 250;
+  --video-list-tier-accent: #60a5fa;
+  --video-list-tier-accent-strong: #93c5fd;
+}
+
+.video-list[data-current-tier='MASTER'] {
+  --video-list-tier-accent-rgb: 168, 85, 247;
+  --video-list-tier-accent: #a855f7;
+  --video-list-tier-accent-strong: #d8b4fe;
+}
+
+.video-list[data-current-tier='LEGEND'] {
+  --video-list-tier-accent-rgb: 244, 63, 94;
+  --video-list-tier-accent: #f43f5e;
+  --video-list-tier-accent-strong: #fda4af;
 }
 
 .video-list__section {
@@ -184,11 +229,19 @@
 }
 
 .video-card:hover,
-.video-card[data-active='true'] {
+.video-card[data-active='false'] {
   background: var(--surface-card-hover);
   border-color: var(--surface-card-hover-border);
   box-shadow: var(--shadow-card-hover);
   transform: translateY(-4px);
+}
+
+.video-card[data-active='true'] {
+  background:
+    radial-gradient(circle at top left, rgba(var(--video-list-tier-accent-rgb), 0.09), transparent 40%),
+    color-mix(in srgb, rgb(var(--video-list-tier-accent-rgb)) 9%, rgba(247, 249, 251, 0.97));
+  border-color: color-mix(in srgb, rgba(148, 163, 184, 0.2) 68%, rgb(var(--video-list-tier-accent-rgb)) 32%);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .video-card__meta-row {
@@ -196,6 +249,14 @@
   display: flex;
   gap: 0.75rem;
   justify-content: space-between;
+}
+
+.video-card__meta-main {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 .video-card__rank {
@@ -209,7 +270,49 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+  margin-left: auto;
   justify-content: flex-end;
+}
+
+.video-card__playing-badge {
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.12)),
+    color-mix(in srgb, rgb(var(--video-list-tier-accent-rgb)) 20%, rgba(255, 255, 255, 0.92));
+  border: 1px solid color-mix(in srgb, rgba(148, 163, 184, 0.18) 60%, rgb(var(--video-list-tier-accent-rgb)) 40%);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--text) 76%, var(--video-list-tier-accent) 24%);
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 24px;
+  padding: 0 0.65rem;
+  white-space: nowrap;
+}
+
+:root[data-theme='dark'] .video-card[data-active='true'] {
+  background:
+    radial-gradient(circle at top left, rgba(var(--video-list-tier-accent-rgb), 0.15), transparent 42%),
+    color-mix(in srgb, rgb(var(--video-list-tier-accent-rgb)) 13%, rgba(12, 12, 12, 0.94));
+  border-color: rgba(var(--video-list-tier-accent-rgb), 0.32);
+  box-shadow:
+    inset 0 -1px 0 rgba(var(--video-list-tier-accent-rgb), 0.07),
+    var(--shadow-card-hover);
+}
+
+:root[data-theme='dark'] .video-card__playing-badge {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, rgb(var(--video-list-tier-accent-rgb)) 18%, rgba(18, 18, 18, 0.96));
+  border-color: rgba(var(--video-list-tier-accent-rgb), 0.34);
+  color: color-mix(in srgb, #f8fafc 82%, var(--video-list-tier-accent-strong) 18%);
+}
+
+:root[data-theme='dark'] .video-list:not([data-current-tier]) {
+  --video-list-tier-accent-rgb: 96, 165, 250;
+  --video-list-tier-accent: #60a5fa;
+  --video-list-tier-accent-strong: #bfdbfe;
 }
 
 .video-card__trend-badge {
@@ -311,6 +414,16 @@
   .video-list__grid {
     gap: 1rem;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .video-card__meta-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .video-card__trend-group {
+    justify-content: flex-start;
+    margin-left: 0;
   }
 }
 

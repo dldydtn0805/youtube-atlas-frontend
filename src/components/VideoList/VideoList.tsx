@@ -11,6 +11,7 @@ export interface FeaturedVideoSection {
 }
 
 interface VideoListProps {
+  currentTierCode?: string;
   isLoading: boolean;
   isError: boolean;
   errorMessage?: string;
@@ -51,6 +52,7 @@ function formatViewCount(viewCount?: string) {
 }
 
 function VideoList({
+  currentTierCode,
   isLoading,
   isError,
   errorMessage,
@@ -152,6 +154,7 @@ function VideoList({
         {!isCollapsed && currentSection.items.length > 0 ? (
           <div className="video-list__grid">
             {currentSection.items.map((item, index) => {
+              const isSelected = selectedVideoId === item.id;
               const trendSignal = trendSignalsByVideoId?.[item.id];
               const trendBadges =
                 trendSignal
@@ -166,12 +169,17 @@ function VideoList({
                 <button
                   key={`${currentSection.categoryId}-${item.id}`}
                   className="video-card"
-                  data-active={selectedVideoId === item.id}
+                  data-active={isSelected}
                   onClick={(event) => onSelectVideo(item.id, currentSection.categoryId, event.currentTarget)}
                   type="button"
                 >
                   <div className="video-card__meta-row">
-                    <span className="video-card__rank">{rankLabel}</span>
+                    <div className="video-card__meta-main">
+                      <span className="video-card__rank">{rankLabel}</span>
+                      {isSelected ? (
+                        <span className="video-card__playing-badge">재생 중</span>
+                      ) : null}
+                    </div>
                     {trendBadges.length > 0 ? (
                       <span className="video-card__trend-group" aria-label="급상승 신호">
                         {trendBadges.map((badge) => (
@@ -221,7 +229,11 @@ function VideoList({
   }
 
   return (
-    <div className="video-list" aria-label="선택한 카테고리 인기 영상 목록">
+    <div
+      className="video-list"
+      aria-label="선택한 카테고리 인기 영상 목록"
+      data-current-tier={currentTierCode}
+    >
       {featuredSections.map(({ section: featuredSection, eyebrow, emptyMessage, getRankLabel }) =>
         renderSection(featuredSection, {
           eyebrow: eyebrow ?? 'Realtime Movers',
