@@ -18,6 +18,7 @@
 }
 
 .video-player__frame-slot {
+  aspect-ratio: 16 / 9;
   height: 100%;
   width: 100%;
 }
@@ -42,21 +43,24 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--surface-player-inset);
+  box-sizing: border-box;
+  height: 100%;
   overflow: hidden;
-  padding: 14px;
   position: relative;
+  width: 100%;
 }
 
 .video-player__embed-shell,
 .video-player__embed,
 .video-player__embed iframe,
 .video-player__embed-shell iframe {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: auto;
   background: #000;
   border: 0;
-  border-radius: 18px;
+  border-radius: inherit;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
   display: block;
+  height: 100%;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   width: 100%;
 }
@@ -186,17 +190,18 @@
 
 .video-player__placeholder {
   align-items: center;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: auto;
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 44%),
     #0a0a0a;
-  border-radius: 18px;
+  border-radius: inherit;
   color: rgba(255, 255, 255, 0.82);
   display: flex;
+  height: 100%;
   font-size: 1rem;
   font-weight: 600;
   justify-content: center;
-  inset: 14px;
+  inset: 0;
   padding: 24px;
   position: absolute;
   text-align: center;
@@ -210,25 +215,21 @@
   box-shadow: none;
   display: flex;
   justify-content: center;
-  min-height: var(--cinematic-player-max-height);
-  padding: 0;
-  width: 100%;
+  min-height: 0;
 }
 
 .video-player[data-cinematic='true'] .video-player__embed-shell,
 .video-player[data-cinematic='true'] .video-player__embed,
 .video-player[data-cinematic='true'] .video-player__placeholder {
   aspect-ratio: auto;
-  flex: none;
-  height: var(--cinematic-player-max-height);
-  width: min(100%, calc(var(--cinematic-player-max-height) * 16 / 9));
+  flex: 1 1 auto;
+  height: 100%;
+  width: 100%;
 }
 
 .video-player[data-cinematic='true'] .video-player__placeholder {
-  inset: auto;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  transform: none;
 }
 
 .video-player[data-cinematic='true'] .video-player__overlay-nav {
@@ -276,15 +277,10 @@
 @media (max-width: 768px) {
   .video-player__frame {
     border-radius: 20px;
-    padding: 10px;
   }
 
   .video-player__overlay-nav {
-    inset: 10px;
-  }
-
-  .video-player__placeholder {
-    inset: 10px;
+    inset: 0;
   }
 
   .video-player[data-cinematic='true'] .video-player__frame {
