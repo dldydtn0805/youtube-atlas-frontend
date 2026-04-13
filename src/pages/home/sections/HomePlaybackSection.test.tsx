@@ -785,7 +785,11 @@ describe('HomePlaybackSection', () => {
     await waitFor(() => {
       expect(previewShell?.style.left).toBe('12px');
       expect(previewShell?.style.top).toBe('12px');
+      expect(previewShell?.style.getPropertyValue('--sticky-player-preview-width')).toBe('360px');
     });
+
+    expect(document.querySelector('.app-shell__sticky-player-preview-resize-handle--top-left')).not.toBeNull();
+    expect(document.querySelector('.app-shell__sticky-player-preview-resize-handle--top-right')).not.toBeNull();
   });
 
   it('can disable the mobile player preview and remember the preference', async () => {
