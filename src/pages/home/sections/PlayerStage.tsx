@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode, RefObject } from 'react';
 import VideoPlayer, { type VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 import type { AuthStatus } from '../../../features/auth/types';
-import type { PendingPlaybackRestore } from '../utils';
 import './PlayerStage.css';
 
 interface PlayerStageProps {
@@ -14,19 +13,13 @@ interface PlayerStageProps {
   isChartLoading: boolean;
   isCinematicModeActive: boolean;
   isFavoriteToggleDisabled: boolean;
-  isManualPlaybackSaveDisabled: boolean;
   isMobileLayout: boolean;
   isSelectedChannelFavorited: boolean;
-  manualPlaybackSaveButtonLabel: string;
-  manualPlaybackSaveStatus?: string;
-  onManualPlaybackSave: () => void;
   onNextVideo: () => void;
   onOpenRegionModal: () => void;
   onPreviousVideo: () => void;
-  onPlaybackRestoreApplied?: (restoreId: number) => void;
   onToggleCinematicMode: () => void;
   onToggleFavoriteStreamer: () => void;
-  playbackRestore?: PendingPlaybackRestore | null;
   playerRef: RefObject<VideoPlayerHandle | null>;
   playerSectionRef: RefObject<HTMLElement | null>;
   playerStageRef: RefObject<HTMLDivElement | null>;
@@ -56,19 +49,13 @@ function PlayerStage({
   isChartLoading,
   isCinematicModeActive,
   isFavoriteToggleDisabled,
-  isManualPlaybackSaveDisabled,
   isMobileLayout,
   isSelectedChannelFavorited,
-  manualPlaybackSaveButtonLabel,
-  manualPlaybackSaveStatus,
-  onManualPlaybackSave,
   onNextVideo,
   onOpenRegionModal,
   onPreviousVideo,
-  onPlaybackRestoreApplied,
   onToggleCinematicMode,
   onToggleFavoriteStreamer,
-  playbackRestore,
   playerRef,
   playerSectionRef,
   playerStageRef,
@@ -148,10 +135,8 @@ function PlayerStage({
               isDocked={isVideoPlayerDocked}
               isLoading={isChartLoading}
               onNextVideo={onNextVideo}
-              onPlaybackRestoreApplied={onPlaybackRestoreApplied}
               onPreviousVideo={onPreviousVideo}
               onVideoEnd={onNextVideo}
-              playbackRestore={playbackRestore}
               ref={playerRef}
               selectedVideoId={selectedVideoId}
               showOverlayNavigation={!isMobileLayout}
@@ -180,52 +165,7 @@ function PlayerStage({
                 {stageMetadataContent ? <div className="app-shell__stage-summary">{stageMetadataContent}</div> : null}
               </div>
               <div className="app-shell__stage-side">
-                <div className="app-shell__stage-actions">
-                  {stageActionContent}
-                  <div className="app-shell__stage-action-item">
-                    <button
-                      aria-label={manualPlaybackSaveButtonLabel}
-                      className="app-shell__stage-action-button app-shell__stage-action-button--save"
-                      disabled={isManualPlaybackSaveDisabled}
-                      onClick={onManualPlaybackSave}
-                      title={manualPlaybackSaveButtonLabel}
-                      type="button"
-                    >
-                      <span className="app-shell__stage-action-icon" aria-hidden="true">
-                        {manualPlaybackSaveButtonLabel === '저장 중...' ? (
-                          '⋯'
-                        ) : (
-                          <svg viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M7.25 4.75h9.5a1.5 1.5 0 0 1 1.5 1.5v11.5a1.5 1.5 0 0 1-1.5 1.5h-9.5a1.5 1.5 0 0 1-1.5-1.5V6.25a1.5 1.5 0 0 1 1.5-1.5Z"
-                              stroke="currentColor"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="1.7"
-                            />
-                            <path
-                              d="M9 9.25h6M9 12.25h6M9 15.25h4"
-                              stroke="currentColor"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="1.7"
-                            />
-                          </svg>
-                        )}
-                      </span>
-                    </button>
-                    <span className="app-shell__stage-action-caption">저장</span>
-                  </div>
-                </div>
-                <p
-                  aria-hidden={!manualPlaybackSaveStatus}
-                  aria-live="polite"
-                  className="app-shell__stage-status"
-                  data-visible={Boolean(manualPlaybackSaveStatus)}
-                  role="status"
-                >
-                  {manualPlaybackSaveStatus ?? ' '}
-                </p>
+                <div className="app-shell__stage-actions">{stageActionContent}</div>
               </div>
             </div>
           ) : null}

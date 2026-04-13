@@ -484,26 +484,6 @@
   width: 42px;
 }
 
-.app-shell__stage-action-button--save {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.31), rgba(22, 163, 74, 0.19));
-  border-color: transparent;
-  color: #166534;
-}
-
-.app-shell__stage-action-button--save:hover,
-.app-shell__stage-action-button--save:focus-visible {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.37), rgba(22, 163, 74, 0.23));
-  border-color: transparent;
-}
-
-.app-shell__stage-action-button--save:disabled {
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.18), rgba(100, 116, 139, 0.1));
-  border-color: transparent;
-  color: #6b7280;
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
 .app-shell__stage-action-button--favorite[data-active='true'] {
   background: rgba(217, 119, 6, 0.12);
   border-color: rgba(245, 158, 11, 0.28);
@@ -531,28 +511,13 @@
   width: 18px;
 }
 
-.app-shell__stage-status {
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  line-height: 1.5;
-  margin: 0;
-  max-width: 220px;
-  min-height: calc(0.78rem * 1.5);
-  text-align: right;
-}
-
-.app-shell__stage-status[data-visible='false'] {
-  visibility: hidden;
-}
-
 :root[data-theme='dark'] .app-shell__stage-action-button--game[data-variant='buy'] {
   background: linear-gradient(180deg, rgba(248, 113, 113, 0.3), rgba(220, 38, 38, 0.18));
   border-color: transparent;
   color: #fff1f2;
 }
 
-:root[data-theme='dark'] .app-shell__stage-action-button--game .app-shell__stage-action-icon,
-:root[data-theme='dark'] .app-shell__stage-action-button--save .app-shell__stage-action-icon {
+:root[data-theme='dark'] .app-shell__stage-action-button--game .app-shell__stage-action-icon {
   color: #fff;
 }
 
@@ -592,17 +557,6 @@
   color: #fde68a;
 }
 
-:root[data-theme='dark'] .app-shell__stage-action-button--save {
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.38), rgba(22, 163, 74, 0.22));
-  border-color: transparent;
-  color: #f0fdf4;
-}
-
-:root[data-theme='dark'] .app-shell__stage-action-button--save:disabled {
-  background: linear-gradient(180deg, rgba(100, 116, 139, 0.34), rgba(51, 65, 85, 0.24));
-  border-color: transparent;
-  color: #cbd5e1;
-}
 
 :root[data-theme='dark'] .app-shell__stage-channel-favorite {
   color: rgba(253, 230, 138, 0.78);

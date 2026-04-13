@@ -86,19 +86,6 @@ function resolveProfitPoints(
   return evaluationPoints - position.stakePoints;
 }
 
-export function formatPlaybackSaveTimestamp(positionSeconds: number) {
-  const normalizedSeconds = Math.max(0, Math.floor(positionSeconds));
-  const hours = Math.floor(normalizedSeconds / 3600);
-  const minutes = Math.floor((normalizedSeconds % 3600) / 60);
-  const seconds = normalizedSeconds % 60;
-
-  if (hours > 0) {
-    return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
-  }
-
-  return [minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
-}
-
 export function formatHoldCountdown(remainingSeconds: number) {
   const normalizedSeconds = Math.max(0, Math.floor(remainingSeconds));
   const hours = Math.floor(normalizedSeconds / 3600);

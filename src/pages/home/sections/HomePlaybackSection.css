@@ -30,7 +30,7 @@
   touch-action: none;
   width: auto;
   z-index: calc(var(--layer-modal-backdrop) - 2);
-  cursor: default;
+  cursor: nwse-resize;
 }
 
 .app-shell__sticky-player-preview-shell[data-visible='false'] {
@@ -41,7 +41,7 @@
 
 .app-shell__sticky-player-preview-shell[data-visible='true'] {
   opacity: 1;
-  pointer-events: none;
+  pointer-events: auto;
   transform: scale(1);
 }
 
@@ -61,97 +61,23 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 42%, rgba(255, 255, 255, 0.04));
   border: 1px solid rgba(148, 163, 184, 0.24);
-  border-radius: 12px 12px 10px 10px;
+  border-radius: 12px;
   box-shadow:
     0 12px 28px rgba(15, 23, 42, 0.12),
     0 0 0 1px rgba(255, 255, 255, 0.72) inset;
   cursor: grab;
   display: flex;
-  inset: 6px 6px auto;
+  inset: 6px;
   justify-content: center;
-  min-height: 22px;
   padding-top: 8px;
   pointer-events: auto;
   position: absolute;
-  top: 6px;
-  z-index: 2;
-  width: calc(100% - 12px);
+  z-index: 0;
+  cursor: grab;
 }
 
 .app-shell__sticky-player-preview-drag-layer:active {
   cursor: grabbing;
-}
-
-.app-shell__sticky-player-preview-resize-handle {
-  pointer-events: auto;
-  position: absolute;
-  z-index: 3;
-}
-
-.app-shell__sticky-player-preview-resize-handle--top,
-.app-shell__sticky-player-preview-resize-handle--bottom {
-  height: 16px;
-  left: 18px;
-  right: 18px;
-}
-
-.app-shell__sticky-player-preview-resize-handle--top {
-  cursor: ns-resize;
-  top: 0;
-}
-
-.app-shell__sticky-player-preview-resize-handle--bottom {
-  bottom: 0;
-  cursor: ns-resize;
-}
-
-.app-shell__sticky-player-preview-resize-handle--left,
-.app-shell__sticky-player-preview-resize-handle--right {
-  bottom: 18px;
-  top: 26px;
-  width: 16px;
-}
-
-.app-shell__sticky-player-preview-resize-handle--left {
-  cursor: ew-resize;
-  left: 0;
-}
-
-.app-shell__sticky-player-preview-resize-handle--right {
-  cursor: ew-resize;
-  right: 0;
-}
-
-.app-shell__sticky-player-preview-resize-handle--top-left,
-.app-shell__sticky-player-preview-resize-handle--top-right,
-.app-shell__sticky-player-preview-resize-handle--bottom-left,
-.app-shell__sticky-player-preview-resize-handle--bottom-right {
-  height: 22px;
-  width: 22px;
-}
-
-.app-shell__sticky-player-preview-resize-handle--top-left {
-  cursor: nwse-resize;
-  left: 0;
-  top: 0;
-}
-
-.app-shell__sticky-player-preview-resize-handle--top-right {
-  cursor: nesw-resize;
-  right: 0;
-  top: 0;
-}
-
-.app-shell__sticky-player-preview-resize-handle--bottom-left {
-  bottom: 0;
-  cursor: nesw-resize;
-  left: 0;
-}
-
-.app-shell__sticky-player-preview-resize-handle--bottom-right {
-  bottom: 0;
-  cursor: nwse-resize;
-  right: 0;
 }
 
 .app-shell__sticky-player-preview-drag-grip {
