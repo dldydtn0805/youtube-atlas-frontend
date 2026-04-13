@@ -35,6 +35,20 @@ export async function fetchPopularVideosByCategory(
   );
 }
 
+export async function fetchMusicTopVideos(
+  regionCode: string,
+  pageToken?: string,
+): Promise<YouTubeCategorySection> {
+  const params = new URLSearchParams();
+  params.set('regionCode', regionCode);
+
+  if (pageToken) {
+    params.set('pageToken', pageToken);
+  }
+
+  return fetchApi<YouTubeCategorySection>(`/api/trending/music-top-videos?${params.toString()}`);
+}
+
 export async function fetchVideoById(videoId: string): Promise<YouTubeVideoItem> {
   return fetchApi<YouTubeVideoItem>(`/api/catalog/videos/${encodeURIComponent(videoId)}`);
 }

@@ -3,4 +3,5 @@ export type ChartViewMode =
   | 'realtime-surging'
   | 'new-chart-entries'
   | 'favorites'
-  | 'popular';
+  | 'popular'
+  | 'music';

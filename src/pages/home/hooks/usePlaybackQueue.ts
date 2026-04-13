@@ -6,6 +6,7 @@ import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features
 
 interface UsePlaybackQueueOptions {
   autoSelectFirstVideoWhenEmpty?: boolean;
+  extraPlaybackSections?: YouTubeCategorySection[];
   favoriteStreamerVideoSection?: YouTubeCategorySection;
   gamePortfolioSection?: YouTubeCategorySection;
   historyPlaybackSection?: YouTubeCategorySection;
@@ -22,6 +23,7 @@ interface UsePlaybackQueueOptions {
 
 function usePlaybackQueue({
   autoSelectFirstVideoWhenEmpty = false,
+  extraPlaybackSections,
   favoriteStreamerVideoSection,
   gamePortfolioSection,
   historyPlaybackSection,
@@ -47,6 +49,7 @@ function usePlaybackQueue({
   const shouldAutoSelectNextAvailableRef = useRef(false);
 
   const activePlaybackItems = getPlaybackQueueItems(activePlaybackQueueId, {
+    extraSections: extraPlaybackSections,
     favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -120,6 +123,7 @@ function usePlaybackQueue({
 
   function handleSelectAdjacentVideo(step: number) {
     const queueItems = getPlaybackQueueItems(activePlaybackQueueId, {
+      extraSections: extraPlaybackSections,
       favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
       gamePortfolioSection,
       historyPlaybackSection,
@@ -162,6 +166,7 @@ function usePlaybackQueue({
       activePlaybackQueueId === selectedCategoryQueueId &&
       !matchedSelectedSection;
     const queueItems = getPlaybackQueueItems(activePlaybackQueueId, {
+      extraSections: extraPlaybackSections,
       favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
       gamePortfolioSection,
       historyPlaybackSection,
@@ -176,12 +181,14 @@ function usePlaybackQueue({
         historyPlaybackSection?.categoryId ??
         gamePortfolioSection?.categoryId ??
         autoPlayableFavoriteStreamerSection?.categoryId ??
+        extraPlaybackSections?.find((section) => section.items.length > 0)?.categoryId ??
         newChartEntriesSection?.categoryId ??
         realtimeSurgingSection?.categoryId;
     const fallbackItems =
       queueItems.length > 0
         ? queueItems
         : getPlaybackQueueItems(fallbackQueueId, {
+            extraSections: extraPlaybackSections,
             favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
             gamePortfolioSection,
             historyPlaybackSection,
@@ -220,6 +227,7 @@ function usePlaybackQueue({
     activePlaybackQueueId,
     autoSelectFirstVideoWhenEmpty,
     autoPlayableFavoriteStreamerSection,
+    extraPlaybackSections,
     gamePortfolioSection,
     historyPlaybackSection,
     newChartEntriesSection,

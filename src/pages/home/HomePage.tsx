@@ -38,10 +38,12 @@ import {
   filterVideoSection,
   getFullscreenElement,
   getVideoThumbnailUrl,
+  isBuyableVideoSearchActive,
   mapGamePositionToVideoItem,
   mergeUniqueVideoItems,
   mergeSections,
   relabelVideoSection,
+  shouldPrefetchBuyableVideos,
   sortedCountryCodes,
   type RegionCode,
 } from './utils';
@@ -80,7 +82,7 @@ import {
 import { useVideoRankHistory } from '../../features/trending/queries';
 import type { VideoRankHistory, VideoTrendSignal } from '../../features/trending/types';
 import { fetchVideoById } from '../../features/youtube/api';
-import { usePopularVideosByCategory, useVideoCategories } from '../../features/youtube/queries';
+import { useMusicTopVideos, usePopularVideosByCategory, useVideoCategories } from '../../features/youtube/queries';
 import type { YouTubeVideoItem } from '../../features/youtube/types';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import '../../styles/app.css';
@@ -519,7 +521,50 @@ function HomePage() {
     isError,
     error,
   } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
+  const {
+    data: musicChartData,
+    fetchNextPage: fetchNextMusicChartPage,
+    hasNextPage: hasNextMusicChartPage = false,
+    isFetchingNextPage: isFetchingNextMusicChartPage,
+    isLoading: isMusicChartLoading,
+    isError: isMusicChartError,
+  } = useMusicTopVideos(
+    selectedRegionCode,
+    selectedCategory?.id === ALL_VIDEO_CATEGORY_ID && supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode),
+  );
   const selectedSection = mergeSections(data?.pages);
+  const musicChartSection = useMemo(
+    () =>
+      selectedCategory?.id === ALL_VIDEO_CATEGORY_ID && supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode)
+        ? mergeSections(musicChartData?.pages)
+        : undefined,
+    [musicChartData?.pages, selectedCategory?.id, selectedRegionCode],
+  );
+  const musicPlaybackSection = useMemo(
+    () =>
+      musicChartSection
+        ? {
+            ...musicChartSection,
+            categoryId: 'chart:music',
+          }
+        : undefined,
+    [musicChartSection],
+  );
+  const buyableVideoIdSet = useMemo(
+    () => new Set(gameMarket.filter((marketVideo) => marketVideo.canBuy).map((marketVideo) => marketVideo.videoId)),
+    [gameMarket],
+  );
+  const filteredMusicChartSection = useMemo(
+    () =>
+      isBuyableOnlyFilterActive
+        ? filterVideoSection(musicPlaybackSection, (item) => buyableVideoIdSet.has(item.id))
+        : musicPlaybackSection,
+    [buyableVideoIdSet, isBuyableOnlyFilterActive, musicPlaybackSection],
+  );
+  const extraPlaybackSections = useMemo(
+    () => (musicPlaybackSection ? [musicPlaybackSection] : []),
+    [musicPlaybackSection],
+  );
   const loadedSelectedVideoCount = selectedSection?.items.length ?? 0;
   const selectedPlaybackSection = useMemo(
     () =>
@@ -584,12 +629,8 @@ function HomePage() {
       return favoriteChartSection;
     }
 
-    const buyableVideoIdSet = new Set(
-      gameMarket.filter((marketVideo) => marketVideo.canBuy).map((marketVideo) => marketVideo.videoId),
-    );
-
     return filterVideoSection(favoriteChartSection, (item) => buyableVideoIdSet.has(item.id));
-  }, [favoriteChartSection, gameMarket, isBuyableOnlyFilterActive]);
+  }, [buyableVideoIdSet, favoriteChartSection, isBuyableOnlyFilterActive]);
   const gamePortfolioSection = useMemo(
     () => ({
       categoryId: GAME_PORTFOLIO_QUEUE_ID,
@@ -657,6 +698,24 @@ function HomePage() {
     shouldLoadFavorites,
   });
   const shouldShowTop200Label = isAllCategorySelected && isTrendRegionSelected;
+  const loadedMusicVideoCount = musicPlaybackSection?.items.length ?? 0;
+  const shouldAutoPrefetchBuyableMusicVideos = shouldPrefetchBuyableVideos({
+    hasNextPage: hasNextMusicChartPage,
+    isBuyableOnlyFilterActive,
+    isBuyableOnlyFilterAvailable,
+    isFetchingNextPage: isFetchingNextMusicChartPage,
+    loadedItemCount: loadedMusicVideoCount,
+  });
+  const isBuyableMusicVideoSearchActive = isBuyableVideoSearchActive({
+    hasNextPage: hasNextMusicChartPage,
+    isBuyableOnlyFilterActive,
+    isBuyableOnlyFilterAvailable,
+    isFetchingNextPage: isFetchingNextMusicChartPage,
+    loadedItemCount: loadedMusicVideoCount,
+  });
+  const buyableMusicVideoSearchStatus = isBuyableMusicVideoSearchActive
+    ? `매수 가능 영상을 찾는 중 · ${Math.min(loadedMusicVideoCount, 200)}/200개 확인`
+    : undefined;
   const displaySelectedPlaybackSection = useMemo(
     () =>
       shouldShowTop200Label
@@ -717,11 +776,18 @@ function HomePage() {
     isFavoriteStreamersLoading,
     isFetchingNextFavoriteStreamerVideosPage,
     isFetchingNextPage,
+    isFetchingNextMusicChartPage,
+    isMusicChartError,
+    isMusicChartLoading,
     isNewChartEntriesError,
     isNewChartEntriesLoading,
     isRealtimeSurgingError,
     isRealtimeSurgingLoading,
     isTrendRegionSelected,
+    hasNextMusicChartPage,
+    musicBuyableVideoSearchStatus: buyableMusicVideoSearchStatus,
+    musicChartSection: filteredMusicChartSection,
+    onLoadMoreMusicChart: fetchNextMusicChartPage,
     selectedChartView,
     setCollapsedHomeSectionIds,
     setSelectedChartView,
@@ -744,6 +810,7 @@ function HomePage() {
   } = useHomePlaybackState({
     accessToken,
     authStatus,
+    extraPlaybackSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -920,6 +987,14 @@ function HomePage() {
 
     void fetchNextPage();
   }, [fetchNextPage, shouldAutoPrefetchBuyableVideos]);
+
+  useEffect(() => {
+    if (!shouldAutoPrefetchBuyableMusicVideos) {
+      return;
+    }
+
+    void fetchNextMusicChartPage();
+  }, [fetchNextMusicChartPage, shouldAutoPrefetchBuyableMusicVideos]);
 
   function handleSelectRegion(regionCode: RegionCode) {
     resetForRegionChange();

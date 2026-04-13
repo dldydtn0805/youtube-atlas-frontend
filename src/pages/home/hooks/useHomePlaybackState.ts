@@ -20,6 +20,7 @@ import { formatPlaybackSaveTimestamp } from '../gameHelpers';
 interface UseHomePlaybackStateOptions {
   accessToken: string | null;
   authStatus: AuthStatus;
+  extraPlaybackSections?: YouTubeCategorySection[];
   favoriteStreamerVideoSection?: YouTubeCategorySection;
   gamePortfolioSection: YouTubeCategorySection;
   historyPlaybackSection?: YouTubeCategorySection;
@@ -64,6 +65,7 @@ interface UseHomePlaybackStateResult {
 function getPlaybackQueueIdForVideo(
   videoId: string | undefined,
   sections: {
+    extraPlaybackSections?: YouTubeCategorySection[];
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
@@ -74,6 +76,7 @@ function getPlaybackQueueIdForVideo(
 ) {
   return (
     findPlaybackQueueIdForVideo(videoId, {
+      extraSections: sections.extraPlaybackSections,
       favoriteStreamerVideoSection: sections.favoriteStreamerVideoSection,
       gamePortfolioSection: sections.gamePortfolioSection,
       historyPlaybackSection: sections.historyPlaybackSection,
@@ -87,6 +90,7 @@ function getPlaybackQueueIdForVideo(
 export default function useHomePlaybackState({
   accessToken,
   authStatus,
+  extraPlaybackSections,
   favoriteStreamerVideoSection,
   gamePortfolioSection,
   historyPlaybackSection,
@@ -119,6 +123,7 @@ export default function useHomePlaybackState({
         realtimeSurgingSection?.items,
         newChartEntriesSection?.items,
         selectedPlaybackSection?.items,
+        ...(extraPlaybackSections?.map((section) => section.items) ?? []),
         favoriteStreamerVideoSection?.items,
         gamePortfolioSection.items,
         historyPlaybackSection?.items,
@@ -129,6 +134,7 @@ export default function useHomePlaybackState({
       gamePortfolioSection.items,
       historyPlaybackSection?.items,
       newChartEntriesSection?.items,
+      extraPlaybackSections,
       realtimeSurgingSection?.items,
       restoredPlaybackVideo,
       selectedPlaybackSection?.items,
@@ -147,6 +153,7 @@ export default function useHomePlaybackState({
     updateActivePlaybackQueueId,
   } = usePlaybackQueue({
     autoSelectFirstVideoWhenEmpty: authStatus === 'anonymous',
+    extraPlaybackSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -241,6 +248,7 @@ export default function useHomePlaybackState({
     restorePlaybackSelection(
       playbackProgress.videoId,
       getPlaybackQueueIdForVideo(playbackProgress.videoId, {
+        extraPlaybackSections,
         favoriteStreamerVideoSection,
         gamePortfolioSection,
         historyPlaybackSection,
@@ -251,6 +259,7 @@ export default function useHomePlaybackState({
     );
   }, [
     authStatus,
+    extraPlaybackSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -267,6 +276,7 @@ export default function useHomePlaybackState({
     }
 
     const matchedQueueId = getPlaybackQueueIdForVideo(selectedVideoId, {
+      extraPlaybackSections,
       favoriteStreamerVideoSection,
       gamePortfolioSection,
       historyPlaybackSection,
@@ -280,6 +290,7 @@ export default function useHomePlaybackState({
     }
   }, [
     activePlaybackQueueId,
+    extraPlaybackSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,

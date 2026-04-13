@@ -405,6 +405,7 @@ export function getCategoryPlaybackQueueId(categoryId: string) {
 export function getPlaybackQueueItems(
   queueId: string | undefined,
   {
+    extraSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -413,6 +414,7 @@ export function getPlaybackQueueItems(
     restoredPlaybackVideo,
     selectedSection,
   }: {
+    extraSections?: YouTubeCategorySection[];
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
@@ -446,6 +448,12 @@ export function getPlaybackQueueItems(
     return historyPlaybackSection.items;
   }
 
+  const matchedExtraSection = extraSections?.find((section) => section.categoryId === queueId);
+
+  if (matchedExtraSection) {
+    return matchedExtraSection.items;
+  }
+
   if (queueId && selectedSection?.categoryId === queueId) {
     return selectedSection.items;
   }
@@ -456,6 +464,7 @@ export function getPlaybackQueueItems(
 export function findPlaybackQueueIdForVideo(
   videoId: string | undefined,
   {
+    extraSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -463,6 +472,7 @@ export function findPlaybackQueueIdForVideo(
     realtimeSurgingSection,
     selectedSection,
   }: {
+    extraSections?: YouTubeCategorySection[];
     favoriteStreamerVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
@@ -493,6 +503,12 @@ export function findPlaybackQueueIdForVideo(
 
   if (historyPlaybackSection?.items.some((item) => item.id === videoId)) {
     return historyPlaybackSection.categoryId;
+  }
+
+  const matchedExtraSection = extraSections?.find((section) => section.items.some((item) => item.id === videoId));
+
+  if (matchedExtraSection) {
+    return matchedExtraSection.categoryId;
   }
 
   if (selectedSection?.items.some((item) => item.id === videoId)) {

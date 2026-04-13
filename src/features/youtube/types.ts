@@ -2,8 +2,15 @@ export interface YouTubeCategorySection {
   categoryId: string;
   label: string;
   description: string;
+  availableCategories?: YouTubeAvailableCategory[];
   items: YouTubeVideoItem[];
   nextPageToken?: string;
+}
+
+export interface YouTubeAvailableCategory {
+  id: string;
+  label: string;
+  count: number;
 }
 
 export interface YouTubeVideoCategoryListResponse {
@@ -36,7 +43,19 @@ export interface YouTubeVideoItem {
     channelTitle: string;
     channelId: string;
     categoryId: string;
+    categoryLabel?: string;
     thumbnails: YouTubeThumbnails;
+  };
+  trend?: {
+    categoryLabel?: string;
+    currentRank?: number | null;
+    previousRank?: number | null;
+    rankChange?: number | null;
+    currentViewCount?: number | null;
+    previousViewCount?: number | null;
+    viewCountDelta?: number | null;
+    isNew?: boolean;
+    capturedAt?: string;
   };
 }
 

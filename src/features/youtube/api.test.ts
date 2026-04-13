@@ -179,6 +179,29 @@ describe('fetchPopularVideosByCategory', () => {
       undefined,
     );
   });
+
+  it('requests snapshot-backed music top videos from the trending endpoint', async () => {
+    const { fetchMusicTopVideos } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        categoryId: '10',
+        label: '음악',
+        description: '음악',
+        items: [],
+        nextPageToken: '50',
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const section = await fetchMusicTopVideos('KR', '50');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/trending/music-top-videos?regionCode=KR&pageToken=50',
+      undefined,
+    );
+    expect(section.nextPageToken).toBe('50');
+  });
 });
 
 describe('fetchVideoById', () => {

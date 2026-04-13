@@ -39,11 +39,18 @@ interface UseHomeChartViewStateOptions {
   isFavoriteStreamersLoading: boolean;
   isFetchingNextFavoriteStreamerVideosPage: boolean;
   isFetchingNextPage: boolean;
+  isFetchingNextMusicChartPage: boolean;
+  isMusicChartError: boolean;
+  isMusicChartLoading: boolean;
   isNewChartEntriesError: boolean;
   isNewChartEntriesLoading: boolean;
   isRealtimeSurgingError: boolean;
   isRealtimeSurgingLoading: boolean;
   isTrendRegionSelected: boolean;
+  hasNextMusicChartPage: boolean;
+  musicChartSection?: YouTubeCategorySection;
+  musicBuyableVideoSearchStatus?: string;
+  onLoadMoreMusicChart: () => Promise<unknown>;
   selectedChartView: ChartViewMode;
   setCollapsedHomeSectionIds: Dispatch<SetStateAction<string[]>>;
   setSelectedChartView: Dispatch<SetStateAction<ChartViewMode>>;
@@ -100,11 +107,18 @@ export default function useHomeChartViewState({
   isFavoriteStreamersLoading,
   isFetchingNextFavoriteStreamerVideosPage,
   isFetchingNextPage,
+  isFetchingNextMusicChartPage,
+  isMusicChartError,
+  isMusicChartLoading,
   isNewChartEntriesError,
   isNewChartEntriesLoading,
   isRealtimeSurgingError,
   isRealtimeSurgingLoading,
   isTrendRegionSelected,
+  hasNextMusicChartPage,
+  musicChartSection,
+  musicBuyableVideoSearchStatus,
+  onLoadMoreMusicChart,
   selectedChartView,
   setCollapsedHomeSectionIds,
   setSelectedChartView,
@@ -129,8 +143,13 @@ export default function useHomeChartViewState({
           label: '신규 진입',
           disabled: !isTrendRegionSelected,
         },
+        {
+          id: 'music',
+          label: '음악',
+          disabled: !musicChartSection,
+        },
       ] satisfies ChartViewOption[],
-    [authStatus, isTrendRegionSelected],
+    [authStatus, isTrendRegionSelected, musicChartSection],
   );
 
   useEffect(() => {
@@ -143,7 +162,8 @@ export default function useHomeChartViewState({
       isTrendRegionSelected ||
       selectedChartView === 'all' ||
       selectedChartView === 'favorites' ||
-      selectedChartView === 'popular'
+      selectedChartView === 'popular' ||
+      selectedChartView === 'music'
     ) {
       return;
     }
@@ -177,6 +197,11 @@ export default function useHomeChartViewState({
     (item: YouTubeVideoItem) =>
       formatTrendRankLabel(chartTrendSignalsByVideoId[item.id], hasResolvedChartTrendSignals),
     [chartTrendSignalsByVideoId, hasResolvedChartTrendSignals],
+  );
+  const musicChartGetRankLabel = useCallback(
+    (item: YouTubeVideoItem) =>
+      typeof item.trend?.currentRank === 'number' ? `${item.trend.currentRank}위` : '현재 순위 확인 중',
+    [],
   );
 
   const realtimeSurgingFeaturedSection = useMemo(
@@ -224,6 +249,8 @@ export default function useHomeChartViewState({
         ? newChartEntriesFeaturedSection?.section
         : effectiveChartView === 'favorites'
           ? buyableFavoriteChartSection
+          : effectiveChartView === 'music'
+            ? musicChartSection
           : displaySelectedPlaybackSection;
   const activeChartFeaturedSections =
     effectiveChartView === 'all'
@@ -238,6 +265,8 @@ export default function useHomeChartViewState({
         ? newChartEntriesFeaturedSection?.eyebrow
         : effectiveChartView === 'favorites'
           ? 'Favorite Videos'
+          : effectiveChartView === 'music'
+            ? 'Music Chart'
           : effectiveChartView === 'popular'
             ? 'Popular Videos'
             : 'Category Ranking';
@@ -248,6 +277,8 @@ export default function useHomeChartViewState({
         ? newChartEntriesFeaturedSection?.getRankLabel
         : effectiveChartView === 'favorites'
           ? favoriteChartGetRankLabel
+          : effectiveChartView === 'music'
+            ? musicChartGetRankLabel
           : popularChartGetRankLabel;
   const activeChartEmptyMessage =
     effectiveChartView === 'realtime-surging'
@@ -260,6 +291,8 @@ export default function useHomeChartViewState({
             : isBuyableOnlyFilterActive
               ? '지금 매수 가능한 즐겨찾기 영상이 없습니다. 필터를 해제하거나 다른 보기를 확인해 보세요.'
               : undefined
+          : effectiveChartView === 'music'
+            ? '음악 차트에 표시할 영상이 없습니다.'
           : undefined;
   const isTrendOnlyViewSelected = effectiveChartView !== 'all';
   const activeTrendViewIsLoading =
@@ -269,6 +302,8 @@ export default function useHomeChartViewState({
         ? isNewChartEntriesLoading
         : effectiveChartView === 'favorites'
           ? isFavoriteStreamersLoading || isFavoriteStreamerVideosLoading
+          : effectiveChartView === 'music'
+            ? isMusicChartLoading
           : false;
   const activeTrendViewIsError =
     effectiveChartView === 'realtime-surging'
@@ -277,6 +312,8 @@ export default function useHomeChartViewState({
         ? isNewChartEntriesError
         : effectiveChartView === 'favorites'
           ? isFavoriteStreamersError || isFavoriteStreamerVideosError
+          : effectiveChartView === 'music'
+            ? isMusicChartError
           : false;
   const activeChartIsLoading =
     effectiveChartView === 'favorites'
@@ -298,9 +335,13 @@ export default function useHomeChartViewState({
       : activeTrendViewIsError && !chartErrorMessage
         ? '선택한 차트 보기를 불러오지 못했습니다.'
         : chartErrorMessage;
+  const resolvedBuyableVideoSearchStatus =
+    effectiveChartView === 'music' ? musicBuyableVideoSearchStatus : buyableVideoSearchStatus;
   const activeChartHasNextPage =
     effectiveChartView === 'favorites'
       ? hasNextFavoriteStreamerVideosPage
+      : effectiveChartView === 'music'
+        ? hasNextMusicChartPage
       : effectiveChartView === 'realtime-surging' || effectiveChartView === 'new-chart-entries'
         ? false
         : hasNextPage;
@@ -308,19 +349,36 @@ export default function useHomeChartViewState({
     ? activeChartSection?.categoryId
     : 'chart-main-list';
   const activeChartHasResolvedTrendSignals =
-    effectiveChartView === 'favorites' ? hasResolvedFavoriteTrendSignals : hasResolvedChartTrendSignals;
+    effectiveChartView === 'favorites'
+      ? hasResolvedFavoriteTrendSignals
+      : effectiveChartView === 'music'
+        ? true
+        : hasResolvedChartTrendSignals;
   const activeChartIsFetchingNextPage =
-    effectiveChartView === 'favorites' ? isFetchingNextFavoriteStreamerVideosPage : isFetchingNextPage;
+    effectiveChartView === 'favorites'
+      ? isFetchingNextFavoriteStreamerVideosPage
+      : effectiveChartView === 'music'
+        ? isFetchingNextMusicChartPage
+        : isFetchingNextPage;
   const activeChartTrendSignalsByVideoId =
-    effectiveChartView === 'favorites' ? favoriteTrendSignalsByVideoId : chartTrendSignalsByVideoId;
+    effectiveChartView === 'favorites'
+      ? favoriteTrendSignalsByVideoId
+      : effectiveChartView === 'music'
+        ? {}
+        : chartTrendSignalsByVideoId;
   const activeChartOnLoadMore = useCallback(() => {
     if (effectiveChartView === 'favorites') {
       void fetchNextFavoriteStreamerVideosPage();
       return;
     }
 
+    if (effectiveChartView === 'music') {
+      void onLoadMoreMusicChart();
+      return;
+    }
+
     void fetchNextPage();
-  }, [effectiveChartView, fetchNextFavoriteStreamerVideosPage, fetchNextPage]);
+  }, [effectiveChartView, fetchNextFavoriteStreamerVideosPage, fetchNextPage, onLoadMoreMusicChart]);
   const chartViewExpandedSectionIds = useMemo(
     (): Partial<Record<ChartViewMode, string[]>> => ({
       all: [
@@ -329,6 +387,7 @@ export default function useHomeChartViewState({
         ...(favoriteFeaturedSection ? [favoriteFeaturedSection.section.categoryId] : []),
       ],
       favorites: buyableFavoriteChartSection?.categoryId ? [buyableFavoriteChartSection.categoryId] : [],
+      music: musicChartSection?.categoryId ? [musicChartSection.categoryId] : [],
       'new-chart-entries': newChartEntriesFeaturedSection?.section.categoryId
         ? [newChartEntriesFeaturedSection.section.categoryId]
         : [],
@@ -342,6 +401,8 @@ export default function useHomeChartViewState({
       displaySelectedPlaybackSection?.categoryId,
       favoriteFeaturedSection,
       featuredChartSections,
+      musicChartGetRankLabel,
+      musicChartSection?.categoryId,
       newChartEntriesFeaturedSection?.section.categoryId,
       realtimeSurgingFeaturedSection?.section.categoryId,
     ],
@@ -373,7 +434,7 @@ export default function useHomeChartViewState({
   return {
     activeChartBuyableOnlyFilterActive: isBuyableOnlyFilterActive,
     activeChartBuyableOnlyFilterAvailable: isBuyableOnlyFilterAvailable,
-    activeChartBuyableVideoSearchStatus: buyableVideoSearchStatus,
+    activeChartBuyableVideoSearchStatus: resolvedBuyableVideoSearchStatus,
     activeChartEmptyMessage,
     activeChartErrorMessage,
     activeChartFeaturedSections,
