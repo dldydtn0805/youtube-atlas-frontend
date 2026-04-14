@@ -988,6 +988,24 @@
   color: rgba(245, 245, 245, 0.72);
 }
 
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-eyebrow,
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-metric-label {
+  color: color-mix(in srgb, rgba(245, 245, 245, 0.74) 68%, rgb(var(--season-coin-accent-rgb)) 32%);
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-title,
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-action {
+  color: color-mix(in srgb, #f8fafc 78%, rgb(var(--season-coin-accent-rgb)) 22%);
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-metric-value {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .app-shell__game-dividend--preview .app-shell__game-dividend-metric-detail {
+  color: color-mix(in srgb, rgba(245, 245, 245, 0.76) 82%, rgb(var(--season-coin-accent-rgb)) 18%);
+}
+
 :root[data-theme='dark'] .app-shell__game-tier-eyebrow {
   color: rgba(245, 245, 245, 0.72);
 }
@@ -1033,6 +1051,24 @@
     0 24px 40px rgba(2, 6, 23, 0.36),
     0 10px 18px rgba(var(--game-tier-accent-rgb), 0.12),
     0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-eyebrow {
+  color: color-mix(in srgb, rgba(245, 245, 245, 0.74) 68%, var(--game-tier-accent-strong) 32%);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-title,
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-name {
+  color: color-mix(in srgb, #f8fafc 78%, var(--game-tier-accent-strong) 22%);
+}
+
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-balance {
+  color: #fffdf8;
+}
+
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-description,
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress-scale {
+  color: color-mix(in srgb, rgba(245, 245, 245, 0.76) 82%, var(--game-tier-accent-strong) 18%);
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-name,
