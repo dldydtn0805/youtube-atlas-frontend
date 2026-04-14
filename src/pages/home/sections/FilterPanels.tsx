@@ -70,7 +70,7 @@ export function RegionFilterModal({
                 <h3 className="app-shell__modal-field-title">탐색 국가</h3>
               </div>
               <p className="app-shell__modal-field-copy">
-                베타 버전에서는 대한민국 외 국가에서 일부 기능이 제한될 수 있습니다.
+                지역 제한이 걸려 있는 일부 영상은 감상할 수 없습니다.
               </p>
               <SearchBar
                 ariaLabel="국가 선택"
