@@ -1,5 +1,5 @@
 import './RankingGamePanel.css';
-import { memo, useMemo, type ReactNode, type RefObject } from 'react';
+import { memo, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
 import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 import type {
   GameCoinOverview,
@@ -1193,6 +1193,19 @@ function RankingGameHistoryTabComponent({
   selectedPositionId,
   selectedVideoId,
 }: RankingGameHistoryTabProps) {
+  const selectedHistoryItemRef = useRef<HTMLLIElement | null>(null);
+
+  useEffect(() => {
+    if (typeof selectedHistoryItemRef.current?.scrollIntoView !== 'function') {
+      return;
+    }
+
+    selectedHistoryItemRef.current.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  }, [activePlaybackQueueId, positions, selectedPositionId, selectedVideoId]);
+
   if (isLoading) {
     return <p className="app-shell__game-empty">거래내역을 불러오는 중입니다.</p>;
   }
@@ -1220,7 +1233,12 @@ function RankingGameHistoryTabComponent({
         const sellFeePoints = grossSellPoints !== null ? calculateSellFeePoints(grossSellPoints) : null;
 
         return (
-          <li key={position.id} className="app-shell__game-history-item" data-selected={isSelectedPosition}>
+          <li
+            key={position.id}
+            ref={isSelectedPosition ? selectedHistoryItemRef : null}
+            className="app-shell__game-history-item"
+            data-selected={isSelectedPosition}
+          >
             <button
               className="app-shell__game-history-select"
               disabled={isLoadingHistoryPlayback}

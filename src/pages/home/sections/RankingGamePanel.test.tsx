@@ -153,4 +153,45 @@ describe('RankingGameHistoryTab', () => {
     expect(screen.getByText('First position').closest('li')).toHaveAttribute('data-selected', 'false');
     expect(screen.getByText('Second position').closest('li')).toHaveAttribute('data-selected', 'true');
   });
+
+  it('scrolls the selected history row into view', () => {
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+
+    try {
+      render(
+        <RankingGameHistoryTab
+          activePlaybackQueueId={HISTORY_PLAYBACK_QUEUE_ID}
+          emptyMessage={null}
+          historyPlaybackLoadingVideoId={null}
+          isLoading={false}
+          onSelectPosition={vi.fn()}
+          positions={[
+            createGamePosition({
+              id: 1,
+              title: 'First position',
+              videoId: 'video-1',
+            }),
+            createGamePosition({
+              id: 2,
+              title: 'Selected position',
+              videoId: 'video-2',
+              createdAt: '2026-01-02T00:00:00.000Z',
+            }),
+          ]}
+          resolvePlaybackQueueId={() => HISTORY_PLAYBACK_QUEUE_ID}
+          selectedPositionId={2}
+          selectedVideoId="video-2"
+        />,
+      );
+
+      expect(scrollIntoView).toHaveBeenCalledWith({
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    } finally {
+      HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+    }
+  });
 });
