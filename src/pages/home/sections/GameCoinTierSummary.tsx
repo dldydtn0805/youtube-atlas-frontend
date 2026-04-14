@@ -21,6 +21,17 @@ function getTierProgressPercent(progress: GameCoinTierProgress) {
   return Math.max(0, Math.min(100, (progressed / range) * 100));
 }
 
+function getTierCardNumber(progress: GameCoinTierProgress) {
+  const tierCode = progress.currentTier.tierCode.slice(0, 4).padEnd(4, '0');
+  const currentFloor = String(progress.currentTier.minCoinBalance).padEnd(4, '0').slice(0, 4);
+  const nextFloor = progress.nextTier
+    ? String(progress.nextTier.minCoinBalance).padEnd(4, '0').slice(0, 4)
+    : '9999';
+  const coinBalance = String(progress.coinBalance).padStart(4, '0').slice(-4);
+
+  return `YTAT ${tierCode} ${currentFloor} ${nextFloor} ${coinBalance}`;
+}
+
 export default function GameCoinTierSummary({
   progress,
   surfaceVariant = 'default',
@@ -35,6 +46,8 @@ export default function GameCoinTierSummary({
   const remainingToNextTier = progress.nextTier
     ? Math.max(progress.nextTier.minCoinBalance - progress.coinBalance, 0)
     : 0;
+  const tierCardNumber = getTierCardNumber(progress);
+  const progressLabel = `${Math.round(progressPercent)}%`;
 
   return (
     <section
@@ -48,32 +61,52 @@ export default function GameCoinTierSummary({
         <h5 className="app-shell__game-tier-title">{title}</h5>
       </div>
 
-      <div className="app-shell__game-tier-card" data-tier-code={progress.currentTier.tierCode}>
-        <div className="app-shell__game-tier-head">
-          <div className="app-shell__game-tier-head-copy">
+      <div className="app-shell__game-tier-card-frame">
+        <div className="app-shell__game-tier-card" data-tier-code={progress.currentTier.tierCode}>
+          <div className="app-shell__game-tier-card-top">
+            <span className="app-shell__game-tier-issuer">YOUTUBE ATLAS</span>
+            <span className="app-shell__game-tier-network">Season Coin</span>
+          </div>
+
+          <div className="app-shell__game-tier-card-tech" aria-hidden="true">
+            <span className="app-shell__game-tier-chip" />
+            <span className="app-shell__game-tier-contactless" />
+          </div>
+
+          <span className="app-shell__game-tier-card-number" aria-label={`티어 카드 번호 ${tierCardNumber}`}>
+            {tierCardNumber}
+          </span>
+
+          <div className="app-shell__game-tier-head">
             <span className="app-shell__game-tier-name" title={`${progress.currentTier.displayName} 티어`}>
               {progress.currentTier.displayName}
             </span>
-            <p className="app-shell__game-tier-description">
-              {progress.nextTier
-                ? `${progress.nextTier.displayName}까지 ${formatCoins(remainingToNextTier)} 남음`
-                : '이번 시즌 최고 티어를 달성했어요.'}
-            </p>
+            <strong className="app-shell__game-tier-balance" title={formatCoins(progress.coinBalance)}>
+              {formatCoins(progress.coinBalance)}
+            </strong>
           </div>
-          <strong className="app-shell__game-tier-balance" title={formatCoins(progress.coinBalance)}>
-            {formatCoins(progress.coinBalance)}
-          </strong>
-        </div>
 
-        <div className="app-shell__game-tier-progress" aria-hidden="true">
-          <div className="app-shell__game-tier-progress-fill" style={{ width: `${progressPercent}%` }} />
-        </div>
+          <p className="app-shell__game-tier-description">
+            {progress.nextTier
+              ? `${progress.nextTier.displayName}까지 ${formatCoins(remainingToNextTier)} 남음`
+              : '이번 시즌 최고 티어를 달성했어요.'}
+          </p>
 
-        <div className="app-shell__game-tier-progress-scale">
-          <span>{formatCoins(progress.currentTier.minCoinBalance)}</span>
-          <span>
-            {progress.nextTier ? formatCoins(progress.nextTier.minCoinBalance) : 'MAX'}
-          </span>
+          <div className="app-shell__game-tier-progress-label">
+            <span>진행률</span>
+            <span>{progressLabel}</span>
+          </div>
+
+          <div className="app-shell__game-tier-progress" aria-hidden="true">
+            <div className="app-shell__game-tier-progress-fill" style={{ width: `${progressPercent}%` }} />
+          </div>
+
+          <div className="app-shell__game-tier-progress-scale">
+            <span>{formatCoins(progress.currentTier.minCoinBalance)}</span>
+            <span>
+              {progress.nextTier ? formatCoins(progress.nextTier.minCoinBalance) : 'MAX'}
+            </span>
+          </div>
         </div>
       </div>
 

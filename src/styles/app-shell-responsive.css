@@ -57,6 +57,65 @@
     text-align: left;
   }
 
+  .app-shell__game-tier-card-frame {
+    display: grid;
+    width: 100%;
+  }
+
+  .app-shell__game-tier-card-frame > .app-shell__game-tier-card {
+    --game-tier-card-max-width: 260px;
+    gap: 14px;
+    aspect-ratio: 0.63 / 1;
+    height: auto;
+    min-height: 0;
+    padding: 14px;
+    position: relative;
+    transform: none;
+    width: 100%;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-head {
+    align-items: end;
+    flex-direction: row;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-balance {
+    text-align: right;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-card-number {
+    font-size: 0.86rem;
+    line-height: 1.35;
+    max-width: 100%;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-spacing: 0.12em;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-card-tech {
+    margin-top: 4px;
+    min-height: 48px;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-chip {
+    height: 36px;
+    width: 44px;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-contactless {
+    height: 30px;
+    width: 30px;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-head > .app-shell__game-tier-name {
+    font-size: 1.28rem;
+  }
+
+  .app-shell__game-tier-card-frame .app-shell__game-tier-description,
+  .app-shell__game-tier-card-frame .app-shell__game-tier-progress-scale {
+    font-size: 0.78rem;
+  }
+
   .app-shell__section-heading--chart {
     align-items: flex-start;
     flex-direction: row;

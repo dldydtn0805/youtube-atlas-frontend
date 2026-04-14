@@ -169,6 +169,20 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.app-shell__game-dividend-metrics--preview .app-shell__game-dividend-metric {
+  align-content: start;
+  gap: 2px;
+  grid-template-rows: auto auto auto;
+  min-height: 54px;
+  padding: 9px 12px;
+}
+
+.app-shell__game-dividend-metrics--preview .app-shell__game-dividend-metric-detail {
+  font-size: 0.66rem;
+  line-height: 1.2;
+  min-height: 0;
+}
+
 .app-shell__game-dividend-metric {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.94)),
@@ -360,38 +374,64 @@
 }
 
 .app-shell__game-tier-card {
+  --game-tier-card-max-width: 348px;
   background:
-    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.1), transparent 34%),
-    color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 8%, rgba(247, 249, 251, 0.97));
+    linear-gradient(115deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 100%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.2) 0 1px, transparent 1px 100%),
+    radial-gradient(ellipse at 12% 12%, rgba(255, 248, 210, 0.9) 0%, rgba(var(--game-tier-accent-rgb), 0.46) 26%, transparent 48%),
+    radial-gradient(ellipse at 72% 64%, rgba(248, 113, 113, 0.58) 0%, rgba(var(--game-tier-accent-rgb), 0.34) 36%, transparent 62%),
+    linear-gradient(132deg, #081827 0%, color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 36%, #0f172a 64%) 52%, #111827 100%);
+  background-size: 58% 100%, 100% 48%, auto, auto, auto;
   border: 1px solid var(--game-tier-border);
-  border-radius: 14px;
+  border-radius: 8px;
+  color: #fffdf8;
   isolation: isolate;
   overflow: hidden;
   position: relative;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    0 8px 18px rgba(148, 163, 184, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.26),
+    0 18px 34px rgba(15, 23, 42, 0.16);
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  aspect-ratio: 1.586 / 1;
+  height: auto;
+  justify-self: center;
+  max-width: var(--game-tier-card-max-width);
   padding: 12px;
+  width: 100%;
+}
+
+.app-shell__game-tier-card-frame {
+  display: grid;
+  min-width: 0;
 }
 
 .app-shell__game-tier-card::before {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.46) 18%,
-    rgba(255, 255, 255, 0.88) 50%,
-    rgba(255, 255, 255, 0.38) 82%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.24) 0 1px, transparent 1px 100%),
+    linear-gradient(90deg, transparent 0 calc(33.333% - 1px), rgba(255, 255, 255, 0.32) calc(33.333% - 1px) 33.333%, transparent 33.333% calc(66.666% - 1px), rgba(255, 255, 255, 0.32) calc(66.666% - 1px) 66.666%, transparent 66.666%),
+    linear-gradient(0deg, transparent 0 calc(50% - 1px), rgba(255, 255, 255, 0.28) calc(50% - 1px) 50%, transparent 50%);
+  background-size: 3px 3px, auto, auto;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.42),
-    0 2px 0 rgba(15, 23, 42, 0.08);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -34px 70px rgba(0, 0, 0, 0.1);
   content: '';
-  height: 1px;
-  inset: 0 0 auto;
-  opacity: 0;
+  inset: 0;
+  mix-blend-mode: soft-light;
+  opacity: 0.72;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.app-shell__game-tier-card::after {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(255, 255, 255, 0.34), transparent 38%),
+    linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.18) 36%, transparent 54%);
+  content: '';
+  inset: 0;
+  opacity: 0.78;
   pointer-events: none;
   position: absolute;
   z-index: 1;
@@ -404,43 +444,135 @@
 
 :root:not([data-theme='dark']) .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-card {
   background:
-    linear-gradient(
-      120deg,
-      rgba(255, 255, 255, 0.94) 0%,
-      rgba(255, 255, 255, 0.58) 16%,
-      rgba(var(--game-tier-accent-rgb), 0.16) 34%,
-      rgba(255, 255, 255, 0.78) 52%,
-      rgba(203, 213, 225, 0.24) 68%,
-      rgba(255, 255, 255, 0.9) 100%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(226, 232, 240, 0.24)),
-    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.14), transparent 40%),
-    color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 10%, rgba(244, 246, 248, 0.98));
-  border-color: transparent;
+    linear-gradient(115deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 100%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px 100%),
+    radial-gradient(ellipse at 14% 16%, rgba(255, 241, 158, 0.94) 0%, rgba(var(--game-tier-accent-rgb), 0.58) 26%, transparent 48%),
+    radial-gradient(ellipse at 68% 70%, rgba(248, 78, 101, 0.72) 0%, rgba(var(--game-tier-accent-rgb), 0.38) 42%, transparent 66%),
+    linear-gradient(134deg, #0b1d2c 0%, color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 38%, #172036 62%) 56%, #071726 100%);
+  background-size: 58% 100%, 100% 48%, auto, auto, auto;
+  border-color: rgba(255, 255, 255, 0.26);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    inset 0 -1px 0 rgba(var(--game-tier-accent-rgb), 0.08),
-    inset 1px 0 0 rgba(255, 255, 255, 0.42),
-    inset -1px 0 0 rgba(148, 163, 184, 0.12),
-    0 12px 24px rgba(15, 23, 42, 0.07);
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.24),
+    0 18px 34px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.12);
 }
 
 :root:not([data-theme='dark']) .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-card::before {
-  background: linear-gradient(
-    100deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.34) 20%,
-    rgba(255, 255, 255, 0.88) 34%,
-    rgba(255, 255, 255, 0.28) 46%,
-    rgba(255, 255, 255, 0) 64%
-  );
+  opacity: 0.68;
+}
+
+.app-shell__game-tier-card-top {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.app-shell__game-tier-issuer,
+.app-shell__game-tier-network,
+.app-shell__game-tier-progress-label {
+  color: rgba(255, 253, 248, 0.82);
+  font-size: 0.64rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.app-shell__game-tier-issuer {
+  align-items: center;
+  color: #fffdf8;
+  display: inline-flex;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  gap: 6px;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow:
+    1px 1px 0 rgba(0, 0, 0, 0.36),
+    0 0 12px rgba(255, 253, 248, 0.24);
+}
+
+.app-shell__game-tier-issuer::before {
+  background:
+    linear-gradient(90deg, #fffdf8 0 4px, transparent 4px 6px, #fffdf8 6px 10px),
+    linear-gradient(90deg, transparent 0 2px, #fffdf8 2px 8px, transparent 8px 10px);
+  background-position: 0 0, 0 4px;
+  background-size: 10px 4px, 10px 4px;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4),
-    0 8px 16px rgba(255, 255, 255, 0.12);
-  height: 100%;
-  inset: 0;
-  opacity: 0.72;
-  transform: translateX(-8%);
+    1px 1px 0 rgba(0, 0, 0, 0.36),
+    0 0 10px rgba(255, 253, 248, 0.22);
+  content: '';
+  display: block;
+  height: 8px;
+  width: 10px;
+}
+
+.app-shell__game-tier-network {
+  text-align: right;
+}
+
+.app-shell__game-tier-card-tech {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 26px;
+}
+
+.app-shell__game-tier-chip {
+  background:
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(72, 63, 45, 0.7) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(0deg, transparent calc(50% - 1px), rgba(72, 63, 45, 0.7) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(135deg, #f8e6b2, #a99158);
+  border: 1px solid rgba(255, 244, 203, 0.62);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(56, 44, 22, 0.28),
+    0 5px 12px rgba(0, 0, 0, 0.14);
+  height: 26px;
+  width: 34px;
+}
+
+.app-shell__game-tier-contactless {
+  border: 2px solid rgba(255, 253, 248, 0.76);
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+  display: block;
+  height: 22px;
+  position: relative;
+  transform: rotate(-45deg);
+  width: 22px;
+}
+
+.app-shell__game-tier-contactless::before,
+.app-shell__game-tier-contactless::after {
+  border: 2px solid rgba(255, 253, 248, 0.76);
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+  content: '';
+  position: absolute;
+}
+
+.app-shell__game-tier-contactless::before {
+  inset: 4px;
+}
+
+.app-shell__game-tier-contactless::after {
+  inset: 10px;
+}
+
+.app-shell__game-tier-card-number {
+  color: #fffdf8;
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.22);
+  word-spacing: 0.12em;
 }
 
 :root:not([data-theme='dark']) .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress {
@@ -475,7 +607,7 @@
 }
 
 .app-shell__game-tier-head {
-  align-items: flex-start;
+  align-items: end;
   display: flex;
   gap: 10px;
   justify-content: space-between;
@@ -489,11 +621,12 @@
 
 .app-shell__game-tier-name,
 .app-shell__game-tier-balance {
-  color: color-mix(in srgb, var(--text) 88%, var(--game-tier-accent) 12%);
+  color: #fffdf8;
   display: block;
   font-size: 0.88rem;
   font-weight: 800;
   line-height: 1.3;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
 }
 
 .app-shell__game-leaderboard-tier {
@@ -586,10 +719,21 @@
   line-height: 1.45;
 }
 
+.app-shell__game-tier-card .app-shell__game-tier-description,
+.app-shell__game-tier-card .app-shell__game-tier-progress-scale {
+  color: rgba(255, 253, 248, 0.82);
+}
+
 .app-shell__game-tier-head-copy > .app-shell__game-tier-name {
   font-size: 1.18rem;
   justify-self: start;
   line-height: 1.2;
+}
+
+.app-shell__game-tier-head > .app-shell__game-tier-name {
+  font-size: 1rem;
+  line-height: 1.15;
+  min-width: 0;
 }
 
 .app-shell__game-tier-balance {
@@ -598,16 +742,22 @@
   text-align: right;
 }
 
+.app-shell__game-tier-progress-label {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
 .app-shell__game-tier-progress {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 45%),
-    linear-gradient(180deg, rgba(var(--game-tier-accent-rgb), 0.06), rgba(148, 163, 184, 0.12));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(8, 24, 39, 0.28));
   border-radius: 999px;
-  height: 10px;
+  height: 8px;
   overflow: hidden;
   box-shadow:
-    inset 0 1px 2px rgba(148, 163, 184, 0.14),
-    0 0 0 1px rgba(var(--game-tier-accent-rgb), 0.08);
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 .app-shell__game-tier-progress-fill {
@@ -820,6 +970,17 @@
   }
 }
 
+@media (max-width: 420px) {
+  .app-shell__game-tier-card {
+    padding: 14px;
+  }
+
+  .app-shell__game-tier-card-number {
+    font-size: 0.94rem;
+    word-spacing: 0.12em;
+  }
+}
+
 .app-shell__game-dividend-rank {
   align-items: start;
   background:
@@ -1012,12 +1173,15 @@
 
 :root[data-theme='dark'] .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.16), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 26%),
-    color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 12%, rgba(14, 14, 14, 0.96));
-  border-color: rgba(255, 255, 255, 0.11);
+    linear-gradient(115deg, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px 100%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 100%),
+    radial-gradient(ellipse at 12% 12%, rgba(255, 223, 122, 0.74) 0%, rgba(var(--game-tier-accent-rgb), 0.46) 28%, transparent 50%),
+    radial-gradient(ellipse at 72% 66%, rgba(244, 63, 94, 0.52) 0%, rgba(var(--game-tier-accent-rgb), 0.26) 40%, transparent 66%),
+    linear-gradient(132deg, #06111d 0%, color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 28%, #0f172a 72%) 54%, #030b14 100%);
+  background-size: 58% 100%, 100% 48%, auto, auto, auto;
+  border-color: rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.075),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 0 -1px 0 rgba(0, 0, 0, 0.24),
     0 22px 38px rgba(2, 6, 23, 0.34),
     0 8px 14px rgba(2, 6, 23, 0.2),
@@ -1025,28 +1189,20 @@
 }
 
 :root[data-theme='dark'] .app-shell__game-tier-card::before {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.36) 18%,
-    rgba(255, 255, 255, 0.82) 50%,
-    rgba(255, 255, 255, 0.28) 82%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  box-shadow:
-    0 0 10px rgba(255, 255, 255, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.05);
-  opacity: 1;
+  opacity: 0.58;
 }
 
 :root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-card {
   background:
-    radial-gradient(circle at top left, rgba(var(--game-tier-accent-rgb), 0.2), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 26%),
-    color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 14%, rgba(14, 14, 14, 0.96));
-  border-color: rgba(255, 255, 255, 0.1);
+    linear-gradient(115deg, rgba(255, 255, 255, 0.18) 0 1px, transparent 1px 100%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.14) 0 1px, transparent 1px 100%),
+    radial-gradient(ellipse at 12% 12%, rgba(255, 223, 122, 0.78) 0%, rgba(var(--game-tier-accent-rgb), 0.52) 28%, transparent 50%),
+    radial-gradient(ellipse at 72% 66%, rgba(244, 63, 94, 0.58) 0%, rgba(var(--game-tier-accent-rgb), 0.3) 40%, transparent 66%),
+    linear-gradient(132deg, #06111d 0%, color-mix(in srgb, rgb(var(--game-tier-accent-rgb)) 32%, #101729 68%) 54%, #030b14 100%);
+  background-size: 58% 100%, 100% 48%, auto, auto, auto;
+  border-color: rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 0 -1px 0 rgba(var(--game-tier-accent-rgb), 0.12),
     0 24px 40px rgba(2, 6, 23, 0.36),
     0 10px 18px rgba(var(--game-tier-accent-rgb), 0.12),
@@ -1067,7 +1223,8 @@
 }
 
 :root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-description,
-:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress-scale {
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress-scale,
+:root[data-theme='dark'] .app-shell__game-tier[data-surface-variant='season-coin'] .app-shell__game-tier-progress-label {
   color: color-mix(in srgb, rgba(245, 245, 245, 0.76) 82%, var(--game-tier-accent-strong) 18%);
 }
 
