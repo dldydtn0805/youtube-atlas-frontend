@@ -45,6 +45,7 @@ import {
   mergeUniqueVideoItems,
   mergeSections,
   relabelVideoSection,
+  resolvePlaybackCategoryLabel,
   shouldPrefetchBuyableVideos,
   sortedCountryCodes,
   type RegionCode,
@@ -780,6 +781,13 @@ function HomePage() {
         : filteredSelectedPlaybackSection,
     [filteredSelectedPlaybackSection, shouldShowTop200Label],
   );
+  const labeledSelectedPlaybackSection = useMemo(
+    () =>
+      shouldShowTop200Label
+        ? relabelVideoSection(selectedPlaybackSection, 'TOP 200')
+        : selectedPlaybackSection,
+    [selectedPlaybackSection, shouldShowTop200Label],
+  );
   const favoriteStreamerVideoErrorMessage =
     favoriteStreamerVideosError instanceof Error
       ? favoriteStreamerVideosError.message
@@ -886,6 +894,29 @@ function HomePage() {
     videoPlayerRef,
   });
   const [previewVideoId, setPreviewVideoId] = useState<string | undefined>();
+  const selectedPlaybackCategoryLabel = useMemo(
+    () =>
+      resolvePlaybackCategoryLabel({
+        activePlaybackQueueId,
+        extraPlaybackSections,
+        fallbackLabel: selectedChartViewOption.label,
+        favoriteStreamerVideoSection,
+        newChartEntriesSection,
+        realtimeSurgingSection,
+        selectedPlaybackSection: labeledSelectedPlaybackSection,
+        selectedVideoId,
+      }),
+    [
+      activePlaybackQueueId,
+      extraPlaybackSections,
+      favoriteStreamerVideoSection,
+      labeledSelectedPlaybackSection,
+      newChartEntriesSection,
+      realtimeSurgingSection,
+      selectedChartViewOption.label,
+      selectedVideoId,
+    ],
+  );
   const {
     activeTradeModal,
     buyQuantity,
@@ -1124,7 +1155,7 @@ function HomePage() {
     resolvedSelectedVideo,
     selectedOpenPositionId,
     selectedCategoryId,
-    selectedCategoryLabel: selectedChartViewOption.label,
+    selectedCategoryLabel: selectedPlaybackCategoryLabel,
     selectedCountryName,
     selectedRegionCode,
     selectedVideoId,
@@ -1760,7 +1791,7 @@ function HomePage() {
             playerSectionRef,
             playerStageRef,
             playerViewportRef,
-            selectedCategoryLabel: selectedChartViewOption.label,
+            selectedCategoryLabel: selectedPlaybackCategoryLabel,
             selectedCountryName,
             selectedVideoChannelTitle: resolvedSelectedVideo?.snippet.channelTitle,
             selectedVideoId,

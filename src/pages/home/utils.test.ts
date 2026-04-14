@@ -14,10 +14,35 @@ import {
   NEW_CHART_ENTRIES_QUEUE_ID,
   REALTIME_SURGING_QUEUE_ID,
   relabelVideoSection,
+  resolvePlaybackCategoryLabel,
   shouldRenderRealtimeSurgingSection,
   shouldPrefetchBuyableVideos,
 } from './utils';
 import type { GamePosition } from '../../features/game/types';
+import type { YouTubeCategorySection } from '../../features/youtube/types';
+
+function createVideoSection(categoryId: string, label: string, videoIds: string[]): YouTubeCategorySection {
+  return {
+    categoryId,
+    description: `${label} 섹션`,
+    items: videoIds.map((videoId) => ({
+      id: videoId,
+      contentDetails: { duration: '' },
+      snippet: {
+        title: videoId,
+        channelTitle: '채널',
+        channelId: 'channel-1',
+        categoryId,
+        thumbnails: {
+          default: { url: 'https://example.com/default.jpg', width: 120, height: 90 },
+          medium: { url: 'https://example.com/medium.jpg', width: 320, height: 180 },
+          high: { url: 'https://example.com/high.jpg', width: 480, height: 360 },
+        },
+      },
+    })),
+    label,
+  };
+}
 
 describe('home utils', () => {
   it('can skip adjacent positions that share the same video id', () => {
@@ -414,6 +439,40 @@ describe('home utils', () => {
     ).toBe('4위');
     expect(formatTrendRankLabel(undefined, false)).toBe('현재 순위 확인 중');
     expect(formatTrendRankLabel(undefined, true)).toBe('현재 순위 미집계');
+  });
+
+  it('uses the active playback queue label when the queue is a chart section', () => {
+    expect(
+      resolvePlaybackCategoryLabel({
+        activePlaybackQueueId: 'chart:music',
+        extraPlaybackSections: [createVideoSection('chart:music', '음악', ['video-1'])],
+        fallbackLabel: '전체',
+        selectedPlaybackSection: createVideoSection('category:0', 'TOP 200', ['video-2']),
+        selectedVideoId: 'video-1',
+      }),
+    ).toBe('음악');
+  });
+
+  it('infers the current video label for portfolio and history playback queues', () => {
+    expect(
+      resolvePlaybackCategoryLabel({
+        activePlaybackQueueId: 'game-portfolio',
+        fallbackLabel: '전체',
+        realtimeSurgingSection: createVideoSection(REALTIME_SURGING_QUEUE_ID, '실시간 급상승', ['video-1']),
+        selectedPlaybackSection: createVideoSection('category:0', 'TOP 200', ['video-1']),
+        selectedVideoId: 'video-1',
+      }),
+    ).toBe('내 포지션');
+
+    expect(
+      resolvePlaybackCategoryLabel({
+        activePlaybackQueueId: 'history-playback',
+        extraPlaybackSections: [createVideoSection('chart:music', '음악', ['video-2'])],
+        fallbackLabel: '전체',
+        selectedPlaybackSection: createVideoSection('category:0', 'TOP 200', ['video-2']),
+        selectedVideoId: 'video-2',
+      }),
+    ).toBe('거래내역');
   });
 
   it('formats position profit as a signed percentage', () => {

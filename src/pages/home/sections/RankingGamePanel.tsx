@@ -1193,17 +1193,30 @@ function RankingGameHistoryTabComponent({
   selectedPositionId,
   selectedVideoId,
 }: RankingGameHistoryTabProps) {
+  const historyListRef = useRef<HTMLUListElement | null>(null);
   const selectedHistoryItemRef = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
-    if (typeof selectedHistoryItemRef.current?.scrollIntoView !== 'function') {
+    const historyList = historyListRef.current;
+    const selectedHistoryItem = selectedHistoryItemRef.current;
+
+    if (!historyList || !selectedHistoryItem) {
       return;
     }
 
-    selectedHistoryItemRef.current.scrollIntoView({
-      block: 'nearest',
-      inline: 'nearest',
-    });
+    const selectedItemTop = selectedHistoryItem.offsetTop;
+    const selectedItemBottom = selectedItemTop + selectedHistoryItem.offsetHeight;
+    const visibleTop = historyList.scrollTop;
+    const visibleBottom = visibleTop + historyList.clientHeight;
+
+    if (selectedItemTop < visibleTop) {
+      historyList.scrollTop = selectedItemTop;
+      return;
+    }
+
+    if (selectedItemBottom > visibleBottom) {
+      historyList.scrollTop = selectedItemBottom - historyList.clientHeight;
+    }
   }, [activePlaybackQueueId, positions, selectedPositionId, selectedVideoId]);
 
   if (isLoading) {
@@ -1215,7 +1228,7 @@ function RankingGameHistoryTabComponent({
   }
 
   return (
-    <ul className="app-shell__game-history">
+    <ul ref={historyListRef} className="app-shell__game-history">
       {positions.map((position) => {
         const playbackQueueId = resolvePlaybackQueueId(position.videoId);
         const isSelectable = Boolean(playbackQueueId);

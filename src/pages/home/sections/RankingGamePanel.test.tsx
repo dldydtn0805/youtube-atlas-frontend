@@ -154,10 +154,31 @@ describe('RankingGameHistoryTab', () => {
     expect(screen.getByText('Second position').closest('li')).toHaveAttribute('data-selected', 'true');
   });
 
-  it('scrolls the selected history row into view', () => {
-    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-    const scrollIntoView = vi.fn();
-    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+  it('adjusts only the history list scroll when the selected history row is below view', () => {
+    const originalOffsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop');
+    const originalOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+    const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    const windowScrollTo = vi.fn();
+    vi.stubGlobal('scrollTo', windowScrollTo);
+
+    Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
+      configurable: true,
+      get() {
+        return this.textContent?.includes('Selected position') ? 200 : 0;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get() {
+        return this.textContent?.includes('Selected position') ? 80 : 0;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get() {
+        return this.classList.contains('app-shell__game-history') ? 100 : 0;
+      },
+    });
 
     try {
       render(
@@ -186,12 +207,19 @@ describe('RankingGameHistoryTab', () => {
         />,
       );
 
-      expect(scrollIntoView).toHaveBeenCalledWith({
-        block: 'nearest',
-        inline: 'nearest',
-      });
+      expect(document.querySelector('.app-shell__game-history')).toHaveProperty('scrollTop', 180);
+      expect(windowScrollTo).not.toHaveBeenCalled();
     } finally {
-      HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+      if (originalOffsetTop) {
+        Object.defineProperty(HTMLElement.prototype, 'offsetTop', originalOffsetTop);
+      }
+      if (originalOffsetHeight) {
+        Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalOffsetHeight);
+      }
+      if (originalClientHeight) {
+        Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight);
+      }
+      vi.unstubAllGlobals();
     }
   });
 });

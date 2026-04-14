@@ -560,6 +560,68 @@ export function findPlaybackQueueIdForVideo(
   return undefined;
 }
 
+function sectionIncludesVideo(section: YouTubeCategorySection | undefined, videoId: string | undefined) {
+  return Boolean(videoId && section?.items.some((item) => item.id === videoId));
+}
+
+function getSectionLabelForQueueId(
+  queueId: string | undefined,
+  sections: Array<YouTubeCategorySection | undefined>,
+) {
+  return sections.find((section) => section?.categoryId === queueId)?.label;
+}
+
+export function resolvePlaybackCategoryLabel({
+  activePlaybackQueueId,
+  fallbackLabel,
+  favoriteStreamerVideoSection,
+  extraPlaybackSections,
+  newChartEntriesSection,
+  realtimeSurgingSection,
+  selectedPlaybackSection,
+  selectedVideoId,
+}: {
+  activePlaybackQueueId?: string;
+  fallbackLabel?: string;
+  favoriteStreamerVideoSection?: YouTubeCategorySection;
+  extraPlaybackSections?: YouTubeCategorySection[];
+  newChartEntriesSection?: YouTubeCategorySection;
+  realtimeSurgingSection?: YouTubeCategorySection;
+  selectedPlaybackSection?: YouTubeCategorySection;
+  selectedVideoId?: string;
+}) {
+  if (activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID) {
+    return '내 포지션';
+  }
+
+  if (activePlaybackQueueId === HISTORY_PLAYBACK_QUEUE_ID) {
+    return '거래내역';
+  }
+
+  const playableChartSections = [
+    realtimeSurgingSection,
+    newChartEntriesSection,
+    favoriteStreamerVideoSection,
+    ...(extraPlaybackSections ?? []),
+    selectedPlaybackSection,
+  ];
+  const activeQueueLabel = getSectionLabelForQueueId(activePlaybackQueueId, playableChartSections);
+
+  if (activeQueueLabel) {
+    return activeQueueLabel;
+  }
+
+  const matchingVideoSection = [
+    realtimeSurgingSection,
+    newChartEntriesSection,
+    ...(extraPlaybackSections ?? []),
+    selectedPlaybackSection,
+    favoriteStreamerVideoSection,
+  ].find((section) => sectionIncludesVideo(section, selectedVideoId));
+
+  return matchingVideoSection?.label ?? fallbackLabel;
+}
+
 export function formatVideoViewCount(viewCount?: string) {
   if (!viewCount) {
     return undefined;
