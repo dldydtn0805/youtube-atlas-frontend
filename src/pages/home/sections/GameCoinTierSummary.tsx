@@ -1,4 +1,4 @@
-import { type PointerEvent } from 'react';
+import { type PointerEvent, type TouchEvent } from 'react';
 
 import type { GameCoinTierProgress } from '../../../features/game/types';
 import { formatCoins } from '../gameHelpers';
@@ -34,11 +34,10 @@ function getTierCardNumber(progress: GameCoinTierProgress) {
   return `YTAT ${tierCode} ${currentFloor} ${nextFloor} ${coinBalance}`;
 }
 
-function handleTierCardPointerMove(event: PointerEvent<HTMLDivElement>) {
-  const card = event.currentTarget;
+function setTierCardTiltFromPoint(card: HTMLDivElement, clientX: number, clientY: number) {
   const rect = card.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
+  const x = ((clientX - rect.left) / rect.width) * 100;
+  const y = ((clientY - rect.top) / rect.height) * 100;
   const dx = (x - 50) / 50;
   const dy = (y - 50) / 50;
 
@@ -50,15 +49,57 @@ function handleTierCardPointerMove(event: PointerEvent<HTMLDivElement>) {
   card.dataset.interacting = 'true';
 }
 
-function handleTierCardPointerEnd(event: PointerEvent<HTMLDivElement>) {
-  const card = event.currentTarget;
+function setTierCardTilt(event: PointerEvent<HTMLDivElement>) {
+  setTierCardTiltFromPoint(event.currentTarget, event.clientX, event.clientY);
+}
 
+function handleTierCardPointerDown(event: PointerEvent<HTMLDivElement>) {
+  event.currentTarget.setPointerCapture(event.pointerId);
+  setTierCardTilt(event);
+}
+
+function resetTierCardTilt(card: HTMLDivElement) {
   card.style.setProperty('--game-tier-card-rotate-x', '0deg');
   card.style.setProperty('--game-tier-card-rotate-y', '0deg');
   card.style.setProperty('--game-tier-card-glare-x', '22%');
   card.style.setProperty('--game-tier-card-glare-y', '18%');
   card.style.setProperty('--game-tier-card-scale', '1');
   delete card.dataset.interacting;
+}
+
+function handleTierCardPointerEnd(event: PointerEvent<HTMLDivElement>) {
+  const card = event.currentTarget;
+
+  if (card.hasPointerCapture(event.pointerId)) {
+    card.releasePointerCapture(event.pointerId);
+  }
+
+  resetTierCardTilt(card);
+}
+
+function handleTierCardTouchStart(event: TouchEvent<HTMLDivElement>) {
+  const touch = event.touches[0];
+
+  if (!touch) {
+    return;
+  }
+
+  setTierCardTiltFromPoint(event.currentTarget, touch.clientX, touch.clientY);
+}
+
+function handleTierCardTouchMove(event: TouchEvent<HTMLDivElement>) {
+  const touch = event.touches[0];
+
+  if (!touch) {
+    return;
+  }
+
+  event.preventDefault();
+  setTierCardTiltFromPoint(event.currentTarget, touch.clientX, touch.clientY);
+}
+
+function handleTierCardTouchEnd(event: TouchEvent<HTMLDivElement>) {
+  resetTierCardTilt(event.currentTarget);
 }
 
 export default function GameCoinTierSummary({
@@ -94,10 +135,15 @@ export default function GameCoinTierSummary({
         <div
           className="app-shell__game-tier-card"
           data-tier-code={progress.currentTier.tierCode}
-          onPointerMove={handleTierCardPointerMove}
+          onPointerDown={handleTierCardPointerDown}
+          onPointerMove={setTierCardTilt}
           onPointerUp={handleTierCardPointerEnd}
           onPointerLeave={handleTierCardPointerEnd}
           onPointerCancel={handleTierCardPointerEnd}
+          onTouchStart={handleTierCardTouchStart}
+          onTouchMove={handleTierCardTouchMove}
+          onTouchEnd={handleTierCardTouchEnd}
+          onTouchCancel={handleTierCardTouchEnd}
         >
           <div className="app-shell__game-tier-card-top">
             <span className="app-shell__game-tier-issuer">YOUTUBE ATLAS</span>

@@ -70,7 +70,7 @@
     min-height: 0;
     padding: 14px;
     position: relative;
-    transform: none;
+    transform: rotateX(var(--game-tier-card-rotate-x)) rotateY(var(--game-tier-card-rotate-y)) scale(var(--game-tier-card-scale));
     width: 100%;
   }
 
