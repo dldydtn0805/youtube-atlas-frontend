@@ -1,3 +1,5 @@
+import { type PointerEvent } from 'react';
+
 import type { GameCoinTierProgress } from '../../../features/game/types';
 import { formatCoins } from '../gameHelpers';
 
@@ -32,6 +34,33 @@ function getTierCardNumber(progress: GameCoinTierProgress) {
   return `YTAT ${tierCode} ${currentFloor} ${nextFloor} ${coinBalance}`;
 }
 
+function handleTierCardPointerMove(event: PointerEvent<HTMLDivElement>) {
+  const card = event.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width) * 100;
+  const y = ((event.clientY - rect.top) / rect.height) * 100;
+  const dx = (x - 50) / 50;
+  const dy = (y - 50) / 50;
+
+  card.style.setProperty('--game-tier-card-rotate-x', `${-dy * 16}deg`);
+  card.style.setProperty('--game-tier-card-rotate-y', `${dx * 16}deg`);
+  card.style.setProperty('--game-tier-card-glare-x', `${x}%`);
+  card.style.setProperty('--game-tier-card-glare-y', `${y}%`);
+  card.style.setProperty('--game-tier-card-scale', '1.02');
+  card.dataset.interacting = 'true';
+}
+
+function handleTierCardPointerEnd(event: PointerEvent<HTMLDivElement>) {
+  const card = event.currentTarget;
+
+  card.style.setProperty('--game-tier-card-rotate-x', '0deg');
+  card.style.setProperty('--game-tier-card-rotate-y', '0deg');
+  card.style.setProperty('--game-tier-card-glare-x', '22%');
+  card.style.setProperty('--game-tier-card-glare-y', '18%');
+  card.style.setProperty('--game-tier-card-scale', '1');
+  delete card.dataset.interacting;
+}
+
 export default function GameCoinTierSummary({
   progress,
   surfaceVariant = 'default',
@@ -62,7 +91,14 @@ export default function GameCoinTierSummary({
       </div>
 
       <div className="app-shell__game-tier-card-frame">
-        <div className="app-shell__game-tier-card" data-tier-code={progress.currentTier.tierCode}>
+        <div
+          className="app-shell__game-tier-card"
+          data-tier-code={progress.currentTier.tierCode}
+          onPointerMove={handleTierCardPointerMove}
+          onPointerUp={handleTierCardPointerEnd}
+          onPointerLeave={handleTierCardPointerEnd}
+          onPointerCancel={handleTierCardPointerEnd}
+        >
           <div className="app-shell__game-tier-card-top">
             <span className="app-shell__game-tier-issuer">YOUTUBE ATLAS</span>
             <span className="app-shell__game-tier-network">Season Coin</span>
