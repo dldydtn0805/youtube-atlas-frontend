@@ -4,14 +4,17 @@ import {
   deleteAdminUser,
   fetchAdminDashboard,
   fetchAdminUserDetail,
+  fetchAdminUserPositions,
   fetchAdminUsers,
   purgeAdminComments,
   purgeAdminTradeHistory,
   updateAdminSeasonSchedule,
+  updateAdminUserPosition,
   updateAdminUserWallet,
 } from './api';
 import type {
   AdminCommentCleanupRequest,
+  AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminTradeHistoryCleanupRequest,
   AdminWalletUpdateRequest,
@@ -22,6 +25,8 @@ export const adminQueryKeys = {
   dashboard: (accessToken: string | null) => ['admin', accessToken, 'dashboard'] as const,
   users: (accessToken: string | null, query: string | null) => ['admin', accessToken, 'users', query ?? ''] as const,
   userDetail: (accessToken: string | null, userId: number | null) => ['admin', accessToken, 'user', userId] as const,
+  userPositions: (accessToken: string | null, userId: number | null, seasonId: number | null) =>
+    ['admin', accessToken, 'userPositions', userId, seasonId] as const,
 };
 
 export function useAdminDashboard(accessToken: string | null, enabled = true) {
@@ -51,6 +56,20 @@ export function useAdminUserDetail(accessToken: string | null, userId: number | 
   });
 }
 
+export function useAdminUserPositions(
+  accessToken: string | null,
+  userId: number | null,
+  seasonId: number | null,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && typeof userId === 'number' && typeof seasonId === 'number',
+    queryKey: adminQueryKeys.userPositions(accessToken, userId, seasonId),
+    queryFn: () => fetchAdminUserPositions(accessToken as string, userId as number, seasonId as number),
+    staleTime: 1000 * 10,
+  });
+}
+
 export function useUpdateAdminUserWallet(accessToken: string | null) {
   const queryClient = useQueryClient();
 
@@ -69,6 +88,32 @@ export function useUpdateAdminUserWallet(accessToken: string | null) {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'users'] }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(accessToken, data.id) }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateAdminUserPosition(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      positionId,
+      request,
+    }: {
+      userId: number;
+      positionId: number;
+      request: AdminPositionUpdateRequest;
+    }) => updateAdminUserPosition(accessToken as string, userId, positionId, request),
+    onSuccess: async (data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(accessToken, variables.userId) }),
+        queryClient.invalidateQueries({
+          queryKey: adminQueryKeys.userPositions(accessToken, variables.userId, data.seasonId),
+        }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'userPositions', variables.userId] }),
       ]);
     },
   });

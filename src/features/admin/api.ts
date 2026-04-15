@@ -3,12 +3,14 @@ import type {
   AdminCommentCleanupRequest,
   AdminCommentCleanupResponse,
   AdminDashboard,
+  AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonSummary,
   AdminTradeHistoryCleanupRequest,
   AdminTradeHistoryCleanupResponse,
   AdminUserDetail,
   AdminUserList,
+  AdminUserPosition,
   AdminWalletUpdateRequest,
 } from './types';
 
@@ -91,12 +93,36 @@ export async function fetchAdminUserDetail(accessToken: string, userId: number) 
   });
 }
 
+export async function fetchAdminUserPositions(accessToken: string, userId: number, seasonId: number) {
+  const params = new URLSearchParams({ seasonId: String(seasonId) });
+
+  return fetchApi<AdminUserPosition[]>(`/api/admin/users/${userId}/positions?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
 export async function updateAdminUserWallet(
   accessToken: string,
   userId: number,
   request: AdminWalletUpdateRequest,
 ) {
   return fetchApi<AdminUserDetail>(`/api/admin/users/${userId}/wallet`, {
+    method: 'PATCH',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function updateAdminUserPosition(
+  accessToken: string,
+  userId: number,
+  positionId: number,
+  request: AdminPositionUpdateRequest,
+) {
+  return fetchApi<AdminUserPosition>(`/api/admin/users/${userId}/positions/${positionId}`, {
     method: 'PATCH',
     headers: {
       ...createAuthorizationHeader(accessToken),

@@ -136,6 +136,25 @@ export interface AdminUserGameSummary {
   closedPositionCount: number;
 }
 
+export interface AdminUserPosition {
+  id: number;
+  seasonId: number;
+  seasonName: string;
+  regionCode: string;
+  categoryId: string;
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string | null;
+  buyRank: number;
+  quantity: number;
+  stakePoints: number;
+  status: string;
+  buyCapturedAt: string;
+  createdAt: string;
+  closedAt: string | null;
+}
+
 export interface AdminUserDetail {
   id: number;
   email: string;
@@ -163,4 +182,9 @@ export interface AdminWalletUpdateRequest {
   reservedPoints: number;
   realizedPnlPoints: number;
   coinBalance: number;
+}
+
+export interface AdminPositionUpdateRequest {
+  quantity: number;
+  stakePoints: number;
 }

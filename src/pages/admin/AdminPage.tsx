@@ -5,10 +5,12 @@ import {
   useCloseAdminSeason,
   useAdminDashboard,
   useAdminUserDetail,
+  useAdminUserPositions,
   useAdminUsers,
   useDeleteAdminUser,
   usePurgeAdminComments,
   usePurgeAdminTradeHistory,
+  useUpdateAdminUserPosition,
   useUpdateAdminSeasonSchedule,
   useUpdateAdminUserWallet,
 } from '../../features/admin/queries';
@@ -20,6 +22,7 @@ import type {
   AdminCoinTierSummary,
   AdminUserDetail,
   AdminUserGameSummary,
+  AdminUserPosition,
   AdminUserSummary,
 } from '../../features/admin/types';
 import useLogoutOnUnauthorized from '../home/hooks/useLogoutOnUnauthorized';
@@ -305,6 +308,13 @@ function UserDirectoryTable({
 
 function UserDetailPanel({
   user,
+  positions,
+  selectedPositionId,
+  onSelectPosition,
+  positionDraft,
+  onPositionDraftChange,
+  onSavePosition,
+  isSavingPosition,
   selectedSeasonId,
   onSelectSeason,
   walletDraft,
@@ -315,6 +325,16 @@ function UserDetailPanel({
   isDeleting,
 }: {
   user: AdminUserDetail;
+  positions: AdminUserPosition[];
+  selectedPositionId: number | null;
+  onSelectPosition: (positionId: number) => void;
+  positionDraft: {
+    quantity: string;
+    stakePoints: string;
+  };
+  onPositionDraftChange: (field: 'quantity' | 'stakePoints', value: string) => void;
+  onSavePosition: () => void;
+  isSavingPosition: boolean;
   selectedSeasonId: number | null;
   onSelectSeason: (seasonId: number) => void;
   walletDraft: {
@@ -337,6 +357,7 @@ function UserDetailPanel({
     activeSeasonGames.find((item) => item.seasonId === selectedSeasonId) ??
     activeSeasonGames[0] ??
     null;
+  const selectedPosition = positions.find((item) => item.id === selectedPositionId) ?? positions[0] ?? null;
   const remainingCoinsToNextTier = getRemainingCoinsToNextTier(
     selectedSeasonGame?.coinBalance,
     selectedSeasonGame?.nextCoinTier,
@@ -483,6 +504,77 @@ function UserDetailPanel({
           </>
         )}
       </div>
+
+      <div className="admin-page__detail-card">
+        <div className="admin-page__section-header">
+          <h3 className="admin-page__section-title">보유 포지션 조정</h3>
+          <span className="admin-page__section-caption">
+            {selectedSeasonGame ? `${selectedSeasonGame.regionCode} · OPEN ${formatNumber(positions.length)}건` : '활성 시즌 없음'}
+          </span>
+        </div>
+        {positions.length ? (
+          <>
+            <div className="admin-page__season-selector" role="tablist" aria-label="보유 포지션 선택">
+              {positions.map((position) => (
+                <button
+                  aria-selected={position.id === selectedPositionId}
+                  className="admin-page__season-tab"
+                  data-active={position.id === selectedPositionId}
+                  key={position.id}
+                  onClick={() => onSelectPosition(position.id)}
+                  role="tab"
+                  type="button"
+                >
+                  <strong>#{position.buyRank}</strong>
+                  <span>{position.title}</span>
+                </button>
+              ))}
+            </div>
+            {selectedPosition ? (
+              <>
+                <div className="admin-page__detail-list admin-page__detail-list--compact">
+                  <p><span>영상</span><strong>{selectedPosition.title}</strong></p>
+                  <p><span>채널</span><strong>{selectedPosition.channelTitle}</strong></p>
+                  <p><span>카테고리</span><strong>{selectedPosition.categoryId}</strong></p>
+                  <p><span>매수 랭크</span><strong>{formatNumber(selectedPosition.buyRank)}</strong></p>
+                  <p><span>매수 시각</span><strong>{formatDateTime(selectedPosition.buyCapturedAt)}</strong></p>
+                  <p><span>생성 시각</span><strong>{formatDateTime(selectedPosition.createdAt)}</strong></p>
+                </div>
+                <div className="admin-page__form-grid">
+                  <label className="admin-page__field">
+                    <span>수량</span>
+                    <input
+                      inputMode="numeric"
+                      onChange={(event) => onPositionDraftChange('quantity', event.target.value)}
+                      type="text"
+                      value={positionDraft.quantity}
+                    />
+                  </label>
+                  <label className="admin-page__field">
+                    <span>매수 금액</span>
+                    <input
+                      inputMode="numeric"
+                      onChange={(event) => onPositionDraftChange('stakePoints', event.target.value)}
+                      type="text"
+                      value={positionDraft.stakePoints}
+                    />
+                  </label>
+                </div>
+                <p className="admin-page__muted">
+                  수량은 100 단위로만 수정할 수 있습니다. 매수 금액을 수정하면 지갑의 가용 포인트와 예약 포인트도 함께 보정됩니다.
+                </p>
+                <div className="admin-page__action-row">
+                  <button className="admin-page__button" disabled={isSavingPosition} onClick={onSavePosition} type="button">
+                    {isSavingPosition ? '저장 중...' : '포지션 저장'}
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </>
+        ) : (
+          <p className="admin-page__muted">선택한 시즌에 보유 중인 OPEN 포지션이 없습니다.</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -515,6 +607,11 @@ export default function AdminPage() {
     realizedPnlPoints: '',
     coinBalance: '',
   });
+  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
+  const [positionDraft, setPositionDraft] = useState({
+    quantity: '',
+    stakePoints: '',
+  });
   const [commentCleanupDraft, setCommentCleanupDraft] = useState('');
   const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -522,9 +619,11 @@ export default function AdminPage() {
   const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
   const usersQuery = useAdminUsers(accessToken, submittedQuery, status === 'authenticated');
   const detailQuery = useAdminUserDetail(accessToken, selectedUserId, status === 'authenticated');
+  const positionsQuery = useAdminUserPositions(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
   const updateSeasonMutation = useUpdateAdminSeasonSchedule(accessToken);
   const closeSeasonMutation = useCloseAdminSeason(accessToken);
   const updateWalletMutation = useUpdateAdminUserWallet(accessToken);
+  const updatePositionMutation = useUpdateAdminUserPosition(accessToken);
   const deleteUserMutation = useDeleteAdminUser(accessToken);
   const purgeCommentsMutation = usePurgeAdminComments(accessToken);
   const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
@@ -532,6 +631,7 @@ export default function AdminPage() {
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
   useLogoutOnUnauthorized(usersQuery.error, logout);
   useLogoutOnUnauthorized(detailQuery.error, logout);
+  useLogoutOnUnauthorized(positionsQuery.error, logout);
 
   useEffect(() => {
     const users = usersQuery.data?.users ?? [];
@@ -599,6 +699,18 @@ export default function AdminPage() {
   }, [detailQuery.data, selectedSeasonId]);
 
   useEffect(() => {
+    const positions = positionsQuery.data ?? [];
+    const nextSelectedPositionId =
+      positions.find((item) => item.id === selectedPositionId)?.id ??
+      positions[0]?.id ??
+      null;
+
+    if (nextSelectedPositionId !== selectedPositionId) {
+      setSelectedPositionId(nextSelectedPositionId);
+    }
+  }, [positionsQuery.data, selectedPositionId]);
+
+  useEffect(() => {
     const activeSeasonGames = getActiveSeasonGames(detailQuery.data);
     const game =
       activeSeasonGames.find((item) => item.seasonId === selectedSeasonId) ??
@@ -623,6 +735,24 @@ export default function AdminPage() {
     });
   }, [detailQuery.data, selectedSeasonId]);
 
+  useEffect(() => {
+    const positions = positionsQuery.data ?? [];
+    const position = positions.find((item) => item.id === selectedPositionId) ?? positions[0] ?? null;
+
+    if (!position) {
+      setPositionDraft({
+        quantity: '',
+        stakePoints: '',
+      });
+      return;
+    }
+
+    setPositionDraft({
+      quantity: String(position.quantity),
+      stakePoints: String(position.stakePoints),
+    });
+  }, [positionsQuery.data, selectedPositionId]);
+
   const errorMessage =
     dashboardQuery.error instanceof ApiRequestError
       ? dashboardQuery.error.message
@@ -630,6 +760,8 @@ export default function AdminPage() {
         ? usersQuery.error.message
         : detailQuery.error instanceof ApiRequestError
           ? detailQuery.error.message
+          : positionsQuery.error instanceof ApiRequestError
+            ? positionsQuery.error.message
           : '관리자 정보를 불러오지 못했습니다.';
   const isForbidden =
     dashboardQuery.error instanceof ApiRequestError && dashboardQuery.error.status === 403;
@@ -652,6 +784,13 @@ export default function AdminPage() {
         endAt: current[seasonId]?.endAt ?? '',
         [field]: value,
       },
+    }));
+  };
+
+  const handlePositionDraftChange = (field: 'quantity' | 'stakePoints', value: string) => {
+    setPositionDraft((current) => ({
+      ...current,
+      [field]: value,
     }));
   };
 
@@ -761,6 +900,34 @@ export default function AdminPage() {
         setActionMessage(error instanceof Error ? error.message : '유저 탈퇴 처리에 실패했습니다.');
       },
     });
+  };
+
+  const handlePositionSave = () => {
+    if (!selectedUserId || !selectedPositionId) {
+      return;
+    }
+
+    try {
+      const request = {
+        quantity: parsePointInput(positionDraft.quantity, '수량'),
+        stakePoints: parsePointInput(positionDraft.stakePoints, '매수 금액'),
+      };
+
+      setActionMessage(null);
+      updatePositionMutation.mutate(
+        { userId: selectedUserId, positionId: selectedPositionId, request },
+        {
+          onSuccess: () => {
+            setActionMessage('보유 포지션이 저장되었습니다.');
+          },
+          onError: (error) => {
+            setActionMessage(error instanceof Error ? error.message : '포지션 저장에 실패했습니다.');
+          },
+        },
+      );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '포지션 입력값을 확인해주세요.');
+    }
   };
 
   const handleCommentCleanup = () => {
@@ -907,7 +1074,7 @@ export default function AdminPage() {
         </section>
       ) : null}
 
-      {dashboardQuery.isError || usersQuery.isError || detailQuery.isError ? (
+      {dashboardQuery.isError || usersQuery.isError || detailQuery.isError || positionsQuery.isError ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">{isForbidden ? '접근 권한 없음' : '불러오기 실패'}</h2>
           <p className="admin-page__error">{errorMessage}</p>
@@ -1157,12 +1324,19 @@ export default function AdminPage() {
                 {detailQuery.isLoading ? <p className="admin-page__muted">사용자 상세를 불러오는 중입니다.</p> : null}
                 {detailQuery.data ? (
                   <UserDetailPanel
+                    isSavingPosition={updatePositionMutation.isPending}
                     isDeleting={deleteUserMutation.isPending}
                     isSaving={updateWalletMutation.isPending}
                     onDeleteUser={handleDeleteUser}
+                    onPositionDraftChange={handlePositionDraftChange}
                     onSaveWallet={handleWalletSave}
+                    onSavePosition={handlePositionSave}
+                    onSelectPosition={setSelectedPositionId}
                     onSelectSeason={setSelectedSeasonId}
                     onWalletDraftChange={handleWalletDraftChange}
+                    positionDraft={positionDraft}
+                    positions={positionsQuery.data ?? []}
+                    selectedPositionId={selectedPositionId}
                     selectedSeasonId={selectedSeasonId}
                     user={detailQuery.data}
                     walletDraft={walletDraft}
