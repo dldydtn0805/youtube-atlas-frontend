@@ -1264,14 +1264,14 @@ describe('HomePlaybackSection', () => {
       playerStageRef: createRef<HTMLDivElement>(),
       playerViewportRef: createRef<HTMLDivElement>(),
       selectedVideoId: 'video-1',
-    } as never;
+    };
 
     const { rerender } = render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
         communityPanelProps={{} as never}
         filterBarProps={{} as never}
-        playerStageProps={playerStageProps}
+        playerStageProps={playerStageProps as never}
         stickySelectedVideoContent={<div>Selected video actions</div>}
       />,
     );

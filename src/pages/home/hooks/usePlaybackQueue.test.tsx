@@ -216,6 +216,31 @@ describe('usePlaybackQueue', () => {
     expect(scrollToPlayerTop).not.toHaveBeenCalled();
   });
 
+  it('scrolls to the player on mobile when a video is selected', () => {
+    const setSelectedCategoryId = vi.fn();
+    const scrollToPlayerTop = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePlaybackQueue({
+        favoriteStreamerVideoSection: undefined,
+        isMobileLayout: true,
+        realtimeSurgingSection: undefined,
+        restoredPlaybackVideo: undefined,
+        scrollToPlayerTop,
+        selectedCategoryId: '0',
+        selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
+        setSelectedCategoryId,
+        sortedVideoCategories,
+      }),
+    );
+
+    act(() => {
+      result.current.handleSelectVideo('video-top', getCategoryPlaybackQueueId('0'));
+    });
+
+    expect(scrollToPlayerTop).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps a history playback selection instead of falling back to the first chart video', async () => {
     const setSelectedCategoryId = vi.fn();
 

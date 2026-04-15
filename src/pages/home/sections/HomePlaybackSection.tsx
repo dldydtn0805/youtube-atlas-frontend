@@ -498,6 +498,14 @@ export default function HomePlaybackSection({
     }
 
     handleJumpToTop();
+
+    const animationFrameId = window.requestAnimationFrame(handleJumpToTop);
+    const timeoutId = window.setTimeout(handleJumpToTop, 80);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.clearTimeout(timeoutId);
+    };
   }, [
     isMobilePlayerStageStickyEnabled,
     playerStageProps.isMobileLayout,
