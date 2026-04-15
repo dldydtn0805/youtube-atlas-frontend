@@ -1,5 +1,4 @@
 import { FormEvent, FocusEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { isApiConfigured } from '../../lib/api';
 import { useComments, useCreateComment } from '../../features/comments/queries';
@@ -318,7 +317,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
   const composerContent = (
     <form
       ref={composerRef}
-      className={`comment-composer${isMobileLayout ? ' comment-composer--mobile-layer' : ''}`}
+      className="comment-composer"
       onBlurCapture={handleComposerBlurCapture}
       onFocusCapture={handleComposerFocusCapture}
       onSubmit={handleSubmit}
@@ -400,6 +399,13 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
     </form>
   );
 
+  const mobileComposerNotice = (
+    <div className="comment-composer-mobile-notice" role="note">
+      <p className="comment-composer-mobile-notice__title">모바일에서는 채팅 읽기만 지원됩니다.</p>
+      <p className="comment-composer-mobile-notice__copy">메시지 작성은 데스크탑에서 이용해 주세요.</p>
+    </div>
+  );
+
   return (
     <section className="comment-section" aria-label="실시간 익명 채팅">
       <header className="comment-section__header">
@@ -443,10 +449,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
           );
         })}
       </div>
-      {isMobileLayout ? <div className="comment-composer-spacer" aria-hidden="true" /> : composerContent}
-      {isMobileLayout && typeof document !== 'undefined'
-        ? createPortal(composerContent, document.body)
-        : null}
+      {isMobileLayout ? mobileComposerNotice : composerContent}
     </section>
   );
 }

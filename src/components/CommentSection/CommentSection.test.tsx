@@ -230,4 +230,31 @@ describe('CommentSection', () => {
 
     expect(document.documentElement.hasAttribute('data-chat-composer-focus')).toBe(false);
   });
+
+  it('shows a read-only notice instead of the composer on mobile', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn().mockImplementation(() => ({
+        addEventListener: vi.fn(),
+        addListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        matches: true,
+        media: '(max-width: 768px)',
+        onchange: null,
+        removeEventListener: vi.fn(),
+        removeListener: vi.fn(),
+      })),
+    });
+
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    render(<CommentSection videoId="video-1" videoTitle="Test video" />);
+
+    expect(screen.getByText('모바일에서는 채팅 읽기만 지원됩니다.')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('메시지를 입력하세요.')).not.toBeInTheDocument();
+  });
 });
