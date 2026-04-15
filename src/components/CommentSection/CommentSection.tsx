@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, FocusEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../features/auth/useAuth';
 import { isApiConfigured } from '../../lib/api';
 import { useComments, useCreateComment } from '../../features/comments/queries';
@@ -21,6 +21,7 @@ interface CommentSectionProps {
 }
 
 const CHAT_PARTICIPANT_STORAGE_KEY = 'youtube-atlas-chat-participant-id';
+const CHAT_COMPOSER_FOCUSED_ATTRIBUTE = 'data-chat-composer-focus';
 
 function formatMessageDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -65,6 +66,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [submissionError, setSubmissionError] = useState<CommentSubmissionError | null>(null);
   const [participantId] = useState(getChatParticipantId);
+  const composerRef = useRef<HTMLFormElement | null>(null);
   const commentListRef = useRef<HTMLDivElement | null>(null);
   const cooldownDeadlineByVideoRef = useRef<Record<string, number>>({});
   const recentMessagesByVideoRef = useRef<Record<string, RecentCommentSnapshot[]>>({});
@@ -111,6 +113,14 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
       behavior: 'smooth',
     });
   }, [commentsQuery.data]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.removeAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE);
+      }
+    };
+  }, []);
 
   function beginCooldown(seconds = COMMENT_COOLDOWN_SECONDS) {
     if (!videoId) {
@@ -230,6 +240,32 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
     }
   }
 
+  function handleComposerFocusCapture() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.setAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE, 'true');
+  }
+
+  function handleComposerBlurCapture(event: FocusEvent<HTMLFormElement>) {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const nextFocusedElement = event.relatedTarget;
+
+    if (nextFocusedElement instanceof Node && composerRef.current?.contains(nextFocusedElement)) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (!composerRef.current?.contains(document.activeElement)) {
+        document.documentElement.removeAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE);
+      }
+    }, 0);
+  }
+
   if (!videoId) {
     return <p className="comment-section__status">채팅에 참여하려면 영상을 먼저 선택해 주세요.</p>;
   }
@@ -252,11 +288,6 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
       <header className="comment-section__header">
         <div className="comment-section__room">
           <h3 className="comment-section__title">{videoTitle ?? '현재 영상 채팅방'}</h3>
-        </div>
-        <div className="comment-section__meta">
-          <span className="comment-section__badge">
-            {isAuthenticated ? 'Google 로그인' : '익명 채팅'}
-          </span>
         </div>
       </header>
 
@@ -296,7 +327,13 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
         })}
       </div>
 
-      <form className="comment-composer" onSubmit={handleSubmit}>
+      <form
+        ref={composerRef}
+        className="comment-composer"
+        onBlurCapture={handleComposerBlurCapture}
+        onFocusCapture={handleComposerFocusCapture}
+        onSubmit={handleSubmit}
+      >
         <div className="comment-composer__top">
           {isAuthenticated && user ? (
             <div className="comment-composer__identity">
@@ -316,7 +353,6 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
               )}
               <div className="comment-composer__identity-copy">
                 <strong>{user.displayName || user.email}</strong>
-                <span>로그인 상태로 보내면 구글 프로필 이름으로 표시됩니다.</span>
               </div>
             </div>
           ) : (
@@ -329,7 +365,6 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
               value={author}
             />
           )}
-          <span className="comment-composer__guide">Enter 전송 · Shift+Enter 줄바꿈</span>
         </div>
         <div className="comment-composer__bottom">
           <textarea

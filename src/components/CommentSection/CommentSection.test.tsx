@@ -159,4 +159,27 @@ describe('CommentSection', () => {
       screen.queryByText('채팅 흐름을 위해 5초 후에 다시 보낼 수 있어요.'),
     ).not.toBeInTheDocument();
   });
+
+  it('marks the document while the mobile composer is focused and clears it on blur', () => {
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    render(<CommentSection videoId="video-1" videoTitle="Test video" />);
+
+    const textarea = screen.getByPlaceholderText('메시지를 입력하세요.');
+
+    fireEvent.focus(textarea);
+
+    expect(document.documentElement.getAttribute('data-chat-composer-focus')).toBe('true');
+
+    fireEvent.blur(textarea);
+
+    act(() => {
+      vi.runAllTimers();
+    });
+
+    expect(document.documentElement.hasAttribute('data-chat-composer-focus')).toBe(false);
+  });
 });

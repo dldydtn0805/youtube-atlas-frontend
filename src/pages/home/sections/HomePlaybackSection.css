@@ -269,6 +269,15 @@
 }
 
 @media (max-width: 768px) {
+  :root[data-chat-composer-focus='true'] .app-shell__mobile-player-stage-sticky-shell {
+    position: static;
+  }
+
+  :root[data-chat-composer-focus='true'] .app-shell__sticky-selected-video-slot[data-cinematic='false'],
+  :root[data-chat-composer-focus='true'] .app-shell__sticky-player-preview-shell {
+    display: none;
+  }
+
   .app-shell__mobile-player-stage-sticky-shell {
     background: var(--page-bg);
     isolation: isolate;

@@ -10,31 +10,13 @@
 }
 
 .comment-section__header {
-  align-items: flex-start;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
+  display: grid;
+  gap: 4px;
 }
 
 .comment-section__room {
   display: grid;
   gap: 4px;
-}
-
-.comment-section__meta {
-  align-items: flex-end;
-  display: grid;
-  gap: 8px;
-}
-
-.comment-section__badge {
-  background: var(--surface-chip);
-  border: 1px solid var(--surface-stat-border);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 8px 12px;
 }
 
 .comment-section__title {
@@ -165,7 +147,6 @@
   gap: 12px;
 }
 
-.comment-composer__guide,
 .comment-composer__counter,
 .comment-composer__feedback {
   color: var(--text-muted);
@@ -260,10 +241,6 @@
   .comment-composer__footer {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .comment-section__meta {
-    justify-items: flex-start;
   }
 
   .comment-composer__name {
