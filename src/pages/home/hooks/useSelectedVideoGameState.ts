@@ -9,12 +9,14 @@ import {
   calculateGameOrderPoints,
   DEFAULT_GAME_QUANTITY,
   formatGameQuantity,
+  formatGameOrderQuantity,
   formatHoldCountdown,
   formatPoints,
   getBuyRemainingPointsText,
   getBuyShortfallPointsText,
   getGamePositionQuantity,
-  normalizeGameQuantity,
+  normalizeGameOrderCapacity,
+  normalizeGameOrderQuantity,
   summarizeGamePositions,
   summarizeSellCandidates,
   type OpenGameHolding,
@@ -315,7 +317,8 @@ export default function useSelectedVideoGameState({
             : 0,
         )
       : 0;
-  const normalizedBuyQuantity = normalizeGameQuantity(buyQuantity);
+  const normalizedBuyQuantity = normalizeGameOrderQuantity(buyQuantity);
+  const maxOrderBuyQuantity = normalizeGameOrderCapacity(maxBuyQuantity);
   const totalSelectedVideoBuyPoints =
     typeof selectedVideoUnitPricePoints === 'number'
       ? calculateGameOrderPoints(selectedVideoUnitPricePoints, normalizedBuyQuantity)
@@ -374,7 +377,8 @@ export default function useSelectedVideoGameState({
     (count, position) => count + getGamePositionQuantity(position),
     0,
   );
-  const normalizedSellQuantity = normalizeGameQuantity(sellQuantity);
+  const normalizedSellQuantity = normalizeGameOrderQuantity(sellQuantity);
+  const maxOrderSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
   const selectedVideoSellSummary = useMemo(
     () => summarizeSellCandidates(buildSellCandidates(sellableSelectedVideoOpenPositions, normalizedSellQuantity)),
     [normalizedSellQuantity, sellableSelectedVideoOpenPositions],
@@ -390,15 +394,15 @@ export default function useSelectedVideoGameState({
   const selectedOpenHoldingLockedQuantity = selectedOpenHolding?.lockedQuantity ?? 0;
   const selectedOpenHoldingNextSellableInSeconds = selectedOpenHolding?.nextSellableInSeconds ?? null;
   const sellModalHelperText =
-    maxSellQuantity > 0
+    maxOrderSellQuantity > 0
       ? selectedOpenHoldingLockedQuantity > 0 && selectedOpenHoldingNextSellableInSeconds !== null
-        ? `지금 ${formatGameQuantity(maxSellQuantity)} 매도 가능하고, 나머지 ${formatGameQuantity(selectedOpenHoldingLockedQuantity)}는 ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 가능합니다.`
-        : `지금 매도 가능한 수량은 ${formatGameQuantity(maxSellQuantity)}입니다.`
+        ? `지금 ${formatGameOrderQuantity(maxOrderSellQuantity)} 매도 가능하고, 나머지 ${formatGameQuantity(selectedOpenHoldingLockedQuantity)}는 ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 가능합니다.`
+        : `지금 매도 가능한 수량은 ${formatGameOrderQuantity(maxOrderSellQuantity)}입니다.`
       : selectedOpenHoldingNextSellableInSeconds !== null
         ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
         : '지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.';
   const defaultPreviewBuyQuantity =
-    maxBuyQuantity > 0 ? Math.min(DEFAULT_GAME_QUANTITY, maxBuyQuantity) : DEFAULT_GAME_QUANTITY;
+    maxOrderBuyQuantity > 0 ? Math.min(DEFAULT_GAME_QUANTITY, maxOrderBuyQuantity) : DEFAULT_GAME_QUANTITY;
   const buyRemainingPointsText = getBuyRemainingPointsText(
     currentGameSeason,
     selectedVideoMarketEntry,
@@ -420,7 +424,7 @@ export default function useSelectedVideoGameState({
     normalizedBuyQuantity,
   );
   const buyModalHelperText =
-    maxBuyQuantity > 0
+    maxOrderBuyQuantity > 0
       ? selectedVideoAlreadyOwned
         ? buyModalRemainingPointsText ?? '이 영상은 보유 포인트가 허용하는 만큼 계속 추가 매수할 수 있습니다.'
         : buyModalRemainingPointsText ??
@@ -469,7 +473,7 @@ export default function useSelectedVideoGameState({
     isBuySubmitting ||
     !selectedVideoMarketEntry ||
     !selectedVideoMarketEntry.canBuy ||
-    maxBuyQuantity <= 0 ||
+    maxOrderBuyQuantity <= 0 ||
     !currentGameSeason;
   const isSelectedVideoSellDisabled =
     !selectedVideoId ||
@@ -489,8 +493,8 @@ export default function useSelectedVideoGameState({
   const sellActionTitle =
     !canShowGameActions
       ? '전체 카테고리에서만 매도할 수 있습니다.'
-      : maxSellQuantity > 0
-        ? `${formatGameQuantity(maxSellQuantity)}까지 수량을 선택해 매도할 수 있습니다.`
+      : maxOrderSellQuantity > 0
+        ? `${formatGameOrderQuantity(maxOrderSellQuantity)}까지 수량을 선택해 매도할 수 있습니다.`
         : sellModalHelperText;
   const selectedVideoTradeThumbnailUrl =
     selectedVideoMarketEntry?.thumbnailUrl ??

@@ -14,12 +14,13 @@ import StickySelectedVideoControls from './sections/StickySelectedVideoControls'
 import {
   buildOpenGameHoldings,
   calculateEstimatedCoinYieldAfterBuy,
-  formatGameQuantity,
+  formatGameOrderQuantity,
   formatCoins,
   formatPoints,
   formatRank,
   getPointTone,
-  MIN_GAME_QUANTITY,
+  normalizeGameOrderCapacity,
+  normalizeGameOrderQuantity,
   SELL_FEE_RATE_LABEL,
   summarizeGamePositions,
 } from './gameHelpers';
@@ -1870,7 +1871,7 @@ function HomePage() {
         tierProgress={gameCoinTierProgress}
       />
       <GameTradeModal
-        confirmLabel={`${formatGameQuantity(normalizedBuyQuantity)} 매수`}
+        confirmLabel={`${formatGameOrderQuantity(normalizedBuyQuantity)} 매수`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         helperText={buyModalHelperText}
         isOpen={isBuyTradeModalOpen}
@@ -1878,22 +1879,24 @@ function HomePage() {
         maxQuantity={maxBuyQuantity}
         mode="buy"
         onChangeQuantity={(quantity) => {
-          if (maxBuyQuantity > 0 && quantity <= 0) {
-            setBuyQuantity(maxBuyQuantity);
+          const normalizedMaxBuyQuantity = normalizeGameOrderCapacity(maxBuyQuantity);
+
+          if (normalizedMaxBuyQuantity > 0 && quantity <= 0) {
+            setBuyQuantity(normalizedMaxBuyQuantity);
             return;
           }
 
           setBuyQuantity(
-            maxBuyQuantity > 0
-              ? Math.min(Math.max(MIN_GAME_QUANTITY, quantity), maxBuyQuantity)
-              : Math.max(MIN_GAME_QUANTITY, quantity),
+            normalizedMaxBuyQuantity > 0
+              ? Math.min(normalizeGameOrderQuantity(quantity), normalizedMaxBuyQuantity)
+              : normalizeGameOrderQuantity(quantity),
           );
         }}
         onClose={closeTradeModal}
         onConfirm={() => void handleBuyCurrentVideo()}
         quantity={normalizedBuyQuantity}
         summaryItems={[
-          { label: '수량', value: formatGameQuantity(normalizedBuyQuantity) },
+          { label: '수량', value: formatGameOrderQuantity(normalizedBuyQuantity) },
           { label: '1개당 가격', value: formatPoints(selectedVideoUnitPricePoints ?? 0) },
           { label: '총 매수', value: formatPoints(totalSelectedVideoBuyPoints ?? (selectedVideoUnitPricePoints ?? 0)) },
           ...(selectedVideoBuyCoinSummary
@@ -1918,7 +1921,7 @@ function HomePage() {
         unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? 0)}
       />
       <GameTradeModal
-        confirmLabel={`${formatGameQuantity(normalizedSellQuantity)} 매도`}
+        confirmLabel={`${formatGameOrderQuantity(normalizedSellQuantity)} 매도`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         helperText={sellModalHelperText}
         isOpen={isSellTradeModalOpen}
@@ -1926,22 +1929,24 @@ function HomePage() {
         maxQuantity={maxSellQuantity}
         mode="sell"
         onChangeQuantity={(quantity) => {
-          if (maxSellQuantity > 0 && quantity <= 0) {
-            setSellQuantity(maxSellQuantity);
+          const normalizedMaxSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
+
+          if (normalizedMaxSellQuantity > 0 && quantity <= 0) {
+            setSellQuantity(normalizedMaxSellQuantity);
             return;
           }
 
           setSellQuantity(
-            maxSellQuantity > 0
-              ? Math.min(Math.max(MIN_GAME_QUANTITY, quantity), maxSellQuantity)
-              : Math.max(MIN_GAME_QUANTITY, quantity),
+            normalizedMaxSellQuantity > 0
+              ? Math.min(normalizeGameOrderQuantity(quantity), normalizedMaxSellQuantity)
+              : normalizeGameOrderQuantity(quantity),
           );
         }}
         onClose={closeTradeModal}
         onConfirm={() => void handleSellCurrentVideo()}
         quantity={normalizedSellQuantity}
         summaryItems={[
-          { label: '수량', value: formatGameQuantity(normalizedSellQuantity) },
+          { label: '수량', value: formatGameOrderQuantity(normalizedSellQuantity) },
           { label: '정산 금액', value: formatPoints(selectedVideoSellSummary.settledPoints) },
           { label: '매도 금액', value: formatPoints(selectedVideoSellSummary.grossSellPoints) },
           { label: '수수료', value: formatPoints(selectedVideoSellSummary.feePoints) },

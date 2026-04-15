@@ -1,10 +1,12 @@
 import { createPortal } from 'react-dom';
 import {
   DEFAULT_GAME_QUANTITY,
-  MIN_GAME_QUANTITY,
-  formatGameQuantity,
-  parseGameQuantityInput,
-  toDisplayGameQuantity,
+  GAME_ORDER_QUANTITY_STEP,
+  formatGameOrderQuantity,
+  parseGameOrderQuantityInput,
+  toDisplayGameOrderQuantity,
+  normalizeGameOrderCapacity,
+  normalizeGameOrderQuantity,
 } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
 import './GameTradeModal.css';
@@ -40,16 +42,30 @@ interface GameTradeModalProps {
 }
 
 export function getGameTradeQuickActions(maxQuantity: number): GameTradeQuickAction[] {
-  if (maxQuantity <= 0) {
+  const normalizedMaxQuantity = normalizeGameOrderCapacity(maxQuantity);
+
+  if (normalizedMaxQuantity <= 0) {
     return [];
   }
 
   const actionsByQuantity = new Map<number, GameTradeQuickAction>();
 
   [
-    { label: '25%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.25)) },
-    { label: '50%', quantity: Math.max(MIN_GAME_QUANTITY, Math.ceil(maxQuantity * 0.5)) },
-    { label: '100%', quantity: maxQuantity },
+    {
+      label: '25%',
+      quantity: Math.max(
+        GAME_ORDER_QUANTITY_STEP,
+        Math.ceil(normalizedMaxQuantity * 0.25 / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
+      ),
+    },
+    {
+      label: '50%',
+      quantity: Math.max(
+        GAME_ORDER_QUANTITY_STEP,
+        Math.ceil(normalizedMaxQuantity * 0.5 / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
+      ),
+    },
+    { label: '100%', quantity: normalizedMaxQuantity },
   ].forEach((action) => {
     actionsByQuantity.set(action.quantity, action);
   });
@@ -82,11 +98,17 @@ export default function GameTradeModal({
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
   const modalTitleId = `game-trade-modal-title-${mode}`;
-  const normalizedQuantity = Math.max(MIN_GAME_QUANTITY, Math.floor(quantity));
-  const previousQuantity = normalizedQuantity <= MIN_GAME_QUANTITY ? maxQuantity : normalizedQuantity - 1;
-  const nextQuantity = normalizedQuantity >= maxQuantity ? MIN_GAME_QUANTITY : normalizedQuantity + 1;
-  const displayQuantity = toDisplayGameQuantity(normalizedQuantity);
-  const quickActions = getGameTradeQuickActions(maxQuantity);
+  const normalizedMaxQuantity = normalizeGameOrderCapacity(maxQuantity);
+  const normalizedQuantity =
+    normalizedMaxQuantity > 0
+      ? Math.min(normalizeGameOrderQuantity(quantity), normalizedMaxQuantity)
+      : normalizeGameOrderQuantity(quantity);
+  const previousQuantity =
+    normalizedQuantity <= GAME_ORDER_QUANTITY_STEP ? normalizedMaxQuantity : normalizedQuantity - GAME_ORDER_QUANTITY_STEP;
+  const nextQuantity =
+    normalizedQuantity >= normalizedMaxQuantity ? GAME_ORDER_QUANTITY_STEP : normalizedQuantity + GAME_ORDER_QUANTITY_STEP;
+  const displayQuantity = toDisplayGameOrderQuantity(normalizedQuantity);
+  const quickActions = getGameTradeQuickActions(normalizedMaxQuantity);
 
   return createPortal(
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
@@ -145,7 +167,7 @@ export default function GameTradeModal({
                 <div className="app-shell__game-panel-quantity">
                   <button
                     className="app-shell__game-panel-quantity-button"
-                    disabled={isSubmitting || maxQuantity <= 0}
+                    disabled={isSubmitting || normalizedMaxQuantity <= 0}
                     onClick={() => onChangeQuantity(previousQuantity)}
                     type="button"
                   >
@@ -153,34 +175,34 @@ export default function GameTradeModal({
                   </button>
                   <input
                     className="app-shell__game-panel-quantity-input"
-                    disabled={isSubmitting || maxQuantity <= 0}
-                    inputMode="decimal"
-                    max={maxQuantity > 0 ? toDisplayGameQuantity(maxQuantity) : undefined}
-                    min={mode === 'buy' ? 0 : toDisplayGameQuantity(MIN_GAME_QUANTITY)}
+                    disabled={isSubmitting || normalizedMaxQuantity <= 0}
+                    inputMode="numeric"
+                    max={normalizedMaxQuantity > 0 ? toDisplayGameOrderQuantity(normalizedMaxQuantity) : undefined}
+                    min={mode === 'buy' ? 0 : toDisplayGameOrderQuantity(GAME_ORDER_QUANTITY_STEP)}
                     onChange={(event) => {
-                      const nextValue = Number.parseFloat(event.target.value);
+                      const nextValue = Number.parseInt(event.target.value, 10);
                       onChangeQuantity(
                         Number.isFinite(nextValue)
-                          ? parseGameQuantityInput(nextValue)
+                          ? parseGameOrderQuantityInput(nextValue)
                           : mode === 'buy'
                             ? 0
                             : DEFAULT_GAME_QUANTITY,
                       );
                     }}
-                    step="0.01"
+                    step="1"
                     type="number"
                     value={displayQuantity}
                   />
                   <button
                     className="app-shell__game-panel-quantity-button"
-                    disabled={isSubmitting || maxQuantity <= 0}
+                    disabled={isSubmitting || normalizedMaxQuantity <= 0}
                     onClick={() => onChangeQuantity(nextQuantity)}
                     type="button"
                   >
                     +
                   </button>
                 </div>
-                <p className="app-shell__modal-field-copy">현재 선택: {formatGameQuantity(normalizedQuantity)}</p>
+                <p className="app-shell__modal-field-copy">1개 단위로만 주문할 수 있습니다. 현재 선택: {formatGameOrderQuantity(normalizedQuantity)}</p>
               </div>
             </div>
 
@@ -207,7 +229,7 @@ export default function GameTradeModal({
         <div className="app-shell__modal-footer app-shell__modal-footer--trade-actions">
           <button
             className="app-shell__modal-action"
-            disabled={isSubmitting || maxQuantity <= 0}
+            disabled={isSubmitting || normalizedMaxQuantity <= 0}
             onClick={onConfirm}
             type="button"
           >

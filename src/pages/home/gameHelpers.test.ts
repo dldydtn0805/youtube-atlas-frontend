@@ -7,8 +7,12 @@ import {
   formatFullCoins,
   formatFullPoints,
   formatGameQuantity,
+  formatGameOrderQuantity,
   formatPointBalance,
   formatPoints,
+  normalizeGameOrderCapacity,
+  normalizeGameOrderQuantity,
+  parseGameOrderQuantityInput,
 } from './gameHelpers';
 
 describe('gameHelpers', () => {
@@ -45,5 +49,12 @@ describe('gameHelpers', () => {
   it('keeps smaller quantities expanded and compacts large ones', () => {
     expect(formatGameQuantity(1_234_567)).toBe('12,345.67개');
     expect(formatGameQuantity(12_345_678_900)).toBe('1억 2,345만개');
+  });
+
+  it('normalizes order quantities to whole shares', () => {
+    expect(normalizeGameOrderQuantity(150)).toBe(100);
+    expect(normalizeGameOrderCapacity(250)).toBe(200);
+    expect(parseGameOrderQuantityInput(3)).toBe(300);
+    expect(formatGameOrderQuantity(300)).toBe('3개');
   });
 });

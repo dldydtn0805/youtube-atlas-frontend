@@ -10,10 +10,11 @@ import type {
 import { ApiRequestError } from '../../../lib/api';
 import {
   DEFAULT_GAME_QUANTITY,
-  formatGameQuantity,
+  formatGameOrderQuantity,
   formatPoints,
   getBuyShortfallPointsText,
-  normalizeGameQuantity,
+  normalizeGameOrderCapacity,
+  normalizeGameOrderQuantity,
 } from '../gameHelpers';
 import { formatSignedProfitRate } from '../utils';
 
@@ -82,7 +83,7 @@ export default function useHomeGameTradeActions({
         return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(normalizeGameQuantity(currentQuantity), maxBuyQuantity);
+      return Math.min(normalizeGameOrderQuantity(currentQuantity), normalizeGameOrderCapacity(maxBuyQuantity));
     });
   }, [maxBuyQuantity, setBuyQuantity]);
 
@@ -92,7 +93,7 @@ export default function useHomeGameTradeActions({
         return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(normalizeGameQuantity(currentQuantity), maxSellQuantity);
+      return Math.min(normalizeGameOrderQuantity(currentQuantity), normalizeGameOrderCapacity(maxSellQuantity));
     });
   }, [maxSellQuantity, setSellQuantity]);
 
@@ -124,7 +125,8 @@ export default function useHomeGameTradeActions({
       return;
     }
 
-    const clampedBuyQuantity = normalizeGameQuantity(buyQuantity);
+    const clampedBuyQuantity = normalizeGameOrderQuantity(buyQuantity);
+    const maxOrderBuyQuantity = normalizeGameOrderCapacity(maxBuyQuantity);
     const buyShortfallMessage = getBuyShortfallPointsText(
       currentGameSeason,
       selectedVideoMarketEntry,
@@ -138,10 +140,10 @@ export default function useHomeGameTradeActions({
       return;
     }
 
-    if (maxBuyQuantity <= 0 || clampedBuyQuantity > maxBuyQuantity) {
+    if (maxOrderBuyQuantity <= 0 || clampedBuyQuantity > maxOrderBuyQuantity) {
       setGameActionStatus(
-        maxBuyQuantity > 0
-          ? `지금은 최대 ${formatGameQuantity(maxBuyQuantity)}까지 한 번에 매수할 수 있습니다.`
+        maxOrderBuyQuantity > 0
+          ? `지금은 최대 ${formatGameOrderQuantity(maxOrderBuyQuantity)}까지 한 번에 매수할 수 있습니다.`
           : buyShortfallMessage ?? '지금은 매수할 수 없습니다.',
       );
       return;
@@ -162,7 +164,7 @@ export default function useHomeGameTradeActions({
       setGameActionStatus(
         `${formatPoints(totalSelectedVideoBuyPoints ?? selectedVideoMarketEntry.currentPricePoints)}로 ${
           selectedVideoMarketEntry.currentRank
-        }위 영상을 ${formatGameQuantity(clampedBuyQuantity)} 매수했어요.`,
+        }위 영상을 ${formatGameOrderQuantity(clampedBuyQuantity)} 매수했어요.`,
       );
     } catch (error) {
       if (
@@ -207,12 +209,13 @@ export default function useHomeGameTradeActions({
       return;
     }
 
-    const clampedSellQuantity = normalizeGameQuantity(sellQuantity);
+    const clampedSellQuantity = normalizeGameOrderQuantity(sellQuantity);
+    const maxOrderSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
 
-    if (maxSellQuantity <= 0 || clampedSellQuantity > maxSellQuantity) {
+    if (maxOrderSellQuantity <= 0 || clampedSellQuantity > maxOrderSellQuantity) {
       setGameActionStatus(
-        maxSellQuantity > 0
-          ? `지금은 최대 ${formatGameQuantity(maxSellQuantity)}까지 매도할 수 있습니다.`
+        maxOrderSellQuantity > 0
+          ? `지금은 최대 ${formatGameOrderQuantity(maxOrderSellQuantity)}까지 매도할 수 있습니다.`
           : '지금 바로 매도 가능한 포지션이 없습니다.',
       );
       return;
@@ -237,7 +240,7 @@ export default function useHomeGameTradeActions({
       setActiveTradeModal(null);
       setSellQuantity(DEFAULT_GAME_QUANTITY);
       setGameActionStatus(
-        `${selectedGameActionTitle} 포지션 ${formatGameQuantity(totalSoldQuantity)}를 정산 ${formatPoints(totalSettledPoints)} / 수수료 ${formatPoints(totalFeePoints)} / 손익률 ${formatSignedProfitRate(
+        `${selectedGameActionTitle} 포지션 ${formatGameOrderQuantity(totalSoldQuantity)}를 정산 ${formatPoints(totalSettledPoints)} / 수수료 ${formatPoints(totalFeePoints)} / 손익률 ${formatSignedProfitRate(
           totalPnlPoints,
           totalStakePoints,
         )} 기준으로 정리했어요.`,
@@ -279,7 +282,7 @@ export default function useHomeGameTradeActions({
         return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(normalizeGameQuantity(currentQuantity), maxBuyQuantity);
+      return Math.min(normalizeGameOrderQuantity(currentQuantity), normalizeGameOrderCapacity(maxBuyQuantity));
     });
     setActiveTradeModal('buy');
   }, [maxBuyQuantity, setActiveTradeModal, setBuyQuantity]);
@@ -290,7 +293,7 @@ export default function useHomeGameTradeActions({
         return DEFAULT_GAME_QUANTITY;
       }
 
-      return Math.min(normalizeGameQuantity(currentQuantity), maxSellQuantity);
+      return Math.min(normalizeGameOrderQuantity(currentQuantity), normalizeGameOrderCapacity(maxSellQuantity));
     });
     setActiveTradeModal('sell');
   }, [maxSellQuantity, setActiveTradeModal, setSellQuantity]);

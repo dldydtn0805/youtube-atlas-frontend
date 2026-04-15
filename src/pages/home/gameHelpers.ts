@@ -14,11 +14,15 @@ const seasonDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit',
   month: 'short',
 });
+const wholeQuantityFormatter = new Intl.NumberFormat('ko-KR', {
+  maximumFractionDigits: 0,
+});
 
 export const SELL_FEE_RATE_LABEL = '0.3%';
 export const GAME_QUANTITY_SCALE = 100;
 export const MIN_GAME_QUANTITY = 1;
 export const DEFAULT_GAME_QUANTITY = GAME_QUANTITY_SCALE;
+export const GAME_ORDER_QUANTITY_STEP = GAME_QUANTITY_SCALE;
 const KOREAN_LARGE_NUMBER_UNITS = ['', '만', '억', '조', '경', '해'];
 
 export interface OpenGameHolding {
@@ -277,6 +281,47 @@ export function parseGameQuantityInput(quantity: number, fallback = DEFAULT_GAME
   }
 
   return Math.max(MIN_GAME_QUANTITY, Math.round(quantity * GAME_QUANTITY_SCALE));
+}
+
+export function normalizeGameOrderQuantity(quantity?: number | null, fallback = DEFAULT_GAME_QUANTITY) {
+  const normalizedFallback = Math.max(
+    GAME_ORDER_QUANTITY_STEP,
+    Math.floor(normalizeGameQuantity(fallback) / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
+  );
+
+  if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < GAME_ORDER_QUANTITY_STEP) {
+    return normalizedFallback;
+  }
+
+  return Math.max(
+    GAME_ORDER_QUANTITY_STEP,
+    Math.floor(quantity / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
+  );
+}
+
+export function normalizeGameOrderCapacity(quantity?: number | null) {
+  if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < GAME_ORDER_QUANTITY_STEP) {
+    return 0;
+  }
+
+  return Math.floor(quantity / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP;
+}
+
+export function toDisplayGameOrderQuantity(quantity?: number | null) {
+  return normalizeGameOrderQuantity(quantity) / GAME_QUANTITY_SCALE;
+}
+
+export function formatGameOrderQuantity(quantity?: number | null) {
+  const displayQuantity = toDisplayGameOrderQuantity(quantity);
+  return `${wholeQuantityFormatter.format(displayQuantity)}개`;
+}
+
+export function parseGameOrderQuantityInput(quantity: number, fallback = DEFAULT_GAME_QUANTITY) {
+  if (!Number.isFinite(quantity)) {
+    return normalizeGameOrderQuantity(undefined, fallback);
+  }
+
+  return Math.max(GAME_ORDER_QUANTITY_STEP, Math.round(quantity) * GAME_ORDER_QUANTITY_STEP);
 }
 
 export function calculateGameOrderPoints(unitPricePoints: number, quantity: number) {
