@@ -379,8 +379,6 @@
   --game-tier-card-glare-y: 18%;
   --game-tier-card-rotate-x: 0deg;
   --game-tier-card-rotate-y: 0deg;
-  --game-tier-card-spin-x: 0deg;
-  --game-tier-card-spin-y: 0deg;
   --game-tier-card-scale: 1;
   --game-tier-metal-deep: color-mix(in srgb, var(--game-tier-accent) 42%, #09090b 58%);
   --game-tier-metal-mid: color-mix(in srgb, var(--game-tier-accent) 74%, #27272a 26%);
@@ -419,10 +417,7 @@
   max-width: var(--game-tier-card-max-width);
   padding: 14px 16px;
   touch-action: pan-y;
-  transform:
-    rotateX(calc(var(--game-tier-card-rotate-x) + var(--game-tier-card-spin-x)))
-    rotateY(calc(var(--game-tier-card-rotate-y) + var(--game-tier-card-spin-y)))
-    scale(var(--game-tier-card-scale));
+  transform: rotateX(var(--game-tier-card-rotate-x)) rotateY(var(--game-tier-card-rotate-y)) scale(var(--game-tier-card-scale));
   transform-origin: 50% 50%;
   transform-style: preserve-3d;
   transition:

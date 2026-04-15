@@ -12,22 +12,6 @@ interface GameCoinTierSummaryProps {
 
 const TIER_CARD_LONG_PRESS_MS = 320;
 const TIER_CARD_TOUCH_MOVE_TOLERANCE_PX = 12;
-const TIER_CARD_SPIN_MIN_SPEED = 0.8;
-const TIER_CARD_SPIN_FRICTION = 0.86;
-const TIER_CARD_SPIN_STOP_SPEED = 0.03;
-
-interface TierCardPointerSample {
-  x: number;
-  y: number;
-  time: number;
-}
-
-interface TierCardTransformState {
-  rotateX: number;
-  rotateY: number;
-  spinX: number;
-  spinY: number;
-}
 
 function getTierProgressPercent(progress: GameCoinTierProgress) {
   if (!progress.nextTier) {
@@ -66,11 +50,6 @@ function setTierCardTiltFromPoint(card: HTMLDivElement, clientX: number, clientY
   card.style.setProperty('--game-tier-card-glare-y', `${y}%`);
   card.style.setProperty('--game-tier-card-scale', '1.02');
   card.dataset.interacting = 'true';
-
-  return {
-    rotateX: -dy * 16,
-    rotateY: dx * 16,
-  };
 }
 
 function setTierCardTilt(event: PointerEvent<HTMLDivElement>) {
@@ -89,8 +68,6 @@ function handleTierCardPointerDown(event: PointerEvent<HTMLDivElement>) {
 function resetTierCardTilt(card: HTMLDivElement) {
   card.style.setProperty('--game-tier-card-rotate-x', '0deg');
   card.style.setProperty('--game-tier-card-rotate-y', '0deg');
-  card.style.setProperty('--game-tier-card-spin-x', '0deg');
-  card.style.setProperty('--game-tier-card-spin-y', '0deg');
   card.style.setProperty('--game-tier-card-glare-x', '22%');
   card.style.setProperty('--game-tier-card-glare-y', '18%');
   card.style.setProperty('--game-tier-card-scale', '1');
@@ -112,14 +89,6 @@ export default function GameCoinTierSummary({
   showLadder = true,
 }: GameCoinTierSummaryProps) {
   const longPressTimeoutRef = useRef<number | null>(null);
-  const spinFrameRef = useRef<number | null>(null);
-  const pointerSamplesRef = useRef<TierCardPointerSample[]>([]);
-  const transformStateRef = useRef<TierCardTransformState>({
-    rotateX: 0,
-    rotateY: 0,
-    spinX: 0,
-    spinY: 0,
-  });
   const mouseInteractionRef = useRef<{
     active: boolean;
     pointerId: number | null;
@@ -147,10 +116,6 @@ export default function GameCoinTierSummary({
 
   useEffect(() => {
     return () => {
-      if (spinFrameRef.current !== null) {
-        window.cancelAnimationFrame(spinFrameRef.current);
-      }
-
       if (longPressTimeoutRef.current !== null) {
         window.clearTimeout(longPressTimeoutRef.current);
       }
@@ -170,111 +135,6 @@ export default function GameCoinTierSummary({
     longPressTimeoutRef.current = null;
   }
 
-  function stopSpinAnimation() {
-    if (spinFrameRef.current !== null) {
-      window.cancelAnimationFrame(spinFrameRef.current);
-      spinFrameRef.current = null;
-    }
-  }
-
-  function recordPointerSample(clientX: number, clientY: number) {
-    const nextSample = {
-      x: clientX,
-      y: clientY,
-      time: performance.now(),
-    };
-
-    pointerSamplesRef.current = [...pointerSamplesRef.current, nextSample].filter(
-      (sample) => nextSample.time - sample.time <= 120,
-    );
-  }
-
-  function applyTiltFromPoint(card: HTMLDivElement, clientX: number, clientY: number) {
-    const nextTransformState = setTierCardTiltFromPoint(card, clientX, clientY);
-
-    transformStateRef.current = {
-      ...transformStateRef.current,
-      ...nextTransformState,
-    };
-  }
-
-  function startSpinAnimation(card: HTMLDivElement) {
-    const samples = pointerSamplesRef.current;
-    const latestSample = samples.at(-1);
-
-    if (!latestSample) {
-      resetTierCardTilt(card);
-      transformStateRef.current = { rotateX: 0, rotateY: 0, spinX: 0, spinY: 0 };
-      return;
-    }
-
-    const referenceSample =
-      [...samples].reverse().find((sample) => latestSample.time - sample.time >= 40) ?? samples[0];
-    const elapsedMs = Math.max(latestSample.time - referenceSample.time, 1);
-    const velocityX = (latestSample.x - referenceSample.x) / elapsedMs;
-    const velocityY = (latestSample.y - referenceSample.y) / elapsedMs;
-    const speed = Math.hypot(velocityX, velocityY);
-
-    pointerSamplesRef.current = [];
-
-    if (speed < TIER_CARD_SPIN_MIN_SPEED) {
-      resetTierCardTilt(card);
-      transformStateRef.current = { rotateX: 0, rotateY: 0, spinX: 0, spinY: 0 };
-      return;
-    }
-
-    stopSpinAnimation();
-
-    let angularVelocityX = Math.max(-0.55, Math.min(0.55, -velocityY * 0.38));
-    let angularVelocityY = Math.max(-0.9, Math.min(0.9, velocityX * 0.68));
-    let rotateX = transformStateRef.current.rotateX;
-    let rotateY = transformStateRef.current.rotateY;
-    let spinX = transformStateRef.current.spinX;
-    let spinY = transformStateRef.current.spinY;
-    let previousTime = performance.now();
-
-    card.dataset.interacting = 'true';
-
-    const step = (currentTime: number) => {
-      const deltaMs = Math.min(currentTime - previousTime, 32);
-      previousTime = currentTime;
-
-      spinX += angularVelocityX * deltaMs * 8;
-      spinY += angularVelocityY * deltaMs * 10;
-      rotateX *= 0.94;
-      rotateY *= 0.94;
-      angularVelocityX *= TIER_CARD_SPIN_FRICTION;
-      angularVelocityY *= TIER_CARD_SPIN_FRICTION;
-
-      card.style.setProperty('--game-tier-card-spin-x', `${spinX}deg`);
-      card.style.setProperty('--game-tier-card-spin-y', `${spinY}deg`);
-      card.style.setProperty('--game-tier-card-rotate-x', `${rotateX}deg`);
-      card.style.setProperty('--game-tier-card-rotate-y', `${rotateY}deg`);
-      card.style.setProperty('--game-tier-card-scale', '1.01');
-
-      transformStateRef.current = {
-        rotateX,
-        rotateY,
-        spinX,
-        spinY,
-      };
-
-      if (
-        Math.abs(angularVelocityX) <= TIER_CARD_SPIN_STOP_SPEED &&
-        Math.abs(angularVelocityY) <= TIER_CARD_SPIN_STOP_SPEED
-      ) {
-        resetTierCardTilt(card);
-        transformStateRef.current = { rotateX: 0, rotateY: 0, spinX: 0, spinY: 0 };
-        spinFrameRef.current = null;
-        return;
-      }
-
-      spinFrameRef.current = window.requestAnimationFrame(step);
-    };
-
-    spinFrameRef.current = window.requestAnimationFrame(step);
-  }
-
   function beginTouchInteraction() {
     const touchInteraction = touchInteractionRef.current;
     const card = touchInteraction.card;
@@ -283,8 +143,6 @@ export default function GameCoinTierSummary({
       return;
     }
 
-    stopSpinAnimation();
-    pointerSamplesRef.current = [];
     touchInteraction.active = true;
     card.style.touchAction = 'none';
 
@@ -292,12 +150,11 @@ export default function GameCoinTierSummary({
       try {
         card.setPointerCapture(touchInteraction.pointerId);
       } catch {
-        // Touch capture can fail if the pointer was already canceled by scrolling.
+        // Touch capture can fail if scrolling already took over.
       }
     }
 
-    applyTiltFromPoint(card, touchInteraction.lastX, touchInteraction.lastY);
-    recordPointerSample(touchInteraction.lastX, touchInteraction.lastY);
+    setTierCardTiltFromPoint(card, touchInteraction.lastX, touchInteraction.lastY);
   }
 
   function resetTouchInteraction(card?: HTMLDivElement) {
@@ -321,8 +178,6 @@ export default function GameCoinTierSummary({
   }
 
   function handleTouchPointerDown(event: PointerEvent<HTMLDivElement>) {
-    stopSpinAnimation();
-    pointerSamplesRef.current = [];
     touchInteractionRef.current = {
       active: false,
       pointerId: event.pointerId,
@@ -361,8 +216,7 @@ export default function GameCoinTierSummary({
       return;
     }
 
-    recordPointerSample(event.clientX, event.clientY);
-    applyTiltFromPoint(event.currentTarget, event.clientX, event.clientY);
+    setTierCardTiltFromPoint(event.currentTarget, event.clientX, event.clientY);
   }
 
   function handleTierCardPointerMove(event: PointerEvent<HTMLDivElement>) {
@@ -378,8 +232,7 @@ export default function GameCoinTierSummary({
       return;
     }
 
-    recordPointerSample(event.clientX, event.clientY);
-    applyTiltFromPoint(event.currentTarget, event.clientX, event.clientY);
+    setTierCardTilt(event);
   }
 
   function handleTierCardPointerRelease(event: PointerEvent<HTMLDivElement>) {
@@ -390,9 +243,7 @@ export default function GameCoinTierSummary({
         card.releasePointerCapture(event.pointerId);
       }
 
-      if (touchInteractionRef.current.active) {
-        startSpinAnimation(card);
-      }
+      resetTierCardTilt(card);
       resetTouchInteraction(card);
       return;
     }
@@ -401,9 +252,8 @@ export default function GameCoinTierSummary({
       active: false,
       pointerId: null,
     };
-
-    startSpinAnimation(event.currentTarget);
     handleTierCardPointerEnd(event);
+    resetTierCardTilt(event.currentTarget);
   }
 
   const progressPercent = getTierProgressPercent(progress);
@@ -439,10 +289,7 @@ export default function GameCoinTierSummary({
               active: true,
               pointerId: event.pointerId,
             };
-            stopSpinAnimation();
-            pointerSamplesRef.current = [];
             handleTierCardPointerDown(event);
-            recordPointerSample(event.clientX, event.clientY);
           }}
           onPointerMove={handleTierCardPointerMove}
           onPointerUp={handleTierCardPointerRelease}
