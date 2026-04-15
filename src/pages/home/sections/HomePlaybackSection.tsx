@@ -1029,6 +1029,7 @@ export default function HomePlaybackSection({
             isCinematicModeActive={playerStageProps.isCinematicModeActive}
             isMobileLayout={playerStageProps.isMobileLayout}
             onOpenRegionModal={playerStageProps.onOpenRegionModal}
+            onOpenViewModal={playerStageProps.onOpenViewModal}
             onToggleCinematicMode={playerStageProps.onToggleCinematicMode}
             selectedCategoryLabel={playerStageProps.selectedCategoryLabel}
             selectedCountryName={playerStageProps.selectedCountryName}

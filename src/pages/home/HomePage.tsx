@@ -5,7 +5,7 @@ import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer
 import AppHeader from './sections/AppHeader';
 import { GameSelectedVideoPriceSummary, SelectedVideoGameActionsBundle } from './sections/GameActionContent';
 import GameCoinModal from './sections/GameDividendModal';
-import { RegionFilterModal } from './sections/FilterPanels';
+import { ChartViewModal, RegionFilterModal } from './sections/FilterPanels';
 import GamePanelSection from './sections/GamePanelSection';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
@@ -294,6 +294,7 @@ function HomePage() {
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
   const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
+  const [isChartViewModalOpen, setIsChartViewModalOpen] = useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('all');
   const [coinCountdownNow, setCoinCountdownNow] = useState(() => Date.now());
@@ -1097,6 +1098,12 @@ function HomePage() {
     setIsRegionModalOpen(false);
   }
 
+  function handleSelectChartViewFromModal(viewId: string, triggerElement?: HTMLButtonElement) {
+    handleSelectChartView(viewId, triggerElement);
+    handleSelectTopVideoForChartView(viewId as ChartViewMode);
+    setIsChartViewModalOpen(false);
+  }
+
   const openGameHoldings = useMemo(
     () => buildOpenGameHoldings(openGamePositions, getRemainingHoldSeconds),
     [getRemainingHoldSeconds, openGamePositions],
@@ -1265,6 +1272,36 @@ function HomePage() {
       handleSelectVideo(nextPreviewVideoId, playbackQueueId);
     },
     [handleSelectVideo],
+  );
+
+  const handleSelectTopVideoForChartView = useCallback(
+    (viewId: ChartViewMode) => {
+      const targetSection =
+        viewId === 'favorites'
+          ? buyableFavoriteChartSection
+          : viewId === 'music'
+            ? filteredMusicChartSection
+            : viewId === 'realtime-surging'
+              ? realtimeSurgingSection
+              : viewId === 'new-chart-entries'
+                ? newChartEntriesSection
+                : displaySelectedPlaybackSection;
+      const topVideoId = targetSection?.items[0]?.id;
+
+      if (!topVideoId || !targetSection?.categoryId) {
+        return;
+      }
+
+      handleSelectVideoWithPreview(topVideoId, targetSection.categoryId);
+    },
+    [
+      buyableFavoriteChartSection,
+      displaySelectedPlaybackSection,
+      filteredMusicChartSection,
+      handleSelectVideoWithPreview,
+      newChartEntriesSection,
+      realtimeSurgingSection,
+    ],
   );
 
   const handlePlayNextVideoWithPreview = useCallback(() => {
@@ -1778,6 +1815,7 @@ function HomePage() {
             onManualPlaybackSave: () => void handleManualPlaybackSave(),
             onNextVideo: handlePlayNextVideoWithPreview,
             onOpenRegionModal: () => setIsRegionModalOpen(true),
+            onOpenViewModal: () => setIsChartViewModalOpen(true),
             onPlaybackRestoreApplied: handlePlaybackRestoreApplied,
             onPlaybackStateChange: handlePlaybackStateChange,
             onPreviousVideo: handlePlayPreviousVideoWithPreview,
@@ -1788,7 +1826,7 @@ function HomePage() {
             playerSectionRef,
             playerStageRef,
             playerViewportRef,
-            selectedCategoryLabel: selectedPlaybackCategoryLabel,
+            selectedCategoryLabel: selectedChartViewOption.label,
             selectedCountryName,
             selectedVideoChannelTitle: resolvedSelectedVideo?.snippet.channelTitle,
             selectedVideoId,
@@ -1863,6 +1901,13 @@ function HomePage() {
         onClose={() => setIsRegionModalOpen(false)}
         regionOptions={regionOptions}
         selectedRegionCode={selectedRegionCode}
+      />
+      <ChartViewModal
+        isOpen={isChartViewModalOpen}
+        onClose={() => setIsChartViewModalOpen(false)}
+        onSelectView={handleSelectChartViewFromModal}
+        selectedViewId={effectiveChartView}
+        viewOptions={chartViewOptions}
       />
       <GameCoinModal
         isOpen={isCoinModalOpen}

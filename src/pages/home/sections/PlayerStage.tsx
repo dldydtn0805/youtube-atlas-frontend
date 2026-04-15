@@ -27,6 +27,7 @@ interface PlayerStageHeaderProps {
   isCinematicModeActive: boolean;
   isMobileLayout: boolean;
   onOpenRegionModal: () => void;
+  onOpenViewModal?: () => void;
   onToggleCinematicMode: () => void;
   selectedCategoryLabel?: string;
   selectedCountryName: string;
@@ -45,6 +46,7 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   manualPlaybackSaveStatus?: string;
   onManualPlaybackSave: () => void;
   onOpenRegionModal: () => void;
+  onOpenViewModal?: () => void;
   onToggleCinematicMode: () => void;
   onToggleFavoriteStreamer: () => void;
   playerSectionRef: RefObject<HTMLElement | null>;
@@ -116,6 +118,7 @@ export function PlayerStageHeader({
   isCinematicModeActive,
   isMobileLayout,
   onOpenRegionModal,
+  onOpenViewModal,
   onToggleCinematicMode,
   selectedCategoryLabel,
   selectedCountryName,
@@ -128,7 +131,14 @@ export function PlayerStageHeader({
           <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
             {selectedCountryName}
           </button>
-          {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ''}
+          {selectedCategoryLabel ? (
+            <>
+              {' · '}
+              <button className="app-shell__section-title-button" onClick={onOpenViewModal} type="button">
+                {selectedCategoryLabel}
+              </button>
+            </>
+          ) : null}
         </h2>
       </div>
       {!isMobileLayout ? (
@@ -167,6 +177,7 @@ function PlayerStage({
   onManualPlaybackSave,
   onNextVideo,
   onOpenRegionModal,
+  onOpenViewModal,
   onPreviousVideo,
   onPlaybackRestoreApplied,
   onPlaybackStateChange,
@@ -223,6 +234,7 @@ function PlayerStage({
               isCinematicModeActive={isCinematicModeActive}
               isMobileLayout={isMobileLayout}
               onOpenRegionModal={onOpenRegionModal}
+              onOpenViewModal={onOpenViewModal}
               onToggleCinematicMode={onToggleCinematicMode}
               selectedCategoryLabel={selectedCategoryLabel}
               selectedCountryName={selectedCountryName}
