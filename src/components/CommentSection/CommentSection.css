@@ -272,7 +272,7 @@
   .comment-composer,
   .comment-composer-mobile-notice {
     border: 1px solid var(--surface-stat-border);
-    border-radius: 0;
+    border-radius: 20px;
     box-shadow: none;
   }
 

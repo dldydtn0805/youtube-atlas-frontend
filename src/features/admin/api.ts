@@ -1,8 +1,12 @@
 import { fetchApi } from '../../lib/api';
 import type {
+  AdminCommentCleanupRequest,
+  AdminCommentCleanupResponse,
   AdminDashboard,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonSummary,
+  AdminTradeHistoryCleanupRequest,
+  AdminTradeHistoryCleanupResponse,
   AdminUserDetail,
   AdminUserList,
   AdminWalletUpdateRequest,
@@ -15,6 +19,34 @@ function createAuthorizationHeader(accessToken: string) {
 export async function fetchAdminDashboard(accessToken: string) {
   return fetchApi<AdminDashboard>('/api/admin/dashboard', {
     headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function purgeAdminComments(
+  accessToken: string,
+  request: AdminCommentCleanupRequest,
+) {
+  return fetchApi<AdminCommentCleanupResponse>('/api/admin/comments/purge', {
+    method: 'POST',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function purgeAdminTradeHistory(
+  accessToken: string,
+  request: AdminTradeHistoryCleanupRequest,
+) {
+  return fetchApi<AdminTradeHistoryCleanupResponse>('/api/admin/trade-history/purge', {
+    method: 'POST',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
   });
 }
 

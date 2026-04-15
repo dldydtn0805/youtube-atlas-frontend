@@ -7,6 +7,8 @@ import {
   useAdminUserDetail,
   useAdminUsers,
   useDeleteAdminUser,
+  usePurgeAdminComments,
+  usePurgeAdminTradeHistory,
   useUpdateAdminSeasonSchedule,
   useUpdateAdminUserWallet,
 } from '../../features/admin/queries';
@@ -117,6 +119,26 @@ function parseDateTimeInput(value: string, label: string) {
   }
 
   return parsedDate.toISOString();
+}
+
+function formatCommentCleanupMessage(deletedCount: number, deleteBefore: string) {
+  return `${formatNumber(deletedCount)}건의 댓글을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
+}
+
+function formatTradeHistoryCleanupMessage(
+  deletedPositionCount: number,
+  deletedLedgerCount: number,
+  deletedCoinPayoutCount: number,
+  deletedDividendPayoutCount: number,
+  deleteBefore: string,
+) {
+  return [
+    `${formatNumber(deletedPositionCount)}건의 거래내역을 정리했습니다.`,
+    `원장 ${formatNumber(deletedLedgerCount)}건`,
+    `코인 지급 ${formatNumber(deletedCoinPayoutCount)}건`,
+    `배당 지급 ${formatNumber(deletedDividendPayoutCount)}건`,
+    `기준 시각: ${formatDateTime(deleteBefore)}`,
+  ].join(' ');
 }
 
 function MetricCard({
@@ -493,6 +515,8 @@ export default function AdminPage() {
     realizedPnlPoints: '',
     coinBalance: '',
   });
+  const [commentCleanupDraft, setCommentCleanupDraft] = useState('');
+  const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState('');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
@@ -502,6 +526,8 @@ export default function AdminPage() {
   const closeSeasonMutation = useCloseAdminSeason(accessToken);
   const updateWalletMutation = useUpdateAdminUserWallet(accessToken);
   const deleteUserMutation = useDeleteAdminUser(accessToken);
+  const purgeCommentsMutation = usePurgeAdminComments(accessToken);
+  const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
   useLogoutOnUnauthorized(usersQuery.error, logout);
@@ -535,6 +561,30 @@ export default function AdminPage() {
       ),
     );
   }, [dashboardQuery.data]);
+
+  useEffect(() => {
+    if (commentCleanupDraft) {
+      return;
+    }
+
+    const recentCommentCreatedAt = dashboardQuery.data?.recentComments[dashboardQuery.data.recentComments.length - 1]?.createdAt;
+
+    if (recentCommentCreatedAt) {
+      setCommentCleanupDraft(formatDateTimeInput(recentCommentCreatedAt));
+    }
+  }, [commentCleanupDraft, dashboardQuery.data]);
+
+  useEffect(() => {
+    if (tradeHistoryCleanupDraft) {
+      return;
+    }
+
+    const activeSeasonEndAt = getDashboardActiveSeasons(dashboardQuery.data)[0]?.endAt;
+
+    if (activeSeasonEndAt) {
+      setTradeHistoryCleanupDraft(formatDateTimeInput(activeSeasonEndAt));
+    }
+  }, [tradeHistoryCleanupDraft, dashboardQuery.data]);
 
   useEffect(() => {
     const activeSeasonGames = getActiveSeasonGames(detailQuery.data);
@@ -713,6 +763,70 @@ export default function AdminPage() {
     });
   };
 
+  const handleCommentCleanup = () => {
+    try {
+      const deleteBefore = parseDateTimeInput(commentCleanupDraft, '댓글 정리 기준');
+      const confirmed = window.confirm(
+        `${formatDateTime(deleteBefore)} 이전 댓글을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setActionMessage(null);
+      purgeCommentsMutation.mutate(
+        { deleteBefore },
+        {
+          onSuccess: (response) => {
+            setActionMessage(formatCommentCleanupMessage(response.deletedCount, response.deleteBefore));
+          },
+          onError: (error) => {
+            setActionMessage(error instanceof Error ? error.message : '댓글 정리에 실패했습니다.');
+          },
+        },
+      );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '댓글 정리 기준 시각을 확인해주세요.');
+    }
+  };
+
+  const handleTradeHistoryCleanup = () => {
+    try {
+      const deleteBefore = parseDateTimeInput(tradeHistoryCleanupDraft, '거래내역 정리 기준');
+      const confirmed = window.confirm(
+        `${formatDateTime(deleteBefore)} 이전에 종료된 거래내역을 삭제할까요? 연결된 원장/지급 내역도 함께 삭제되며 이 작업은 되돌릴 수 없습니다.`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setActionMessage(null);
+      purgeTradeHistoryMutation.mutate(
+        { deleteBefore },
+        {
+          onSuccess: (response) => {
+            setActionMessage(
+              formatTradeHistoryCleanupMessage(
+                response.deletedPositionCount,
+                response.deletedLedgerCount,
+                response.deletedCoinPayoutCount,
+                response.deletedDividendPayoutCount,
+                response.deleteBefore,
+              ),
+            );
+          },
+          onError: (error) => {
+            setActionMessage(error instanceof Error ? error.message : '거래내역 정리에 실패했습니다.');
+          },
+        },
+      );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '거래내역 정리 기준 시각을 확인해주세요.');
+    }
+  };
+
   if (!isApiConfigured) {
     return (
       <main className="admin-page">
@@ -763,7 +877,7 @@ export default function AdminPage() {
           <p className="admin-page__eyebrow">Operations Console</p>
           <h1 className="admin-page__title">YouTube Atlas Admin</h1>
           <p className="admin-page__description">
-            최근 사용자 활동과 댓글, 즐겨찾기, 트렌딩 수집 상태뿐 아니라 유저 지갑 수정과 탈퇴 처리까지 한 화면에서 운영할 수 있습니다.
+            최근 사용자 활동과 댓글, 즐겨찾기, 트렌딩 수집 상태뿐 아니라 댓글 정리, 유저 지갑 수정, 탈퇴 처리까지 한 화면에서 운영할 수 있습니다.
           </p>
         </div>
         <div className="admin-page__hero-actions">
@@ -816,6 +930,7 @@ export default function AdminPage() {
             <MetricCard label="총 댓글" value={dashboardQuery.data.metrics.totalComments} />
             <MetricCard label="총 즐겨찾기" value={dashboardQuery.data.metrics.totalFavorites} />
             <MetricCard label="트렌드 수집 런" value={dashboardQuery.data.metrics.totalTrendRuns} />
+            <MetricCard label="총 거래내역" value={dashboardQuery.data.metrics.totalTradeHistories} />
           </section>
 
           <section className="admin-page__grid">
@@ -858,6 +973,70 @@ export default function AdminPage() {
                 <p className="admin-page__muted">아직 수집된 트렌딩 데이터가 없습니다.</p>
               )}
             </article>
+          </section>
+
+          <section className="admin-page__panel">
+            <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
+              <div>
+                <h2 className="admin-page__section-title">댓글 정리</h2>
+                <p className="admin-page__section-caption">기준 시각보다 오래된 채팅 로그를 한 번에 삭제합니다.</p>
+              </div>
+            </div>
+            <div className="admin-page__form-grid">
+              <label className="admin-page__field">
+                <span>삭제 기준 시각</span>
+                <input
+                  onChange={(event) => setCommentCleanupDraft(event.target.value)}
+                  type="datetime-local"
+                  value={commentCleanupDraft}
+                />
+              </label>
+            </div>
+            <p className="admin-page__muted">
+              입력한 시각보다 이전에 생성된 댓글만 삭제됩니다. 미래 시각은 허용되지 않으며, 삭제 후에는 복구할 수 없습니다.
+            </p>
+            <div className="admin-page__action-row">
+              <button
+                className="admin-page__button admin-page__button--danger"
+                disabled={purgeCommentsMutation.isPending}
+                onClick={handleCommentCleanup}
+                type="button"
+              >
+                {purgeCommentsMutation.isPending ? '정리 중...' : '오래된 댓글 삭제'}
+              </button>
+            </div>
+          </section>
+
+          <section className="admin-page__panel">
+            <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
+              <div>
+                <h2 className="admin-page__section-title">거래내역 정리</h2>
+                <p className="admin-page__section-caption">기준 시각보다 오래된 완료 거래내역과 연결된 지급 내역을 정리합니다.</p>
+              </div>
+            </div>
+            <div className="admin-page__form-grid">
+              <label className="admin-page__field">
+                <span>삭제 기준 시각</span>
+                <input
+                  onChange={(event) => setTradeHistoryCleanupDraft(event.target.value)}
+                  type="datetime-local"
+                  value={tradeHistoryCleanupDraft}
+                />
+              </label>
+            </div>
+            <p className="admin-page__muted">
+              입력한 시각보다 이전에 종료된 거래내역만 삭제됩니다. 보유 중인 포지션은 유지되며, 연결된 원장·코인 지급·배당 지급 기록은 함께 제거됩니다.
+            </p>
+            <div className="admin-page__action-row">
+              <button
+                className="admin-page__button admin-page__button--danger"
+                disabled={purgeTradeHistoryMutation.isPending}
+                onClick={handleTradeHistoryCleanup}
+                type="button"
+              >
+                {purgeTradeHistoryMutation.isPending ? '정리 중...' : '오래된 거래내역 삭제'}
+              </button>
+            </div>
           </section>
 
           <section className="admin-page__panel">

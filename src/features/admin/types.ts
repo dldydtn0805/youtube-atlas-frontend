@@ -3,6 +3,7 @@ export interface AdminSummaryMetrics {
   totalComments: number;
   totalFavorites: number;
   totalTrendRuns: number;
+  totalTradeHistories: number;
 }
 
 export interface AdminSeasonSummary {
@@ -76,6 +77,29 @@ export interface AdminDashboard {
 export interface AdminSeasonScheduleUpdateRequest {
   startAt: string;
   endAt: string;
+}
+
+export interface AdminCommentCleanupRequest {
+  deleteBefore: string;
+}
+
+export interface AdminCommentCleanupResponse {
+  deleteBefore: string;
+  deletedAt: string;
+  deletedCount: number;
+}
+
+export interface AdminTradeHistoryCleanupRequest {
+  deleteBefore: string;
+}
+
+export interface AdminTradeHistoryCleanupResponse {
+  deleteBefore: string;
+  deletedAt: string;
+  deletedPositionCount: number;
+  deletedLedgerCount: number;
+  deletedCoinPayoutCount: number;
+  deletedDividendPayoutCount: number;
 }
 
 export interface AdminPlaybackProgress {

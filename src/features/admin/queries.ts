@@ -5,10 +5,17 @@ import {
   fetchAdminDashboard,
   fetchAdminUserDetail,
   fetchAdminUsers,
+  purgeAdminComments,
+  purgeAdminTradeHistory,
   updateAdminSeasonSchedule,
   updateAdminUserWallet,
 } from './api';
-import type { AdminSeasonScheduleUpdateRequest, AdminWalletUpdateRequest } from './types';
+import type {
+  AdminCommentCleanupRequest,
+  AdminSeasonScheduleUpdateRequest,
+  AdminTradeHistoryCleanupRequest,
+  AdminWalletUpdateRequest,
+} from './types';
 
 export const adminQueryKeys = {
   all: (accessToken: string | null) => ['admin', accessToken] as const,
@@ -62,6 +69,34 @@ export function useUpdateAdminUserWallet(accessToken: string | null) {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'users'] }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(accessToken, data.id) }),
+      ]);
+    },
+  });
+}
+
+export function usePurgeAdminComments(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AdminCommentCleanupRequest) => purgeAdminComments(accessToken as string, request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'user'] }),
+      ]);
+    },
+  });
+}
+
+export function usePurgeAdminTradeHistory(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AdminTradeHistoryCleanupRequest) => purgeAdminTradeHistory(accessToken as string, request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'user'] }),
       ]);
     },
   });
