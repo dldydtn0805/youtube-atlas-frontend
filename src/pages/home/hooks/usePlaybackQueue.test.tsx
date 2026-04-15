@@ -187,6 +187,35 @@ describe('usePlaybackQueue', () => {
     expect(scrollToPlayerTop).toHaveBeenCalledTimes(1);
   });
 
+  it('does not scroll to the player on mobile when a category is selected', () => {
+    const setSelectedCategoryId = vi.fn();
+    let selectedCategoryId = '0';
+    const scrollToPlayerTop = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePlaybackQueue({
+        favoriteStreamerVideoSection: undefined,
+        isMobileLayout: true,
+        realtimeSurgingSection: undefined,
+        restoredPlaybackVideo: undefined,
+        scrollToPlayerTop,
+        selectedCategoryId,
+        selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
+        setSelectedCategoryId: (categoryId) => {
+          selectedCategoryId = categoryId;
+          setSelectedCategoryId(categoryId);
+        },
+        sortedVideoCategories,
+      }),
+    );
+
+    act(() => {
+      result.current.handleSelectCategory('10');
+    });
+
+    expect(scrollToPlayerTop).not.toHaveBeenCalled();
+  });
+
   it('keeps a history playback selection instead of falling back to the first chart video', async () => {
     const setSelectedCategoryId = vi.fn();
 

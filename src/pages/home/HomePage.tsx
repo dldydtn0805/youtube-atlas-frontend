@@ -321,11 +321,7 @@ function HomePage() {
   }, [collapsedHomeSectionIds]);
 
   const scrollToPlayerStage = useCallback(() => {
-    if (
-      typeof window !== 'undefined' &&
-      isMobileLayout &&
-      window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY) === 'true'
-    ) {
+    if (isMobileLayout) {
       return;
     }
 

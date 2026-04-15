@@ -61,6 +61,10 @@ function usePlaybackQueue({
   const canPlayNextVideo = activePlaybackItems.length > 1;
 
   function requestScrollToPlayer() {
+    if (isMobileLayout) {
+      return;
+    }
+
     shouldScrollToPlayerRef.current = true;
     setScrollRequestKey((current) => current + 1);
   }
@@ -141,10 +145,6 @@ function usePlaybackQueue({
 
     if (queueItems.length === 0) {
       return;
-    }
-
-    if (isMobileLayout) {
-      requestScrollToPlayer();
     }
 
     const currentIndex = queueItems.findIndex((item) => item.id === selectedVideoId);
