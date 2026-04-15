@@ -116,11 +116,21 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
 
   useEffect(() => {
     return () => {
-      if (typeof document !== 'undefined') {
-        document.documentElement.removeAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE);
-      }
+      clearComposerFocusState();
     };
   }, []);
+
+  function clearComposerFocusState() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.removeAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE);
+
+    if (composerRef.current?.contains(document.activeElement)) {
+      (document.activeElement as HTMLElement | null)?.blur();
+    }
+  }
 
   function beginCooldown(seconds = COMMENT_COOLDOWN_SECONDS) {
     if (!videoId) {
@@ -189,6 +199,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
       ];
       setSubmissionError(null);
       setContent('');
+      clearComposerFocusState();
       beginCooldown();
     } catch (error) {
       const nextError = toCommentSubmissionError(error);

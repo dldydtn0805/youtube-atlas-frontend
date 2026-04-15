@@ -73,6 +73,33 @@ describe('CommentSection', () => {
     expect(textarea).toHaveValue('');
   });
 
+  it('restores sticky visibility markers after a successful send', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({
+      id: 1,
+    });
+
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync,
+    });
+
+    render(<CommentSection videoId="video-1" videoTitle="Test video" />);
+
+    const textarea = screen.getByPlaceholderText('메시지를 입력하세요.');
+
+    fireEvent.focus(textarea);
+    fireEvent.change(textarea, { target: { value: 'hello world' } });
+
+    expect(document.documentElement.getAttribute('data-chat-composer-focus')).toBe('true');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '보내기' }));
+      await flushPromises();
+    });
+
+    expect(document.documentElement.hasAttribute('data-chat-composer-focus')).toBe(false);
+  });
+
   it('disables send and shows a countdown during the local cooldown', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       id: 1,

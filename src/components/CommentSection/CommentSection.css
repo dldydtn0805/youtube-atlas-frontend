@@ -232,7 +232,7 @@
 @media (max-width: 768px) {
   .comment-section {
     border-radius: 24px;
-    padding: 16px;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
   }
 
   .comment-section__header,
@@ -245,6 +245,13 @@
 
   .comment-composer__name {
     max-width: none;
+  }
+
+  .comment-composer {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    position: sticky;
+    z-index: 6;
   }
 
   .comment-composer__identity {
