@@ -1,4 +1,5 @@
 import { FormEvent, FocusEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../features/auth/useAuth';
 import { isApiConfigured } from '../../lib/api';
 import { useComments, useCreateComment } from '../../features/comments/queries';
@@ -22,6 +23,7 @@ interface CommentSectionProps {
 
 const CHAT_PARTICIPANT_STORAGE_KEY = 'youtube-atlas-chat-participant-id';
 const CHAT_COMPOSER_FOCUSED_ATTRIBUTE = 'data-chat-composer-focus';
+const MOBILE_COMMENT_BREAKPOINT = 768;
 
 function formatMessageDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -66,6 +68,7 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [submissionError, setSubmissionError] = useState<CommentSubmissionError | null>(null);
   const [participantId] = useState(getChatParticipantId);
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
   const composerRef = useRef<HTMLFormElement | null>(null);
   const commentListRef = useRef<HTMLDivElement | null>(null);
   const cooldownDeadlineByVideoRef = useRef<Record<string, number>>({});
@@ -113,6 +116,24 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
       behavior: 'smooth',
     });
   }, [commentsQuery.data]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_COMMENT_BREAKPOINT}px)`);
+    const syncIsMobileLayout = () => {
+      setIsMobileLayout(mediaQuery.matches);
+    };
+
+    syncIsMobileLayout();
+    mediaQuery.addEventListener('change', syncIsMobileLayout);
+
+    return () => {
+      mediaQuery.removeEventListener('change', syncIsMobileLayout);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -294,6 +315,91 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
     );
   }
 
+  const composerContent = (
+    <form
+      ref={composerRef}
+      className={`comment-composer${isMobileLayout ? ' comment-composer--mobile-layer' : ''}`}
+      onBlurCapture={handleComposerBlurCapture}
+      onFocusCapture={handleComposerFocusCapture}
+      onSubmit={handleSubmit}
+    >
+      <div className="comment-composer__top">
+        {isAuthenticated && user ? (
+          <div className="comment-composer__identity">
+            {user.pictureUrl ? (
+              <img
+                alt={`${user.displayName} 프로필`}
+                className="comment-composer__avatar"
+                src={user.pictureUrl}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="comment-composer__avatar comment-composer__avatar--fallback"
+              >
+                {(user.displayName || user.email).slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <div className="comment-composer__identity-copy">
+              <strong>{user.displayName || user.email}</strong>
+            </div>
+          </div>
+        ) : (
+          <input
+            className="comment-composer__name"
+            maxLength={30}
+            onChange={(event) => handleAuthorChange(event.target.value)}
+            placeholder="닉네임 (비워두면 익명)"
+            type="text"
+            value={author}
+          />
+        )}
+      </div>
+      <div className="comment-composer__bottom">
+        <textarea
+          className="comment-composer__textarea"
+          maxLength={500}
+          onChange={(event) => handleContentChange(event.target.value)}
+          onKeyDown={handleTextareaKeyDown}
+          placeholder="메시지를 입력하세요."
+          required
+          rows={1}
+          value={content}
+        />
+        <button
+          className="comment-composer__submit"
+          disabled={isSubmitDisabled}
+          type="submit"
+        >
+          {createCommentMutation.isPending
+            ? '전송 중...'
+            : isCooldownActive
+              ? `${remainingCooldownSeconds}초 대기`
+              : '보내기'}
+        </button>
+      </div>
+      <div className="comment-composer__footer">
+        {feedbackMessage ? (
+          <p
+            aria-live="polite"
+            className={`comment-composer__feedback ${
+              isCooldownActive
+                ? 'comment-composer__feedback--cooldown'
+                : 'comment-composer__feedback--error'
+            }`}
+          >
+            {feedbackMessage}
+          </p>
+        ) : (
+          <span className="comment-composer__feedback comment-composer__feedback--muted">
+            공개 채팅방입니다. 개인 정보는 적지 마세요.
+          </span>
+        )}
+        <span className="comment-composer__counter">{content.length}/500</span>
+      </div>
+    </form>
+  );
+
   return (
     <section className="comment-section" aria-label="실시간 익명 채팅">
       <header className="comment-section__header">
@@ -337,89 +443,10 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
           );
         })}
       </div>
-
-      <form
-        ref={composerRef}
-        className="comment-composer"
-        onBlurCapture={handleComposerBlurCapture}
-        onFocusCapture={handleComposerFocusCapture}
-        onSubmit={handleSubmit}
-      >
-        <div className="comment-composer__top">
-          {isAuthenticated && user ? (
-            <div className="comment-composer__identity">
-              {user.pictureUrl ? (
-                <img
-                  alt={`${user.displayName} 프로필`}
-                  className="comment-composer__avatar"
-                  src={user.pictureUrl}
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="comment-composer__avatar comment-composer__avatar--fallback"
-                >
-                  {(user.displayName || user.email).slice(0, 1).toUpperCase()}
-                </span>
-              )}
-              <div className="comment-composer__identity-copy">
-                <strong>{user.displayName || user.email}</strong>
-              </div>
-            </div>
-          ) : (
-            <input
-              className="comment-composer__name"
-              maxLength={30}
-              onChange={(event) => handleAuthorChange(event.target.value)}
-              placeholder="닉네임 (비워두면 익명)"
-              type="text"
-              value={author}
-            />
-          )}
-        </div>
-        <div className="comment-composer__bottom">
-          <textarea
-            className="comment-composer__textarea"
-            maxLength={500}
-            onChange={(event) => handleContentChange(event.target.value)}
-            onKeyDown={handleTextareaKeyDown}
-            placeholder="메시지를 입력하세요."
-            required
-            rows={1}
-            value={content}
-          />
-          <button
-            className="comment-composer__submit"
-            disabled={isSubmitDisabled}
-            type="submit"
-          >
-            {createCommentMutation.isPending
-              ? '전송 중...'
-              : isCooldownActive
-                ? `${remainingCooldownSeconds}초 대기`
-                : '보내기'}
-          </button>
-        </div>
-        <div className="comment-composer__footer">
-          {feedbackMessage ? (
-            <p
-              aria-live="polite"
-              className={`comment-composer__feedback ${
-                isCooldownActive
-                  ? 'comment-composer__feedback--cooldown'
-                  : 'comment-composer__feedback--error'
-              }`}
-            >
-              {feedbackMessage}
-            </p>
-          ) : (
-            <span className="comment-composer__feedback comment-composer__feedback--muted">
-              공개 채팅방입니다. 개인 정보는 적지 마세요.
-            </span>
-          )}
-          <span className="comment-composer__counter">{content.length}/500</span>
-        </div>
-      </form>
+      {isMobileLayout ? <div className="comment-composer-spacer" aria-hidden="true" /> : composerContent}
+      {isMobileLayout && typeof document !== 'undefined'
+        ? createPortal(composerContent, document.body)
+        : null}
     </section>
   );
 }

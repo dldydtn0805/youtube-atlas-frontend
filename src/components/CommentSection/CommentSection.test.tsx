@@ -27,9 +27,25 @@ async function flushPromises() {
 }
 
 describe('CommentSection', () => {
+  const originalMatchMedia = window.matchMedia;
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-22T00:00:00.000Z'));
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: vi.fn().mockImplementation(() => ({
+        addEventListener: vi.fn(),
+        addListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        matches: false,
+        media: '(max-width: 768px)',
+        onchange: null,
+        removeEventListener: vi.fn(),
+        removeListener: vi.fn(),
+      })),
+    });
     window.localStorage?.removeItem?.('youtube-atlas-chat-participant-id');
     useCommentsMock.mockReturnValue({
       data: [],
@@ -46,6 +62,11 @@ describe('CommentSection', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
   });
 
   it('clears the input after a successful send', async () => {
