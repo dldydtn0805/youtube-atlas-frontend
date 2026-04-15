@@ -1,7 +1,7 @@
 import { createRef } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import HomePlaybackSection from './HomePlaybackSection';
+import HomePlaybackSection, { MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY } from './HomePlaybackSection';
 
 vi.mock('./ContentPanels', () => ({
   ChartPanel: () => <div data-testid="chart-panel" />,
@@ -67,6 +67,7 @@ describe('HomePlaybackSection', () => {
     animationFrameCallbacks = new Map<number, FrameRequestCallback>();
     nextAnimationFrameId = 1;
     window.localStorage.clear();
+    window.localStorage.setItem('youtube-atlas-sticky-selected-video-collapsed', 'false');
 
     vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
@@ -103,7 +104,9 @@ describe('HomePlaybackSection', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps the sticky selected video always visible in default mode', async () => {
+  it('starts with the sticky selected video collapsed by default', async () => {
+    window.localStorage.removeItem('youtube-atlas-sticky-selected-video-collapsed');
+
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -122,13 +125,14 @@ describe('HomePlaybackSection', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+      expect(screen.getByText('Now Playing')).toBeInTheDocument();
     });
 
     window.dispatchEvent(new Event('scroll'));
     flushAnimationFrames();
 
-    expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
+    expect(screen.getByText('Now Playing')).toBeInTheDocument();
   });
 
   it('renders the community panel between the player stage and filter bar', () => {
@@ -1027,6 +1031,77 @@ describe('HomePlaybackSection', () => {
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('false');
   });
 
+  it('can toggle the mobile player stage sticky shell and remember the preference', async () => {
+    const playerStageProps = {
+      isCinematicModeActive: false,
+      isMobileLayout: true,
+      playerSectionRef: createRef<HTMLElement>(),
+      playerStageRef: createRef<HTMLDivElement>(),
+      playerViewportRef: createRef<HTMLDivElement>(),
+      selectedVideoChannelTitle: 'Preview Channel',
+      selectedVideoId: 'preview-video',
+      selectedVideoTitle: 'Preview Title',
+    } as never;
+
+    const { unmount } = render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={playerStageProps}
+        stickySelectedVideoContent={({
+          isMobilePlayerStageStickyEnabled,
+          onToggleMobilePlayerStageStickyEnabled,
+        }) => (
+          <div>
+            <button onClick={onToggleMobilePlayerStageStickyEnabled} type="button">
+              {isMobilePlayerStageStickyEnabled ? '상단 스티키 끄기' : '상단 스티키 켜기'}
+            </button>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('상단 스티키 끄기')).toBeInTheDocument();
+    });
+    expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: '상단 스티키 끄기' }));
+
+    await waitFor(() => {
+      expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('false');
+    });
+    expect(window.localStorage.getItem(MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY)).toBe('false');
+
+    unmount();
+
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={playerStageProps}
+        stickySelectedVideoContent={({ isMobilePlayerStageStickyEnabled }) => (
+          <div>
+            <div>{isMobilePlayerStageStickyEnabled ? '상단 스티키 켜짐' : '상단 스티키 꺼짐'}</div>
+            <div>Selected video actions</div>
+          </div>
+        )}
+      />,
+    );
+
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(screen.getByText('상단 스티키 꺼짐')).toBeInTheDocument();
+    });
+    expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('false');
+  });
+
   it('keeps the mobile player preview visible while the mobile selected video panel is collapsed', async () => {
     const scrollTo = vi.fn();
 
@@ -1101,6 +1176,7 @@ describe('HomePlaybackSection', () => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
       expect(document.querySelector('.app-shell__game-panel-actions-eyebrow')).toHaveTextContent('Now Playing');
       expect(screen.getByRole('button', { name: '페이지 맨 위로 즉시 이동' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '상단 영상 스티키 끄기' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: '미니 플레이어 숨기기' })).not.toBeInTheDocument();
     });
 

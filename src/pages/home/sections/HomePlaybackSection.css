@@ -286,10 +286,17 @@
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     transform: translateZ(0);
-    position: sticky;
-    top: 0;
     width: 100vw;
     z-index: 20;
+  }
+
+  .app-shell__mobile-player-stage-sticky-shell[data-sticky-enabled='true'] {
+    position: sticky;
+    top: 0;
+  }
+
+  .app-shell__mobile-player-stage-sticky-shell[data-sticky-enabled='false'] {
+    position: static;
   }
 
   .app-shell__mobile-player-stage-sticky-shell .app-shell__player-viewport {

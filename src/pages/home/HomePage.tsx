@@ -1874,15 +1874,18 @@ function HomePage() {
           }}
           stickySelectedVideoLabel="Now Playing"
           stickySelectedVideoContent={({
+            isMobilePlayerStageStickyEnabled,
             desktopPlayerDockSlotRef,
             isDesktopPlayerDockEnabled,
             onJumpToTop,
             onScrollToTop,
+            onToggleMobilePlayerStageStickyEnabled,
             onToggleCollapse,
           }) =>
             renderSelectedVideoActionsContent(
               <StickySelectedVideoControls
                 isMobileLayout={isMobileLayout}
+                isMobilePlayerStageStickyEnabled={isMobileLayout ? isMobilePlayerStageStickyEnabled : undefined}
                 isPlaybackPaused={isPlaybackPaused}
                 onCollapsePanel={!isMobileLayout ? onToggleCollapse : undefined}
                 onJumpToTop={isMobileLayout ? onJumpToTop : undefined}
@@ -1891,6 +1894,9 @@ function HomePage() {
                 onPreviousVideo={handlePlayPreviousVideoWithPreview}
                 onResumeVideo={handleResumeCurrentVideo}
                 onScrollToTop={!isMobileLayout ? onScrollToTop : undefined}
+                onToggleMobilePlayerStageStickyEnabled={
+                  isMobileLayout ? onToggleMobilePlayerStageStickyEnabled : undefined
+                }
               />,
               isMobileLayout ? onToggleCollapse : onToggleCollapse,
               handleOpenSelectedVideoRankHistory,

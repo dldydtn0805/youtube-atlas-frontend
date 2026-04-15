@@ -11,6 +11,7 @@ import './HomePlaybackSection.css';
 const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
 const STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY = 'youtube-atlas-sticky-selected-video-collapsed';
 export const MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-enabled';
+export const MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY = 'youtube-atlas-mobile-player-stage-sticky-enabled';
 const MOBILE_PLAYER_PREVIEW_LAYOUT_STORAGE_KEY = 'youtube-atlas-mobile-player-preview-layout';
 const MOBILE_PLAYER_PREVIEW_MIN_WIDTH = 96;
 const MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH = 360;
@@ -31,11 +32,13 @@ type MobilePlayerPreviewResizeDirection =
 interface StickySelectedVideoControls {
   isDesktopPlayerDockActive: boolean;
   desktopPlayerDockSlotRef?: RefObject<HTMLDivElement | null>;
+  isMobilePlayerStageStickyEnabled: boolean;
   isDesktopPlayerDockEnabled: boolean;
   isMobilePlayerPreviewEnabled: boolean;
   onJumpToTop: () => void;
   onShowMobilePlayerPreview: () => void;
   onScrollToTop: () => void;
+  onToggleMobilePlayerStageStickyEnabled: () => void;
   onToggleMobilePlayerPreviewEnabled: () => void;
   onToggleCollapse: () => void;
 }
@@ -61,10 +64,12 @@ function getCinematicChartClassName(className?: string) {
 
 function getInitialStickySelectedVideoCollapsed() {
   if (typeof window === 'undefined') {
-    return false;
+    return true;
   }
 
-  return window.localStorage.getItem(STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY) === 'true';
+  const storedValue = window.localStorage.getItem(STICKY_SELECTED_VIDEO_COLLAPSED_STORAGE_KEY);
+
+  return storedValue !== 'false';
 }
 
 function getInitialMobilePlayerPreviewEnabled() {
@@ -73,6 +78,16 @@ function getInitialMobilePlayerPreviewEnabled() {
   }
 
   return window.localStorage.getItem(MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY) === 'true';
+}
+
+function getInitialMobilePlayerStageStickyEnabled() {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  const storedValue = window.localStorage.getItem(MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY);
+
+  return storedValue !== 'false';
 }
 
 function clampValue(value: number, min: number, max: number) {
@@ -204,6 +219,9 @@ export default function HomePlaybackSection({
   );
   const [isMobilePlayerPreviewEnabled, setIsMobilePlayerPreviewEnabled] = useState(
     getInitialMobilePlayerPreviewEnabled,
+  );
+  const [isMobilePlayerStageStickyEnabled, setIsMobilePlayerStageStickyEnabled] = useState(
+    getInitialMobilePlayerStageStickyEnabled,
   );
   const [isMobilePlayerPreviewCollapsed, setIsMobilePlayerPreviewCollapsed] = useState(false);
   const mobilePlayerPreviewVideoId = preferredPreviewVideoId ?? playerStageProps.selectedVideoId;
@@ -430,6 +448,17 @@ export default function HomePlaybackSection({
       isMobilePlayerPreviewEnabled ? 'true' : 'false',
     );
   }, [isMobilePlayerPreviewEnabled]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY,
+      isMobilePlayerStageStickyEnabled ? 'true' : 'false',
+    );
+  }, [isMobilePlayerStageStickyEnabled]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -724,6 +753,10 @@ export default function HomePlaybackSection({
     setIsMobilePlayerPreviewCollapsed(false);
   };
 
+  const handleToggleMobilePlayerStageSticky = () => {
+    setIsMobilePlayerStageStickyEnabled((currentValue) => !currentValue);
+  };
+
   const handleCollapsedLabelClick = () => {
     handleScrollToTop();
   };
@@ -732,6 +765,7 @@ export default function HomePlaybackSection({
       ? stickySelectedVideoContent({
           isDesktopPlayerDockActive: Boolean(desktopDockStyle),
           desktopPlayerDockSlotRef,
+          isMobilePlayerStageStickyEnabled,
           isDesktopPlayerDockEnabled:
             !playerStageProps.isMobileLayout &&
             isDesktopPlayerDockActive &&
@@ -741,6 +775,7 @@ export default function HomePlaybackSection({
           onJumpToTop: handleJumpToTop,
           onShowMobilePlayerPreview: handleShowMobilePlayerPreview,
           onScrollToTop: handleScrollToTop,
+          onToggleMobilePlayerStageStickyEnabled: handleToggleMobilePlayerStageSticky,
           onToggleMobilePlayerPreviewEnabled: handleToggleMobilePlayerPreview,
           onToggleCollapse: () => {
             setIsStickySelectedVideoCollapsed(true);
@@ -957,6 +992,7 @@ export default function HomePlaybackSection({
                 >
                   <StickySelectedVideoControls
                     isMobileLayout={playerStageProps.isMobileLayout}
+                    isMobilePlayerStageStickyEnabled={playerStageProps.isMobileLayout ? isMobilePlayerStageStickyEnabled : undefined}
                     isPlaybackPaused={isStickySelectedVideoPlaybackPaused}
                     onExpandPanel={handleExpandStickySelectedVideo}
                     onJumpToTop={handleJumpToTop}
@@ -965,6 +1001,9 @@ export default function HomePlaybackSection({
                     onPreviousVideo={playerStageProps.selectedVideoId ? onPlayPreviousStickySelectedVideo : undefined}
                     onResumeVideo={playerStageProps.selectedVideoId ? onResumeStickySelectedVideo : undefined}
                     onScrollToTop={handleScrollToTop}
+                    onToggleMobilePlayerStageStickyEnabled={
+                      playerStageProps.isMobileLayout ? handleToggleMobilePlayerStageSticky : undefined
+                    }
                   />
                 </div>
               </div>
@@ -1034,7 +1073,10 @@ export default function HomePlaybackSection({
             selectedCategoryLabel={playerStageProps.selectedCategoryLabel}
             selectedCountryName={playerStageProps.selectedCountryName}
           />
-          <div className="app-shell__mobile-player-stage-sticky-shell">
+          <div
+            className="app-shell__mobile-player-stage-sticky-shell"
+            data-sticky-enabled={isMobilePlayerStageStickyEnabled ? 'true' : 'false'}
+          >
             <PlayerViewportContent
               canNavigateVideos={playerStageProps.canNavigateVideos}
               isChartLoading={playerStageProps.isChartLoading}
