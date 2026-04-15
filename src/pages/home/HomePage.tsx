@@ -9,7 +9,7 @@ import { RegionFilterModal } from './sections/FilterPanels';
 import GamePanelSection from './sections/GamePanelSection';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
-import HomePlaybackSection, { MOBILE_PLAYER_PREVIEW_ENABLED_STORAGE_KEY } from './sections/HomePlaybackSection';
+import HomePlaybackSection from './sections/HomePlaybackSection';
 import StickySelectedVideoControls from './sections/StickySelectedVideoControls';
 import {
   buildOpenGameHoldings,
