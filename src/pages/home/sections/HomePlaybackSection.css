@@ -270,8 +270,11 @@
 
 @media (max-width: 768px) {
   .app-shell__mobile-player-stage-sticky-shell {
+    background: var(--page-bg);
+    isolation: isolate;
     margin-left: calc(50% - 50vw);
     margin-right: calc(50% - 50vw);
+    transform: translateZ(0);
     position: sticky;
     top: 0;
     width: 100vw;
