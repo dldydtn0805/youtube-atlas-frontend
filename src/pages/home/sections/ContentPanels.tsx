@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import CommentSection from '../../../components/CommentSection/CommentSection';
 import VideoList, { type FeaturedVideoSection } from '../../../components/VideoList/VideoList';
 import type { AuthStatus } from '../../../features/auth/types';
@@ -263,13 +264,31 @@ export function FavoriteVideosPanel({
 }
 
 export function CommunityPanel({ selectedVideoId, selectedVideoTitle }: CommunityPanelProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   return (
     <section className="app-shell__panel app-shell__panel--community">
       <div className="app-shell__section-heading">
-        <p className="app-shell__section-eyebrow">Live Chat</p>
-        <h2 className="app-shell__section-title">실시간 채팅</h2>
+        <div className="app-shell__section-heading-copy">
+          <p className="app-shell__section-eyebrow">Live Chat</p>
+          <div className="app-shell__section-title-row">
+            <h2 className="app-shell__section-title">실시간 채팅</h2>
+            <button
+              aria-expanded={!isCollapsed}
+              aria-label={isCollapsed ? '실시간 채팅 펼치기' : '실시간 채팅 숨기기'}
+              className="app-shell__collapse-toggle"
+              data-active={isCollapsed}
+              onClick={() => setIsCollapsed((current) => !current)}
+              type="button"
+            >
+              <span className="app-shell__collapse-toggle-icon" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
-      <CommentSection videoId={selectedVideoId} videoTitle={selectedVideoTitle} />
+      {isCollapsed ? null : <CommentSection videoId={selectedVideoId} videoTitle={selectedVideoTitle} />}
     </section>
   );
 }

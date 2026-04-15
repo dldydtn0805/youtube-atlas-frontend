@@ -1064,9 +1064,9 @@ export default function HomePlaybackSection({
         renderViewportInline={!shouldRenderDetachedMobileViewport}
         videoPlayerDockStyle={videoPlayerDockStyle}
       />
+      <CommunityPanel {...communityPanelProps} />
       {!playerStageProps.isCinematicModeActive ? renderFilterBar() : null}
       {!playerStageProps.isCinematicModeActive ? renderChartPanel() : null}
-      <CommunityPanel {...communityPanelProps} />
     </>
   );
 }

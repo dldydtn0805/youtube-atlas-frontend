@@ -251,17 +251,11 @@ function CommentSection({ videoId, videoTitle }: CommentSectionProps) {
     <section className="comment-section" aria-label="실시간 익명 채팅">
       <header className="comment-section__header">
         <div className="comment-section__room">
-          <p className="comment-section__lead">Live Chat</p>
           <h3 className="comment-section__title">{videoTitle ?? '현재 영상 채팅방'}</h3>
-          <p className="comment-section__hint">같은 영상을 보고 있는 사람들과 바로 대화하세요.</p>
         </div>
         <div className="comment-section__meta">
           <span className="comment-section__badge">
             {isAuthenticated ? 'Google 로그인' : '익명 채팅'}
-          </span>
-          <span className="comment-section__presence">
-            <span className="comment-section__presence-dot" />
-            실시간 연결
           </span>
         </div>
       </header>

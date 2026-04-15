@@ -131,6 +131,31 @@ describe('HomePlaybackSection', () => {
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
 
+  it('renders the community panel between the player stage and filter bar', () => {
+    const { getByTestId } = render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+      />,
+    );
+
+    const playerStage = getByTestId('player-stage');
+    const communityPanel = getByTestId('community-panel');
+    const filterBar = getByTestId('filter-bar');
+
+    expect(playerStage.compareDocumentPosition(communityPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(communityPanel.compareDocumentPosition(filterBar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('can collapse and expand the sticky selected video panel', async () => {
     render(
       <HomePlaybackSection
@@ -724,7 +749,7 @@ describe('HomePlaybackSection', () => {
     const stickyFrame = document.querySelector('.app-shell__sticky-selected-video-frame');
     expect(stickyFrame?.querySelector('.app-shell__sticky-player-preview-dock-slot')).toBeNull();
     expect(document.querySelector('.app-shell__sticky-player-preview-shell')).not.toBeNull();
-    expect(screen.queryByText('Now Playing')).not.toBeInTheDocument();
+    expect(document.querySelector('.app-shell__game-panel-actions-eyebrow')).toBeNull();
     expect(screen.getByText('Selected video actions')).toBeInTheDocument();
   });
 
@@ -1074,7 +1099,7 @@ describe('HomePlaybackSection', () => {
 
     await waitFor(() => {
       expect(document.querySelector('.app-shell__sticky-player-preview-shell')?.getAttribute('data-visible')).toBe('true');
-      expect(screen.getByText('Now Playing')).toBeInTheDocument();
+      expect(document.querySelector('.app-shell__game-panel-actions-eyebrow')).toHaveTextContent('Now Playing');
       expect(screen.getByRole('button', { name: '페이지 맨 위로 즉시 이동' })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: '미니 플레이어 숨기기' })).not.toBeInTheDocument();
     });
@@ -1086,7 +1111,7 @@ describe('HomePlaybackSection', () => {
       top: 0,
     });
 
-    fireEvent.click(screen.getByText('Now Playing'));
+    fireEvent.click(document.querySelector('.app-shell__game-panel-actions-eyebrow') as HTMLElement);
 
     await waitFor(() => {
       expect(screen.getByText('Selected video actions')).toBeInTheDocument();
