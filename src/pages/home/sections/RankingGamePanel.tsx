@@ -526,109 +526,114 @@ export function RankingGamePanelShell({
             data-has-actions={hasSelectedVideoActions}
             data-has-dividend={hasDividendOverview}
           >
-            <div className="app-shell__game-panel-overview-side">
-              <section
-                className="app-shell__game-wallet"
-                aria-label="지갑 현황"
-                data-current-tier={coinTierProgress?.currentTier.tierCode}
-              >
-                <div className="app-shell__game-wallet-copy">
-                  <div className="app-shell__game-wallet-copy-main">
-                    <p className="app-shell__game-wallet-eyebrow">Wallet</p>
-                    <h4 className="app-shell__game-wallet-title">지갑</h4>
+            <div
+              className="app-shell__game-panel-overview-pages"
+              data-has-dividend={hasDividendOverview}
+            >
+              <div className="app-shell__game-panel-overview-side">
+                <section
+                  className="app-shell__game-wallet"
+                  aria-label="지갑 현황"
+                  data-current-tier={coinTierProgress?.currentTier.tierCode}
+                >
+                  <div className="app-shell__game-wallet-copy">
+                    <div className="app-shell__game-wallet-copy-main">
+                      <p className="app-shell__game-wallet-eyebrow">Wallet</p>
+                      <h4 className="app-shell__game-wallet-title">지갑</h4>
+                    </div>
+                    {walletUpdatedLabel ? (
+                      <p className="app-shell__game-wallet-status" aria-label={`최근 갱신 시각 ${walletUpdatedLabel}`}>
+                        {walletUpdatedLabel}
+                      </p>
+                    ) : null}
                   </div>
-                  {walletUpdatedLabel ? (
-                    <p className="app-shell__game-wallet-status" aria-label={`최근 갱신 시각 ${walletUpdatedLabel}`}>
-                      {walletUpdatedLabel}
-                    </p>
-                  ) : null}
+                  <div className="app-shell__game-panel-metrics">
+                    <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero">
+                      <span className="app-shell__game-panel-metric-label">잔액</span>
+                      <span
+                        className="app-shell__game-panel-metric-value"
+                        title={season ? formatFullPoints(season.wallet.balancePoints) : undefined}
+                      >
+                        {season ? formatPoints(season.wallet.balancePoints) : '-'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">즉시 매수 가능 포인트</span>
+                    </span>
+                    <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero">
+                      <span className="app-shell__game-panel-metric-label">총자산</span>
+                      <span
+                        className="app-shell__game-panel-metric-value"
+                        title={
+                          summary.computedWalletTotalAssetPoints !== null
+                            ? formatFullPoints(summary.computedWalletTotalAssetPoints)
+                            : undefined
+                        }
+                      >
+                        {summary.computedWalletTotalAssetPoints !== null
+                          ? formatPoints(summary.computedWalletTotalAssetPoints)
+                          : '-'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">잔액 + 현재 평가 금액</span>
+                    </span>
+                    <span className="app-shell__game-panel-metric">
+                      <span className="app-shell__game-panel-metric-label">손익률</span>
+                      <span className="app-shell__game-panel-metric-value" data-tone={profitPointsTone}>
+                        {season
+                          ? formatSignedProfitRate(summary.openPositionsProfitPoints, summary.openPositionsBuyPoints)
+                          : '-'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">현재 평가 기준 수익률</span>
+                    </span>
+                    <span className="app-shell__game-panel-metric">
+                      <span className="app-shell__game-panel-metric-label">평가 손익</span>
+                      <span className="app-shell__game-panel-metric-value" data-tone={profitPointsTone}>
+                        {season ? formatSignedPoints(summary.openPositionsProfitPoints) : '-'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">현재 평가 금액 - 총 매수 금액</span>
+                    </span>
+                    <span className="app-shell__game-panel-metric">
+                      <span className="app-shell__game-panel-metric-label">총 매수 금액</span>
+                      <span
+                        className="app-shell__game-panel-metric-value"
+                        title={season ? formatFullPoints(summary.openPositionsBuyPoints) : undefined}
+                      >
+                        {season ? formatPoints(summary.openPositionsBuyPoints) : '-'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">현재 보유 포지션 원금</span>
+                    </span>
+                    <span className="app-shell__game-panel-metric">
+                      <span className="app-shell__game-panel-metric-label">총 평가 금액</span>
+                      <span
+                        className="app-shell__game-panel-metric-value"
+                        title={season ? formatFullPoints(summary.openPositionsEvaluationPoints) : undefined}
+                      >
+                        {season ? formatPoints(summary.openPositionsEvaluationPoints) : '-'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">최신 시세 기준 평가</span>
+                    </span>
+                    <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero app-shell__game-panel-metric--capacity">
+                      <span className="app-shell__game-panel-metric-label">보유</span>
+                      <span className="app-shell__game-panel-metric-value">
+                        {`${summary.openDistinctVideoCount}/${season?.maxOpenPositions ?? '-'}`}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meta">
+                        {remainingOpenSlots !== null ? `남은 슬롯 ${remainingOpenSlots}개` : '보유 가능한 슬롯 집계 중'}
+                      </span>
+                      <span className="app-shell__game-panel-metric-meter" aria-hidden="true">
+                        <span style={{ width: `${holdingCapacityPercent}%` }} />
+                      </span>
+                    </span>
+                  </div>
+                </section>
+              </div>
+              {dividendOverview ? (
+                <div className="app-shell__game-panel-overview-main app-shell__game-panel-overview-main--dividend">
+                  {dividendOverview}
                 </div>
-                <div className="app-shell__game-panel-metrics">
-                  <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero">
-                    <span className="app-shell__game-panel-metric-label">잔액</span>
-                    <span
-                      className="app-shell__game-panel-metric-value"
-                      title={season ? formatFullPoints(season.wallet.balancePoints) : undefined}
-                    >
-                      {season ? formatPoints(season.wallet.balancePoints) : '-'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">즉시 매수 가능 포인트</span>
-                  </span>
-                  <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero">
-                    <span className="app-shell__game-panel-metric-label">총자산</span>
-                    <span
-                      className="app-shell__game-panel-metric-value"
-                      title={
-                        summary.computedWalletTotalAssetPoints !== null
-                          ? formatFullPoints(summary.computedWalletTotalAssetPoints)
-                          : undefined
-                      }
-                    >
-                      {summary.computedWalletTotalAssetPoints !== null
-                        ? formatPoints(summary.computedWalletTotalAssetPoints)
-                        : '-'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">잔액 + 현재 평가 금액</span>
-                  </span>
-                  <span className="app-shell__game-panel-metric">
-                    <span className="app-shell__game-panel-metric-label">손익률</span>
-                    <span className="app-shell__game-panel-metric-value" data-tone={profitPointsTone}>
-                      {season
-                        ? formatSignedProfitRate(summary.openPositionsProfitPoints, summary.openPositionsBuyPoints)
-                        : '-'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">현재 평가 기준 수익률</span>
-                  </span>
-                  <span className="app-shell__game-panel-metric">
-                    <span className="app-shell__game-panel-metric-label">평가 손익</span>
-                    <span className="app-shell__game-panel-metric-value" data-tone={profitPointsTone}>
-                      {season ? formatSignedPoints(summary.openPositionsProfitPoints) : '-'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">현재 평가 금액 - 총 매수 금액</span>
-                  </span>
-                  <span className="app-shell__game-panel-metric">
-                    <span className="app-shell__game-panel-metric-label">총 매수 금액</span>
-                    <span
-                      className="app-shell__game-panel-metric-value"
-                      title={season ? formatFullPoints(summary.openPositionsBuyPoints) : undefined}
-                    >
-                      {season ? formatPoints(summary.openPositionsBuyPoints) : '-'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">현재 보유 포지션 원금</span>
-                  </span>
-                  <span className="app-shell__game-panel-metric">
-                    <span className="app-shell__game-panel-metric-label">총 평가 금액</span>
-                    <span
-                      className="app-shell__game-panel-metric-value"
-                      title={season ? formatFullPoints(summary.openPositionsEvaluationPoints) : undefined}
-                    >
-                      {season ? formatPoints(summary.openPositionsEvaluationPoints) : '-'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">최신 시세 기준 평가</span>
-                  </span>
-                  <span className="app-shell__game-panel-metric app-shell__game-panel-metric--hero app-shell__game-panel-metric--capacity">
-                    <span className="app-shell__game-panel-metric-label">보유</span>
-                    <span className="app-shell__game-panel-metric-value">
-                      {`${summary.openDistinctVideoCount}/${season?.maxOpenPositions ?? '-'}`}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meta">
-                      {remainingOpenSlots !== null ? `남은 슬롯 ${remainingOpenSlots}개` : '보유 가능한 슬롯 집계 중'}
-                    </span>
-                    <span className="app-shell__game-panel-metric-meter" aria-hidden="true">
-                      <span style={{ width: `${holdingCapacityPercent}%` }} />
-                    </span>
-                  </span>
-                </div>
-              </section>
+              ) : null}
             </div>
             {selectedVideoActions ? (
               <div className="app-shell__game-panel-overview-main app-shell__game-panel-overview-main--actions">
                 {selectedVideoActions}
-              </div>
-            ) : null}
-            {dividendOverview ? (
-              <div className="app-shell__game-panel-overview-main app-shell__game-panel-overview-main--dividend">
-                {dividendOverview}
               </div>
             ) : null}
           </div>
@@ -691,17 +696,23 @@ export function RankingGameCoinOverview({
       aria-label="시즌 코인 미리보기"
       data-current-tier={coinTierProgress?.currentTier.tierCode}
     >
-      <GameCoinTierSummary progress={coinTierProgress} showLadder={false} surfaceVariant="season-coin" title="현재 티어" />
+      <GameCoinTierSummary progress={coinTierProgress} showLadder={false} surfaceVariant="season-coin" title="현재 티어 카드" />
       <div className="app-shell__game-dividend-header">
         <div className="app-shell__game-dividend-copy">
           <p className="app-shell__game-dividend-eyebrow">Season Coin</p>
-          <h4 className="app-shell__game-dividend-title">
-            {overview ? `Top ${overview.eligibleRankCutoff} 코인 채굴 현황` : '시즌 코인 티어'}
-          </h4>
+          <div className="app-shell__game-dividend-title-row">
+            <h4 className="app-shell__game-dividend-title">
+              {overview ? '코인' : '시즌 코인 티어'}
+            </h4>
+            <button
+              className="app-shell__game-dividend-action app-shell__game-dividend-action--compact"
+              onClick={onOpenDetails}
+              type="button"
+            >
+              상세 보기
+            </button>
+          </div>
         </div>
-        <button className="app-shell__game-dividend-action" onClick={onOpenDetails} type="button">
-          상세 보기
-        </button>
       </div>
       {overview ? (
         <div className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview" aria-label="코인 요약">

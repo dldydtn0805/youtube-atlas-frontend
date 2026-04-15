@@ -139,6 +139,14 @@
   min-width: 0;
 }
 
+.app-shell__game-dividend-title-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
 .app-shell__game-dividend-eyebrow,
 .app-shell__game-dividend-title {
   margin: 0;
@@ -154,9 +162,20 @@
 
 .app-shell__game-dividend-title {
   color: var(--text);
+  flex: 1 1 auto;
   font-size: 0.92rem;
   font-weight: 800;
   line-height: 1.35;
+  min-width: 0;
+}
+
+.app-shell__game-dividend-action--compact {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 6px 14px rgba(148, 163, 184, 0.07);
+  font-size: 0.68rem;
+  min-height: 28px;
+  padding: 0 10px;
 }
 
 .app-shell__game-dividend-metrics {
