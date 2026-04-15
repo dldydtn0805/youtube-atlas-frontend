@@ -290,6 +290,7 @@
   color: var(--text-muted);
   font-size: 0.88rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .app-shell__stage-summary-fallback {
@@ -711,11 +712,7 @@
     display: grid;
     gap: 6px 12px;
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      'headline headline'
-      'channel channel'
-      'summary-line summary-line'
-      'badges side';
+    grid-template-areas: 'copy side';
     justify-content: space-between;
     padding-top: 12px;
   }
@@ -726,10 +723,18 @@
     gap: 0;
     grid-area: side;
     justify-items: end;
+    justify-self: end;
     margin-left: 0;
     margin-top: 4px;
     min-width: 0;
     width: fit-content;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__stage-copy {
+    display: grid;
+    gap: 6px;
+    grid-area: copy;
+    min-width: 0;
   }
 
   :root[data-mobile-layout='true'] .app-shell__stage-actions {
@@ -748,15 +753,10 @@
     max-width: 56px;
   }
 
-  :root[data-mobile-layout='true'] .app-shell__stage-copy {
-    display: contents;
-  }
-
   :root[data-mobile-layout='true'] .app-shell__stage-channel-row {
     align-items: center;
     flex-wrap: nowrap;
     gap: 8px;
-    grid-area: channel;
   }
 
   .app-shell__stage-channel-favorite {
@@ -772,26 +772,29 @@
     font-size: 0.82rem;
   }
 
-  .app-shell__stage-headline {
-    grid-area: headline;
+  :root[data-mobile-layout='true'] .app-shell__stage-headline {
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .app-shell__stage-summary {
-    display: contents;
+  :root[data-mobile-layout='true'] .app-shell__stage-summary {
+    display: grid;
+    gap: 4px;
+    margin-top: 0;
   }
 
-  .app-shell__stage-summary .app-shell__game-selected-summary {
-    display: contents;
-    gap: 6px;
+  :root[data-mobile-layout='true'] .app-shell__stage-summary .app-shell__game-selected-summary {
+    display: grid;
+    gap: 4px;
   }
 
-  .app-shell__stage-summary .app-shell__game-selected-summary-line {
-    grid-area: summary-line;
+  :root[data-mobile-layout='true'] .app-shell__stage-summary .app-shell__game-selected-summary-line {
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
-  .app-shell__stage-summary .app-shell__game-selected-summary-badges {
+  :root[data-mobile-layout='true'] .app-shell__stage-summary .app-shell__game-selected-summary-badges {
     align-self: start;
-    grid-area: badges;
     gap: 4px;
   }
 
@@ -840,6 +843,31 @@
 
   .app-shell__stage-status[data-visible='false'] {
     display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  :root:not([data-mobile-layout='true']) .app-shell__stage-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  :root:not([data-mobile-layout='true']) .app-shell__stage-copy {
+    min-width: 0;
+  }
+
+  :root:not([data-mobile-layout='true']) .app-shell__stage-side {
+    justify-items: end;
+    margin-left: auto;
+    width: fit-content;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 560px) and (orientation: landscape) {
+  :root[data-mobile-layout='true'] .app-shell__stage-summary .app-shell__game-selected-summary-line {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
