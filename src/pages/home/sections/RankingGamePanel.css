@@ -2089,13 +2089,23 @@
     order: 1;
   }
 
+  .app-shell__game-positions {
+    max-height: min(24rem, 46vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.38) rgba(148, 163, 184, 0.08);
+  }
+
   .app-shell__game-history-item {
     gap: 12px;
     grid-template-columns: 1fr;
   }
 
   .app-shell__game-history {
-    max-height: min(28rem, 52vh);
+    max-height: min(24rem, 46vh);
     padding-right: 2px;
   }
 
@@ -2135,7 +2145,7 @@
 
   .app-shell__game-leaderboard-stack {
     gap: 10px;
-    max-height: min(28rem, 52vh);
+    max-height: min(24rem, 46vh);
     padding-right: 2px;
   }
 
