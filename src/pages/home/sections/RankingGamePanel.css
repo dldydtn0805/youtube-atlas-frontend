@@ -1278,27 +1278,6 @@
 .app-shell__game-leaderboard-stack {
   display: grid;
   gap: 12px;
-  max-height: min(34rem, 60vh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 4px;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.38) rgba(148, 163, 184, 0.08);
-}
-
-.app-shell__game-leaderboard-stack::-webkit-scrollbar {
-  width: 8px;
-}
-
-.app-shell__game-leaderboard-stack::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.38);
-  border-radius: 999px;
-}
-
-.app-shell__game-leaderboard-stack::-webkit-scrollbar-track {
-  background: rgba(148, 163, 184, 0.08);
-  border-radius: 999px;
 }
 
 .app-shell__game-leaderboard-pinned {
@@ -2169,8 +2148,6 @@
 
   .app-shell__game-leaderboard-stack {
     gap: 10px;
-    max-height: min(24rem, 46vh);
-    padding-right: 2px;
   }
 
   .app-shell__game-leaderboard-position-select {
