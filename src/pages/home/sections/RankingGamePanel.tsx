@@ -1208,14 +1208,21 @@ function RankingGameHistoryTabComponent({
     const selectedItemBottom = selectedItemTop + selectedHistoryItem.offsetHeight;
     const visibleTop = historyList.scrollTop;
     const visibleBottom = visibleTop + historyList.clientHeight;
+    const selectedItemLeft = selectedHistoryItem.offsetLeft;
+    const selectedItemRight = selectedItemLeft + selectedHistoryItem.offsetWidth;
+    const visibleLeft = historyList.scrollLeft;
+    const visibleRight = visibleLeft + historyList.clientWidth;
 
     if (selectedItemTop < visibleTop) {
       historyList.scrollTop = selectedItemTop;
-      return;
+    } else if (selectedItemBottom > visibleBottom) {
+      historyList.scrollTop = selectedItemBottom - historyList.clientHeight;
     }
 
-    if (selectedItemBottom > visibleBottom) {
-      historyList.scrollTop = selectedItemBottom - historyList.clientHeight;
+    if (selectedItemLeft < visibleLeft) {
+      historyList.scrollLeft = selectedItemLeft;
+    } else if (selectedItemRight > visibleRight) {
+      historyList.scrollLeft = selectedItemRight - historyList.clientWidth;
     }
   }, [activePlaybackQueueId, positions, selectedPositionId, selectedVideoId]);
 

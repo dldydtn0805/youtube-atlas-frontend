@@ -2090,13 +2090,24 @@
   }
 
   .app-shell__game-positions {
-    max-height: min(24rem, 46vh);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-right: 2px;
+    display: flex;
+    gap: 10px;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    padding-bottom: 4px;
+    padding-right: 0;
+    scroll-padding-inline: 2px;
+    scroll-snap-type: x proximity;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.38) rgba(148, 163, 184, 0.08);
+  }
+
+  .app-shell__game-positions .app-shell__game-position {
+    flex: 0 0 min(320px, calc(100vw - 76px));
+    scroll-snap-align: start;
   }
 
   .app-shell__game-history-item {
@@ -2105,8 +2116,21 @@
   }
 
   .app-shell__game-history {
-    max-height: min(24rem, 46vh);
-    padding-right: 2px;
+    display: flex;
+    gap: 10px;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    padding-bottom: 4px;
+    padding-right: 0;
+    scroll-padding-inline: 2px;
+    scroll-snap-type: x proximity;
+  }
+
+  .app-shell__game-history .app-shell__game-history-item {
+    flex: 0 0 min(320px, calc(100vw - 76px));
+    scroll-snap-align: start;
   }
 
   .app-shell__game-history-select {
