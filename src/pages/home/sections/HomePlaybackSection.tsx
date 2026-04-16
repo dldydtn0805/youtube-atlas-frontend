@@ -18,6 +18,7 @@ const MOBILE_PLAYER_PREVIEW_DEFAULT_WIDTH = 360;
 const MOBILE_PLAYER_PREVIEW_ASPECT_RATIO = 16 / 9;
 const MOBILE_PLAYER_PREVIEW_MARGIN = 12;
 const MOBILE_PLAYER_PREVIEW_RESIZE_EDGE = 18;
+const MOBILE_STICKY_BOTTOM_OFFSET_CSS_VAR = '--app-mobile-visual-viewport-bottom-offset';
 
 interface MobilePlayerPreviewLayout {
   width: number;
@@ -91,7 +92,7 @@ function getInitialMobilePlayerStageStickyEnabled() {
 
   const storedValue = window.localStorage.getItem(MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY);
 
-  return storedValue === 'true';
+  return storedValue !== 'false';
 }
 
 function clampValue(value: number, min: number, max: number) {
@@ -250,6 +251,7 @@ export default function HomePlaybackSection({
     top: number;
     width: number;
   } | null>(null);
+  const [mobileStickyBottomOffset, setMobileStickyBottomOffset] = useState(0);
   const [mobileDockStyle, setMobileDockStyle] = useState<{
     height: number;
     left: number;
@@ -431,6 +433,54 @@ export default function HomePlaybackSection({
     playerStageProps.selectedVideoId,
     stickySelectedVideoContent,
   ]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !playerStageProps.isMobileLayout) {
+      setMobileStickyBottomOffset(0);
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+    const visualViewport = window.visualViewport;
+
+    const syncMobileStickyBottomOffset = () => {
+      const nextOffset = visualViewport
+        ? Math.max(0, Math.round(window.innerHeight - visualViewport.height - visualViewport.offsetTop))
+        : 0;
+
+      setMobileStickyBottomOffset((currentOffset) => (
+        currentOffset === nextOffset ? currentOffset : nextOffset
+      ));
+    };
+
+    const updateMobileStickyBottomOffset = () => {
+      animationFrameId = null;
+      syncMobileStickyBottomOffset();
+    };
+
+    const scheduleMobileStickyBottomOffsetUpdate = () => {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateMobileStickyBottomOffset);
+    };
+
+    scheduleMobileStickyBottomOffsetUpdate();
+    window.addEventListener('resize', scheduleMobileStickyBottomOffsetUpdate);
+    visualViewport?.addEventListener('resize', scheduleMobileStickyBottomOffsetUpdate);
+    visualViewport?.addEventListener('scroll', scheduleMobileStickyBottomOffsetUpdate);
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener('resize', scheduleMobileStickyBottomOffsetUpdate);
+      visualViewport?.removeEventListener('resize', scheduleMobileStickyBottomOffsetUpdate);
+      visualViewport?.removeEventListener('scroll', scheduleMobileStickyBottomOffsetUpdate);
+    };
+  }, [playerStageProps.isMobileLayout]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1003,6 +1053,13 @@ export default function HomePlaybackSection({
       <div
         className="app-shell__sticky-selected-video-slot"
         data-cinematic={playerStageProps.isCinematicModeActive}
+        style={
+          playerStageProps.isMobileLayout
+            ? ({
+                [MOBILE_STICKY_BOTTOM_OFFSET_CSS_VAR]: `${mobileStickyBottomOffset}px`,
+              } as CSSProperties)
+            : undefined
+        }
       >
         <div className="app-shell__sticky-selected-video-frame">
           {isStickySelectedVideoCollapsed ? (

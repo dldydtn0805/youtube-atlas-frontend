@@ -1489,7 +1489,7 @@ function HomePage() {
     [gamePortfolioSection.categoryId, handleSelectVideoWithPreview, scrollToPlayerStage],
   );
   const handleSelectGameHistoryVideo = useCallback(
-    async (position: GamePosition, _playbackQueueId?: string) => {
+    async (position: GamePosition) => {
       scrollToPlayerStage();
 
       const historyVideo = mapGamePositionToVideoItem(position);
