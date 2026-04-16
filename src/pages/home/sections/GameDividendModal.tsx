@@ -21,15 +21,23 @@ interface GameDividendModalProps {
 }
 
 function buildCoinRateExamples(overview: GameCoinOverview) {
-  const midpointRank = Math.max(2, Math.round(overview.eligibleRankCutoff / 2));
-  const preferredRanks = [1, 10, 50, midpointRank, 100, overview.eligibleRankCutoff];
-  const uniqueRanks = preferredRanks.filter(
-    (rank, index, array) => rank <= overview.eligibleRankCutoff && array.indexOf(rank) === index,
+  const eligibleRanks = overview.ranks
+    .filter((entry) => entry.rank >= 1 && entry.rank <= overview.eligibleRankCutoff)
+    .sort((first, second) => first.rank - second.rank);
+
+  if (eligibleRanks.length <= 6) {
+    return eligibleRanks;
+  }
+
+  const lastIndex = eligibleRanks.length - 1;
+  const exampleCount = 6;
+  const exampleIndexes = Array.from({ length: exampleCount }, (_, index) =>
+    Math.round((index * lastIndex) / (exampleCount - 1)),
   );
 
-  return uniqueRanks
-    .map((rank) => overview.ranks.find((entry) => entry.rank === rank))
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  return exampleIndexes
+    .filter((entryIndex, index, array) => array.indexOf(entryIndex) === index)
+    .map((entryIndex) => eligibleRanks[entryIndex]);
 }
 
 function getCoinPositionStatus(position: GameCoinPosition) {
