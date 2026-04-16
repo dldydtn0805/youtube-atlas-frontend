@@ -38,12 +38,16 @@ describe('GameSelectedVideoPriceSummary', () => {
         selectedVideoMarketEntry={{
           buyBlockedReason: null,
           canBuy: true,
+          basePricePoints: 1000,
           capturedAt: '2026-04-13T00:00:00.000Z',
           channelTitle: '배도',
-          currentPricePoints: 1200,
+          currentPricePoints: 1128,
           currentRank: 3,
           currentViewCount: 125000,
           isNew: false,
+          momentumPriceDeltaPercent: 12.8,
+          momentumPriceDeltaPoints: 128,
+          momentumPriceType: 'PREMIUM',
           previousRank: 4,
           rankChange: 1,
           thumbnailUrl: 'https://example.com/thumb.jpg',
@@ -65,7 +69,50 @@ describe('GameSelectedVideoPriceSummary', () => {
     expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
       '순위 3위 · 조회수 12.5만 · 현재 단가',
     );
+    expect(screen.getByText('프리미엄 +12.8%')).toBeInTheDocument();
     expect(screen.queryByText('개당 채굴량')).not.toBeInTheDocument();
+  });
+
+  it('shows discount badge next to selected video metadata', () => {
+    render(
+      <GameSelectedVideoPriceSummary
+        fallbackRankLabel="3위"
+        preferMarketSummary
+        selectedVideoCurrentChartRank={3}
+        selectedVideoId="video-1"
+        selectedVideoIsChartOut={false}
+        selectedVideoMarketEntry={{
+          buyBlockedReason: null,
+          canBuy: true,
+          basePricePoints: 1000,
+          capturedAt: '2026-04-13T00:00:00.000Z',
+          channelTitle: '배도',
+          currentPricePoints: 942,
+          currentRank: 3,
+          currentViewCount: 125000,
+          isNew: false,
+          momentumPriceDeltaPercent: -5.8,
+          momentumPriceDeltaPoints: -58,
+          momentumPriceType: 'DISCOUNT',
+          previousRank: 2,
+          rankChange: -1,
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          title: '테스트 영상',
+          videoId: 'video-1',
+          viewCountDelta: 1000,
+        }}
+        selectedVideoOpenPositionCount={0}
+        selectedVideoOpenPositionSummary={{
+          evaluationPoints: 0,
+          profitPoints: 0,
+          quantity: 0,
+          stakePoints: 0,
+        }}
+        selectedVideoTrendBadges={[]}
+      />,
+    );
+
+    expect(screen.getByText('세일 -5.8%')).toBeInTheDocument();
   });
 
   it('shows fallback trend badges when market data is unavailable', () => {

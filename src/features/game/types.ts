@@ -29,7 +29,11 @@ export interface GameMarketVideo {
   currentRank: number;
   previousRank: number | null;
   rankChange: number | null;
+  basePricePoints?: number;
   currentPricePoints: number;
+  momentumPriceDeltaPoints?: number;
+  momentumPriceDeltaPercent?: number;
+  momentumPriceType?: 'PREMIUM' | 'DISCOUNT' | 'NONE';
   currentViewCount: number | null;
   viewCountDelta: number | null;
   isNew: boolean;

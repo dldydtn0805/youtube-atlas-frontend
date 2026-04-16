@@ -124,6 +124,29 @@ function formatTrendBadgeLabel(badge: VideoTrendBadge) {
   return badge.label;
 }
 
+function formatMomentumPriceBadge(entry: GameMarketVideo) {
+  if (
+    entry.momentumPriceType !== 'PREMIUM' &&
+    entry.momentumPriceType !== 'DISCOUNT'
+  ) {
+    return null;
+  }
+
+  if (
+    typeof entry.momentumPriceDeltaPercent !== 'number' ||
+    !Number.isFinite(entry.momentumPriceDeltaPercent) ||
+    entry.momentumPriceDeltaPercent === 0
+  ) {
+    return null;
+  }
+
+  const absolutePercent = Math.abs(entry.momentumPriceDeltaPercent);
+  const formattedPercent = formatPercentValue(absolutePercent);
+  return entry.momentumPriceType === 'PREMIUM'
+    ? `프리미엄 +${formattedPercent}%`
+    : `세일 -${formattedPercent}%`;
+}
+
 export function GameSelectedVideoPriceSummary({
   fallbackRankLabel,
   fallbackViewCountLabel,
@@ -432,6 +455,7 @@ export function GameSelectedVideoPriceSummary({
       : gameCoinOverview?.eligibleRankCutoff
         ? `Top ${gameCoinOverview.eligibleRankCutoff} 밖`
         : null;
+  const selectedVideoMomentumPriceBadge = formatMomentumPriceBadge(selectedVideoMarketEntry);
 
   return (
     <div className="app-shell__game-selected-summary" aria-label="선택한 영상 현재 가격">
@@ -446,11 +470,20 @@ export function GameSelectedVideoPriceSummary({
           {formatPoints(selectedVideoMarketEntry.currentPricePoints)}
         </span>
       </p>
-      {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoMiningBadge ? (
+      {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoMiningBadge || selectedVideoMomentumPriceBadge ? (
         <p className="app-shell__game-selected-summary-badges">
           <TrendBadges badges={selectedVideoFormattedTrendBadges} />
           {selectedVideoMiningBadge ? (
             <span className="app-shell__game-selected-status-badge">{selectedVideoMiningBadge}</span>
+          ) : null}
+          {selectedVideoMomentumPriceBadge ? (
+            <span
+              className="app-shell__game-selected-status-badge"
+              data-momentum-price-type={selectedVideoMarketEntry.momentumPriceType}
+              title={`기본가 ${formatPoints(selectedVideoMarketEntry.basePricePoints ?? selectedVideoMarketEntry.currentPricePoints)}`}
+            >
+              {selectedVideoMomentumPriceBadge}
+            </span>
           ) : null}
         </p>
       ) : null}
