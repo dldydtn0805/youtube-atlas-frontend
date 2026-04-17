@@ -226,6 +226,10 @@
   font-size: 0.74rem;
 }
 
+.app-shell__trend-ticker-list-meta-rise {
+  color: #dc2626;
+}
+
 .app-shell__trend-ticker-list {
   display: grid;
   gap: 6px;
@@ -602,8 +606,66 @@
   outline: none;
 }
 
+.app-shell__trend-ticker-dropdown {
+  --trend-tier-ink: #172033;
+  --trend-tier-muted: rgba(71, 85, 105, 0.82);
+  backdrop-filter: none;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.app-shell__trend-ticker-list-button,
+.app-shell__trend-ticker-list-button:hover,
+.app-shell__trend-ticker-list-button:focus-visible {
+  background: #ffffff;
+  border: 0;
+  box-shadow: none;
+  color: var(--trend-tier-ink);
+}
+
+:root[data-theme='dark'] .app-shell__trend-ticker-dropdown {
+  --trend-tier-ink: #f8fafc;
+  --trend-tier-muted: rgba(226, 232, 240, 0.78);
+  backdrop-filter: none;
+  background: linear-gradient(180deg, rgba(9, 9, 11, 0.98), rgba(23, 23, 23, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='dark'] .app-shell__trend-ticker-dropdown-header,
+:root[data-theme='dark'] .app-shell__trend-ticker-list-title {
+  color: var(--trend-tier-ink);
+}
+
+:root[data-theme='dark'] .app-shell__trend-ticker-dropdown-header span,
+:root[data-theme='dark'] .app-shell__trend-ticker-list-meta {
+  color: var(--trend-tier-muted);
+}
+
+:root[data-theme='dark'] .app-shell__trend-ticker-list-button,
+:root[data-theme='dark'] .app-shell__trend-ticker-list-button:hover,
+:root[data-theme='dark'] .app-shell__trend-ticker-list-button:focus-visible {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--trend-tier-ink);
+}
+
 .app-shell__trend-ticker-viewport {
   box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .app-shell__trend-ticker-dropdown,
+  :root[data-theme='dark'] .app-shell__trend-ticker-dropdown {
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  .app-shell__trend-ticker-list-button {
+    padding: 9px 10px;
+  }
 }
 
 .app-shell__mode-toggle {

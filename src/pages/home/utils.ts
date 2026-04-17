@@ -562,8 +562,8 @@ export function buildTopRankRisersSection(
 
   return {
     categoryId: TOP_RANK_RISERS_QUEUE_ID,
-    label: '순위 변동 Top 10',
-    description: 'TOP 200 안에서 직전 집계 대비 순위 변화폭이 가장 큰 영상을 모았습니다.',
+    label: '상승 Top 10',
+    description: 'TOP 200 안에서 직전 집계 대비 가장 많이 상승한 영상을 모았습니다.',
     items: topRankRisersData.items.map(mapTrendSignalToVideoItem),
   };
 }

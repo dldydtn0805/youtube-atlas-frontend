@@ -15,6 +15,8 @@ const DROPDOWN_GAP_PX = 10;
 const DROPDOWN_WIDTH_PX = 420;
 const TICKER_ITEM_HEIGHT_REM = 1.4;
 const VIEWPORT_MARGIN_PX = 16;
+const MOBILE_BREAKPOINT_PX = 768;
+const MOBILE_DROPDOWN_MAX_HEIGHT_RATIO = 0.6;
 
 function formatTickerDelta(signal: VideoTrendSignal) {
   if (signal.isNew) {
@@ -45,6 +47,7 @@ export default function TrendTicker({
     left: number;
     top: number;
     width: number;
+    maxHeight: number;
   } | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -107,16 +110,26 @@ export default function TrendTicker({
         window.innerWidth - maxWidth - VIEWPORT_MARGIN_PX,
       );
       const estimatedHeight = dropdownRef.current?.offsetHeight ?? 380;
-      const canOpenBelow =
-        buttonRect.bottom + DROPDOWN_GAP_PX + estimatedHeight <= window.innerHeight - VIEWPORT_MARGIN_PX;
+      const availableBelow = Math.max(
+        220,
+        window.innerHeight - buttonRect.bottom - DROPDOWN_GAP_PX - VIEWPORT_MARGIN_PX,
+      );
+      const availableAbove = Math.max(220, buttonRect.top - DROPDOWN_GAP_PX - VIEWPORT_MARGIN_PX);
+      const canOpenBelow = estimatedHeight <= availableBelow || availableBelow >= availableAbove;
       const top = canOpenBelow
         ? buttonRect.bottom + DROPDOWN_GAP_PX
         : Math.max(VIEWPORT_MARGIN_PX, buttonRect.top - estimatedHeight - DROPDOWN_GAP_PX);
+      const availableHeight = canOpenBelow ? availableBelow : availableAbove;
+      const mobileMaxHeight = Math.floor(window.innerHeight * MOBILE_DROPDOWN_MAX_HEIGHT_RATIO);
+      const maxHeight = window.innerWidth <= MOBILE_BREAKPOINT_PX
+        ? Math.min(availableHeight, mobileMaxHeight)
+        : availableHeight;
 
       setDropdownStyle({
         left,
         top,
         width: maxWidth,
+        maxHeight,
       });
     };
 
@@ -156,12 +169,13 @@ export default function TrendTicker({
                   left: `${dropdownStyle.left}px`,
                   top: `${dropdownStyle.top}px`,
                   width: `${dropdownStyle.width}px`,
+                  maxHeight: `${dropdownStyle.maxHeight}px`,
                 }
               : undefined
           }
         >
           <div className="app-shell__trend-ticker-dropdown-header">
-            <strong>순위 변동 Top 10</strong>
+            <strong>상승 Top 10</strong>
             <span>최근 집계 기준</span>
           </div>
           <ol className="app-shell__trend-ticker-list">
@@ -183,7 +197,11 @@ export default function TrendTicker({
                       {item.isNew
                         ? ' · 신규 진입'
                         : typeof item.rankChange === 'number' && item.rankChange > 0
-                          ? ` · ${item.rankChange}계단 상승`
+                          ? (
+                              <span className="app-shell__trend-ticker-list-meta-rise">
+                                {` · ${item.rankChange}계단 상승`}
+                              </span>
+                            )
                           : typeof item.rankChange === 'number' && item.rankChange < 0
                             ? ` · ${Math.abs(item.rankChange)}계단 하락`
                             : item.previousRank
@@ -217,7 +235,7 @@ export default function TrendTicker({
         onClick={() => setIsOpen((currentValue) => !currentValue)}
         type="button"
       >
-        <span className="app-shell__trend-ticker-label">순위 변동 Top 10</span>
+        <span className="app-shell__trend-ticker-label">상승 Top 10</span>
         <span className="app-shell__trend-ticker-viewport" aria-live="polite">
           <span
             className="app-shell__trend-ticker-track"
