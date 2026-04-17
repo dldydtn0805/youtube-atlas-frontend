@@ -7,4 +7,12 @@ export type ChartViewMode =
   | 'popular'
   | 'music';
 
-export type ChartSortMode = 'popular' | 'price-desc' | 'price-asc' | 'views';
+export type ChartSortMode =
+  | 'popular-desc'
+  | 'popular-asc'
+  | 'price-desc'
+  | 'price-asc'
+  | 'views-desc'
+  | 'views-asc'
+  | 'rank-up'
+  | 'rank-down';

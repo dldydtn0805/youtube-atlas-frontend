@@ -92,4 +92,124 @@ describe('VideoList', () => {
 
     expect(screen.getByText('가격 12,345P · 조회수 1.5천')).toBeInTheDocument();
   });
+
+  it('uses item trend data when no separate trend signal map is provided', () => {
+    render(
+      <VideoList
+        hasNextPage={false}
+        hasResolvedTrendSignals
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseSection.items[0],
+              trend: {
+                capturedAt: '2026-04-17T00:00:00.000Z',
+                currentRank: 12,
+                currentViewCount: 1500,
+                isNew: false,
+                previousRank: 18,
+                previousViewCount: 1200,
+                rankChange: 6,
+                viewCountDelta: 300,
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('▲ 6')).toBeInTheDocument();
+    expect(screen.queryByText('NEW')).not.toBeInTheDocument();
+  });
+
+  it('re-renders the main section with the updated item order after the section changes', () => {
+    const { rerender } = render(
+      <VideoList
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseSection.items[0],
+              id: 'video-1',
+              snippet: {
+                ...baseSection.items[0].snippet,
+                title: '첫 번째 영상',
+              },
+            },
+            {
+              ...baseSection.items[0],
+              id: 'video-2',
+              snippet: {
+                ...baseSection.items[0].snippet,
+                title: '두 번째 영상',
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /영상/i }).map((element) => element.textContent)).toEqual([
+      expect.stringContaining('첫 번째 영상'),
+      expect.stringContaining('두 번째 영상'),
+    ]);
+
+    rerender(
+      <VideoList
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseSection.items[0],
+              id: 'video-3',
+              snippet: {
+                ...baseSection.items[0].snippet,
+                title: '세 번째 영상',
+              },
+            },
+            {
+              ...baseSection.items[0],
+              id: 'video-1',
+              snippet: {
+                ...baseSection.items[0].snippet,
+                title: '첫 번째 영상',
+              },
+            },
+            {
+              ...baseSection.items[0],
+              id: 'video-2',
+              snippet: {
+                ...baseSection.items[0].snippet,
+                title: '두 번째 영상',
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /영상/i }).map((element) => element.textContent)).toEqual([
+      expect.stringContaining('세 번째 영상'),
+      expect.stringContaining('첫 번째 영상'),
+      expect.stringContaining('두 번째 영상'),
+    ]);
+  });
 });

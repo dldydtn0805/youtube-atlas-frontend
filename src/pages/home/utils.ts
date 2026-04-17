@@ -34,7 +34,7 @@ export const FAVORITE_STREAMER_VIDEO_SECTION: YouTubeCategorySection = {
   items: [],
   label: '즐겨찾기 채널',
 };
-export const BUYABLE_ONLY_PREFETCH_LIMIT = 200;
+export const BUYABLE_ONLY_PREFETCH_LIMIT = 50;
 export const HISTORY_PLAYBACK_QUEUE_ID = 'history-playback';
 
 export type RegionCode = (typeof countryCodes)[number]['code'];
@@ -223,6 +223,34 @@ function getVideoViewCount(item: YouTubeVideoItem) {
   return Number.isFinite(parsedViewCount) && parsedViewCount >= 0 ? parsedViewCount : null;
 }
 
+function getChartSortValue(
+  item: YouTubeVideoItem,
+  sortMode: ChartSortMode,
+  priceByVideoId: Map<string, number>,
+) {
+  if (sortMode === 'price-desc' || sortMode === 'price-asc') {
+    return priceByVideoId.get(item.id);
+  }
+
+  if (sortMode === 'views-desc' || sortMode === 'views-asc') {
+    return getVideoViewCount(item);
+  }
+
+  if (sortMode === 'rank-up') {
+    const rankChange = item.trend?.rankChange;
+
+    return typeof rankChange === 'number' && rankChange > 0 ? rankChange : null;
+  }
+
+  if (sortMode === 'rank-down') {
+    const rankChange = item.trend?.rankChange;
+
+    return typeof rankChange === 'number' && rankChange < 0 ? Math.abs(rankChange) : null;
+  }
+
+  return null;
+}
+
 export function sortVideoSection(
   section: YouTubeCategorySection | undefined,
   sortMode: ChartSortMode,
@@ -230,8 +258,19 @@ export function sortVideoSection(
     marketVideos?: Pick<GameMarketVideo, 'videoId' | 'currentPricePoints'>[];
   } = {},
 ) {
-  if (!section || sortMode === 'popular') {
+  if (!section) {
     return section;
+  }
+
+  if (sortMode === 'popular-desc') {
+    return section;
+  }
+
+  if (sortMode === 'popular-asc') {
+    return {
+      ...section,
+      items: [...section.items].reverse(),
+    };
   }
 
   const priceByVideoId = new Map(
@@ -240,8 +279,8 @@ export function sortVideoSection(
   const sortedItems = section.items
     .map((item, index) => ({ item, index }))
     .sort((left, right) => {
-      const leftValue = sortMode.startsWith('price') ? priceByVideoId.get(left.item.id) : getVideoViewCount(left.item);
-      const rightValue = sortMode.startsWith('price') ? priceByVideoId.get(right.item.id) : getVideoViewCount(right.item);
+      const leftValue = getChartSortValue(left.item, sortMode, priceByVideoId);
+      const rightValue = getChartSortValue(right.item, sortMode, priceByVideoId);
 
       if (typeof leftValue !== 'number' && typeof rightValue !== 'number') {
         return left.index - right.index;
@@ -255,7 +294,8 @@ export function sortVideoSection(
         return -1;
       }
 
-      const valueOrder = sortMode === 'price-asc' ? leftValue - rightValue : rightValue - leftValue;
+      const valueOrder =
+        sortMode === 'price-asc' || sortMode === 'views-asc' ? leftValue - rightValue : rightValue - leftValue;
 
       return valueOrder || left.index - right.index;
     })

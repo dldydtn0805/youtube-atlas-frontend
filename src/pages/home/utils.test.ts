@@ -354,16 +354,79 @@ describe('home utils', () => {
     ).toEqual(['video-3', 'video-1', 'video-2']);
   });
 
+  it('keeps the original order for popularity descending', () => {
+    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
+
+    expect(sortVideoSection(section, 'popular-desc')?.items.map((item) => item.id)).toEqual([
+      'video-1',
+      'video-2',
+      'video-3',
+    ]);
+  });
+
+  it('reverses the original order for popularity ascending', () => {
+    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
+
+    expect(sortVideoSection(section, 'popular-asc')?.items.map((item) => item.id)).toEqual([
+      'video-3',
+      'video-2',
+      'video-1',
+    ]);
+  });
+
   it('sorts a video section by view count descending', () => {
     const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
     section.items[0].statistics = { viewCount: '100' };
     section.items[1].statistics = { viewCount: '300' };
     section.items[2].trend = { currentViewCount: 200 };
 
-    expect(sortVideoSection(section, 'views')?.items.map((item) => item.id)).toEqual([
+    expect(sortVideoSection(section, 'views-desc')?.items.map((item) => item.id)).toEqual([
       'video-2',
       'video-3',
       'video-1',
+    ]);
+  });
+
+  it('sorts a video section by view count ascending', () => {
+    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
+    section.items[0].statistics = { viewCount: '100' };
+    section.items[1].statistics = { viewCount: '300' };
+    section.items[2].trend = { currentViewCount: 200 };
+
+    expect(sortVideoSection(section, 'views-asc')?.items.map((item) => item.id)).toEqual([
+      'video-1',
+      'video-3',
+      'video-2',
+    ]);
+  });
+
+  it('sorts a video section by rank rise magnitude while keeping non-rising videos last', () => {
+    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3', 'video-4']);
+    section.items[0].trend = { rankChange: 3 };
+    section.items[1].trend = { rankChange: -8 };
+    section.items[2].trend = { rankChange: 11 };
+    section.items[3].trend = { rankChange: 0 };
+
+    expect(sortVideoSection(section, 'rank-up')?.items.map((item) => item.id)).toEqual([
+      'video-3',
+      'video-1',
+      'video-2',
+      'video-4',
+    ]);
+  });
+
+  it('sorts a video section by rank drop magnitude while keeping non-falling videos last', () => {
+    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3', 'video-4']);
+    section.items[0].trend = { rankChange: 3 };
+    section.items[1].trend = { rankChange: -8 };
+    section.items[2].trend = { rankChange: -2 };
+    section.items[3].trend = { rankChange: 0 };
+
+    expect(sortVideoSection(section, 'rank-down')?.items.map((item) => item.id)).toEqual([
+      'video-2',
+      'video-3',
+      'video-1',
+      'video-4',
     ]);
   });
 
@@ -416,7 +479,7 @@ describe('home utils', () => {
         isBuyableOnlyFilterActive: true,
         isBuyableOnlyFilterAvailable: true,
         isFetchingNextPage: true,
-        loadedItemCount: 50,
+        loadedItemCount: BUYABLE_ONLY_PREFETCH_LIMIT - 1,
       }),
     ).toBe(true);
 
@@ -426,7 +489,7 @@ describe('home utils', () => {
         isBuyableOnlyFilterActive: true,
         isBuyableOnlyFilterAvailable: true,
         isFetchingNextPage: false,
-        loadedItemCount: 50,
+        loadedItemCount: BUYABLE_ONLY_PREFETCH_LIMIT - 1,
       }),
     ).toBe(true);
 
@@ -436,7 +499,7 @@ describe('home utils', () => {
         isBuyableOnlyFilterActive: true,
         isBuyableOnlyFilterAvailable: true,
         isFetchingNextPage: false,
-        loadedItemCount: 50,
+        loadedItemCount: BUYABLE_ONLY_PREFETCH_LIMIT,
       }),
     ).toBe(false);
 

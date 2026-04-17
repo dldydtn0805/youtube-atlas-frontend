@@ -61,6 +61,48 @@ function formatPrice(points?: number) {
   return `가격 ${points.toLocaleString('ko-KR')}P`;
 }
 
+function resolveVideoTrendSignal(
+  item: YouTubeVideoItem,
+  trendSignalsByVideoId?: Record<string, VideoTrendSignal>,
+): VideoTrendSignal | undefined {
+  const signal = trendSignalsByVideoId?.[item.id];
+
+  if (signal) {
+    return signal;
+  }
+
+  if (!item.trend || typeof item.trend.currentRank !== 'number') {
+    return undefined;
+  }
+
+  return {
+    videoId: item.id,
+    title: item.snippet.title,
+    channelTitle: item.snippet.channelTitle,
+    thumbnailUrl: item.snippet.thumbnails.high.url,
+    categoryId: item.snippet.categoryId,
+    categoryLabel: item.trend.categoryLabel ?? item.snippet.categoryLabel ?? '',
+    capturedAt: item.trend.capturedAt ?? '',
+    currentRank: item.trend.currentRank,
+    previousRank: item.trend.previousRank ?? null,
+    rankChange: item.trend.rankChange ?? null,
+    currentViewCount: item.trend.currentViewCount ?? null,
+    previousViewCount: item.trend.previousViewCount ?? null,
+    viewCountDelta: item.trend.viewCountDelta ?? null,
+    isNew: item.trend.isNew ?? false,
+  };
+}
+
+function getSectionRenderKey(
+  currentSection: YouTubeCategorySection,
+  sectionKey?: string,
+) {
+  const baseKey = sectionKey ?? currentSection.categoryId;
+  const itemOrderKey = currentSection.items.map((item) => item.id).join(':');
+
+  return `${baseKey}:${itemOrderKey}`;
+}
+
 function VideoList({
   activePlaybackQueueId,
   currentTierCode,
@@ -134,8 +176,10 @@ function VideoList({
       return null;
     }
 
+    const renderKey = getSectionRenderKey(currentSection, sectionKey);
+
     return (
-      <section key={sectionKey} className="video-list__section" aria-label={`${currentSection.label} 영상`}>
+      <section key={renderKey} className="video-list__section" aria-label={`${currentSection.label} 영상`}>
         <header className="video-list__section-header">
           <div className="video-list__section-header-main">
             <div>
@@ -168,7 +212,7 @@ function VideoList({
             {currentSection.items.map((item, index) => {
               const isSelected =
                 selectedVideoId === item.id && activePlaybackQueueId === currentSection.categoryId;
-              const trendSignal = trendSignalsByVideoId?.[item.id];
+              const trendSignal = resolveVideoTrendSignal(item, trendSignalsByVideoId);
               const trendBadges =
                 trendSignal
                   ? getVideoTrendBadges(trendSignal)

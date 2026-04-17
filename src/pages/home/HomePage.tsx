@@ -95,10 +95,14 @@ import '../../styles/app.css';
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
 const CHART_SORT_OPTIONS: Array<{ id: ChartSortMode; label: string }> = [
-  { id: 'popular', label: '인기순' },
-  { id: 'price-desc', label: '가격 높은순' },
-  { id: 'price-asc', label: '가격 낮은순' },
-  { id: 'views', label: '조회순' },
+  { id: 'popular-desc', label: '순위 높은 순' },
+  { id: 'popular-asc', label: '순위 낮은 순' },
+  { id: 'price-desc', label: '가격 높은 순' },
+  { id: 'price-asc', label: '가격 낮은 순' },
+  { id: 'views-desc', label: '조회 높은 순' },
+  { id: 'views-asc', label: '조회 낮은 순' },
+  { id: 'rank-up', label: '랭킹 상승 순' },
+  { id: 'rank-down', label: '랭킹 하락 순' },
 ];
 
 function getProjectedWalletBalance(currentBalancePoints?: number | null, deltaPoints?: number | null) {
@@ -317,7 +321,7 @@ function HomePage() {
   const [pendingRegionTopVideoSelection, setPendingRegionTopVideoSelection] = useState<string | null>(null);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('popular');
-  const [chartSortMode, setChartSortMode] = useState<ChartSortMode>('popular');
+  const [chartSortMode, setChartSortMode] = useState<ChartSortMode>('popular-desc');
   const [coinCountdownNow, setCoinCountdownNow] = useState(() => Date.now());
   const lastCoinAutoRefreshAtRef = useRef<number | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
