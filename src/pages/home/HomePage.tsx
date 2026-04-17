@@ -95,6 +95,9 @@ import '../../styles/app.css';
 
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
+const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>(['popular-asc', 'price-asc', 'views-asc', 'rank-down']);
+const MAX_CHART_ITEM_COUNT = 200;
+const MAX_SORT_PREFETCH_PAGE_COUNT = 10;
 const CHART_SORT_OPTIONS: Array<{ id: ChartSortMode; label: string }> = [
   { id: 'popular-desc', label: '순위 높은 순' },
   { id: 'popular-asc', label: '순위 낮은 순' },
@@ -116,6 +119,87 @@ function getProjectedWalletBalance(currentBalancePoints?: number | null, deltaPo
   }
 
   return currentBalancePoints + deltaPoints;
+}
+
+function hasNextPageFromFetchResult(result: unknown) {
+  if (!result || typeof result !== 'object' || !('data' in result)) {
+    return false;
+  }
+
+  const data = (result as { data?: unknown }).data;
+
+  if (!data || typeof data !== 'object' || !('pages' in data)) {
+    return false;
+  }
+
+  const pages = (data as { pages?: unknown }).pages;
+
+  if (!Array.isArray(pages) || pages.length === 0) {
+    return false;
+  }
+
+  const lastPage = pages[pages.length - 1];
+
+  return (
+    Boolean(lastPage) &&
+    typeof lastPage === 'object' &&
+    'nextPageToken' in lastPage &&
+    typeof (lastPage as { nextPageToken?: unknown }).nextPageToken === 'string'
+  );
+}
+
+function getLoadedItemCountFromFetchResult(result: unknown) {
+  if (!result || typeof result !== 'object' || !('data' in result)) {
+    return 0;
+  }
+
+  const data = (result as { data?: unknown }).data;
+
+  if (!data || typeof data !== 'object' || !('pages' in data)) {
+    return 0;
+  }
+
+  const pages = (data as { pages?: unknown }).pages;
+
+  if (!Array.isArray(pages)) {
+    return 0;
+  }
+
+  return pages.reduce((totalCount, page) => {
+    if (!page || typeof page !== 'object' || !('items' in page)) {
+      return totalCount;
+    }
+
+    const items = (page as { items?: unknown }).items;
+
+    return totalCount + (Array.isArray(items) ? items.length : 0);
+  }, 0);
+}
+
+function formatSortPrefetchStatus(label: string, loadedItemCount: number, initialItemCount: number) {
+  const boundedLoadedItemCount = Math.min(loadedItemCount, MAX_CHART_ITEM_COUNT);
+  const additionalItemCount = Math.max(0, boundedLoadedItemCount - initialItemCount);
+
+  return `${label} 전체 종목 확인 중 · 현재 ${boundedLoadedItemCount}/${MAX_CHART_ITEM_COUNT}개, 추가 ${additionalItemCount}개 처리 완료`;
+}
+
+async function fetchRemainingChartPages(
+  fetchNextPage: () => Promise<unknown>,
+  hasInitialNextPage: boolean,
+  onProgress?: (loadedItemCount: number) => void,
+) {
+  if (!hasInitialNextPage) {
+    return;
+  }
+
+  let hasNextPage: boolean = hasInitialNextPage;
+
+  for (let pageCount = 0; hasNextPage && pageCount < MAX_SORT_PREFETCH_PAGE_COUNT; pageCount += 1) {
+    const result = await fetchNextPage();
+
+    onProgress?.(getLoadedItemCountFromFetchResult(result));
+    hasNextPage = hasNextPageFromFetchResult(result);
+  }
 }
 
 function mergeRankHistories(
@@ -323,6 +407,7 @@ function HomePage() {
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('popular');
   const [chartSortMode, setChartSortMode] = useState<ChartSortMode>('popular-desc');
+  const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(null);
   const chartSortOptions = useMemo(
     () =>
       authStatus === 'authenticated'
@@ -977,6 +1062,66 @@ function HomePage() {
     setCollapsedHomeSectionIds,
     setSelectedChartView,
   });
+  const handleChangeChartSortMode = useCallback(
+    (sortMode: ChartSortMode) => {
+      setChartSortMode(sortMode);
+
+      if (!FULL_CHART_PREFETCH_SORT_MODES.has(sortMode)) {
+        return;
+      }
+
+      if (effectiveChartView === 'buyable') {
+        if (hasNextBuyableMarketChartPage && !isFetchingNextBuyableMarketChartPage) {
+          const initialItemCount = Math.min(buyableMarketChartSection.items.length, MAX_CHART_ITEM_COUNT);
+
+          setSortPrefetchStatus(
+            `매수 가능 전체 종목 확인 중 · 현재 ${initialItemCount}/${MAX_CHART_ITEM_COUNT}개, 추가 종목 작업 중`,
+          );
+
+          void fetchRemainingChartPages(
+            fetchNextBuyableMarketChartPage,
+            hasNextBuyableMarketChartPage,
+            (loadedItemCount) => {
+              setSortPrefetchStatus(formatSortPrefetchStatus('매수 가능', loadedItemCount, initialItemCount));
+            },
+          )
+            .catch(() => undefined)
+            .finally(() => {
+              setSortPrefetchStatus(null);
+            });
+        }
+
+        return;
+      }
+
+      if (effectiveChartView === 'popular' && hasNextPage && !isFetchingNextPage) {
+        const initialItemCount = Math.min(selectedPlaybackSection?.items.length ?? 0, MAX_CHART_ITEM_COUNT);
+
+        setSortPrefetchStatus(
+          `TOP 200 전체 종목 확인 중 · 현재 ${initialItemCount}/${MAX_CHART_ITEM_COUNT}개, 추가 종목 작업 중`,
+        );
+
+        void fetchRemainingChartPages(fetchNextPage, hasNextPage, (loadedItemCount) => {
+          setSortPrefetchStatus(formatSortPrefetchStatus('TOP 200', loadedItemCount, initialItemCount));
+        })
+          .catch(() => undefined)
+          .finally(() => {
+            setSortPrefetchStatus(null);
+          });
+      }
+    },
+    [
+      effectiveChartView,
+      fetchNextBuyableMarketChartPage,
+      fetchNextPage,
+      buyableMarketChartSection.items.length,
+      hasNextBuyableMarketChartPage,
+      hasNextPage,
+      isFetchingNextBuyableMarketChartPage,
+      isFetchingNextPage,
+      selectedPlaybackSection?.items.length,
+    ],
+  );
   const {
     activePlaybackQueueId,
     canPlayNextVideo,
@@ -1962,7 +2107,7 @@ function HomePage() {
     isBuyTradeModalOpen ||
     isSellTradeModalOpen;
   const buyableVideoSearchOverlay =
-    isBuyableVideoSearchLoading && !isAnyModalOpen ? (
+    isBuyableVideoSearchLoading && !sortPrefetchStatus && !isAnyModalOpen ? (
       <div className="app-shell__fullscreen-loading" role="status" aria-live="polite" aria-modal="true">
         <div className="app-shell__fullscreen-loading-card">
           <span className="app-shell__fullscreen-loading-spinner" aria-hidden="true" />
@@ -1974,6 +2119,20 @@ function HomePage() {
           {buyableVideoSearchStatus ? (
             <p className="app-shell__fullscreen-loading-status">{buyableVideoSearchStatus}</p>
           ) : null}
+        </div>
+      </div>
+    ) : null;
+  const sortPrefetchOverlay =
+    sortPrefetchStatus && !isAnyModalOpen ? (
+      <div className="app-shell__fullscreen-loading" role="status" aria-live="polite" aria-modal="true">
+        <div className="app-shell__fullscreen-loading-card">
+          <span className="app-shell__fullscreen-loading-spinner" aria-hidden="true" />
+          <p className="app-shell__fullscreen-loading-eyebrow">Sorting Queue</p>
+          <p className="app-shell__fullscreen-loading-title">전체 종목 불러오는 중</p>
+          <p className="app-shell__fullscreen-loading-copy">
+            낮은 순 정렬을 정확하게 계산하기 위해 남은 차트 종목을 확인하고 있습니다.
+          </p>
+          <p className="app-shell__fullscreen-loading-status">{sortPrefetchStatus}</p>
         </div>
       </div>
     ) : null;
@@ -2020,7 +2179,7 @@ function HomePage() {
             isChartLoading: activeChartIsLoading,
             isFetchingNextPage: activeChartIsFetchingNextPage,
             mainSectionCollapseKey: activeChartMainSectionCollapseKey,
-            onChangeChartSortMode: setChartSortMode,
+            onChangeChartSortMode: handleChangeChartSortMode,
             onLoadMore: activeChartOnLoadMore,
             onSelectVideo: handleSelectVideoWithPreview,
             onToggleFeaturedSectionCollapse: toggleCollapsedSection,
@@ -2267,6 +2426,9 @@ function HomePage() {
       />
       {buyableVideoSearchOverlay && buyableVideoSearchOverlayContainer
         ? createPortal(buyableVideoSearchOverlay, buyableVideoSearchOverlayContainer)
+        : null}
+      {sortPrefetchOverlay && buyableVideoSearchOverlayContainer
+        ? createPortal(sortPrefetchOverlay, buyableVideoSearchOverlayContainer)
         : null}
     </div>
   );

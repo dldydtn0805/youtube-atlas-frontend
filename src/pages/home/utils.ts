@@ -229,6 +229,9 @@ function getChartSortValue(
   item: YouTubeVideoItem,
   sortMode: ChartSortMode,
   priceByVideoId: Map<string, number>,
+  options: {
+    shouldFallbackToRankRiseMagnitude?: boolean;
+  } = {},
 ) {
   if (sortMode === 'price-desc' || sortMode === 'price-asc') {
     return priceByVideoId.get(item.id);
@@ -247,7 +250,15 @@ function getChartSortValue(
   if (sortMode === 'rank-down') {
     const rankChange = item.trend?.rankChange;
 
-    return typeof rankChange === 'number' && rankChange < 0 ? Math.abs(rankChange) : null;
+    if (typeof rankChange !== 'number') {
+      return null;
+    }
+
+    if (rankChange < 0) {
+      return Math.abs(rankChange);
+    }
+
+    return options.shouldFallbackToRankRiseMagnitude && rankChange > 0 ? rankChange : null;
   }
 
   return null;
@@ -278,11 +289,20 @@ export function sortVideoSection(
   const priceByVideoId = new Map(
     (options.marketVideos ?? []).map((marketVideo) => [marketVideo.videoId, marketVideo.currentPricePoints]),
   );
+  const hasRankDrop = sortMode === 'rank-down' && section.items.some((item) => (item.trend?.rankChange ?? 0) < 0);
+  const shouldFallbackToRankRiseMagnitude =
+    sortMode === 'rank-down' &&
+    !hasRankDrop &&
+    section.items.some((item) => (item.trend?.rankChange ?? 0) > 0);
   const sortedItems = section.items
     .map((item, index) => ({ item, index }))
     .sort((left, right) => {
-      const leftValue = getChartSortValue(left.item, sortMode, priceByVideoId);
-      const rightValue = getChartSortValue(right.item, sortMode, priceByVideoId);
+      const leftValue = getChartSortValue(left.item, sortMode, priceByVideoId, {
+        shouldFallbackToRankRiseMagnitude,
+      });
+      const rightValue = getChartSortValue(right.item, sortMode, priceByVideoId, {
+        shouldFallbackToRankRiseMagnitude,
+      });
 
       if (typeof leftValue !== 'number' && typeof rightValue !== 'number') {
         return left.index - right.index;
@@ -296,8 +316,9 @@ export function sortVideoSection(
         return -1;
       }
 
-      const valueOrder =
-        sortMode === 'price-asc' || sortMode === 'views-asc' ? leftValue - rightValue : rightValue - leftValue;
+      const shouldSortAscending =
+        sortMode === 'price-asc' || sortMode === 'views-asc' || shouldFallbackToRankRiseMagnitude;
+      const valueOrder = shouldSortAscending ? leftValue - rightValue : rightValue - leftValue;
 
       return valueOrder || left.index - right.index;
     })

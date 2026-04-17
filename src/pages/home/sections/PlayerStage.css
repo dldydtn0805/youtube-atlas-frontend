@@ -580,6 +580,32 @@
   --trend-tier-accent-strong: #ffffff;
 }
 
+.app-shell__trend-ticker-button,
+:root[data-theme='dark'] .app-shell__trend-ticker-button {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 1.8rem;
+  padding: 0;
+}
+
+.app-shell__trend-ticker-button::before,
+:root[data-theme='dark'] .app-shell__trend-ticker-button::before {
+  display: none;
+}
+
+.app-shell__trend-ticker-button:hover,
+.app-shell__trend-ticker-button:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.app-shell__trend-ticker-viewport {
+  box-shadow: none;
+}
+
 .app-shell__mode-toggle {
   align-items: center;
   background: var(--surface-interactive);

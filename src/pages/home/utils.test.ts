@@ -430,6 +430,19 @@ describe('home utils', () => {
     ]);
   });
 
+  it('falls back to smaller rise magnitude for rank drop sorting when a section has no falling videos', () => {
+    const section = createVideoSection('realtime-surging', '실시간 급상승', ['video-1', 'video-2', 'video-3']);
+    section.items[0].trend = { rankChange: 12 };
+    section.items[1].trend = { rankChange: 5 };
+    section.items[2].trend = { rankChange: 9 };
+
+    expect(sortVideoSection(section, 'rank-down')?.items.map((item) => item.id)).toEqual([
+      'video-2',
+      'video-3',
+      'video-1',
+    ]);
+  });
+
   it('prefetches more pages only while buyable-only filtering needs more videos', () => {
     expect(
       shouldPrefetchBuyableVideos({
