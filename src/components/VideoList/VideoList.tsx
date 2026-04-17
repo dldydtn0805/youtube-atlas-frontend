@@ -76,6 +76,7 @@ function resolveVideoTrendSignal(
   }
 
   return {
+    regionCode: '',
     videoId: item.id,
     title: item.snippet.title,
     channelTitle: item.snippet.channelTitle,

@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import type { FeaturedVideoSection } from '../../../components/VideoList/VideoList';
 import { ALL_VIDEO_CATEGORY_ID, supportsVideoTrendSignals } from '../../../constants/videoCategories';
 import type { GameCurrentSeason, GameMarketVideo } from '../../../features/game/types';
-import { useNewChartEntries, useRealtimeSurging, useVideoTrendSignals } from '../../../features/trending/queries';
+import { useNewChartEntries, useRealtimeSurging, useTopRankRisers, useVideoTrendSignals } from '../../../features/trending/queries';
 import type { VideoTrendSignal } from '../../../features/trending/types';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
 import {
+  buildTopRankRisersSection,
   BUYABLE_ONLY_PREFETCH_LIMIT,
   buildNewChartEntriesSection,
   buildRealtimeSurgingSection,
@@ -51,6 +52,8 @@ interface UseHomeTrendSectionsResult {
   isRealtimeSurgingError: boolean;
   isRealtimeSurgingLoading: boolean;
   newChartEntriesSection?: YouTubeCategorySection;
+  topRankRisersSignals: VideoTrendSignal[];
+  topRankRisersSection?: YouTubeCategorySection;
   realtimeSurgingSection?: YouTubeCategorySection;
   shouldAutoPrefetchBuyableVideos: boolean;
 }
@@ -136,6 +139,9 @@ export default function useHomeTrendSections({
     isError: isRealtimeSurgingError,
   } = useRealtimeSurging(selectedRegionCode, isApiConfigured && shouldShowRealtimeSurging);
   const {
+    data: topRankRisersData,
+  } = useTopRankRisers(selectedRegionCode, isApiConfigured && shouldShowRealtimeSurging);
+  const {
     data: newChartEntriesData,
     isLoading: isNewChartEntriesLoading,
     isError: isNewChartEntriesError,
@@ -173,6 +179,10 @@ export default function useHomeTrendSections({
   const newChartEntriesSection = useMemo(
     () => buildNewChartEntriesSection(shouldShowRealtimeSurging, newChartEntriesData),
     [newChartEntriesData, shouldShowRealtimeSurging],
+  );
+  const topRankRisersSection = useMemo(
+    () => buildTopRankRisersSection(shouldShowRealtimeSurging, topRankRisersData),
+    [shouldShowRealtimeSurging, topRankRisersData],
   );
   const realtimeSurgingEmptyMessage =
     shouldShowRealtimeSurging &&
@@ -303,6 +313,8 @@ export default function useHomeTrendSections({
     isRealtimeSurgingError,
     isRealtimeSurgingLoading,
     newChartEntriesSection,
+    topRankRisersSignals: topRankRisersData?.items ?? [],
+    topRankRisersSection,
     realtimeSurgingSection,
     shouldAutoPrefetchBuyableVideos,
   };

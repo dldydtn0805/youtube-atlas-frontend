@@ -24,6 +24,7 @@ interface PlayerViewportContentProps {
 
 interface PlayerStageHeaderProps {
   cinematicToggleLabel: string;
+  headerSupplementalContent?: ReactNode;
   isCinematicModeActive: boolean;
   isMobileLayout: boolean;
   onOpenRegionModal: () => void;
@@ -39,6 +40,7 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   cinematicToggleLabel: string;
   favoriteToggleLabel: string;
   filterContent?: ReactNode;
+  headerSupplementalContent?: ReactNode;
   isFavoriteToggleDisabled: boolean;
   isManualPlaybackSaveDisabled: boolean;
   isSelectedChannelFavorited: boolean;
@@ -115,6 +117,7 @@ export function PlayerViewportContent({
 
 export function PlayerStageHeader({
   cinematicToggleLabel,
+  headerSupplementalContent,
   isCinematicModeActive,
   isMobileLayout,
   onOpenRegionModal,
@@ -141,6 +144,9 @@ export function PlayerStageHeader({
           ) : null}
         </h2>
       </div>
+      {headerSupplementalContent ? (
+        <div className="app-shell__player-heading-supplemental">{headerSupplementalContent}</div>
+      ) : null}
       {!isMobileLayout ? (
         <div className="app-shell__player-actions">
           <button
@@ -151,7 +157,31 @@ export function PlayerStageHeader({
             title={cinematicToggleLabel}
             type="button"
           >
-            {cinematicToggleLabel}
+            <span className="app-shell__mode-toggle-icon" aria-hidden="true">
+              {isCinematicModeActive ? (
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M9 4H4v5" />
+                  <path d="M15 4h5v5" />
+                  <path d="M9 20H4v-5" />
+                  <path d="M15 20h5v-5" />
+                  <path d="M4 4l6 6" />
+                  <path d="M20 4l-6 6" />
+                  <path d="M4 20l6-6" />
+                  <path d="M20 20l-6-6" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 9V4h5" />
+                  <path d="M20 9V4h-5" />
+                  <path d="M4 15v5h5" />
+                  <path d="M20 15v5h-5" />
+                  <path d="M4 4l6 6" />
+                  <path d="M20 4l-6 6" />
+                  <path d="M4 20l6-6" />
+                  <path d="M20 20l-6-6" />
+                </svg>
+              )}
+            </span>
           </button>
         </div>
       ) : null}
@@ -166,6 +196,7 @@ function PlayerStage({
   cinematicToggleLabel,
   favoriteToggleLabel,
   filterContent,
+  headerSupplementalContent,
   isChartLoading,
   isCinematicModeActive,
   isFavoriteToggleDisabled,
@@ -231,6 +262,7 @@ function PlayerStage({
           {renderHeaderInline ? (
             <PlayerStageHeader
               cinematicToggleLabel={cinematicToggleLabel}
+              headerSupplementalContent={headerSupplementalContent}
               isCinematicModeActive={isCinematicModeActive}
               isMobileLayout={isMobileLayout}
               onOpenRegionModal={onOpenRegionModal}

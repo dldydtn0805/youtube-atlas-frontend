@@ -1163,6 +1163,7 @@ export default function HomePlaybackSection({
         <>
           <PlayerStageHeader
             cinematicToggleLabel={playerStageProps.cinematicToggleLabel}
+            headerSupplementalContent={playerStageProps.headerSupplementalContent}
             isCinematicModeActive={playerStageProps.isCinematicModeActive}
             isMobileLayout={playerStageProps.isMobileLayout}
             onOpenRegionModal={playerStageProps.onOpenRegionModal}

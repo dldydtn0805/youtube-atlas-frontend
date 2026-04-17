@@ -3,6 +3,7 @@ import { supportsVideoTrendSignals } from '../../constants/videoCategories';
 import {
   fetchNewChartEntries,
   fetchRealtimeSurging,
+  fetchTopRankRisers,
   fetchVideoRankHistory,
   fetchVideoTrendSignals,
 } from './api';
@@ -29,6 +30,15 @@ export function useRealtimeSurging(regionCode: string | undefined, enabled = tru
     enabled: enabled && Boolean(regionCode),
     queryKey: ['realtimeSurging', regionCode],
     queryFn: () => fetchRealtimeSurging(regionCode as string),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useTopRankRisers(regionCode: string | undefined, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(regionCode),
+    queryKey: ['topRankRisers', regionCode],
+    queryFn: () => fetchTopRankRisers(regionCode as string),
     staleTime: 1000 * 60 * 5,
   });
 }

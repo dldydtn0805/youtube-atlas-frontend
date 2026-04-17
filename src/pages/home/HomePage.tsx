@@ -11,6 +11,7 @@ import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
 import HomePlaybackSection from './sections/HomePlaybackSection';
 import StickySelectedVideoControls from './sections/StickySelectedVideoControls';
+import TrendTicker from './sections/TrendTicker';
 import {
   buildOpenGameHoldings,
   calculateEstimatedCoinYieldAfterBuy,
@@ -669,13 +670,6 @@ function HomePage() {
     () => mapMusicTrendSignalsByVideoId(musicPlaybackSection, selectedRegionCode),
     [musicPlaybackSection, selectedRegionCode],
   );
-  const extraPlaybackSections = useMemo(
-    () =>
-      [sortedBuyableMarketChartSection, sortedFilteredMusicChartSection].filter(
-        (section): section is NonNullable<typeof section> => Boolean(section),
-      ),
-    [sortedBuyableMarketChartSection, sortedFilteredMusicChartSection],
-  );
   const loadedSelectedVideoCount = selectedSection?.items.length ?? 0;
   const selectedPlaybackSection = useMemo(
     () =>
@@ -786,6 +780,8 @@ function HomePage() {
     isRealtimeSurgingError,
     isRealtimeSurgingLoading,
     newChartEntriesSection,
+    topRankRisersSignals,
+    topRankRisersSection,
     realtimeSurgingSection,
     shouldAutoPrefetchBuyableVideos,
   } = useHomeTrendSections({
@@ -808,6 +804,13 @@ function HomePage() {
     selectedRegionCode,
     shouldLoadFavorites,
   });
+  const extraPlaybackSections = useMemo(
+    () =>
+      [topRankRisersSection, sortedBuyableMarketChartSection, sortedFilteredMusicChartSection].filter(
+        (section): section is NonNullable<typeof section> => Boolean(section),
+      ),
+    [sortedBuyableMarketChartSection, sortedFilteredMusicChartSection, topRankRisersSection],
+  );
   const selectedVideoRankSignalsById = useMemo(
     () => ({
       ...chartTrendSignalsByVideoId,
@@ -1442,6 +1445,32 @@ function HomePage() {
     },
     [handleSelectVideo],
   );
+  const headerTrendTicker = useMemo(
+    () => {
+      if (!isAllCategorySelected || topRankRisersSignals.length === 0 || !topRankRisersSection?.categoryId) {
+        return undefined;
+      }
+
+      return (
+        <TrendTicker
+          currentTierCode={gameCoinTierProgress?.currentTier.tierCode}
+          isAuthenticated={authStatus === 'authenticated'}
+          items={topRankRisersSignals}
+          onSelect={(videoId) => {
+            handleSelectVideoWithPreview(videoId, topRankRisersSection.categoryId);
+          }}
+        />
+      );
+    },
+    [
+      authStatus,
+      handleSelectVideoWithPreview,
+      gameCoinTierProgress?.currentTier.tierCode,
+      isAllCategorySelected,
+      topRankRisersSignals,
+      topRankRisersSection?.categoryId,
+    ],
+  );
 
   const handleSelectTopVideoForChartView = useCallback(
     (viewId: ChartViewMode) => {
@@ -2007,6 +2036,7 @@ function HomePage() {
             canNavigateVideos: canPlayNextVideo,
             cinematicToggleLabel,
             favoriteToggleLabel,
+            headerSupplementalContent: headerTrendTicker,
             isChartLoading,
             isCinematicModeActive,
             isFavoriteToggleDisabled: !selectedChannelId || toggleFavoriteStreamerMutation.isPending,

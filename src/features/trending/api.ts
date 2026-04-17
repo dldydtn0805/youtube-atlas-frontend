@@ -2,6 +2,7 @@ import { fetchApi } from '../../lib/api';
 import type {
   NewChartEntriesResponse,
   RealtimeSurgingResponse,
+  TopRankRisersResponse,
   VideoRankHistory,
   VideoTrendSignal,
 } from './types';
@@ -37,6 +38,14 @@ export async function fetchRealtimeSurging(regionCode: string): Promise<Realtime
   });
 
   return fetchApi<RealtimeSurgingResponse>(`/api/trending/realtime-surging?${params.toString()}`);
+}
+
+export async function fetchTopRankRisers(regionCode: string): Promise<TopRankRisersResponse> {
+  const params = new URLSearchParams({
+    regionCode,
+  });
+
+  return fetchApi<TopRankRisersResponse>(`/api/trending/top-rank-risers?${params.toString()}`);
 }
 
 export async function fetchNewChartEntries(regionCode: string): Promise<NewChartEntriesResponse> {

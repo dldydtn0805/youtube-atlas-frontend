@@ -6,6 +6,7 @@ import { formatCompactCount } from '../../features/trending/presentation';
 import type {
   NewChartEntriesResponse,
   RealtimeSurgingResponse,
+  TopRankRisersResponse,
   VideoTrendSignal,
 } from '../../features/trending/types';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
@@ -18,6 +19,7 @@ export const MOBILE_BREAKPOINT = 768;
 export const MOBILE_MIN_HEIGHT = 500;
 export const NEW_CHART_ENTRIES_QUEUE_ID = 'new-chart-entries';
 export const REALTIME_SURGING_QUEUE_ID = 'realtime-surging';
+export const TOP_RANK_RISERS_QUEUE_ID = 'top-rank-risers';
 export const RESTORED_PLAYBACK_QUEUE_ID = 'last-playback-progress';
 const STORAGE_KEY = 'youtube-atlas-region-code';
 const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
@@ -515,6 +517,22 @@ export function buildNewChartEntriesSection(
     label: '신규 진입',
     description: '전체 차트에 이번 집계에서 새로 진입한 영상을 모았습니다.',
     items: newChartEntriesData.items.map(mapTrendSignalToVideoItem),
+  };
+}
+
+export function buildTopRankRisersSection(
+  isAllCategorySelected: boolean,
+  topRankRisersData: TopRankRisersResponse | undefined,
+) {
+  if (!isAllCategorySelected || !topRankRisersData) {
+    return undefined;
+  }
+
+  return {
+    categoryId: TOP_RANK_RISERS_QUEUE_ID,
+    label: '인기 급상승',
+    description: 'TOP 200 안에서 직전 집계 대비 순위 상승폭이 가장 큰 영상을 모았습니다.',
+    items: topRankRisersData.items.map(mapTrendSignalToVideoItem),
   };
 }
 
