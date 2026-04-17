@@ -3,6 +3,7 @@ import {
   closeAdminSeason,
   deleteAdminUser,
   fetchAdminDashboard,
+  fetchAdminTrendSnapshots,
   fetchAdminUserDetail,
   fetchAdminUserPositions,
   fetchAdminUsers,
@@ -23,6 +24,8 @@ import type {
 export const adminQueryKeys = {
   all: (accessToken: string | null) => ['admin', accessToken] as const,
   dashboard: (accessToken: string | null) => ['admin', accessToken, 'dashboard'] as const,
+  trendSnapshots: (accessToken: string | null, startAt: string | null, endAt: string | null, regionCode: string | null) =>
+    ['admin', accessToken, 'trendSnapshots', startAt ?? '', endAt ?? '', regionCode ?? 'ALL'] as const,
   users: (accessToken: string | null, query: string | null) => ['admin', accessToken, 'users', query ?? ''] as const,
   userDetail: (accessToken: string | null, userId: number | null) => ['admin', accessToken, 'user', userId] as const,
   userPositions: (accessToken: string | null, userId: number | null, seasonId: number | null) =>
@@ -35,6 +38,21 @@ export function useAdminDashboard(accessToken: string | null, enabled = true) {
     queryKey: adminQueryKeys.dashboard(accessToken),
     queryFn: () => fetchAdminDashboard(accessToken as string),
     staleTime: 1000 * 30,
+  });
+}
+
+export function useAdminTrendSnapshots(
+  accessToken: string | null,
+  startAt: string | null,
+  endAt: string | null,
+  regionCode: string | null,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && Boolean(startAt) && Boolean(endAt),
+    queryKey: adminQueryKeys.trendSnapshots(accessToken, startAt, endAt, regionCode),
+    queryFn: () => fetchAdminTrendSnapshots(accessToken as string, startAt as string, endAt as string, regionCode),
+    staleTime: 1000 * 10,
   });
 }
 

@@ -61,26 +61,27 @@ function formatPrice(points?: number) {
   return `가격 ${points.toLocaleString('ko-KR')}P`;
 }
 
-function resolveVideoTrendSignal(
+type VideoTrendBadgeSignal = Pick<VideoTrendSignal, 'isNew' | 'previousRank' | 'rankChange'>;
+
+function hasInlineTrendBadgeData(item: YouTubeVideoItem) {
+  return Boolean(
+    item.trend &&
+      (
+        item.trend.isNew === true ||
+        typeof item.trend.previousRank === 'number' ||
+        typeof item.trend.rankChange === 'number'
+      ),
+  );
+}
+
+function resolveVideoTrendBadgeSignal(
   item: YouTubeVideoItem,
   trendSignalsByVideoId?: Record<string, VideoTrendSignal>,
-): VideoTrendSignal | undefined {
-  if (item.trend && typeof item.trend.currentRank === 'number') {
+): VideoTrendBadgeSignal | undefined {
+  if (hasInlineTrendBadgeData(item)) {
     return {
-      regionCode: '',
-      videoId: item.id,
-      title: item.snippet.title,
-      channelTitle: item.snippet.channelTitle,
-      thumbnailUrl: item.snippet.thumbnails.high.url,
-      categoryId: item.snippet.categoryId,
-      categoryLabel: item.trend.categoryLabel ?? item.snippet.categoryLabel ?? '',
-      capturedAt: item.trend.capturedAt ?? '',
-      currentRank: item.trend.currentRank,
       previousRank: item.trend.previousRank ?? null,
       rankChange: item.trend.rankChange ?? null,
-      currentViewCount: item.trend.currentViewCount ?? null,
-      previousViewCount: item.trend.previousViewCount ?? null,
-      viewCountDelta: item.trend.viewCountDelta ?? null,
       isNew: item.trend.isNew ?? false,
     };
   }
@@ -207,7 +208,7 @@ function VideoList({
             {currentSection.items.map((item, index) => {
               const isSelected =
                 selectedVideoId === item.id && activePlaybackQueueId === currentSection.categoryId;
-              const trendSignal = resolveVideoTrendSignal(item, trendSignalsByVideoId);
+              const trendSignal = resolveVideoTrendBadgeSignal(item, trendSignalsByVideoId);
               const trendBadges =
                 trendSignal
                   ? getVideoTrendBadges(trendSignal)

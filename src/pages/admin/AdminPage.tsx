@@ -4,6 +4,7 @@ import { useAuth } from '../../features/auth/useAuth';
 import {
   useCloseAdminSeason,
   useAdminDashboard,
+  useAdminTrendSnapshots,
   useAdminUserDetail,
   useAdminUserPositions,
   useAdminUsers,
@@ -18,6 +19,7 @@ import type {
   AdminCommentSummary,
   AdminFavoriteSummary,
   AdminSeasonSummary,
+  AdminTrendSnapshotHistoryItem,
   AdminTrendSnapshot,
   AdminCoinTierSummary,
   AdminUserDetail,
@@ -27,6 +29,7 @@ import type {
 } from '../../features/admin/types';
 import useLogoutOnUnauthorized from '../home/hooks/useLogoutOnUnauthorized';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
+import countryCodes from '../../constants/countryCodes';
 import './AdminPage.css';
 
 function formatDateTime(value: string | null | undefined) {
@@ -106,6 +109,25 @@ function formatDateTimeInput(value: string | null | undefined) {
 
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return localDate.toISOString().slice(0, 16);
+}
+
+function createDefaultSnapshotRange() {
+  const end = new Date();
+  const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+
+  return {
+    startAt: formatDateTimeInput(start.toISOString()),
+    endAt: formatDateTimeInput(end.toISOString()),
+  };
+}
+
+function formatRegionLabel(regionCode: string | null | undefined) {
+  if (!regionCode) {
+    return '전체 국가';
+  }
+
+  const country = countryCodes.find((item) => item.code === regionCode);
+  return country ? `${country.name} (${country.code})` : regionCode;
 }
 
 function parseDateTimeInput(value: string, label: string) {
@@ -263,6 +285,49 @@ function TrendList({ items }: { items: AdminTrendSnapshot[] }) {
           </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+function TrendSnapshotHistoryTable({ items }: { items: AdminTrendSnapshotHistoryItem[] }) {
+  return (
+    <div className="admin-page__table-wrap">
+      <table className="admin-page__table">
+        <thead>
+          <tr>
+            <th>저장 시각</th>
+            <th>수집 시각</th>
+            <th>런</th>
+            <th>지역/카테고리</th>
+            <th>랭크</th>
+            <th>영상</th>
+            <th>채널</th>
+            <th>조회수</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td>{formatDateTime(item.savedAt)}</td>
+              <td>{formatDateTime(item.capturedAt)}</td>
+              <td>
+                <div className="admin-page__detail-list admin-page__detail-list--table">
+                  <p><span>#{item.runId}</span><strong>{item.source}</strong></p>
+                </div>
+              </td>
+              <td>{item.regionCode} / {item.categoryLabel || item.categoryId}</td>
+              <td>#{item.rank}</td>
+              <td className="admin-page__content-cell">
+                <strong>{item.title}</strong>
+                <br />
+                <span className="admin-page__muted">{item.videoId}</span>
+              </td>
+              <td>{item.channelTitle}</td>
+              <td>{formatNumber(item.viewCount)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -614,9 +679,28 @@ export default function AdminPage() {
   });
   const [commentCleanupDraft, setCommentCleanupDraft] = useState('');
   const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState('');
+  const [trendSnapshotRangeDraft, setTrendSnapshotRangeDraft] = useState(createDefaultSnapshotRange);
+  const [submittedTrendSnapshotRange, setSubmittedTrendSnapshotRange] = useState<{
+    startAt: string | null;
+    endAt: string | null;
+    regionCode: string | null;
+  }>(() => {
+    const initial = createDefaultSnapshotRange();
+    return {
+      ...initial,
+      regionCode: null,
+    };
+  });
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
+  const trendSnapshotsQuery = useAdminTrendSnapshots(
+    accessToken,
+    submittedTrendSnapshotRange.startAt,
+    submittedTrendSnapshotRange.endAt,
+    submittedTrendSnapshotRange.regionCode,
+    status === 'authenticated',
+  );
   const usersQuery = useAdminUsers(accessToken, submittedQuery, status === 'authenticated');
   const detailQuery = useAdminUserDetail(accessToken, selectedUserId, status === 'authenticated');
   const positionsQuery = useAdminUserPositions(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
@@ -629,6 +713,7 @@ export default function AdminPage() {
   const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
+  useLogoutOnUnauthorized(trendSnapshotsQuery.error, logout);
   useLogoutOnUnauthorized(usersQuery.error, logout);
   useLogoutOnUnauthorized(detailQuery.error, logout);
   useLogoutOnUnauthorized(positionsQuery.error, logout);
@@ -756,13 +841,15 @@ export default function AdminPage() {
   const errorMessage =
     dashboardQuery.error instanceof ApiRequestError
       ? dashboardQuery.error.message
-      : usersQuery.error instanceof ApiRequestError
-        ? usersQuery.error.message
-        : detailQuery.error instanceof ApiRequestError
-          ? detailQuery.error.message
-          : positionsQuery.error instanceof ApiRequestError
-            ? positionsQuery.error.message
-          : '관리자 정보를 불러오지 못했습니다.';
+        : usersQuery.error instanceof ApiRequestError
+          ? usersQuery.error.message
+          : detailQuery.error instanceof ApiRequestError
+            ? detailQuery.error.message
+            : positionsQuery.error instanceof ApiRequestError
+              ? positionsQuery.error.message
+              : trendSnapshotsQuery.error instanceof ApiRequestError
+                ? trendSnapshotsQuery.error.message
+                : '관리자 정보를 불러오지 못했습니다.';
   const isForbidden =
     dashboardQuery.error instanceof ApiRequestError && dashboardQuery.error.status === 403;
 
@@ -791,6 +878,21 @@ export default function AdminPage() {
     setPositionDraft((current) => ({
       ...current,
       [field]: value,
+    }));
+  };
+
+  const handleTrendSnapshotRangeChange = (field: 'startAt' | 'endAt', value: string) => {
+    setTrendSnapshotRangeDraft((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleTrendSnapshotRegionChange = (value: string) => {
+    setSubmittedTrendSnapshotRange((current) => current);
+    setTrendSnapshotRangeDraft((current) => ({
+      ...current,
+      regionCode: value,
     }));
   };
 
@@ -994,6 +1096,26 @@ export default function AdminPage() {
     }
   };
 
+  const handleTrendSnapshotSearch = () => {
+    try {
+      const startAt = parseDateTimeInput(trendSnapshotRangeDraft.startAt, '스냅샷 조회 시작');
+      const endAt = parseDateTimeInput(trendSnapshotRangeDraft.endAt, '스냅샷 조회 종료');
+
+      if (new Date(startAt).getTime() > new Date(endAt).getTime()) {
+        throw new Error('스냅샷 조회 시작 시각은 종료 시각보다 늦을 수 없습니다.');
+      }
+
+      setActionMessage(null);
+      setSubmittedTrendSnapshotRange({
+        startAt,
+        endAt,
+        regionCode: trendSnapshotRangeDraft.regionCode?.trim() ? trendSnapshotRangeDraft.regionCode : null,
+      });
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '스냅샷 조회 기간을 확인해주세요.');
+    }
+  };
+
   if (!isApiConfigured) {
     return (
       <main className="admin-page">
@@ -1074,7 +1196,7 @@ export default function AdminPage() {
         </section>
       ) : null}
 
-      {dashboardQuery.isError || usersQuery.isError || detailQuery.isError || positionsQuery.isError ? (
+      {dashboardQuery.isError || trendSnapshotsQuery.isError || usersQuery.isError || detailQuery.isError || positionsQuery.isError ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">{isForbidden ? '접근 권한 없음' : '불러오기 실패'}</h2>
           <p className="admin-page__error">{errorMessage}</p>
@@ -1140,6 +1262,72 @@ export default function AdminPage() {
                 <p className="admin-page__muted">아직 수집된 트렌딩 데이터가 없습니다.</p>
               )}
             </article>
+          </section>
+
+          <section className="admin-page__panel">
+            <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
+              <div>
+                <h2 className="admin-page__section-title">스냅샷 저장 기록 조회</h2>
+                <p className="admin-page__section-caption">저장 시각 기준으로 기간 내 스냅샷 레코드를 전부 조회합니다.</p>
+              </div>
+              {trendSnapshotsQuery.data ? (
+                <span className="admin-page__section-caption">
+                  {formatRegionLabel(submittedTrendSnapshotRange.regionCode)} · {formatDateTime(trendSnapshotsQuery.data.startAt)} ~ {formatDateTime(trendSnapshotsQuery.data.endAt)} · {formatNumber(trendSnapshotsQuery.data.count)}건
+                </span>
+              ) : null}
+            </div>
+            <div className="admin-page__form-grid">
+              <label className="admin-page__field">
+                <span>국가</span>
+                <select
+                  className="admin-page__select"
+                  onChange={(event) => handleTrendSnapshotRegionChange(event.target.value)}
+                  value={trendSnapshotRangeDraft.regionCode ?? ''}
+                >
+                  <option value="">전체 국가</option>
+                  {countryCodes.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name} ({country.code})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="admin-page__field">
+                <span>조회 시작 시각</span>
+                <input
+                  onChange={(event) => handleTrendSnapshotRangeChange('startAt', event.target.value)}
+                  type="datetime-local"
+                  value={trendSnapshotRangeDraft.startAt}
+                />
+              </label>
+              <label className="admin-page__field">
+                <span>조회 종료 시각</span>
+                <input
+                  onChange={(event) => handleTrendSnapshotRangeChange('endAt', event.target.value)}
+                  type="datetime-local"
+                  value={trendSnapshotRangeDraft.endAt}
+                />
+              </label>
+            </div>
+            <div className="admin-page__action-row">
+              <button
+                className="admin-page__button"
+                disabled={trendSnapshotsQuery.isFetching}
+                onClick={handleTrendSnapshotSearch}
+                type="button"
+              >
+                {trendSnapshotsQuery.isFetching ? '조회 중...' : '스냅샷 기록 조회'}
+              </button>
+            </div>
+            {trendSnapshotsQuery.data ? (
+              trendSnapshotsQuery.data.items.length ? (
+                <div className="admin-page__table-section">
+                  <TrendSnapshotHistoryTable items={trendSnapshotsQuery.data.items} />
+                </div>
+              ) : (
+                <p className="admin-page__muted">선택한 기간에 저장된 스냅샷 기록이 없습니다.</p>
+              )
+            ) : null}
           </section>
 
           <section className="admin-page__panel">

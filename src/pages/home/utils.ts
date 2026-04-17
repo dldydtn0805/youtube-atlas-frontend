@@ -499,6 +499,17 @@ export function mapTrendSignalToVideoItem(signal: VideoTrendSignal): YouTubeVide
       categoryId: signal.categoryId,
       thumbnails: createFallbackThumbnails(signal.thumbnailUrl ?? ''),
     },
+    trend: {
+      categoryLabel: signal.categoryLabel,
+      currentRank: signal.currentRank,
+      previousRank: signal.previousRank,
+      rankChange: signal.rankChange,
+      currentViewCount: signal.currentViewCount,
+      previousViewCount: signal.previousViewCount,
+      viewCountDelta: signal.viewCountDelta,
+      isNew: signal.isNew,
+      capturedAt: signal.capturedAt,
+    },
   };
 }
 

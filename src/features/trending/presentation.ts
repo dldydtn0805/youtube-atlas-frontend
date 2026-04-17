@@ -7,6 +7,8 @@ export interface VideoTrendBadge {
   tone: 'new' | 'up' | 'down' | 'steady';
 }
 
+type TrendBadgeSignal = Pick<VideoTrendSignal, 'isNew' | 'previousRank' | 'rankChange'>;
+
 function trimTrailingZeroes(value: string) {
   return value.replace(/\.0$/, '');
 }
@@ -23,7 +25,7 @@ export function formatCompactCount(value: number) {
   return String(value);
 }
 
-export function getVideoTrendBadges(signal?: VideoTrendSignal | null): VideoTrendBadge[] {
+export function getVideoTrendBadges(signal?: TrendBadgeSignal | null): VideoTrendBadge[] {
   if (!signal) {
     return [];
   }
@@ -62,7 +64,7 @@ export function getVideoTrendBadges(signal?: VideoTrendSignal | null): VideoTren
   return badges;
 }
 
-export function getPrimaryVideoTrendBadge(signal?: VideoTrendSignal | null): VideoTrendBadge | null {
+export function getPrimaryVideoTrendBadge(signal?: TrendBadgeSignal | null): VideoTrendBadge | null {
   const [badge] = getVideoTrendBadges(signal);
 
   if (!badge) {

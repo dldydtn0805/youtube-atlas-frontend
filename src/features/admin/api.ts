@@ -6,6 +6,7 @@ import type {
   AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonSummary,
+  AdminTrendSnapshotHistory,
   AdminTradeHistoryCleanupRequest,
   AdminTradeHistoryCleanupResponse,
   AdminUserDetail,
@@ -20,6 +21,26 @@ function createAuthorizationHeader(accessToken: string) {
 
 export async function fetchAdminDashboard(accessToken: string) {
   return fetchApi<AdminDashboard>('/api/admin/dashboard', {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchAdminTrendSnapshots(
+  accessToken: string,
+  startAt: string,
+  endAt: string,
+  regionCode?: string | null,
+) {
+  const searchParams = new URLSearchParams({
+    startAt,
+    endAt,
+  });
+
+  if (regionCode?.trim()) {
+    searchParams.set('regionCode', regionCode.trim().toUpperCase());
+  }
+
+  return fetchApi<AdminTrendSnapshotHistory>(`/api/admin/trend-snapshots?${searchParams.toString()}`, {
     headers: createAuthorizationHeader(accessToken),
   });
 }

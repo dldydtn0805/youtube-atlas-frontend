@@ -128,6 +128,36 @@ describe('VideoList', () => {
     expect(screen.queryByText('NEW')).not.toBeInTheDocument();
   });
 
+  it('uses inline rank change badges even when the snapshot is missing current rank', () => {
+    render(
+      <VideoList
+        hasNextPage={false}
+        hasResolvedTrendSignals
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseSection.items[0],
+              trend: {
+                isNew: false,
+                previousRank: 18,
+                rankChange: 6,
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('▲ 6')).toBeInTheDocument();
+    expect(screen.queryByText('NEW')).not.toBeInTheDocument();
+  });
+
   it('prefers snapshot-backed item trend data over stale separate trend signals', () => {
     render(
       <VideoList

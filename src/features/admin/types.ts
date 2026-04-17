@@ -74,6 +74,32 @@ export interface AdminDashboard {
   recentFavorites: AdminFavoriteSummary[];
 }
 
+export interface AdminTrendSnapshotHistoryItem {
+  id: number;
+  runId: number;
+  regionCode: string;
+  categoryId: string;
+  categoryLabel: string;
+  source: string;
+  capturedAt: string;
+  savedAt: string;
+  rank: number;
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  viewCount: number | null;
+  videoCategoryId: string | null;
+  videoCategoryLabel: string | null;
+}
+
+export interface AdminTrendSnapshotHistory {
+  startAt: string;
+  endAt: string;
+  count: number;
+  items: AdminTrendSnapshotHistoryItem[];
+}
+
 export interface AdminSeasonScheduleUpdateRequest {
   startAt: string;
   endAt: string;
