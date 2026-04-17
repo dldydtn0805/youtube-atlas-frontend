@@ -323,6 +323,13 @@ function HomePage() {
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('popular');
   const [chartSortMode, setChartSortMode] = useState<ChartSortMode>('popular-desc');
+  const chartSortOptions = useMemo(
+    () =>
+      authStatus === 'authenticated'
+        ? CHART_SORT_OPTIONS
+        : CHART_SORT_OPTIONS.filter((option) => option.id !== 'price-desc' && option.id !== 'price-asc'),
+    [authStatus],
+  );
   const [coinCountdownNow, setCoinCountdownNow] = useState(() => Date.now());
   const lastCoinAutoRefreshAtRef = useRef<number | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
@@ -347,6 +354,12 @@ function HomePage() {
   useEffect(() => {
     persistCollapsedHomeSectionIds(collapsedHomeSectionIds);
   }, [collapsedHomeSectionIds]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated' && (chartSortMode === 'price-desc' || chartSortMode === 'price-asc')) {
+      setChartSortMode('popular-desc');
+    }
+  }, [authStatus, chartSortMode]);
 
   const scrollToPlayerStage = useCallback(() => {
     if (isMobileLayout) {
@@ -1996,7 +2009,7 @@ function HomePage() {
             chartErrorMessage: activeChartErrorMessage,
             marketPriceByVideoId,
             chartSortMode,
-            chartSortOptions: CHART_SORT_OPTIONS,
+            chartSortOptions,
             collapsedFeaturedSectionIds,
             currentTierCode: gameCoinTierProgress?.currentTier.tierCode,
             featuredSections: activeChartFeaturedSections,
