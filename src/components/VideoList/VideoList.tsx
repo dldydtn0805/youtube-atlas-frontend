@@ -79,10 +79,16 @@ function resolveVideoTrendBadgeSignal(
   trendSignalsByVideoId?: Record<string, VideoTrendSignal>,
 ): VideoTrendBadgeSignal | undefined {
   if (hasInlineTrendBadgeData(item)) {
+    const trend = item.trend;
+
+    if (!trend) {
+      return undefined;
+    }
+
     return {
-      previousRank: item.trend.previousRank ?? null,
-      rankChange: item.trend.rankChange ?? null,
-      isNew: item.trend.isNew ?? false,
+      previousRank: trend.previousRank ?? null,
+      rankChange: trend.rankChange ?? null,
+      isNew: trend.isNew ?? false,
     };
   }
 

@@ -116,6 +116,7 @@ function createDefaultSnapshotRange() {
   const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
   return {
+    regionCode: null as string | null,
     startAt: formatDateTimeInput(start.toISOString()),
     endAt: formatDateTimeInput(end.toISOString()),
   };
