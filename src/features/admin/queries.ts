@@ -10,6 +10,7 @@ import {
   purgeAdminComments,
   purgeAdminTradeHistory,
   updateAdminSeasonSchedule,
+  updateAdminSeasonStartingBalance,
   updateAdminUserPosition,
   updateAdminUserWallet,
 } from './api';
@@ -17,6 +18,7 @@ import type {
   AdminCommentCleanupRequest,
   AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
+  AdminSeasonStartingBalanceUpdateRequest,
   AdminTradeHistoryCleanupRequest,
   AdminWalletUpdateRequest,
 } from './types';
@@ -176,6 +178,26 @@ export function useUpdateAdminSeasonSchedule(accessToken: string | null) {
       seasonId: number;
       request: AdminSeasonScheduleUpdateRequest;
     }) => updateAdminSeasonSchedule(accessToken as string, seasonId, request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'user'] }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateAdminSeasonStartingBalance(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      seasonId,
+      request,
+    }: {
+      seasonId: number;
+      request: AdminSeasonStartingBalanceUpdateRequest;
+    }) => updateAdminSeasonStartingBalance(accessToken as string, seasonId, request),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),

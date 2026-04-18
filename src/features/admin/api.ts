@@ -5,6 +5,7 @@ import type {
   AdminDashboard,
   AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
+  AdminSeasonStartingBalanceUpdateRequest,
   AdminSeasonSummary,
   AdminTrendSnapshotHistory,
   AdminTradeHistoryCleanupRequest,
@@ -79,6 +80,21 @@ export async function updateAdminSeasonSchedule(
   request: AdminSeasonScheduleUpdateRequest,
 ) {
   return fetchApi<AdminSeasonSummary>(`/api/admin/seasons/${seasonId}`, {
+    method: 'PATCH',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function updateAdminSeasonStartingBalance(
+  accessToken: string,
+  seasonId: number,
+  request: AdminSeasonStartingBalanceUpdateRequest,
+) {
+  return fetchApi<AdminSeasonSummary>(`/api/admin/seasons/${seasonId}/starting-balance`, {
     method: 'PATCH',
     headers: {
       ...createAuthorizationHeader(accessToken),

@@ -11,6 +11,7 @@ export interface AdminSeasonSummary {
   name: string;
   status: string;
   regionCode: string;
+  startingBalancePoints: number;
   startAt: string;
   endAt: string;
   createdAt: string;
@@ -103,6 +104,10 @@ export interface AdminTrendSnapshotHistory {
 export interface AdminSeasonScheduleUpdateRequest {
   startAt: string;
   endAt: string;
+}
+
+export interface AdminSeasonStartingBalanceUpdateRequest {
+  startingBalancePoints: number;
 }
 
 export interface AdminCommentCleanupRequest {

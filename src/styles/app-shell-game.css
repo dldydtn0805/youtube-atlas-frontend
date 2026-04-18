@@ -857,15 +857,19 @@
 
 .app-shell__game-tier-yield {
   align-items: center;
-  color: rgba(255, 253, 248, 0.82);
+  background: rgba(255, 253, 248, 0.1);
+  border: 1px solid rgba(255, 245, 214, 0.2);
+  border-radius: 6px;
+  color: rgba(255, 253, 248, 0.88);
   display: inline-flex;
-  font-size: 0.56rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  gap: 5px;
-  letter-spacing: 0.04em;
+  gap: 6px;
+  letter-spacing: 0.02em;
   line-height: 1.2;
   max-width: 100%;
   min-width: 0;
+  padding: 3px 6px;
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.46),
     0 0 12px rgba(var(--game-tier-accent-rgb), 0.34);
@@ -874,6 +878,8 @@
 
 .app-shell__game-tier-yield-value {
   color: rgba(255, 240, 210, 0.96);
+  font-size: 0.78rem;
+  font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -13,6 +13,7 @@ import {
   usePurgeAdminTradeHistory,
   useUpdateAdminUserPosition,
   useUpdateAdminSeasonSchedule,
+  useUpdateAdminSeasonStartingBalance,
   useUpdateAdminUserWallet,
 } from '../../features/admin/queries';
 import type {
@@ -122,9 +123,17 @@ function createDefaultSnapshotRange() {
   };
 }
 
+function createDefaultSubmittedSnapshotRange() {
+  return {
+    regionCode: null as string | null,
+    startAt: null,
+    endAt: null,
+  };
+}
+
 function formatRegionLabel(regionCode: string | null | undefined) {
   if (!regionCode) {
-    return '전체 국가';
+    return '국가 미선택';
   }
 
   const country = countryCodes.find((item) => item.code === regionCode);
@@ -665,8 +674,12 @@ export default function AdminPage() {
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null);
-  const [seasonDrafts, setSeasonDrafts] = useState<Record<number, { startAt: string; endAt: string }>>({});
-  const [seasonActionState, setSeasonActionState] = useState<{ seasonId: number; type: 'save' | 'close' } | null>(null);
+  const [seasonDrafts, setSeasonDrafts] = useState<Record<number, {
+    startAt: string;
+    endAt: string;
+    startingBalancePoints: string;
+  }>>({});
+  const [seasonActionState, setSeasonActionState] = useState<{ seasonId: number; type: 'save' | 'close' | 'balance' } | null>(null);
   const [walletDraft, setWalletDraft] = useState({
     balancePoints: '',
     reservedPoints: '',
@@ -685,13 +698,7 @@ export default function AdminPage() {
     startAt: string | null;
     endAt: string | null;
     regionCode: string | null;
-  }>(() => {
-    const initial = createDefaultSnapshotRange();
-    return {
-      ...initial,
-      regionCode: null,
-    };
-  });
+  }>(createDefaultSubmittedSnapshotRange);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
@@ -706,6 +713,7 @@ export default function AdminPage() {
   const detailQuery = useAdminUserDetail(accessToken, selectedUserId, status === 'authenticated');
   const positionsQuery = useAdminUserPositions(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
   const updateSeasonMutation = useUpdateAdminSeasonSchedule(accessToken);
+  const updateSeasonStartingBalanceMutation = useUpdateAdminSeasonStartingBalance(accessToken);
   const closeSeasonMutation = useCloseAdminSeason(accessToken);
   const updateWalletMutation = useUpdateAdminUserWallet(accessToken);
   const updatePositionMutation = useUpdateAdminUserPosition(accessToken);
@@ -742,6 +750,7 @@ export default function AdminPage() {
           {
             startAt: current[season.id]?.startAt ?? formatDateTimeInput(season.startAt),
             endAt: current[season.id]?.endAt ?? formatDateTimeInput(season.endAt),
+            startingBalancePoints: current[season.id]?.startingBalancePoints ?? String(season.startingBalancePoints),
           },
         ]),
       ),
@@ -864,12 +873,17 @@ export default function AdminPage() {
     }));
   };
 
-  const handleSeasonDraftChange = (seasonId: number, field: 'startAt' | 'endAt', value: string) => {
+  const handleSeasonDraftChange = (
+    seasonId: number,
+    field: 'startAt' | 'endAt' | 'startingBalancePoints',
+    value: string,
+  ) => {
     setSeasonDrafts((current) => ({
       ...current,
       [seasonId]: {
         startAt: current[seasonId]?.startAt ?? '',
         endAt: current[seasonId]?.endAt ?? '',
+        startingBalancePoints: current[seasonId]?.startingBalancePoints ?? '',
         [field]: value,
       },
     }));
@@ -947,6 +961,34 @@ export default function AdminPage() {
         setSeasonActionState(null);
       },
     });
+  };
+
+  const handleSeasonStartingBalanceSave = (season: AdminSeasonSummary) => {
+    const draft = seasonDrafts[season.id];
+
+    try {
+      const request = {
+        startingBalancePoints: parsePointInput(draft?.startingBalancePoints ?? '', '시작 자금'),
+      };
+
+      setActionMessage(null);
+      setSeasonActionState({ seasonId: season.id, type: 'balance' });
+      updateSeasonStartingBalanceMutation.mutate(
+        { seasonId: season.id, request },
+        {
+          onSuccess: () => {
+            setActionMessage(`${season.regionCode} 시즌 시작 자금이 저장되었습니다. 이미 생성된 유저 지갑은 변경하지 않습니다.`);
+            setSeasonActionState(null);
+          },
+          onError: (error) => {
+            setActionMessage(error instanceof Error ? error.message : '시작 자금 저장에 실패했습니다.');
+            setSeasonActionState(null);
+          },
+        },
+      );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '시작 자금을 확인해주세요.');
+    }
   };
 
   const handleWalletSave = () => {
@@ -1099,6 +1141,12 @@ export default function AdminPage() {
 
   const handleTrendSnapshotSearch = () => {
     try {
+      const regionCode = trendSnapshotRangeDraft.regionCode?.trim().toUpperCase() ?? '';
+
+      if (!regionCode) {
+        throw new Error('국가를 선택하세요.');
+      }
+
       const startAt = parseDateTimeInput(trendSnapshotRangeDraft.startAt, '스냅샷 조회 시작');
       const endAt = parseDateTimeInput(trendSnapshotRangeDraft.endAt, '스냅샷 조회 종료');
 
@@ -1110,7 +1158,7 @@ export default function AdminPage() {
       setSubmittedTrendSnapshotRange({
         startAt,
         endAt,
-        regionCode: trendSnapshotRangeDraft.regionCode?.trim() ? trendSnapshotRangeDraft.regionCode : null,
+        regionCode,
       });
     } catch (error) {
       setActionMessage(error instanceof Error ? error.message : '스냅샷 조회 기간을 확인해주세요.');
@@ -1236,6 +1284,7 @@ export default function AdminPage() {
                       </div>
                       <div className="admin-page__detail-list">
                         <p><span>이름</span><strong>{season.name}</strong></p>
+                        <p><span>시작 자금</span><strong>{formatNumber(season.startingBalancePoints)}</strong></p>
                         <p><span>시작</span><strong>{formatDateTime(season.startAt)}</strong></p>
                         <p><span>종료</span><strong>{formatDateTime(season.endAt)}</strong></p>
                       </div>
@@ -1285,7 +1334,7 @@ export default function AdminPage() {
                   onChange={(event) => handleTrendSnapshotRegionChange(event.target.value)}
                   value={trendSnapshotRangeDraft.regionCode ?? ''}
                 >
-                  <option value="">전체 국가</option>
+                  <option value="">국가 선택</option>
                   {countryCodes.map((country) => (
                     <option key={country.code} value={country.code}>
                       {country.name} ({country.code})
@@ -1408,8 +1457,13 @@ export default function AdminPage() {
                   const draft = seasonDrafts[season.id] ?? {
                     startAt: formatDateTimeInput(season.startAt),
                     endAt: formatDateTimeInput(season.endAt),
+                    startingBalancePoints: String(season.startingBalancePoints),
                   };
                   const isSavingSeason = seasonActionState?.type === 'save' && seasonActionState.seasonId === season.id && updateSeasonMutation.isPending;
+                  const isSavingStartingBalance =
+                    seasonActionState?.type === 'balance' &&
+                    seasonActionState.seasonId === season.id &&
+                    updateSeasonStartingBalanceMutation.isPending;
                   const isClosingSeason = seasonActionState?.type === 'close' && seasonActionState.seasonId === season.id && closeSeasonMutation.isPending;
 
                   return (
@@ -1423,8 +1477,18 @@ export default function AdminPage() {
                       </div>
                       <div className="admin-page__detail-list admin-page__detail-list--compact">
                         <p><span>생성일</span><strong>{formatDateTime(season.createdAt)}</strong></p>
+                        <p><span>현재 시작 자금</span><strong>{formatNumber(season.startingBalancePoints)}</strong></p>
                       </div>
                       <div className="admin-page__form-grid">
+                        <label className="admin-page__field">
+                          <span>게임 시작 자금</span>
+                          <input
+                            inputMode="numeric"
+                            onChange={(event) => handleSeasonDraftChange(season.id, 'startingBalancePoints', event.target.value)}
+                            type="text"
+                            value={draft.startingBalancePoints}
+                          />
+                        </label>
                         <label className="admin-page__field">
                           <span>시작 시각</span>
                           <input
@@ -1442,10 +1506,21 @@ export default function AdminPage() {
                           />
                         </label>
                       </div>
+                      <p className="admin-page__muted">
+                        시작 자금은 이 시즌에서 새로 생성되는 지갑과 다음 시즌 생성 기준에 적용됩니다. 이미 참여 중인 유저 지갑은 유저 관리에서 별도로 조정하세요.
+                      </p>
                       <div className="admin-page__action-row">
                         <button
                           className="admin-page__button"
-                          disabled={isSavingSeason || isClosingSeason}
+                          disabled={isSavingSeason || isSavingStartingBalance || isClosingSeason}
+                          onClick={() => handleSeasonStartingBalanceSave(season)}
+                          type="button"
+                        >
+                          {isSavingStartingBalance ? '저장 중...' : '시작 자금 저장'}
+                        </button>
+                        <button
+                          className="admin-page__button"
+                          disabled={isSavingSeason || isSavingStartingBalance || isClosingSeason}
                           onClick={() => handleSeasonSave(season)}
                           type="button"
                         >
@@ -1453,7 +1528,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           className="admin-page__button admin-page__button--danger"
-                          disabled={isSavingSeason || isClosingSeason}
+                          disabled={isSavingSeason || isSavingStartingBalance || isClosingSeason}
                           onClick={() => handleSeasonClose(season)}
                           type="button"
                         >
