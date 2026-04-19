@@ -7,10 +7,10 @@ import {
   toCommentSubmissionError,
 } from './spam';
 
-const COMMENTS_TOPIC_PREFIX = '/topic/videos';
+const COMMENTS_TOPIC = '/topic/comments';
 
-export async function fetchComments(videoId: string): Promise<ChatMessage[]> {
-  return fetchApi<ChatMessage[]>(`/api/videos/${encodeURIComponent(videoId)}/comments`);
+export async function fetchComments(): Promise<ChatMessage[]> {
+  return fetchApi<ChatMessage[]>('/api/comments');
 }
 
 export async function createComment(input: SendMessageInput): Promise<ChatMessage> {
@@ -30,7 +30,7 @@ export async function createComment(input: SendMessageInput): Promise<ChatMessag
   }
 
   try {
-    return await fetchApi<ChatMessage>(`/api/videos/${encodeURIComponent(input.videoId)}/comments`, {
+    return await fetchApi<ChatMessage>('/api/comments', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -44,4 +44,4 @@ export async function createComment(input: SendMessageInput): Promise<ChatMessag
   }
 }
 
-export { COMMENTS_TOPIC_PREFIX };
+export { COMMENTS_TOPIC };

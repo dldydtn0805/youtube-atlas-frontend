@@ -235,7 +235,7 @@ function RecentCommentsTable({ items }: { items: AdminCommentSummary[] }) {
           <tr>
             <th>작성자</th>
             <th>댓글</th>
-            <th>비디오</th>
+            <th>채팅방</th>
             <th>작성일</th>
           </tr>
         </thead>
@@ -244,7 +244,7 @@ function RecentCommentsTable({ items }: { items: AdminCommentSummary[] }) {
             <tr key={item.id}>
               <td>{item.author}</td>
               <td className="admin-page__content-cell">{item.content}</td>
-              <td>{item.videoId}</td>
+              <td>{item.videoId === 'global' ? '전체' : item.videoId}</td>
               <td>{formatDateTime(item.createdAt)}</td>
             </tr>
           ))}
@@ -1384,7 +1384,7 @@ export default function AdminPage() {
             <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
               <div>
                 <h2 className="admin-page__section-title">댓글 정리</h2>
-                <p className="admin-page__section-caption">기준 시각보다 오래된 채팅 로그를 한 번에 삭제합니다.</p>
+                <p className="admin-page__section-caption">기준 시각보다 오래된 전체 채팅 로그를 한 번에 삭제합니다.</p>
               </div>
             </div>
             <div className="admin-page__form-grid">
@@ -1398,7 +1398,7 @@ export default function AdminPage() {
               </label>
             </div>
             <p className="admin-page__muted">
-              입력한 시각보다 이전에 생성된 댓글만 삭제됩니다. 미래 시각은 허용되지 않으며, 삭제 후에는 복구할 수 없습니다.
+              입력한 시각보다 이전에 생성된 전체 채팅 댓글만 삭제됩니다. 미래 시각은 허용되지 않으며, 삭제 후에는 복구할 수 없습니다.
             </p>
             <div className="admin-page__action-row">
               <button
@@ -1622,7 +1622,7 @@ export default function AdminPage() {
 
           <section className="admin-page__panel">
             <div className="admin-page__section-header">
-              <h2 className="admin-page__section-title">최근 댓글</h2>
+              <h2 className="admin-page__section-title">최근 전체 채팅</h2>
               <span className="admin-page__section-caption">최근 8건</span>
             </div>
             <RecentCommentsTable items={dashboardQuery.data.recentComments} />

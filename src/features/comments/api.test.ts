@@ -29,7 +29,7 @@ describe('createComment', () => {
         content: 'hello world',
         created_at: '2026-03-22T00:00:00.000Z',
         id: 1,
-        video_id: 'video-1',
+        video_id: 'global',
       }),
     );
 
@@ -43,7 +43,7 @@ describe('createComment', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.example.com/api/videos/video-1/comments',
+      'https://api.example.com/api/comments',
       expect.objectContaining({
         method: 'POST',
       }),

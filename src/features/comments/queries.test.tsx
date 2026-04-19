@@ -61,7 +61,7 @@ describe('comments queries', () => {
       content: 'hello world',
       created_at: '2026-04-06T10:00:00.000Z',
       id: 101,
-      video_id: 'video-1',
+      video_id: 'global',
     };
     const broadcastComment: ChatMessage = {
       author: 'Tester',
@@ -69,7 +69,7 @@ describe('comments queries', () => {
       content: 'hello world',
       created_at: '2026-04-06T10:00:01.200Z',
       id: 202,
-      video_id: 'video-1',
+      video_id: 'global',
     };
 
     expect(mergeComment([existingComment], broadcastComment)).toEqual([
@@ -107,5 +107,31 @@ describe('comments queries', () => {
     client?.onConnect?.();
 
     expect(client?.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('subscribes to the global comments topic', async () => {
+    const { useComments } = await import('./queries');
+
+    function HookHarness() {
+      useComments(undefined);
+      return null;
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(<HookHarness />, {
+      wrapper: createWrapper(queryClient),
+    });
+    const client = clientInstances.at(-1);
+
+    client?.onConnect?.();
+
+    expect(client?.subscribe).toHaveBeenCalledWith('/topic/comments', expect.any(Function));
   });
 });

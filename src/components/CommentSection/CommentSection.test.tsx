@@ -177,7 +177,7 @@ describe('CommentSection', () => {
     expect(screen.getByText('같은 메시지는 30초 후에 다시 보낼 수 있어요.')).toBeInTheDocument();
   });
 
-  it('resets the cooldown UI when switching to a different room', async () => {
+  it('keeps the cooldown UI when switching videos because chat is global', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       id: 1,
     });
@@ -202,10 +202,20 @@ describe('CommentSection', () => {
 
     rerender(<CommentSection videoId="video-2" videoTitle="Other video" />);
 
-    expect(screen.getByRole('button', { name: '보내기' })).toBeEnabled();
-    expect(
-      screen.queryByText('채팅 흐름을 위해 5초 후에 다시 보낼 수 있어요.'),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '5초 대기' })).toBeDisabled();
+    expect(screen.getByText('채팅 흐름을 위해 5초 후에 다시 보낼 수 있어요.')).toBeInTheDocument();
+  });
+
+  it('renders the global chat even before a video is selected', () => {
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    render(<CommentSection />);
+
+    expect(screen.getByRole('heading', { name: '전체 채팅방' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('메시지를 입력하세요.')).toBeInTheDocument();
   });
 
   it('marks the document while the mobile composer is focused and clears it on blur', () => {

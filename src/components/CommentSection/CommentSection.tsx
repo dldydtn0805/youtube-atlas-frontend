@@ -23,6 +23,7 @@ interface CommentSectionProps {
 
 const CHAT_PARTICIPANT_STORAGE_KEY = 'youtube-atlas-chat-participant-id';
 const CHAT_COMPOSER_FOCUSED_ATTRIBUTE = 'data-chat-composer-focus';
+const GLOBAL_CHAT_ROOM_ID = 'global';
 const MOBILE_COMMENT_BREAKPOINT = 768;
 
 function formatMessageDate(value: string) {
@@ -61,7 +62,7 @@ function formatCooldownFeedback(seconds: number) {
   return `채팅 흐름을 위해 ${seconds}초 후에 다시 보낼 수 있어요.`;
 }
 
-function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSectionProps) {
+function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
   const { logout, status, user } = useAuth();
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
@@ -87,8 +88,8 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
   useEffect(() => {
     setContent('');
     setSubmissionError(null);
-    setCooldownEndsAt(getCurrentCooldownDeadline(videoId, cooldownDeadlineByVideoRef.current));
-  }, [videoId]);
+    setCooldownEndsAt(getCurrentCooldownDeadline(GLOBAL_CHAT_ROOM_ID, cooldownDeadlineByVideoRef.current));
+  }, []);
 
   useEffect(() => {
     if (!cooldownEndsAt) {
@@ -96,13 +97,13 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
     }
 
     const intervalId = window.setInterval(() => {
-      setCooldownEndsAt(getCurrentCooldownDeadline(videoId, cooldownDeadlineByVideoRef.current));
+      setCooldownEndsAt(getCurrentCooldownDeadline(GLOBAL_CHAT_ROOM_ID, cooldownDeadlineByVideoRef.current));
     }, 250);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [cooldownEndsAt, videoId]);
+  }, [cooldownEndsAt]);
 
   useEffect(() => {
     const commentList = commentListRef.current;
@@ -154,13 +155,9 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
   }
 
   function beginCooldown(seconds = COMMENT_COOLDOWN_SECONDS) {
-    if (!videoId) {
-      return;
-    }
-
     const nextCooldownEndsAt = Date.now() + seconds * 1000;
 
-    cooldownDeadlineByVideoRef.current[videoId] = nextCooldownEndsAt;
+    cooldownDeadlineByVideoRef.current[GLOBAL_CHAT_ROOM_ID] = nextCooldownEndsAt;
     setCooldownEndsAt(nextCooldownEndsAt);
   }
 
@@ -176,17 +173,13 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
   }
 
   async function submitMessage() {
-    if (!videoId) {
-      return;
-    }
-
     if (isCooldownActive) {
       return;
     }
 
     const now = Date.now();
     const normalizedContent = normalizeMessageContent(content);
-    const recentMessages = getRecentMessages(videoId, now);
+    const recentMessages = getRecentMessages(GLOBAL_CHAT_ROOM_ID, now);
     const localViolation = getLocalSpamViolation(recentMessages, normalizedContent, now);
 
     if (localViolation) {
@@ -211,10 +204,10 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
         author: isAuthenticated ? user?.displayName ?? '' : author,
         content,
         clientId: participantId,
-        videoId,
+        videoId: GLOBAL_CHAT_ROOM_ID,
       });
 
-      recentMessagesByVideoRef.current[videoId] = [
+      recentMessagesByVideoRef.current[GLOBAL_CHAT_ROOM_ID] = [
         ...recentMessages,
         { normalizedContent, sentAt: now },
       ];
@@ -296,10 +289,6 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
         document.documentElement.removeAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE);
       }
     }, 0);
-  }
-
-  if (!videoId) {
-    return <p className="comment-section__status">채팅에 참여하려면 영상을 먼저 선택해 주세요.</p>;
   }
 
   if (!isApiConfigured) {
@@ -415,7 +404,7 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
       {hideHeader ? null : (
         <header className="comment-section__header">
           <div className="comment-section__room">
-            <h3 className="comment-section__title">{videoTitle ?? '현재 영상 채팅방'}</h3>
+            <h3 className="comment-section__title">전체 채팅방</h3>
           </div>
         </header>
       )}

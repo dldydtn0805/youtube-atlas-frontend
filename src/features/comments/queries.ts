@@ -2,14 +2,12 @@ import { useEffect } from 'react';
 import { Client, type StompSubscription } from '@stomp/stompjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getWebSocketUrl } from '../../lib/api';
-import { COMMENTS_TOPIC_PREFIX, createComment, fetchComments } from './api';
+import { COMMENTS_TOPIC, createComment, fetchComments } from './api';
 import type { ChatMessage, SendMessageInput } from './types';
 
 const SAME_COMMENT_TIME_WINDOW_MS = 10_000;
 
-function commentsQueryKey(videoId?: string) {
-  return ['comments', videoId] as const;
-}
+const commentsQueryKey = ['comments', 'global'] as const;
 
 function isSameCommentEvent(current: ChatMessage, next: ChatMessage) {
   if (current.id === next.id) {
@@ -50,16 +48,16 @@ export function mergeComment(existing: ChatMessage[] = [], nextComment: ChatMess
   );
 }
 
-export function useComments(videoId?: string, enabled = true) {
+export function useComments(_videoId?: string, enabled = true) {
   const queryClient = useQueryClient();
   const query = useQuery({
-    enabled: Boolean(videoId) && enabled,
-    queryKey: commentsQueryKey(videoId),
-    queryFn: () => fetchComments(videoId as string),
+    enabled,
+    queryKey: commentsQueryKey,
+    queryFn: fetchComments,
   });
 
   useEffect(() => {
-    if (!videoId || !enabled) {
+    if (!enabled) {
       return;
     }
 
@@ -77,11 +75,11 @@ export function useComments(videoId?: string, enabled = true) {
         return;
       }
 
-      subscription = client.subscribe(`${COMMENTS_TOPIC_PREFIX}/${videoId}/comments`, (message) => {
+      subscription = client.subscribe(COMMENTS_TOPIC, (message) => {
         try {
           const nextComment = JSON.parse(message.body) as ChatMessage;
 
-          queryClient.setQueryData<ChatMessage[]>(commentsQueryKey(videoId), (current = []) =>
+          queryClient.setQueryData<ChatMessage[]>(commentsQueryKey, (current = []) =>
             mergeComment(current, nextComment),
           );
         } catch {
@@ -97,7 +95,7 @@ export function useComments(videoId?: string, enabled = true) {
       subscription?.unsubscribe();
       void client.deactivate();
     };
-  }, [enabled, queryClient, videoId]);
+  }, [enabled, queryClient]);
 
   return query;
 }
@@ -107,8 +105,8 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: (input: SendMessageInput) => createComment(input),
-    onSuccess: (comment, variables) => {
-      queryClient.setQueryData<ChatMessage[]>(commentsQueryKey(variables.videoId), (current = []) =>
+    onSuccess: (comment) => {
+      queryClient.setQueryData<ChatMessage[]>(commentsQueryKey, (current = []) =>
         mergeComment(current, comment),
       );
     },
