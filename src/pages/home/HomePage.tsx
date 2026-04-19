@@ -485,7 +485,7 @@ function HomePage() {
       if (fullscreenElement instanceof HTMLElement) {
         if (typeof fullscreenElement.scrollTo === 'function') {
           fullscreenElement.scrollTo({
-            behavior: 'smooth',
+            behavior: 'auto',
             top: 0,
           });
         } else {
@@ -494,7 +494,7 @@ function HomePage() {
       }
 
       window.scrollTo({
-        behavior: 'smooth',
+        behavior: 'auto',
         top: 0,
       });
     }, 0);
