@@ -50,8 +50,10 @@ function createWrapper(queryClient: QueryClient) {
 }
 
 describe('comments queries', () => {
-  afterEach(() => {
+  afterEach(async () => {
     clientInstances.length = 0;
+    const { resetCommentsRealtimeForTests } = await import('./queries');
+    resetCommentsRealtimeForTests();
   });
 
   it('merges duplicate comment events when the realtime payload uses a different id', async () => {
@@ -135,5 +137,34 @@ describe('comments queries', () => {
 
     expect(client?.subscribe).toHaveBeenCalledWith('/topic/comments', expect.any(Function));
     expect(client?.subscribe).toHaveBeenCalledWith('/topic/comments/presence', expect.any(Function));
+  });
+
+  it('reuses a single realtime client across multiple mounted comment hooks', async () => {
+    const { useComments } = await import('./queries');
+
+    function HookHarness() {
+      useComments(undefined);
+      return null;
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <>
+        <HookHarness />
+        <HookHarness />
+      </>,
+      {
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(clientInstances).toHaveLength(1);
   });
 });

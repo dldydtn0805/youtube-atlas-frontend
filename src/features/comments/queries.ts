@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Client, type StompSubscription } from '@stomp/stompjs';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getWebSocketUrl } from '../../lib/api';
 import { COMMENTS_PRESENCE_TOPIC, COMMENTS_TOPIC, createComment, fetchCommentPresence, fetchComments } from './api';
 import type { ChatMessage, ChatPresence, SendMessageInput } from './types';
@@ -9,6 +9,12 @@ const SAME_COMMENT_TIME_WINDOW_MS = 10_000;
 
 const commentsQueryKey = ['comments', 'global'] as const;
 const commentsPresenceQueryKey = ['comments', 'presence'] as const;
+
+let sharedRealtimeClient: Client | null = null;
+let sharedCommentsSubscription: StompSubscription | undefined;
+let sharedPresenceSubscription: StompSubscription | undefined;
+let sharedRealtimeConsumerCount = 0;
+const sharedQueryClientRefCounts = new Map<QueryClient, number>();
 
 function isSameCommentEvent(current: ChatMessage, next: ChatMessage) {
   if (current.id === next.id) {
@@ -49,6 +55,96 @@ export function mergeComment(existing: ChatMessage[] = [], nextComment: ChatMess
   );
 }
 
+function pushCommentUpdate(nextComment: ChatMessage) {
+  sharedQueryClientRefCounts.forEach((_, queryClient) => {
+    queryClient.setQueryData<ChatMessage[]>(commentsQueryKey, (current = []) =>
+      mergeComment(current, nextComment),
+    );
+  });
+}
+
+function pushPresenceUpdate(nextPresence: ChatPresence) {
+  sharedQueryClientRefCounts.forEach((_, queryClient) => {
+    queryClient.setQueryData<ChatPresence>(commentsPresenceQueryKey, nextPresence);
+  });
+}
+
+function registerQueryClient(queryClient: QueryClient) {
+  sharedQueryClientRefCounts.set(queryClient, (sharedQueryClientRefCounts.get(queryClient) ?? 0) + 1);
+}
+
+function unregisterQueryClient(queryClient: QueryClient) {
+  const nextCount = (sharedQueryClientRefCounts.get(queryClient) ?? 0) - 1;
+
+  if (nextCount <= 0) {
+    sharedQueryClientRefCounts.delete(queryClient);
+    return;
+  }
+
+  sharedQueryClientRefCounts.set(queryClient, nextCount);
+}
+
+function ensureSharedRealtimeClient() {
+  if (sharedRealtimeClient) {
+    return sharedRealtimeClient;
+  }
+
+  const client = new Client({
+    brokerURL: getWebSocketUrl(),
+    debug: () => {},
+    reconnectDelay: 5_000,
+  });
+
+  client.onConnect = () => {
+    if (sharedRealtimeClient !== client) {
+      void client.deactivate();
+      return;
+    }
+
+    sharedCommentsSubscription = client.subscribe(COMMENTS_TOPIC, (message) => {
+      try {
+        const nextComment = JSON.parse(message.body) as ChatMessage;
+
+        pushCommentUpdate(nextComment);
+      } catch {
+        // Ignore malformed messages so the existing list stays usable.
+      }
+    });
+
+    sharedPresenceSubscription = client.subscribe(COMMENTS_PRESENCE_TOPIC, (message) => {
+      try {
+        const nextPresence = JSON.parse(message.body) as ChatPresence;
+
+        pushPresenceUpdate(nextPresence);
+      } catch {
+        // Ignore malformed presence updates so the existing count stays usable.
+      }
+    });
+  };
+
+  sharedRealtimeClient = client;
+  client.activate();
+
+  return client;
+}
+
+function releaseSharedRealtimeClient() {
+  if (sharedRealtimeConsumerCount > 0) {
+    sharedRealtimeConsumerCount -= 1;
+  }
+
+  if (sharedRealtimeConsumerCount > 0 || !sharedRealtimeClient) {
+    return;
+  }
+
+  sharedCommentsSubscription?.unsubscribe();
+  sharedPresenceSubscription?.unsubscribe();
+  sharedCommentsSubscription = undefined;
+  sharedPresenceSubscription = undefined;
+  void sharedRealtimeClient.deactivate();
+  sharedRealtimeClient = null;
+}
+
 export function useComments(_videoId?: string, enabled = true) {
   const queryClient = useQueryClient();
   const commentsQuery = useQuery({
@@ -67,51 +163,13 @@ export function useComments(_videoId?: string, enabled = true) {
       return;
     }
 
-    let isDisposed = false;
-    let commentsSubscription: StompSubscription | undefined;
-    let presenceSubscription: StompSubscription | undefined;
-    const client = new Client({
-      brokerURL: getWebSocketUrl(),
-      debug: () => {},
-      reconnectDelay: 5_000,
-    });
-
-    client.onConnect = () => {
-      if (isDisposed) {
-        void client.deactivate();
-        return;
-      }
-
-      commentsSubscription = client.subscribe(COMMENTS_TOPIC, (message) => {
-        try {
-          const nextComment = JSON.parse(message.body) as ChatMessage;
-
-          queryClient.setQueryData<ChatMessage[]>(commentsQueryKey, (current = []) =>
-            mergeComment(current, nextComment),
-          );
-        } catch {
-          // Ignore malformed messages so the existing list stays usable.
-        }
-      });
-
-      presenceSubscription = client.subscribe(COMMENTS_PRESENCE_TOPIC, (message) => {
-        try {
-          const nextPresence = JSON.parse(message.body) as ChatPresence;
-
-          queryClient.setQueryData<ChatPresence>(commentsPresenceQueryKey, nextPresence);
-        } catch {
-          // Ignore malformed presence updates so the existing count stays usable.
-        }
-      });
-    };
-
-    client.activate();
+    registerQueryClient(queryClient);
+    sharedRealtimeConsumerCount += 1;
+    ensureSharedRealtimeClient();
 
     return () => {
-      isDisposed = true;
-      commentsSubscription?.unsubscribe();
-      presenceSubscription?.unsubscribe();
-      void client.deactivate();
+      unregisterQueryClient(queryClient);
+      releaseSharedRealtimeClient();
     };
   }, [enabled, queryClient]);
 
@@ -119,6 +177,17 @@ export function useComments(_videoId?: string, enabled = true) {
     ...commentsQuery,
     presenceQuery,
   };
+}
+
+export function resetCommentsRealtimeForTests() {
+  sharedCommentsSubscription?.unsubscribe();
+  sharedPresenceSubscription?.unsubscribe();
+  sharedCommentsSubscription = undefined;
+  sharedPresenceSubscription = undefined;
+  void sharedRealtimeClient?.deactivate();
+  sharedRealtimeClient = null;
+  sharedRealtimeConsumerCount = 0;
+  sharedQueryClientRefCounts.clear();
 }
 
 export function useCreateComment() {
