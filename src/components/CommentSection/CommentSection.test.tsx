@@ -279,7 +279,7 @@ describe('CommentSection', () => {
     expect(document.documentElement.hasAttribute('data-chat-composer-focus')).toBe(false);
   });
 
-  it('shows a read-only notice instead of the composer on mobile', () => {
+  it('shows the composer on mobile', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
       writable: true,
@@ -302,7 +302,7 @@ describe('CommentSection', () => {
 
     render(<CommentSection videoId="video-1" videoTitle="Test video" />);
 
-    expect(screen.getByText('모바일에서는 채팅 읽기만 지원됩니다.')).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('메시지를 입력하세요.')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('메시지를 입력하세요.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '보내기' })).toBeInTheDocument();
   });
 });

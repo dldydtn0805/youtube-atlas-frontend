@@ -24,7 +24,6 @@ interface CommentSectionProps {
 const CHAT_PARTICIPANT_STORAGE_KEY = 'youtube-atlas-chat-participant-id';
 const CHAT_COMPOSER_FOCUSED_ATTRIBUTE = 'data-chat-composer-focus';
 const GLOBAL_CHAT_ROOM_ID = 'global';
-const MOBILE_COMMENT_BREAKPOINT = 768;
 
 function formatMessageDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -73,7 +72,6 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [submissionError, setSubmissionError] = useState<CommentSubmissionError | null>(null);
   const [participantId] = useState(getChatParticipantId);
-  const [isMobileLayout, setIsMobileLayout] = useState(false);
   const composerRef = useRef<HTMLFormElement | null>(null);
   const commentListRef = useRef<HTMLDivElement | null>(null);
   const cooldownDeadlineByVideoRef = useRef<Record<string, number>>({});
@@ -121,24 +119,6 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
       behavior: 'smooth',
     });
   }, [commentsQuery.data]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_COMMENT_BREAKPOINT}px)`);
-    const syncIsMobileLayout = () => {
-      setIsMobileLayout(mediaQuery.matches);
-    };
-
-    syncIsMobileLayout();
-    mediaQuery.addEventListener('change', syncIsMobileLayout);
-
-    return () => {
-      mediaQuery.removeEventListener('change', syncIsMobileLayout);
-    };
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -393,13 +373,6 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
     </form>
   );
 
-  const mobileComposerNotice = (
-    <div className="comment-composer-mobile-notice" role="note">
-      <p className="comment-composer-mobile-notice__title">모바일에서는 채팅 읽기만 지원됩니다.</p>
-      <p className="comment-composer-mobile-notice__copy">메시지 작성은 데스크탑에서 이용해 주세요.</p>
-    </div>
-  );
-
   return (
     <section
       className={`comment-section ${hideHeader ? 'comment-section--body-only' : ''}`}
@@ -448,7 +421,7 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
           );
         })}
       </div>
-      {isMobileLayout ? mobileComposerNotice : composerContent}
+      {composerContent}
     </section>
   );
 }
