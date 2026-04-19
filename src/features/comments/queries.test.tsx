@@ -1,6 +1,6 @@
 import { PropsWithChildren } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from './types';
 
@@ -42,11 +42,12 @@ vi.mock('../../lib/api', () => ({
 
 vi.mock('./api', async () => {
   const actual = await vi.importActual<typeof import('./api')>('./api');
+  const fetchCommentPresence = vi.fn().mockResolvedValue({ active_count: 0 });
 
   return {
     ...actual,
     fetchComments: vi.fn().mockResolvedValue([]),
-    fetchCommentPresence: vi.fn().mockResolvedValue({ active_count: 0 }),
+    fetchCommentPresence,
   };
 });
 
@@ -176,5 +177,40 @@ describe('comments queries', () => {
     );
 
     expect(clientInstances).toHaveLength(1);
+  });
+
+  it('refetches presence after the realtime connection is established', async () => {
+    const { useComments } = await import('./queries');
+    const { fetchCommentPresence } = await import('./api');
+
+    function HookHarness() {
+      useComments(undefined);
+      return null;
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(<HookHarness />, {
+      wrapper: createWrapper(queryClient),
+    });
+
+    let initialCallCount = 0;
+    await waitFor(() => {
+      initialCallCount = vi.mocked(fetchCommentPresence).mock.calls.length;
+      expect(initialCallCount).toBeGreaterThan(0);
+    });
+
+    const client = clientInstances.at(-1);
+    client?.onConnect?.();
+
+    await waitFor(() => {
+      expect(fetchCommentPresence).toHaveBeenCalledTimes(initialCallCount + 1);
+    });
   });
 });

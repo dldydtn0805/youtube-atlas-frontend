@@ -3,11 +3,13 @@ import { getWebSocketUrl } from '../../lib/api';
 import { CHAT_PARTICIPANT_HEADER, getChatParticipantId } from '../comments/participant';
 
 type TopicHandler = (messageBody: string) => void;
+type ConnectionHandler = () => void;
 
 let sharedClient: Client | null = null;
 let isConnected = false;
 const handlersByTopic = new Map<string, Set<TopicHandler>>();
 const subscriptionsByTopic = new Map<string, StompSubscription>();
+const connectionHandlers = new Set<ConnectionHandler>();
 
 function dispatchMessage(topic: string, message: IMessage) {
   const handlers = handlersByTopic.get(topic);
@@ -18,6 +20,12 @@ function dispatchMessage(topic: string, message: IMessage) {
 
   [...handlers].forEach((handler) => {
     handler(message.body);
+  });
+}
+
+function dispatchConnection() {
+  [...connectionHandlers].forEach((handler) => {
+    handler();
   });
 }
 
@@ -57,6 +65,7 @@ function ensureSharedClient() {
     handlersByTopic.forEach((_handlers, topic) => {
       subscribeTopic(topic);
     });
+    dispatchConnection();
   };
 
   client.onWebSocketClose = () => {
@@ -116,12 +125,27 @@ export function subscribeToRealtimeTopic(topic: string, handler: TopicHandler) {
   };
 }
 
+export function subscribeToRealtimeConnection(handler: ConnectionHandler) {
+  connectionHandlers.add(handler);
+  ensureSharedClient();
+
+  if (isConnected) {
+    handler();
+  }
+
+  return () => {
+    connectionHandlers.delete(handler);
+    deactivateSharedClient();
+  };
+}
+
 export function resetSharedRealtimeClientForTests() {
   subscriptionsByTopic.forEach((subscription) => {
     subscription.unsubscribe();
   });
   subscriptionsByTopic.clear();
   handlersByTopic.clear();
+  connectionHandlers.clear();
   isConnected = false;
   void sharedClient?.deactivate();
   sharedClient = null;

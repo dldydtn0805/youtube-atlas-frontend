@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { COMMENTS_PRESENCE_TOPIC, COMMENTS_TOPIC, createComment, fetchCommentPresence, fetchComments } from './api';
-import { subscribeToRealtimeTopic, resetSharedRealtimeClientForTests } from '../realtime/stompClient';
+import {
+  subscribeToRealtimeConnection,
+  subscribeToRealtimeTopic,
+  resetSharedRealtimeClientForTests,
+} from '../realtime/stompClient';
 import type { ChatMessage, ChatPresence, SendMessageInput } from './types';
 
 const SAME_COMMENT_TIME_WINDOW_MS = 10_000;
@@ -86,10 +90,18 @@ export function useComments(_videoId?: string, enabled = true) {
         // Ignore malformed presence updates so the existing count stays usable.
       }
     });
+    const unsubscribeConnection = subscribeToRealtimeConnection(() => {
+      void queryClient.refetchQueries({
+        queryKey: commentsPresenceQueryKey,
+        exact: true,
+        type: 'active',
+      });
+    });
 
     return () => {
       unsubscribeComments();
       unsubscribePresence();
+      unsubscribeConnection();
     };
   }, [enabled, queryClient]);
 
