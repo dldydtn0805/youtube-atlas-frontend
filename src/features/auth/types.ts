@@ -8,7 +8,10 @@ export interface AuthUser {
   createdAt: string;
   lastLoginAt: string;
   favoriteCount: number;
+  commentCount: number;
+  tradeCount: number;
   lastPlaybackProgress: PlaybackProgress | null;
+  recentPlaybackProgresses: PlaybackProgress[];
 }
 
 export interface AuthSession {

@@ -1,4 +1,5 @@
 import type { AuthSession } from './types';
+import type { PlaybackProgress } from '../playback/types';
 
 const AUTH_SESSION_STORAGE_KEY = 'youtube-atlas-auth-session';
 
@@ -23,6 +24,21 @@ function isStoredSession(value: unknown): value is AuthSession {
   );
 }
 
+function isPlaybackProgress(value: unknown): value is PlaybackProgress {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.videoId === 'string' &&
+    (typeof value.videoTitle === 'string' || value.videoTitle === null) &&
+    (typeof value.channelTitle === 'string' || value.channelTitle === null) &&
+    (typeof value.thumbnailUrl === 'string' || value.thumbnailUrl === null) &&
+    typeof value.positionSeconds === 'number' &&
+    typeof value.updatedAt === 'string'
+  );
+}
+
 export function readStoredAuthSession() {
   if (typeof window === 'undefined') {
     return null;
@@ -38,6 +54,15 @@ export function readStoredAuthSession() {
     const parsedValue = JSON.parse(rawValue) as unknown;
 
     if (isStoredSession(parsedValue)) {
+      const lastPlaybackProgress = isPlaybackProgress(parsedValue.user.lastPlaybackProgress)
+        ? parsedValue.user.lastPlaybackProgress
+        : null;
+      const recentPlaybackProgresses = Array.isArray(parsedValue.user.recentPlaybackProgresses)
+        ? parsedValue.user.recentPlaybackProgresses.filter(isPlaybackProgress)
+        : lastPlaybackProgress
+          ? [lastPlaybackProgress]
+          : [];
+
       return {
         ...parsedValue,
         user: {
@@ -50,6 +75,16 @@ export function readStoredAuthSession() {
             typeof parsedValue.user.favoriteCount === 'number'
               ? parsedValue.user.favoriteCount
               : 0,
+          commentCount:
+            typeof parsedValue.user.commentCount === 'number'
+              ? parsedValue.user.commentCount
+              : 0,
+          tradeCount:
+            typeof parsedValue.user.tradeCount === 'number'
+              ? parsedValue.user.tradeCount
+              : 0,
+          lastPlaybackProgress,
+          recentPlaybackProgresses,
         },
       };
     }

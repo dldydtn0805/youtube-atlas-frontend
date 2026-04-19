@@ -75,6 +75,22 @@ function formatProfileDateTime(value?: string | null) {
   return profileDateFormatter.format(parsed);
 }
 
+function formatAtlasDays(value?: string | null) {
+  if (!value) {
+    return '정보 없음';
+  }
+
+  const joinedAt = new Date(value);
+  if (Number.isNaN(joinedAt.getTime())) {
+    return '정보 없음';
+  }
+
+  const elapsedMilliseconds = Date.now() - joinedAt.getTime();
+  const elapsedDays = Math.max(0, Math.floor(elapsedMilliseconds / 86_400_000));
+
+  return `+ ${elapsedDays}일`;
+}
+
 function formatPlaybackPosition(seconds?: number | null) {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) {
     return '정보 없음';
@@ -119,6 +135,12 @@ function AppHeader({
   const profileCardRef = useRef<HTMLDivElement | null>(null);
   const profileButtonLabel = `${userIdentityLabel} 프로필 정보 열기`;
   const playbackProgress = user?.lastPlaybackProgress ?? null;
+  const recentPlaybackProgresses =
+    user?.recentPlaybackProgresses && user.recentPlaybackProgresses.length > 0
+      ? user.recentPlaybackProgresses.slice(0, 5)
+      : playbackProgress
+        ? [playbackProgress]
+        : [];
 
   const handleProfileButtonClick = async () => {
     if (!isProfileCardOpen) {
@@ -261,49 +283,66 @@ function AppHeader({
                   </div>
                   <div className="app-shell__profile-card-grid">
                     <p>
-                      <span>가입일</span>
-                      <strong>{formatProfileDateTime(user.createdAt)}</strong>
-                    </p>
-                    <p>
-                      <span>마지막 로그인</span>
-                      <strong>{formatProfileDateTime(user.lastLoginAt)}</strong>
+                      <span>Atlas에 함께한지</span>
+                      <strong>{formatAtlasDays(user.createdAt)}</strong>
                     </p>
                     <p>
                       <span>즐겨찾기</span>
                       <strong>{user.favoriteCount}명</strong>
                     </p>
+                    <p>
+                      <span>댓글</span>
+                      <strong>{user.commentCount}회</strong>
+                    </p>
+                    <p>
+                      <span>거래</span>
+                      <strong>{user.tradeCount}회</strong>
+                    </p>
                   </div>
                   <div className="app-shell__profile-card-section">
                     <span className="app-shell__profile-card-section-label">최근 재생</span>
-                    {playbackProgress ? (
-                      <div className="app-shell__profile-card-playback">
-                        {playbackProgress.thumbnailUrl ? (
-                          <img
-                            alt=""
-                            className="app-shell__profile-card-playback-thumb"
-                            src={playbackProgress.thumbnailUrl}
-                          />
-                        ) : null}
-                        <div className="app-shell__profile-card-playback-copy">
-                          <strong>{playbackProgress.videoTitle ?? playbackProgress.videoId}</strong>
-                          <span>{playbackProgress.channelTitle ?? '채널 정보 없음'}</span>
-                          <span>
-                            {formatPlaybackPosition(playbackProgress.positionSeconds)} ·{' '}
-                            {formatProfileDateTime(playbackProgress.updatedAt)}
-                          </span>
-                        </div>
-                        {typeof onOpenRecentPlayback === 'function' ? (
-                          <button
-                            className="app-shell__profile-card-action app-shell__profile-card-action--wide"
-                            onClick={() => {
-                              setIsProfileCardOpen(false);
-                              onOpenRecentPlayback(playbackProgress.videoId);
-                            }}
-                            type="button"
+                    {recentPlaybackProgresses.length > 0 ? (
+                      <div className="app-shell__profile-card-playback-list">
+                        {recentPlaybackProgresses.map((recentPlaybackProgress) => (
+                          <div
+                            className="app-shell__profile-card-playback"
+                            key={`${recentPlaybackProgress.videoId}-${recentPlaybackProgress.updatedAt}`}
                           >
-                            최근 본 영상으로 이동
-                          </button>
-                        ) : null}
+                            {recentPlaybackProgress.thumbnailUrl ? (
+                              typeof onOpenRecentPlayback === 'function' ? (
+                                <button
+                                  aria-label={`${recentPlaybackProgress.videoTitle ?? recentPlaybackProgress.videoId} 영상으로 이동`}
+                                  className="app-shell__profile-card-playback-thumb-button"
+                                  onClick={() => {
+                                    setIsProfileCardOpen(false);
+                                    onOpenRecentPlayback(recentPlaybackProgress.videoId);
+                                  }}
+                                  type="button"
+                                >
+                                  <img
+                                    alt=""
+                                    className="app-shell__profile-card-playback-thumb"
+                                    src={recentPlaybackProgress.thumbnailUrl}
+                                  />
+                                </button>
+                              ) : (
+                                <img
+                                  alt=""
+                                  className="app-shell__profile-card-playback-thumb"
+                                  src={recentPlaybackProgress.thumbnailUrl}
+                                />
+                              )
+                            ) : null}
+                            <div className="app-shell__profile-card-playback-copy">
+                              <strong>{recentPlaybackProgress.videoTitle ?? recentPlaybackProgress.videoId}</strong>
+                              <span>{recentPlaybackProgress.channelTitle ?? '채널 정보 없음'}</span>
+                              <span>
+                                {formatPlaybackPosition(recentPlaybackProgress.positionSeconds)} ·{' '}
+                                {formatProfileDateTime(recentPlaybackProgress.updatedAt)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <p className="app-shell__profile-card-empty">최근 재생 기록이 아직 없습니다.</p>

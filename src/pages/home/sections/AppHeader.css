@@ -4,6 +4,7 @@
   padding: 18px 16px 20px;
   position: relative;
   width: 100%;
+  z-index: calc(var(--layer-modal-backdrop, 1400) + 1);
 }
 
 .app-shell__header-top {
@@ -349,7 +350,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 10px);
-  z-index: 20;
+  z-index: 1;
 }
 
 .app-shell__profile-card-header {
@@ -390,23 +391,21 @@
 
 .app-shell__profile-card-grid {
   display: grid;
-  gap: 10px;
+  gap: 6px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.app-shell__profile-card-grid p,
-.app-shell__profile-card-playback,
-.app-shell__profile-card-empty {
-  background: var(--surface-interactive);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  margin: 0;
-  padding: 12px;
-}
-
 .app-shell__profile-card-grid p {
+  margin: 0;
   display: grid;
   gap: 4px;
+  padding: 2px 0;
+}
+
+.app-shell__profile-card-playback,
+.app-shell__profile-card-empty {
+  margin: 0;
+  padding: 0;
 }
 
 .app-shell__profile-card-grid span,
@@ -429,6 +428,11 @@
   gap: 8px;
 }
 
+.app-shell__profile-card-playback-list {
+  display: grid;
+  gap: 10px;
+}
+
 .app-shell__profile-card-playback {
   align-items: center;
   display: grid;
@@ -445,10 +449,33 @@
 
 .app-shell__profile-card-playback-thumb {
   aspect-ratio: 16 / 9;
-  border-radius: 12px;
+  border-radius: 10px;
+  display: block;
   height: auto;
   object-fit: cover;
   width: 100%;
+}
+
+.app-shell__profile-card-playback-thumb-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.app-shell__profile-card-playback-thumb-button:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.app-shell__profile-card-playback-thumb-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-primary, #14b8a6) 64%, white 36%);
+  outline-offset: 2px;
 }
 
 .app-shell__profile-card-playback-copy {
@@ -457,44 +484,15 @@
   min-width: 0;
 }
 
+.app-shell__profile-card-playback-copy:first-child {
+  grid-column: 1 / -1;
+}
+
 .app-shell__profile-card-playback-copy strong,
 .app-shell__profile-card-playback-copy span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.app-shell__profile-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.app-shell__profile-card-action {
-  background: var(--surface-interactive);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 800;
-  min-height: 34px;
-  padding: 0 12px;
-  transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    border-color 0.22s ease,
-    background 0.22s ease;
-}
-
-.app-shell__profile-card-action:hover {
-  box-shadow: var(--shadow-card);
-  transform: translateY(-1px);
-}
-
-.app-shell__profile-card-action--wide {
-  grid-column: 1 / -1;
-  width: 100%;
 }
 
 .app-shell__auth-avatar--fallback {
@@ -577,21 +575,16 @@
   }
 
   :root[data-mobile-layout='true'] .app-shell__profile-card {
-    min-width: min(280px, calc(100vw - 24px));
-    right: -6px;
+    min-width: min(340px, calc(100vw - 16px));
+    right: -2px;
   }
 
   :root[data-mobile-layout='true'] .app-shell__profile-card-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   :root[data-mobile-layout='true'] .app-shell__profile-card-playback {
     grid-template-columns: 72px minmax(0, 1fr);
-  }
-
-  :root[data-mobile-layout='true'] .app-shell__profile-card-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
   }
 
   :root[data-mobile-layout='true'] .app-shell__theme-toggle {
