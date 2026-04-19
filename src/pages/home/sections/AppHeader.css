@@ -340,7 +340,8 @@
 }
 
 .app-shell__profile-card {
-  background: color-mix(in srgb, var(--surface-panel, #fff) 94%, rgba(255, 255, 255, 0.82));
+  backdrop-filter: blur(22px);
+  background: var(--surface-modal);
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
@@ -352,6 +353,16 @@
   right: 0;
   top: calc(100% + 10px);
   z-index: 1;
+}
+
+:root[data-theme='dark'] .app-shell__profile-card {
+  background:
+    linear-gradient(180deg, rgba(12, 12, 12, 0.98), rgba(18, 18, 18, 0.96)),
+    rgba(10, 10, 10, 0.98);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 28px 64px rgba(0, 0, 0, 0.62);
 }
 
 .app-shell__profile-card-header {
@@ -398,9 +409,12 @@
 
 .app-shell__profile-card-grid p {
   margin: 0;
+  background: var(--surface-stat);
+  border: 1px solid var(--surface-stat-border);
+  border-radius: 12px;
   display: grid;
   gap: 4px;
-  padding: 2px 0;
+  padding: 10px;
 }
 
 .app-shell__profile-card-playback,
@@ -436,9 +450,18 @@
 
 .app-shell__profile-card-playback {
   align-items: center;
+  background: color-mix(in srgb, var(--surface-stat) 62%, transparent);
+  border: 1px solid transparent;
+  border-radius: 14px;
   display: grid;
   gap: 10px;
   grid-template-columns: 78px minmax(0, 1fr);
+  padding: 6px;
+}
+
+:root[data-theme='dark'] .app-shell__profile-card-playback {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .app-shell__profile-card-playback span,
@@ -450,6 +473,7 @@
 
 .app-shell__profile-card-playback-thumb {
   aspect-ratio: 16 / 9;
+  border: 1px solid var(--surface-thumbnail-border);
   border-radius: 10px;
   display: block;
   height: auto;
