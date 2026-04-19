@@ -97,6 +97,33 @@ describe('CommentSection', () => {
     expect(textarea).toHaveValue('');
   });
 
+  it('sends a fallback message based on the video title when the input is empty', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({
+      id: 1,
+    });
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.2);
+
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync,
+    });
+
+    render(<CommentSection videoId="video-1" videoTitle="멋진 영상 제목" />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '보내기' }));
+      await flushPromises();
+    });
+
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: '멋진 영상 제목 유익하네요.',
+      }),
+    );
+
+    randomSpy.mockRestore();
+  });
+
   it('restores sticky visibility markers after a successful send', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       id: 1,

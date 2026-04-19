@@ -24,6 +24,48 @@ interface CommentSectionProps {
 
 const CHAT_COMPOSER_FOCUSED_ATTRIBUTE = 'data-chat-composer-focus';
 const GLOBAL_CHAT_ROOM_ID = 'global';
+const FALLBACK_MESSAGE_SUFFIXES = [
+  '좋네요.',
+  '감사합니다.',
+  '잘 봤습니다.',
+  '흥미롭네요.',
+  '재밌네요.',
+  '도움됐어요.',
+  '인상적이네요.',
+  '알차네요.',
+  '유익하네요.',
+  '멋지네요.',
+  '지금 매수 하면 되나요?',
+  '지금 들어가도 괜찮을까요?',
+  '타이밍 좋아 보이네요.',
+  '지금 분위기 괜찮네요.',
+  '이거 계속 들고 가나요?',
+  '설명 깔끔하네요.',
+  '포인트 좋네요.',
+  '이 종목 왜 오르나요?',
+  '지금은 관망이 맞을까요?',
+  '흐름이 좋아 보입니다.',
+  '오늘도 잘 보고 갑니다.',
+  '정리 감사합니다.',
+  '이 부분이 핵심이네요.',
+  '생각보다 강하네요.',
+  '지금 매도 타이밍일까요?',
+  '계속 지켜봐야겠네요.',
+  '덕분에 이해됐어요.',
+  '의견 참고하겠습니다.',
+  '정보 감사합니다.',
+  '이거 재료가 있나요?',
+  '지금 눌림목인가요?',
+  '관점이 좋네요.',
+  '차트가 예쁘네요.',
+  '이거 반등 나오나요?',
+  '설명 듣고 보니 이해되네요.',
+  '오늘 방송도 알차네요.',
+  '이 종목 계속 봐야겠네요.',
+  '분석 고맙습니다.',
+  '한번 공부해봐야겠네요.',
+  '지금 거래량 괜찮네요.',
+] as const;
 
 function formatMessageDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -82,7 +124,15 @@ function getSystemMessageVariant(message: ChatMessage) {
   return 'comment-message--system-generic';
 }
 
-function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
+function getFallbackMessageContent(videoTitle?: string) {
+  const normalizedTitle = videoTitle?.trim();
+  const randomIndex = Math.floor(Math.random() * FALLBACK_MESSAGE_SUFFIXES.length);
+  const randomSuffix = FALLBACK_MESSAGE_SUFFIXES[randomIndex] ?? FALLBACK_MESSAGE_SUFFIXES[0];
+
+  return `${normalizedTitle || '이 영상'} ${randomSuffix}`;
+}
+
+function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSectionProps) {
   const { logout, status, user } = useAuth();
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
@@ -181,7 +231,10 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
     }
 
     const now = Date.now();
-    const normalizedContent = normalizeMessageContent(content);
+    const submittedContent = normalizeMessageContent(content)
+      ? content
+      : getFallbackMessageContent(videoTitle);
+    const normalizedContent = normalizeMessageContent(submittedContent);
     const recentMessages = getRecentMessages(GLOBAL_CHAT_ROOM_ID, now);
     const localViolation = getLocalSpamViolation(recentMessages, normalizedContent, now);
 
@@ -205,7 +258,7 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
     try {
       await createCommentMutation.mutateAsync({
         author: isAuthenticated ? user?.displayName ?? '' : author,
-        content,
+        content: submittedContent,
         clientId: participantId,
         videoId: GLOBAL_CHAT_ROOM_ID,
       });
@@ -354,7 +407,6 @@ function CommentSection({ hideHeader = false, videoId }: CommentSectionProps) {
           onChange={(event) => handleContentChange(event.target.value)}
           onKeyDown={handleTextareaKeyDown}
           placeholder="메시지를 입력하세요."
-          required
           rows={1}
           value={content}
         />
