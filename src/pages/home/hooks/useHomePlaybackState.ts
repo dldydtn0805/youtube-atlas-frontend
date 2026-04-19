@@ -277,6 +277,17 @@ export default function useHomePlaybackState({
     [persistPlaybackProgress, videoPlayerRef],
   );
 
+  const persistPlaybackEntry = useCallback(
+    (videoId: string) => {
+      const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
+      const entryPositionSeconds = snapshot?.videoId === videoId ? snapshot.positionSeconds : 0;
+
+      void persistPlaybackProgress(videoId, entryPositionSeconds)
+        .catch(() => undefined);
+    },
+    [persistPlaybackProgress, videoPlayerRef],
+  );
+
   const persistCurrentPlaybackBeforeSwitch = useCallback(
     (nextVideoId?: string) => {
       const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
@@ -324,6 +335,14 @@ export default function useHomePlaybackState({
     },
     [persistCurrentPlaybackBeforeSwitch, syncPlaybackSelection],
   );
+
+  useEffect(() => {
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !selectedVideoId) {
+      return;
+    }
+
+    persistPlaybackEntry(selectedVideoId);
+  }, [authStatus, persistPlaybackEntry, selectedVideoId]);
 
   useEffect(() => {
     if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !selectedVideoId) {
