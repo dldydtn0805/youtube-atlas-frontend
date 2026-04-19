@@ -96,6 +96,7 @@ export default function useHomePlaybackState({
   const [isManualPlaybackSavePending, setIsManualPlaybackSavePending] = useState(false);
   const [manualPlaybackSaveStatus, setManualPlaybackSaveStatus] = useState<string | null>(null);
   const lastPersistedPlaybackSecondsRef = useRef<Record<string, number>>({});
+  const lastPlaybackEntryVideoIdRef = useRef<string | undefined>(undefined);
 
   const restoredPlaybackVideo = ENABLE_PLAYBACK_PROGRESS && user?.lastPlaybackProgress
     ? mapPlaybackProgressToVideoItem(user.lastPlaybackProgress)
@@ -182,6 +183,7 @@ export default function useHomePlaybackState({
     }
 
     lastPersistedPlaybackSecondsRef.current = {};
+    lastPlaybackEntryVideoIdRef.current = undefined;
     setIsManualPlaybackSavePending(false);
     setManualPlaybackSaveStatus(null);
   }, [authStatus]);
@@ -337,10 +339,20 @@ export default function useHomePlaybackState({
   );
 
   useEffect(() => {
-    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !selectedVideoId) {
+    if (!selectedVideoId) {
+      lastPlaybackEntryVideoIdRef.current = undefined;
       return;
     }
 
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated') {
+      return;
+    }
+
+    if (lastPlaybackEntryVideoIdRef.current === selectedVideoId) {
+      return;
+    }
+
+    lastPlaybackEntryVideoIdRef.current = selectedVideoId;
     persistPlaybackEntry(selectedVideoId);
   }, [authStatus, persistPlaybackEntry, selectedVideoId]);
 
