@@ -117,6 +117,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setAuthError(null);
   }, []);
 
+  const refreshCurrentUser = useCallback(async () => {
+    const accessToken = session?.accessToken;
+
+    if (!accessToken) {
+      return;
+    }
+
+    try {
+      const user = await fetchCurrentUser(accessToken);
+      const nextSession = { ...session, user };
+
+      writeStoredAuthSession(nextSession);
+      startTransition(() => {
+        setSession(nextSession);
+        setStatus('authenticated');
+      });
+    } catch (error) {
+      if (
+        error instanceof ApiRequestError &&
+        (error.code === 'unauthorized' || error.code === 'session_expired')
+      ) {
+        clearStoredAuthSession();
+        startTransition(() => {
+          setSession(null);
+          setStatus('anonymous');
+        });
+      }
+
+      throw error;
+    }
+  }, [session]);
+
   const loginWithGoogleCode = useCallback(async (code: string, redirectUri: string) => {
     setIsLoggingIn(true);
     setAuthError(null);
@@ -176,6 +208,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoggingOut,
       loginWithGoogleAuthorizationCode: loginWithGoogleCode,
       logout,
+      refreshCurrentUser,
       status,
       user: session?.user ?? null,
     }),
@@ -189,6 +222,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoggingOut,
       loginWithGoogleCode,
       logout,
+      refreshCurrentUser,
       session,
       status,
     ],

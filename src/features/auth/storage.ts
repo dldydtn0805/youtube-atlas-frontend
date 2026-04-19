@@ -38,7 +38,20 @@ export function readStoredAuthSession() {
     const parsedValue = JSON.parse(rawValue) as unknown;
 
     if (isStoredSession(parsedValue)) {
-      return parsedValue;
+      return {
+        ...parsedValue,
+        user: {
+          ...parsedValue.user,
+          createdAt:
+            typeof parsedValue.user.createdAt === 'string'
+              ? parsedValue.user.createdAt
+              : parsedValue.user.lastLoginAt,
+          favoriteCount:
+            typeof parsedValue.user.favoriteCount === 'number'
+              ? parsedValue.user.favoriteCount
+              : 0,
+        },
+      };
     }
   } catch {
     // Ignore malformed local data and reset below.

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import GoogleLoginButton from '../../../components/GoogleLoginButton/GoogleLoginButton';
 import type { AuthStatus, AuthUser } from '../../../features/auth/types';
 import { formatPoints } from '../gameHelpers';
@@ -11,6 +12,8 @@ interface AppHeaderProps {
   isLoggingOut: boolean;
   onLogout: () => void;
   onOpenGameModal?: () => void;
+  onOpenRecentPlayback?: (videoId: string) => void;
+  onRefreshProfile?: () => Promise<void>;
   onOpenTierModal?: () => void;
   onOpenWalletModal?: () => void;
   onToggleThemeMode: () => void;
@@ -54,6 +57,41 @@ function ThemeToggleIcon({ isDarkMode }: { isDarkMode: boolean }) {
   );
 }
 
+const profileDateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
+function formatProfileDateTime(value?: string | null) {
+  if (!value) {
+    return '정보 없음';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '정보 없음';
+  }
+
+  return profileDateFormatter.format(parsed);
+}
+
+function formatPlaybackPosition(seconds?: number | null) {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) {
+    return '정보 없음';
+  }
+
+  const totalSeconds = Math.floor(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+}
+
 function AppHeader({
   authStatus,
   currentTierCode,
@@ -62,6 +100,8 @@ function AppHeader({
   isLoggingOut,
   onLogout,
   onOpenGameModal,
+  onOpenRecentPlayback,
+  onRefreshProfile,
   onOpenTierModal,
   onOpenWalletModal,
   onToggleThemeMode,
@@ -75,8 +115,52 @@ function AppHeader({
       ? formatPoints(walletBalancePoints)
       : '집계 중';
   const tierSummary = currentTierName?.trim() || '미정';
-  const canOpenGameModalFromProfile = typeof onOpenGameModal === 'function';
-  const profileButtonLabel = `${userIdentityLabel} 프로필로 게임 내역 열기`;
+  const [isProfileCardOpen, setIsProfileCardOpen] = useState(false);
+  const profileCardRef = useRef<HTMLDivElement | null>(null);
+  const profileButtonLabel = `${userIdentityLabel} 프로필 정보 열기`;
+  const playbackProgress = user?.lastPlaybackProgress ?? null;
+
+  const handleProfileButtonClick = async () => {
+    if (!isProfileCardOpen) {
+      try {
+        await onRefreshProfile?.();
+      } catch {
+        // Keep the profile card usable even if the background refresh fails.
+      }
+    }
+
+    setIsProfileCardOpen((current) => !current);
+  };
+
+  useEffect(() => {
+    if (!isProfileCardOpen) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (!profileCardRef.current?.contains(event.target)) {
+        setIsProfileCardOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsProfileCardOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isProfileCardOpen]);
 
   return (
     <header className="app-shell__header">
@@ -128,48 +212,105 @@ function AppHeader({
             <ThemeToggleIcon isDarkMode={isDarkMode} />
           </button>
           {authStatus === 'authenticated' && user ? (
-            <div className="app-shell__auth-session">
-              {canOpenGameModalFromProfile ? (
-                <button
-                  aria-label={profileButtonLabel}
-                  className="app-shell__auth-avatar-button"
-                  onClick={onOpenGameModal}
-                  title={profileButtonLabel}
-                  type="button"
-                >
-                  {user.pictureUrl ? (
-                    <img
-                      alt={`${userIdentityLabel} 프로필`}
-                      className="app-shell__auth-avatar"
-                      src={user.pictureUrl}
-                    />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="app-shell__auth-avatar app-shell__auth-avatar--fallback"
-                    >
-                      {userIdentityLabel.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <>
-                  {user.pictureUrl ? (
-                    <img
-                      alt={`${userIdentityLabel} 프로필`}
-                      className="app-shell__auth-avatar"
-                      src={user.pictureUrl}
-                    />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="app-shell__auth-avatar app-shell__auth-avatar--fallback"
-                    >
-                      {userIdentityLabel.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                </>
-              )}
+            <div className="app-shell__auth-session" ref={profileCardRef}>
+              <button
+                aria-expanded={isProfileCardOpen}
+                aria-haspopup="dialog"
+                aria-label={profileButtonLabel}
+                className="app-shell__auth-avatar-button"
+                onClick={() => void handleProfileButtonClick()}
+                title={profileButtonLabel}
+                type="button"
+              >
+                {user.pictureUrl ? (
+                  <img
+                    alt={`${userIdentityLabel} 프로필`}
+                    className="app-shell__auth-avatar"
+                    src={user.pictureUrl}
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="app-shell__auth-avatar app-shell__auth-avatar--fallback"
+                  >
+                    {userIdentityLabel.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+              </button>
+              {isProfileCardOpen ? (
+                <div className="app-shell__profile-card" role="dialog" aria-label="내 프로필 정보">
+                  <div className="app-shell__profile-card-header">
+                    {user.pictureUrl ? (
+                      <img
+                        alt={`${userIdentityLabel} 프로필`}
+                        className="app-shell__profile-card-avatar"
+                        src={user.pictureUrl}
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="app-shell__profile-card-avatar app-shell__auth-avatar--fallback"
+                      >
+                        {userIdentityLabel.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="app-shell__profile-card-identity">
+                      <strong>{user.displayName || '이름 없음'}</strong>
+                      <span>{user.email}</span>
+                    </div>
+                  </div>
+                  <div className="app-shell__profile-card-grid">
+                    <p>
+                      <span>가입일</span>
+                      <strong>{formatProfileDateTime(user.createdAt)}</strong>
+                    </p>
+                    <p>
+                      <span>마지막 로그인</span>
+                      <strong>{formatProfileDateTime(user.lastLoginAt)}</strong>
+                    </p>
+                    <p>
+                      <span>즐겨찾기</span>
+                      <strong>{user.favoriteCount}명</strong>
+                    </p>
+                  </div>
+                  <div className="app-shell__profile-card-section">
+                    <span className="app-shell__profile-card-section-label">최근 재생</span>
+                    {playbackProgress ? (
+                      <div className="app-shell__profile-card-playback">
+                        {playbackProgress.thumbnailUrl ? (
+                          <img
+                            alt=""
+                            className="app-shell__profile-card-playback-thumb"
+                            src={playbackProgress.thumbnailUrl}
+                          />
+                        ) : null}
+                        <div className="app-shell__profile-card-playback-copy">
+                          <strong>{playbackProgress.videoTitle ?? playbackProgress.videoId}</strong>
+                          <span>{playbackProgress.channelTitle ?? '채널 정보 없음'}</span>
+                          <span>
+                            {formatPlaybackPosition(playbackProgress.positionSeconds)} ·{' '}
+                            {formatProfileDateTime(playbackProgress.updatedAt)}
+                          </span>
+                        </div>
+                        {typeof onOpenRecentPlayback === 'function' ? (
+                          <button
+                            className="app-shell__profile-card-action app-shell__profile-card-action--wide"
+                            onClick={() => {
+                              setIsProfileCardOpen(false);
+                              onOpenRecentPlayback(playbackProgress.videoId);
+                            }}
+                            type="button"
+                          >
+                            최근 본 영상으로 이동
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="app-shell__profile-card-empty">최근 재생 기록이 아직 없습니다.</p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
               <button
                 className="app-shell__auth-logout"
                 onClick={onLogout}

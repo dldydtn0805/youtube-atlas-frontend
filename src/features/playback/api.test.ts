@@ -82,4 +82,39 @@ describe('playback progress api', () => {
       videoTitle: 'Video One',
     });
   });
+
+  it('passes keepalive when requested for unload-safe saves', async () => {
+    const { upsertPlaybackProgress } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        channelTitle: 'Streamer One',
+        positionSeconds: 184,
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        updatedAt: '2026-04-03T00:00:00.000Z',
+        videoId: 'video-1',
+        videoTitle: 'Video One',
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await upsertPlaybackProgress(
+      'access-token',
+      {
+        channelTitle: 'Streamer One',
+        positionSeconds: 184,
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        videoId: 'video-1',
+        videoTitle: 'Video One',
+      },
+      { keepalive: true },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/me/playback-progress',
+      expect.objectContaining({
+        keepalive: true,
+      }),
+    );
+  });
 });

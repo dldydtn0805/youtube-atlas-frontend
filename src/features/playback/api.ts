@@ -14,8 +14,12 @@ export async function fetchPlaybackProgress(accessToken: string) {
 export async function upsertPlaybackProgress(
   accessToken: string,
   input: UpsertPlaybackProgressInput,
+  options?: {
+    keepalive?: boolean;
+  },
 ) {
   return fetchApi<PlaybackProgress>('/api/me/playback-progress', {
+    keepalive: options?.keepalive,
     method: 'POST',
     headers: {
       ...createAuthorizationHeader(accessToken),

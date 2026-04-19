@@ -12,6 +12,7 @@ export interface AuthContextValue {
   isLoggingOut: boolean;
   loginWithGoogleAuthorizationCode: (code: string, redirectUri: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshCurrentUser: () => Promise<void>;
   status: AuthStatus;
   user: AuthUser | null;
 }

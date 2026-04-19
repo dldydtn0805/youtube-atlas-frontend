@@ -42,6 +42,7 @@ import {
   FAVORITE_STREAMER_VIDEO_SECTION,
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
+  RESTORED_PLAYBACK_QUEUE_ID,
   findPlaybackQueueIdForVideo,
   filterVideoSection,
   getFullscreenElement,
@@ -414,7 +415,7 @@ function getNextCoinRefreshSeconds(remainingSecondsList: Array<number | null | u
 
 function HomePage() {
   const queryClient = useQueryClient();
-  const { accessToken, isLoggingOut, logout, status: authStatus, user } = useAuth();
+  const { accessToken, isLoggingOut, logout, refreshCurrentUser, status: authStatus, user } = useAuth();
   const [selectedOpenPositionId, setSelectedOpenPositionId] = useState<number | null>(null);
   const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'guide'>('positions');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
@@ -1640,6 +1641,34 @@ function HomePage() {
     },
     [handleSelectVideo],
   );
+  const handleOpenRecentPlayback = useCallback(
+    (videoId: string) => {
+      if (!videoId) {
+        return;
+      }
+
+      const playbackQueueId =
+        findPlaybackQueueIdForVideo(videoId, {
+          favoriteStreamerVideoSection,
+          gamePortfolioSection,
+          historyPlaybackSection,
+          newChartEntriesSection: sortedNewChartEntriesSection,
+          realtimeSurgingSection: sortedRealtimeSurgingSection,
+          selectedSection: selectedPlaybackSection,
+        }) ?? RESTORED_PLAYBACK_QUEUE_ID;
+
+      handleSelectVideoWithPreview(videoId, playbackQueueId);
+    },
+    [
+      favoriteStreamerVideoSection,
+      gamePortfolioSection,
+      handleSelectVideoWithPreview,
+      historyPlaybackSection,
+      selectedPlaybackSection,
+      sortedNewChartEntriesSection,
+      sortedRealtimeSurgingSection,
+    ],
+  );
   const headerTrendTicker = useMemo(
     () => {
       if (!isAllCategorySelected || topRankRisersSignals.length === 0 || !topRankRisersSection?.categoryId) {
@@ -2247,6 +2276,8 @@ function HomePage() {
         isLoggingOut={isLoggingOut}
         onLogout={() => void logout()}
         onOpenGameModal={() => setIsGameModalOpen(true)}
+        onOpenRecentPlayback={handleOpenRecentPlayback}
+        onRefreshProfile={refreshCurrentUser}
         onOpenTierModal={openCoinModal}
         onOpenWalletModal={() => setIsWalletModalOpen(true)}
         onToggleThemeMode={handleToggleThemeMode}

@@ -5,7 +5,9 @@ export interface AuthUser {
   email: string;
   displayName: string;
   pictureUrl: string | null;
+  createdAt: string;
   lastLoginAt: string;
+  favoriteCount: number;
   lastPlaybackProgress: PlaybackProgress | null;
 }
 

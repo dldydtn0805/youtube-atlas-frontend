@@ -8,16 +8,15 @@ import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features
 import { ApiRequestError, isApiConfigured } from '../../../lib/api';
 import usePlaybackQueue from './usePlaybackQueue';
 import {
-  findPlaybackQueueIdForVideo,
   getVideoThumbnailUrl,
   mapPlaybackProgressToVideoItem,
   mergeUniqueVideoItems,
-  RESTORED_PLAYBACK_QUEUE_ID,
   type PendingPlaybackRestore,
 } from '../utils';
 import { formatPlaybackSaveTimestamp } from '../gameHelpers';
 
-const ENABLE_PLAYBACK_PROGRESS = false;
+const ENABLE_PLAYBACK_PROGRESS = true;
+const PLAYBACK_PROGRESS_AUTOSAVE_INTERVAL_MS = 15000;
 
 interface UseHomePlaybackStateOptions {
   accessToken: string | null;
@@ -70,31 +69,6 @@ interface UseHomePlaybackStateResult {
   selectedVideoId?: string;
 }
 
-function getPlaybackQueueIdForVideo(
-  videoId: string | undefined,
-  sections: {
-    extraPlaybackSections?: YouTubeCategorySection[];
-    favoriteStreamerVideoSection?: YouTubeCategorySection;
-    gamePortfolioSection: YouTubeCategorySection;
-    historyPlaybackSection?: YouTubeCategorySection;
-    newChartEntriesSection?: YouTubeCategorySection;
-    realtimeSurgingSection?: YouTubeCategorySection;
-    selectedPlaybackSection?: YouTubeCategorySection;
-  },
-) {
-  return (
-    findPlaybackQueueIdForVideo(videoId, {
-      extraSections: sections.extraPlaybackSections,
-      favoriteStreamerVideoSection: sections.favoriteStreamerVideoSection,
-      gamePortfolioSection: sections.gamePortfolioSection,
-      historyPlaybackSection: sections.historyPlaybackSection,
-      newChartEntriesSection: sections.newChartEntriesSection,
-      realtimeSurgingSection: sections.realtimeSurgingSection,
-      selectedSection: sections.selectedPlaybackSection,
-    }) ?? RESTORED_PLAYBACK_QUEUE_ID
-  );
-}
-
 export default function useHomePlaybackState({
   accessToken,
   authStatus,
@@ -119,12 +93,8 @@ export default function useHomePlaybackState({
   user,
   videoPlayerRef,
 }: UseHomePlaybackStateOptions): UseHomePlaybackStateResult {
-  const [pendingPlaybackRestore, setPendingPlaybackRestore] = useState<PendingPlaybackRestore | null>(null);
-  const [isRestoredPlaybackActive, setIsRestoredPlaybackActive] = useState(false);
   const [isManualPlaybackSavePending, setIsManualPlaybackSavePending] = useState(false);
   const [manualPlaybackSaveStatus, setManualPlaybackSaveStatus] = useState<string | null>(null);
-  const nextPlaybackRestoreIdRef = useRef(0);
-  const handledPlaybackRestoreSignatureRef = useRef<string | null>(null);
   const lastPersistedPlaybackSecondsRef = useRef<Record<string, number>>({});
 
   const restoredPlaybackVideo = ENABLE_PLAYBACK_PROGRESS && user?.lastPlaybackProgress
@@ -161,14 +131,10 @@ export default function useHomePlaybackState({
     handleSelectCategory,
     handleSelectVideo,
     resetForRegionChange,
-    restorePlaybackSelection,
     syncPlaybackSelection,
     selectedVideoId,
-    updateActivePlaybackQueueId,
   } = usePlaybackQueue({
-    autoSelectFirstVideoWhenEmpty:
-      authStatus === 'anonymous' ||
-      (authStatus === 'authenticated' && (!ENABLE_PLAYBACK_PROGRESS || !user?.lastPlaybackProgress)),
+    autoSelectFirstVideoWhenEmpty: authStatus !== 'loading',
     extraPlaybackSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
@@ -215,10 +181,7 @@ export default function useHomePlaybackState({
       return;
     }
 
-    setIsRestoredPlaybackActive(false);
-    handledPlaybackRestoreSignatureRef.current = null;
     lastPersistedPlaybackSecondsRef.current = {};
-    setPendingPlaybackRestore(null);
     setIsManualPlaybackSavePending(false);
     setManualPlaybackSaveStatus(null);
   }, [authStatus]);
@@ -241,96 +204,10 @@ export default function useHomePlaybackState({
     };
   }, [isManualPlaybackSavePending, manualPlaybackSaveStatus]);
 
-  useEffect(() => {
-    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !user?.lastPlaybackProgress) {
-      return;
-    }
-
-    const playbackProgress = user.lastPlaybackProgress;
-    const playbackRestoreSignature = [
-      user.id,
-      playbackProgress.videoId,
-      playbackProgress.positionSeconds,
-      playbackProgress.updatedAt,
-    ].join(':');
-
-    if (handledPlaybackRestoreSignatureRef.current === playbackRestoreSignature) {
-      return;
-    }
-
-    handledPlaybackRestoreSignatureRef.current = playbackRestoreSignature;
-    nextPlaybackRestoreIdRef.current += 1;
-    setPendingPlaybackRestore({
-      positionSeconds: playbackProgress.positionSeconds,
-      restoreId: nextPlaybackRestoreIdRef.current,
-      videoId: playbackProgress.videoId,
-    });
-    setIsRestoredPlaybackActive(true);
-    restorePlaybackSelection(
-      playbackProgress.videoId,
-      getPlaybackQueueIdForVideo(playbackProgress.videoId, {
-        extraPlaybackSections,
-        favoriteStreamerVideoSection,
-        gamePortfolioSection,
-        historyPlaybackSection,
-        newChartEntriesSection,
-        realtimeSurgingSection,
-        selectedPlaybackSection,
-      }),
-    );
-  }, [
-    authStatus,
-    extraPlaybackSections,
-    favoriteStreamerVideoSection,
-    gamePortfolioSection,
-    historyPlaybackSection,
-    newChartEntriesSection,
-    realtimeSurgingSection,
-    restorePlaybackSelection,
-    selectedPlaybackSection,
-    user,
-  ]);
-
-  useEffect(() => {
-    if (activePlaybackQueueId !== RESTORED_PLAYBACK_QUEUE_ID || !selectedVideoId) {
-      return;
-    }
-
-    const matchedQueueId = getPlaybackQueueIdForVideo(selectedVideoId, {
-      extraPlaybackSections,
-      favoriteStreamerVideoSection,
-      gamePortfolioSection,
-      historyPlaybackSection,
-      newChartEntriesSection,
-      realtimeSurgingSection,
-      selectedPlaybackSection,
-    });
-
-    if (matchedQueueId && matchedQueueId !== RESTORED_PLAYBACK_QUEUE_ID) {
-      updateActivePlaybackQueueId(matchedQueueId);
-    }
-  }, [
-    activePlaybackQueueId,
-    extraPlaybackSections,
-    favoriteStreamerVideoSection,
-    gamePortfolioSection,
-    historyPlaybackSection,
-    newChartEntriesSection,
-    realtimeSurgingSection,
-    selectedPlaybackSection,
-    selectedVideoId,
-    updateActivePlaybackQueueId,
-  ]);
-
-  const handlePlaybackRestoreApplied = useCallback((restoreId: number) => {
-    setPendingPlaybackRestore((currentRestore) =>
-      currentRestore?.restoreId === restoreId ? null : currentRestore,
-    );
-  }, []);
+  const handlePlaybackRestoreApplied = useCallback((_restoreId: number) => {}, []);
 
   const handleSelectCategoryWithRestoreReset = useCallback(
     (categoryId: string, triggerElement?: HTMLButtonElement) => {
-      setIsRestoredPlaybackActive(false);
       handleSelectCategory(categoryId, triggerElement);
     },
     [handleSelectCategory],
@@ -338,25 +215,21 @@ export default function useHomePlaybackState({
 
   const handleSelectVideoWithRestoreReset = useCallback(
     (videoId: string, playbackQueueId: string, triggerElement?: HTMLButtonElement) => {
-      setIsRestoredPlaybackActive(false);
       handleSelectVideo(videoId, playbackQueueId, triggerElement);
     },
     [handleSelectVideo],
   );
 
   const handlePlayNextVideoWithRestoreReset = useCallback(() => {
-    setIsRestoredPlaybackActive(false);
     handlePlayNextVideo();
   }, [handlePlayNextVideo]);
 
   const handlePlayPreviousVideoWithRestoreReset = useCallback(() => {
-    setIsRestoredPlaybackActive(false);
     handlePlayPreviousVideo();
   }, [handlePlayPreviousVideo]);
 
   const syncPlaybackSelectionWithRestoreReset = useCallback(
     (videoId: string, playbackQueueId: string) => {
-      setIsRestoredPlaybackActive(false);
       syncPlaybackSelection(videoId, playbackQueueId);
     },
     [syncPlaybackSelection],
@@ -368,6 +241,7 @@ export default function useHomePlaybackState({
       positionSeconds: number,
       options?: {
         force?: boolean;
+        keepalive?: boolean;
       },
     ) => {
       if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !accessToken) {
@@ -396,7 +270,7 @@ export default function useHomePlaybackState({
           thumbnailUrl: getVideoThumbnailUrl(playbackVideo),
           videoId,
           videoTitle: playbackVideo.snippet.title || null,
-        });
+        }, { keepalive: options?.keepalive });
       } catch (error) {
         if (previousPositionSeconds === undefined) {
           delete lastPersistedPlaybackSecondsRef.current[videoId];
@@ -418,6 +292,67 @@ export default function useHomePlaybackState({
     },
     [accessToken, authStatus, combinedPlayableItems, logout],
   );
+
+  const persistCurrentPlaybackSnapshot = useCallback(
+    async (options?: { force?: boolean; keepalive?: boolean }) => {
+      const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
+
+      if (!snapshot) {
+        return null;
+      }
+
+      return persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, options);
+    },
+    [persistPlaybackProgress, videoPlayerRef],
+  );
+
+  useEffect(() => {
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !selectedVideoId) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void persistCurrentPlaybackSnapshot();
+    }, PLAYBACK_PROGRESS_AUTOSAVE_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [authStatus, persistCurrentPlaybackSnapshot, selectedVideoId]);
+
+  useEffect(() => {
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated') {
+      return undefined;
+    }
+
+    return () => {
+      void persistCurrentPlaybackSnapshot({ force: true });
+    };
+  }, [authStatus, persistCurrentPlaybackSnapshot, selectedVideoId]);
+
+  useEffect(() => {
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated') {
+      return undefined;
+    }
+
+    const handlePageHide = () => {
+      void persistCurrentPlaybackSnapshot({ force: true, keepalive: true });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        void persistCurrentPlaybackSnapshot({ force: true, keepalive: true });
+      }
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [authStatus, persistCurrentPlaybackSnapshot]);
 
   const handleManualPlaybackSave = useCallback(async () => {
     if (!ENABLE_PLAYBACK_PROGRESS) {
@@ -441,9 +376,13 @@ export default function useHomePlaybackState({
     setManualPlaybackSaveStatus(null);
 
     try {
-      const savedPositionSeconds = await persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, {
-        force: true,
-      });
+      const savedPositionSeconds = await persistPlaybackProgress(
+        snapshot.videoId,
+        snapshot.positionSeconds,
+        {
+          force: true,
+        },
+      );
 
       if (savedPositionSeconds === null) {
         setManualPlaybackSaveStatus('저장할 재생 위치를 찾지 못했습니다.');
@@ -471,10 +410,10 @@ export default function useHomePlaybackState({
     handlePlayPreviousVideo: handlePlayPreviousVideoWithRestoreReset,
     handleSelectCategory: handleSelectCategoryWithRestoreReset,
     handleSelectVideo: handleSelectVideoWithRestoreReset,
-    isRestoredPlaybackActive,
+    isRestoredPlaybackActive: false,
     isManualPlaybackSavePending,
     manualPlaybackSaveStatus,
-    pendingPlaybackRestore,
+    pendingPlaybackRestore: null as PendingPlaybackRestore | null,
     resetForRegionChange,
     resolvedSelectedVideo,
     selectedVideoId,

@@ -173,7 +173,7 @@
 .app-shell__trend-ticker-rank,
 .app-shell__trend-ticker-list-rank {
   color: var(--trend-tier-accent);
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 900;
   text-shadow: 0 0 16px rgba(var(--trend-tier-accent-rgb), 0.24);
 }
@@ -189,6 +189,11 @@
 .app-shell__trend-ticker-title {
   color: var(--trend-tier-ink);
   font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.app-shell__trend-ticker-list-title {
+  font-size: 0.72rem;
   font-weight: 800;
 }
 
@@ -239,13 +244,13 @@
 }
 
 .app-shell__trend-ticker-dropdown-header strong {
-  font-size: 0.88rem;
+  font-size: 0.76rem;
 }
 
 .app-shell__trend-ticker-dropdown-header span,
 .app-shell__trend-ticker-list-meta {
   color: var(--trend-tier-muted);
-  font-size: 0.74rem;
+  font-size: 0.62rem;
 }
 
 .app-shell__trend-ticker-list-meta-rise {
