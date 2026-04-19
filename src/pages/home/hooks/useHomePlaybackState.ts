@@ -206,35 +206,6 @@ export default function useHomePlaybackState({
 
   const handlePlaybackRestoreApplied = useCallback((_restoreId: number) => {}, []);
 
-  const handleSelectCategoryWithRestoreReset = useCallback(
-    (categoryId: string, triggerElement?: HTMLButtonElement) => {
-      handleSelectCategory(categoryId, triggerElement);
-    },
-    [handleSelectCategory],
-  );
-
-  const handleSelectVideoWithRestoreReset = useCallback(
-    (videoId: string, playbackQueueId: string, triggerElement?: HTMLButtonElement) => {
-      handleSelectVideo(videoId, playbackQueueId, triggerElement);
-    },
-    [handleSelectVideo],
-  );
-
-  const handlePlayNextVideoWithRestoreReset = useCallback(() => {
-    handlePlayNextVideo();
-  }, [handlePlayNextVideo]);
-
-  const handlePlayPreviousVideoWithRestoreReset = useCallback(() => {
-    handlePlayPreviousVideo();
-  }, [handlePlayPreviousVideo]);
-
-  const syncPlaybackSelectionWithRestoreReset = useCallback(
-    (videoId: string, playbackQueueId: string) => {
-      syncPlaybackSelection(videoId, playbackQueueId);
-    },
-    [syncPlaybackSelection],
-  );
-
   const persistPlaybackProgress = useCallback(
     async (
       videoId: string,
@@ -306,6 +277,54 @@ export default function useHomePlaybackState({
     [persistPlaybackProgress, videoPlayerRef],
   );
 
+  const persistCurrentPlaybackBeforeSwitch = useCallback(
+    (nextVideoId?: string) => {
+      const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
+
+      if (!snapshot || snapshot.videoId === nextVideoId) {
+        return;
+      }
+
+      void persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, { force: true })
+        .catch(() => undefined);
+    },
+    [persistPlaybackProgress, videoPlayerRef],
+  );
+
+  const handleSelectCategoryWithRestoreReset = useCallback(
+    (categoryId: string, triggerElement?: HTMLButtonElement) => {
+      persistCurrentPlaybackBeforeSwitch();
+      handleSelectCategory(categoryId, triggerElement);
+    },
+    [handleSelectCategory, persistCurrentPlaybackBeforeSwitch],
+  );
+
+  const handleSelectVideoWithRestoreReset = useCallback(
+    (videoId: string, playbackQueueId: string, triggerElement?: HTMLButtonElement) => {
+      persistCurrentPlaybackBeforeSwitch(videoId);
+      handleSelectVideo(videoId, playbackQueueId, triggerElement);
+    },
+    [handleSelectVideo, persistCurrentPlaybackBeforeSwitch],
+  );
+
+  const handlePlayNextVideoWithRestoreReset = useCallback(() => {
+    persistCurrentPlaybackBeforeSwitch();
+    handlePlayNextVideo();
+  }, [handlePlayNextVideo, persistCurrentPlaybackBeforeSwitch]);
+
+  const handlePlayPreviousVideoWithRestoreReset = useCallback(() => {
+    persistCurrentPlaybackBeforeSwitch();
+    handlePlayPreviousVideo();
+  }, [handlePlayPreviousVideo, persistCurrentPlaybackBeforeSwitch]);
+
+  const syncPlaybackSelectionWithRestoreReset = useCallback(
+    (videoId: string, playbackQueueId: string) => {
+      persistCurrentPlaybackBeforeSwitch(videoId);
+      syncPlaybackSelection(videoId, playbackQueueId);
+    },
+    [persistCurrentPlaybackBeforeSwitch, syncPlaybackSelection],
+  );
+
   useEffect(() => {
     if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !selectedVideoId) {
       return undefined;
@@ -317,16 +336,6 @@ export default function useHomePlaybackState({
 
     return () => {
       window.clearInterval(intervalId);
-    };
-  }, [authStatus, persistCurrentPlaybackSnapshot, selectedVideoId]);
-
-  useEffect(() => {
-    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated') {
-      return undefined;
-    }
-
-    return () => {
-      void persistCurrentPlaybackSnapshot({ force: true });
     };
   }, [authStatus, persistCurrentPlaybackSnapshot, selectedVideoId]);
 
