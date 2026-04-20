@@ -27,7 +27,7 @@ function createGamePosition(overrides: Partial<GamePosition>): GamePosition {
   };
 }
 
-function createGameHighlight(overrides: Partial<GameHighlight>): GameHighlight {
+function createGameHighlight(overrides: Partial<GameHighlight> = {}): GameHighlight {
   return {
     id: 'highlight-1',
     highlightType: 'SNIPE',
@@ -55,7 +55,7 @@ function createGameHighlight(overrides: Partial<GameHighlight>): GameHighlight {
   };
 }
 
-function createLeaderboardEntry(overrides: Partial<GameLeaderboardEntry>): GameLeaderboardEntry {
+function createLeaderboardEntry(overrides: Partial<GameLeaderboardEntry> = {}): GameLeaderboardEntry {
   return {
     rank: 1,
     userId: 7,
