@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { GamePosition } from '../../../features/game/types';
+import type { GameHighlight, GameLeaderboardEntry, GamePosition } from '../../../features/game/types';
 import { HISTORY_PLAYBACK_QUEUE_ID } from '../utils';
-import { RankingGameHistoryTab, RankingGameSelectedVideoActions } from './RankingGamePanel';
+import { RankingGameHistoryTab, RankingGameLeaderboardTab, RankingGameSelectedVideoActions } from './RankingGamePanel';
 
 function createGamePosition(overrides: Partial<GamePosition>): GamePosition {
   return {
@@ -23,6 +23,66 @@ function createGamePosition(overrides: Partial<GamePosition>): GamePosition {
     buyCapturedAt: '2026-01-01T00:00:00.000Z',
     createdAt: '2026-01-01T00:00:00.000Z',
     closedAt: null,
+    ...overrides,
+  };
+}
+
+function createGameHighlight(overrides: Partial<GameHighlight>): GameHighlight {
+  return {
+    id: 'highlight-1',
+    highlightType: 'SNIPE',
+    title: 'Highlight',
+    description: '수익률 359.2% 플레이가 기록됐습니다.',
+    positionId: 1,
+    videoId: 'video-1',
+    videoTitle: '하이라이트 영상 제목',
+    channelTitle: '채널',
+    thumbnailUrl: 'https://example.com/thumb.jpg',
+    buyRank: 96,
+    highlightRank: 47,
+    sellRank: null,
+    rankDiff: 49,
+    quantity: 1,
+    stakePoints: 100,
+    currentPricePoints: 200,
+    profitPoints: 100,
+    profitRatePercent: 359.2,
+    strategyTags: ['SMALL_CASHOUT'],
+    highlightScore: 37072,
+    status: 'OPEN',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function createLeaderboardEntry(overrides: Partial<GameLeaderboardEntry>): GameLeaderboardEntry {
+  return {
+    rank: 1,
+    userId: 7,
+    displayName: '소몰 캐시아웃',
+    pictureUrl: null,
+    currentTier: {
+      tierCode: 'PLATINUM',
+      displayName: '플래티넘',
+      minCoinBalance: 1000,
+      badgeCode: 'badge',
+      titleCode: 'title',
+      profileThemeCode: 'theme',
+    },
+    highlightScore: 37072,
+    highlightCount: 3,
+    topHighlightType: 'SMALL_CASHOUT',
+    coinBalance: 1000,
+    totalAssetPoints: 2000,
+    balancePoints: 1000,
+    reservedPoints: 0,
+    totalStakePoints: 1000,
+    totalEvaluationPoints: 1200,
+    profitRatePercent: 25,
+    realizedPnlPoints: 100,
+    unrealizedPnlPoints: 100,
+    openPositionCount: 1,
+    me: false,
     ...overrides,
   };
 }
@@ -221,5 +281,38 @@ describe('RankingGameHistoryTab', () => {
       }
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('RankingGameLeaderboardTab', () => {
+  it('renders expanded leaderboard highlights with the richer card metadata', () => {
+    const onSelectHighlight = vi.fn();
+    const highlight = createGameHighlight();
+
+    render(
+      <RankingGameLeaderboardTab
+        entries={[createLeaderboardEntry()]}
+        error={null}
+        highlights={[highlight]}
+        highlightsError={null}
+        highlightsTitle="소몰 캐시아웃님의 하이라이트"
+        isError={false}
+        isHighlightsError={false}
+        isHighlightsLoading={false}
+        isLoading={false}
+        onSelectHighlight={onSelectHighlight}
+        onToggleUser={vi.fn()}
+        selectedUserId={7}
+      />,
+    );
+
+    expect(screen.getByText('하이라이트 영상 제목')).toBeInTheDocument();
+    expect(screen.getByText('+37,072점')).toBeInTheDocument();
+    expect(screen.getByText('수익률 359.2% 플레이가 기록됐습니다.')).toBeInTheDocument();
+    expect(screen.getByText('스몰 캐시아웃')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle('이 하이라이트의 순위 추이 차트를 봅니다.'));
+
+    expect(onSelectHighlight).toHaveBeenCalledWith(highlight);
   });
 });

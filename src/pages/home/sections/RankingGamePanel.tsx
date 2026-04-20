@@ -22,7 +22,7 @@ import {
   getPointTone,
   type OpenGameHolding,
 } from '../gameHelpers';
-import { buildPositionStrategyBadges } from '../gameStrategyTags';
+import { buildGameStrategyBadges, buildPositionStrategyBadges } from '../gameStrategyTags';
 import {
   calculateSellFeePoints,
   formatSignedProfitRate,
@@ -245,33 +245,71 @@ function LeaderboardHighlightList({
 }) {
   return (
     <ul className="app-shell__game-leaderboard-position-list">
-      {highlights.map((highlight) => (
-        <li key={highlight.id} className="app-shell__game-leaderboard-position-item">
-          <button
-            className="app-shell__game-leaderboard-position-select"
-            onClick={() => onSelectHighlight(highlight)}
-            title="이 하이라이트의 순위 추이 차트를 봅니다."
-            type="button"
-          >
-            <img
-              alt=""
-              className="app-shell__game-leaderboard-position-thumb"
-              loading="lazy"
-              src={highlight.thumbnailUrl}
-            />
-            <div className="app-shell__game-leaderboard-position-copy">
-              <p className="app-shell__game-leaderboard-position-title">{highlight.title}</p>
-              <p className="app-shell__game-leaderboard-position-meta">{highlight.videoTitle}</p>
-              <p className="app-shell__game-leaderboard-position-meta">
-                {getLeaderboardHighlightTypeLabel(highlight.highlightType)}
-                {' · '}{formatRank(highlight.buyRank)} → {formatRank(highlight.highlightRank)}
-                {' · '}
-                <span data-tone={getPointTone(highlight.profitPoints)}>{formatSignedPoints(highlight.profitPoints)}</span>
-              </p>
-            </div>
-          </button>
-        </li>
-      ))}
+      {highlights.map((highlight) => {
+        const strategyBadges = buildGameStrategyBadges(highlight.strategyTags, highlight.highlightType);
+
+        return (
+          <li key={highlight.id} className="app-shell__game-leaderboard-position-item">
+            <button
+              className="app-shell__game-leaderboard-position-select"
+              onClick={() => onSelectHighlight(highlight)}
+              title="이 하이라이트의 순위 추이 차트를 봅니다."
+              type="button"
+            >
+              <img
+                alt=""
+                className="app-shell__game-leaderboard-position-thumb"
+                loading="lazy"
+                src={highlight.thumbnailUrl}
+              />
+              <div className="app-shell__game-leaderboard-position-copy">
+                <p className="app-shell__game-leaderboard-position-title">{highlight.videoTitle}</p>
+                <p className="app-shell__game-leaderboard-position-meta">
+                  <span className="app-shell__game-leaderboard-position-meta-label">티어 점수</span>{' '}
+                  <span className="app-shell__game-leaderboard-position-score">
+                    +{formatHighlightScore(highlight.highlightScore)}
+                  </span>
+                  {' · '}
+                  <span className="app-shell__game-leaderboard-position-meta-label">순위</span>{' '}
+                  <span>{formatRank(highlight.buyRank)}</span>
+                  {' → '}
+                  <span>{formatRank(highlight.highlightRank)}</span>
+                  {' · '}
+                  <span className="app-shell__game-leaderboard-position-meta-label">손익금</span>{' '}
+                  <span data-tone={getPointTone(highlight.profitPoints)}>{formatSignedPoints(highlight.profitPoints)}</span>
+                  {' · '}
+                  <span className="app-shell__game-leaderboard-position-meta-label">손익률</span>{' '}
+                  <span data-tone={getPointTone(highlight.profitPoints)}>
+                    {formatSignedPercent(highlight.profitRatePercent)}
+                  </span>
+                </p>
+                <div className="app-shell__game-leaderboard-position-detail">
+                  <span className="app-shell__game-leaderboard-position-badges">
+                    {strategyBadges.map((badge) => (
+                      <span
+                        key={`${highlight.id}-${badge.type}`}
+                        className="app-shell__game-leaderboard-position-tag"
+                        data-tone={badge.tone}
+                      >
+                        {badge.label}
+                      </span>
+                    ))}
+                    {strategyBadges.length === 0 ? (
+                      <span
+                        className="app-shell__game-leaderboard-position-tag"
+                        data-tone="moonshot"
+                      >
+                        {getLeaderboardHighlightTypeLabel(highlight.highlightType)}
+                      </span>
+                    ) : null}
+                  </span>
+                  <p className="app-shell__game-leaderboard-position-description">{highlight.description}</p>
+                </div>
+              </div>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

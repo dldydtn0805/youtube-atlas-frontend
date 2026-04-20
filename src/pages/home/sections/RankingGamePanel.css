@@ -1483,7 +1483,8 @@
 .app-shell__game-leaderboard-positions-title,
 .app-shell__game-leaderboard-positions-status,
 .app-shell__game-leaderboard-position-title,
-.app-shell__game-leaderboard-position-meta {
+.app-shell__game-leaderboard-position-meta,
+.app-shell__game-leaderboard-position-description {
   margin: 0;
 }
 
@@ -1559,22 +1560,29 @@
 
 .app-shell__game-leaderboard-position-select {
   align-items: start;
-  background: transparent;
-  border: 0;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 18px;
   color: inherit;
   cursor: pointer;
   display: grid;
-  gap: 10px;
-  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  grid-template-columns: 148px minmax(0, 1fr);
   min-width: 0;
-  padding: 0;
+  padding: 12px;
   text-align: left;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   width: 100%;
 }
 
-.app-shell__game-leaderboard-position-select:hover .app-shell__game-leaderboard-position-title,
-.app-shell__game-leaderboard-position-select:focus-visible .app-shell__game-leaderboard-position-title {
-  text-decoration: underline;
+.app-shell__game-leaderboard-position-select:hover,
+.app-shell__game-leaderboard-position-select:focus-visible {
+  border-color: rgba(217, 119, 6, 0.38);
+  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.14);
+  transform: translateY(-1px);
 }
 
 .app-shell__game-leaderboard-position-select:focus-visible {
@@ -1590,28 +1598,102 @@
 }
 
 .app-shell__game-leaderboard-position-thumb {
+  align-self: stretch;
   aspect-ratio: 16 / 9;
   border-radius: 12px;
   display: block;
-  height: auto;
+  height: 100%;
+  min-height: 100%;
   object-fit: cover;
-  width: 64px;
+  width: 148px;
 }
 
 .app-shell__game-leaderboard-position-copy {
   display: grid;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
 }
 
 .app-shell__game-leaderboard-position-title {
   color: var(--text);
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: 0.96rem;
+  font-weight: 900;
   line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-shell__game-leaderboard-position-meta {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.app-shell__game-leaderboard-position-meta-label {
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.app-shell__game-leaderboard-position-score {
+  color: inherit;
+  font-weight: 700;
+}
+
+.app-shell__game-leaderboard-position-meta [data-tone='gain'] {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.app-shell__game-leaderboard-position-meta [data-tone='loss'] {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+.app-shell__game-leaderboard-position-detail {
+  display: grid;
+  gap: 6px;
+}
+
+.app-shell__game-leaderboard-position-badges {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.app-shell__game-leaderboard-position-tag {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 18px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.app-shell__game-leaderboard-position-tag[data-tone='moonshot'] {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  color: #b91c1c;
+}
+
+.app-shell__game-leaderboard-position-tag[data-tone='cashout'] {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  color: #1d4ed8;
+}
+
+.app-shell__game-leaderboard-position-tag[data-tone='snipe'] {
+  background: rgba(8, 145, 178, 0.1);
+  border: 1px solid rgba(8, 145, 178, 0.16);
+  color: #0f766e;
+}
+
+.app-shell__game-leaderboard-position-description {
   color: var(--text-muted);
   font-size: 0.76rem;
   line-height: 1.5;
@@ -1622,6 +1704,29 @@
     linear-gradient(135deg, rgba(10, 10, 10, 0.9), rgba(24, 24, 24, 0.94)),
     var(--surface-elevated);
   border-color: rgba(255, 255, 255, 0.14);
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-position-select {
+  background: rgba(14, 14, 14, 0.72);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-position-tag[data-tone='moonshot'] {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.24);
+  color: #fecaca;
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-position-tag[data-tone='cashout'] {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: #bfdbfe;
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-position-tag[data-tone='snipe'] {
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.24);
+  color: #a5f3fc;
 }
 
 :root[data-theme='dark'] .app-shell__game-panel-metric--hero {
@@ -2440,7 +2545,23 @@
 
   .app-shell__game-leaderboard-position-select {
     align-items: start;
-    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 10px;
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .app-shell__game-leaderboard-position-thumb {
+    height: auto;
+    min-height: 0;
+    width: 64px;
+  }
+
+  .app-shell__game-leaderboard-position-copy {
+    gap: 6px;
+  }
+
+  .app-shell__game-leaderboard-position-title {
+    font-size: 0.88rem;
+    white-space: normal;
   }
 
   .app-shell__game-leaderboard-item {
@@ -2474,4 +2595,29 @@
     font-size: 0.78rem;
     line-height: 1.5;
   }
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-leaderboard-position-select {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-leaderboard-position-thumb {
+  height: auto;
+  min-height: 0;
+  width: 100%;
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-leaderboard-position-copy {
+  gap: 8px;
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-leaderboard-position-title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  font-size: 1.08rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
