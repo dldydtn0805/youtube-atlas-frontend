@@ -1,9 +1,9 @@
 import { useCallback, type ReactNode } from 'react';
 import type { AuthStatus } from '../../../features/auth/types';
 import type {
-  GameCoinOverview,
   GameCoinTierProgress,
   GameCurrentSeason,
+  GameHighlight,
   GamePosition,
 } from '../../../features/game/types';
 import type { VideoTrendSignal } from '../../../features/trending/types';
@@ -16,15 +16,15 @@ import {
   RankingGamePanelShell,
   RankingGamePositionsTab,
 } from './RankingGamePanel';
+import GameHighlightsTab from './GameHighlightsTab';
 
-type GameTab = 'positions' | 'history' | 'guide';
+type GameTab = 'positions' | 'highlights' | 'history' | 'guide';
 
 interface GamePanelSectionProps {
   activeGameTab: GameTab;
   activePlaybackQueueId?: string;
   authStatus: AuthStatus;
   canShowGameActions: boolean;
-  coinOverview?: GameCoinOverview;
   coinTierProgress?: GameCoinTierProgress;
   computedWalletTotalAssetPoints: number | null;
   currentGameSeason?: GameCurrentSeason;
@@ -32,15 +32,18 @@ interface GamePanelSectionProps {
   favoriteStreamerVideoSection?: YouTubeCategorySection;
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameHistoryPositions: GamePosition[];
+  gameHighlights: GameHighlight[];
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
   gamePortfolioSection: YouTubeCategorySection;
   hasApiConfigured: boolean;
   historyPlaybackLoadingVideoId: string | null;
   historyPlaybackSection?: YouTubeCategorySection;
   isGameHistoryLoading: boolean;
+  isGameHighlightsLoading: boolean;
   isCollapsed: boolean;
   newChartEntriesSection?: YouTubeCategorySection;
   onOpenCoinModal: () => void;
+  onSelectGameHighlight: (highlight: GameHighlight) => void;
   onSelectGameHistoryVideo: (position: GamePosition, playbackQueueId?: string) => void | Promise<void>;
   onSelectGamePositionVideo: (position: GamePosition) => void;
   onSelectTab: (tab: GameTab) => void;
@@ -64,7 +67,6 @@ export default function GamePanelSection({
   activePlaybackQueueId,
   authStatus,
   canShowGameActions,
-  coinOverview,
   coinTierProgress,
   computedWalletTotalAssetPoints,
   currentGameSeason,
@@ -72,15 +74,18 @@ export default function GamePanelSection({
   favoriteStreamerVideoSection,
   favoriteTrendSignalsByVideoId,
   gameHistoryPositions,
+  gameHighlights,
   gameMarketSignalsByVideoId,
   gamePortfolioSection,
   hasApiConfigured,
   historyPlaybackLoadingVideoId,
   historyPlaybackSection,
   isGameHistoryLoading,
+  isGameHighlightsLoading,
   isCollapsed,
   newChartEntriesSection,
   onOpenCoinModal,
+  onSelectGameHighlight,
   onSelectGameHistoryVideo,
   onSelectGamePositionVideo,
   onSelectTab,
@@ -127,7 +132,6 @@ export default function GamePanelSection({
     <RankingGamePositionsTab
       activePlaybackQueueId={activePlaybackQueueId}
       canShowGameActions={canShowGameActions}
-      coinOverview={coinOverview}
       emptyMessage={positionsEmptyMessage}
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}
@@ -153,6 +157,13 @@ export default function GamePanelSection({
       selectedVideoId={selectedVideoId}
     />
   );
+  const highlightsContent = (
+    <GameHighlightsTab
+      highlights={gameHighlights}
+      isLoading={isGameHighlightsLoading}
+      onSelectHighlight={onSelectGameHighlight}
+    />
+  );
 
   const guideContent = (
     <div className="app-shell__game-guide" aria-label="랭킹 게임 설명">
@@ -165,10 +176,11 @@ export default function GamePanelSection({
           </p>
         </li>
         <li className="app-shell__game-guide-item">
-          <strong className="app-shell__game-guide-title">코인 모아 티어 올리기</strong>
+          <strong className="app-shell__game-guide-title">하이라이트로 티어 올리기</strong>
           <p className="app-shell__game-guide-copy">
-            영상을 보유하고 있으면 포인트에 비례해서 코인이 자동으로 들어와요. 인기 영상일수록 코인이 더
-            많이 쌓이니, 좋은 영상을 잘 고를수록 티어가 빨리 올라가요!
+            문샷은 100위 밖에서 사서 20위 안에 들면, 스나이프는 150위 밖에서 사서 100위 안에 들면
+            기록됩니다. 캐시아웃은 수익률 300% 이상일 때 쌓이고 큰 수익은 추가 점수도 붙어요. 시즌 티어와
+            랭킹은 이 점수로 결정돼요.
           </p>
         </li>
         <li className="app-shell__game-guide-item">
@@ -185,6 +197,8 @@ export default function GamePanelSection({
   const activeGameTabContent =
     activeGameTab === 'positions'
       ? positionsContent
+      : activeGameTab === 'highlights'
+        ? highlightsContent
       : activeGameTab === 'history'
         ? historyContent
         : guideContent;
@@ -197,7 +211,6 @@ export default function GamePanelSection({
         <RankingGameCoinOverview
           coinTierProgress={coinTierProgress}
           onOpenDetails={onOpenCoinModal}
-          overview={coinOverview}
           season={currentGameSeason}
         />
       }

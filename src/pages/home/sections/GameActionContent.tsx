@@ -1,12 +1,9 @@
 import type { ReactNode, RefObject } from 'react';
 import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
-import type { GameCoinOverview, GameMarketVideo, GamePosition } from '../../../features/game/types';
+import type { GameMarketVideo, GamePosition } from '../../../features/game/types';
 import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
-  formatCoins,
   formatGameQuantity,
-  formatMiningStatusLabel,
-  formatPercent,
   formatPercentValue,
   formatPoints,
   formatRank,
@@ -20,11 +17,9 @@ import './GameActionContent.css';
 interface GameSelectedVideoPriceSummaryProps {
   fallbackRankLabel?: string;
   fallbackViewCountLabel?: string;
-  gameCoinOverview?: GameCoinOverview;
   hideEvaluationPoints?: boolean;
   maxSellQuantity?: number;
   preferMarketSummary?: boolean;
-  selectedOpenPositionId?: number | null;
   selectedVideoCurrentChartRank: number | null | undefined;
   selectedVideoHistoricalPosition?: GamePosition | null;
   selectedVideoId?: string;
@@ -54,7 +49,6 @@ interface SelectedVideoGameActionsBundleProps {
   desktopPlayerDockSlotRef?: RefObject<HTMLDivElement | null>;
   fallbackRankLabel?: string;
   fallbackViewCountLabel?: string;
-  gameCoinOverview?: GameCoinOverview;
   isDesktopMiniPlayerEnabled?: boolean;
   mainPlayerRef?: RefObject<VideoPlayerHandle | null>;
   isBuySubmitting?: boolean;
@@ -73,7 +67,6 @@ interface SelectedVideoGameActionsBundleProps {
   panelControls?: ReactNode;
   selectedGameActionChannelTitle?: string;
   selectedGameActionTitle?: string;
-  selectedOpenPositionId?: number | null;
   selectedVideoCurrentChartRank: number | null | undefined;
   selectedVideoHistoricalPosition?: GamePosition | null;
   selectedVideoId?: string;
@@ -150,11 +143,9 @@ function formatMomentumPriceBadge(entry: GameMarketVideo) {
 export function GameSelectedVideoPriceSummary({
   fallbackRankLabel,
   fallbackViewCountLabel,
-  gameCoinOverview,
   hideEvaluationPoints = false,
   maxSellQuantity = 0,
   preferMarketSummary = false,
-  selectedOpenPositionId,
   selectedVideoCurrentChartRank,
   selectedVideoHistoricalPosition,
   selectedVideoId,
@@ -291,7 +282,6 @@ export function GameSelectedVideoPriceSummary({
           </span>
         </p>
         <p className="app-shell__game-selected-summary-badges">
-          <span className="app-shell__game-selected-status-badge">채굴 불가</span>
           <span className="app-shell__game-selected-status-badge">차트 아웃</span>
         </p>
       </div>
@@ -303,49 +293,8 @@ export function GameSelectedVideoPriceSummary({
       ...badge,
       label: formatTrendBadgeLabel(badge),
     }));
-    const selectedVideoCoinPositions =
-      gameCoinOverview
-        ? typeof selectedOpenPositionId === 'number'
-          ? gameCoinOverview.positions.filter((position) => position.positionId === selectedOpenPositionId)
-          : selectedVideoId
-            ? gameCoinOverview.positions.filter((position) => position.videoId === selectedVideoId)
-            : []
-        : [];
-    const matchingRank = gameCoinOverview?.ranks.find((rank) => rank.rank === selectedVideoCurrentChartRank);
-    const activeVideoCoinPositions = selectedVideoCoinPositions.filter((position) => position.productionActive);
-    const positionCoinYield = activeVideoCoinPositions.reduce((sum, position) => sum + position.estimatedCoinYield, 0);
-    const nearestPayoutInSeconds = activeVideoCoinPositions.reduce<number | null>((nearest, position) => {
-      if (typeof position.nextPayoutInSeconds !== 'number') {
-        return nearest;
-      }
-
-      return nearest === null ? position.nextPayoutInSeconds : Math.min(nearest, position.nextPayoutInSeconds);
-    }, null);
-    const warmingUpPosition = selectedVideoCoinPositions.find((position) => !position.productionActive);
-    const maxHoldBoostPercent = selectedVideoCoinPositions.reduce(
-      (highest, position) => Math.max(highest, position.holdBoostPercent),
-      0,
-    );
-    const hasBoostBadge = !selectedVideoIsChartOut && selectedVideoCoinPositions.length > 0;
     const sellableStatusBadge = maxSellQuantity > 0 ? `${formatGameQuantity(maxSellQuantity)} 매도 가능` : null;
-    const statusBadge = selectedVideoIsChartOut
-      ? '차트 아웃'
-      : positionCoinYield > 0
-        ? formatMiningStatusLabel('active', nearestPayoutInSeconds)
-        : typeof warmingUpPosition?.nextProductionInSeconds === 'number'
-          ? formatMiningStatusLabel('warming', warmingUpPosition.nextProductionInSeconds)
-          : matchingRank
-            ? '채굴 대상'
-            : null;
-    const detailCopy = selectedVideoIsChartOut
-      ? null
-      : !matchingRank
-        ? `Top ${gameCoinOverview?.eligibleRankCutoff ?? 0} 안에 들면 시즌 코인 채굴이 시작됩니다.`
-        : positionCoinYield > 0
-          ? null
-          : typeof warmingUpPosition?.nextProductionInSeconds === 'number'
-            ? null
-            : `기본 채굴률 ${formatPercent(matchingRank.coinRatePercent)}`;
+    const statusBadge = selectedVideoIsChartOut ? '차트 아웃' : null;
 
     return (
       <div className="app-shell__game-selected-summary" aria-label="선택한 영상 가격 정보">
@@ -379,28 +328,16 @@ export function GameSelectedVideoPriceSummary({
               selectedVideoOpenPositionSummary.stakePoints,
             )}
           </span>
-          {positionCoinYield > 0 ? (
-            <>
-              {' · '}<span className="app-shell__game-selected-summary-label">채굴량</span>{' '}
-              <span className="app-shell__game-selected-summary-value">{formatCoins(positionCoinYield)}</span>
-            </>
-          ) : null}
         </p>
-        {selectedVideoTrendBadges.length > 0 || statusBadge || hasBoostBadge || sellableStatusBadge ? (
+        {selectedVideoTrendBadges.length > 0 || statusBadge || sellableStatusBadge ? (
           <p className="app-shell__game-selected-summary-badges">
             <TrendBadges badges={selectedPositionTrendBadges} />
             {sellableStatusBadge ? (
               <span className="app-shell__game-selected-status-badge">{sellableStatusBadge}</span>
             ) : null}
             {statusBadge ? <span className="app-shell__game-selected-status-badge">{statusBadge}</span> : null}
-            {hasBoostBadge ? (
-              <span className="app-shell__game-selected-status-badge">
-                채굴 부스트 {formatPercentValue(maxHoldBoostPercent)}
-              </span>
-            ) : null}
           </p>
         ) : null}
-        {detailCopy ? <p className="app-shell__game-selected-summary-line">{detailCopy}</p> : null}
       </div>
     );
   }
@@ -441,20 +378,11 @@ export function GameSelectedVideoPriceSummary({
     );
   }
 
-  const selectedVideoMatchingRank = gameCoinOverview?.ranks.find(
-    (rank) => rank.rank === selectedVideoMarketEntry.currentRank,
-  );
   const selectedVideoFormattedTrendBadges = selectedVideoTrendBadges.map((badge) => ({
     ...badge,
     label: formatTrendBadgeLabel(badge),
   }));
-  const selectedVideoMiningBadge = selectedVideoIsChartOut
-    ? '차트 아웃'
-    : selectedVideoMatchingRank
-      ? `채굴률 ${formatPercent(selectedVideoMatchingRank.coinRatePercent)}`
-      : gameCoinOverview?.eligibleRankCutoff
-        ? `Top ${gameCoinOverview.eligibleRankCutoff} 밖`
-        : null;
+  const selectedVideoStatusBadge = selectedVideoIsChartOut ? '차트 아웃' : null;
   const selectedVideoMomentumPriceBadge = formatMomentumPriceBadge(selectedVideoMarketEntry);
 
   return (
@@ -470,11 +398,11 @@ export function GameSelectedVideoPriceSummary({
           {formatPoints(selectedVideoMarketEntry.currentPricePoints)}
         </span>
       </p>
-      {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoMiningBadge || selectedVideoMomentumPriceBadge ? (
+      {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoStatusBadge || selectedVideoMomentumPriceBadge ? (
         <p className="app-shell__game-selected-summary-badges">
           <TrendBadges badges={selectedVideoFormattedTrendBadges} />
-          {selectedVideoMiningBadge ? (
-            <span className="app-shell__game-selected-status-badge">{selectedVideoMiningBadge}</span>
+          {selectedVideoStatusBadge ? (
+            <span className="app-shell__game-selected-status-badge">{selectedVideoStatusBadge}</span>
           ) : null}
           {selectedVideoMomentumPriceBadge ? (
             <span
@@ -602,7 +530,6 @@ export function SelectedVideoGameActionsBundle({
   desktopPlayerDockSlotRef,
   fallbackRankLabel,
   fallbackViewCountLabel,
-  gameCoinOverview,
   isDesktopMiniPlayerEnabled = false,
   mainPlayerRef,
   isBuySubmitting = false,
@@ -620,7 +547,6 @@ export function SelectedVideoGameActionsBundle({
   panelControls,
   selectedGameActionChannelTitle,
   selectedGameActionTitle,
-  selectedOpenPositionId,
   selectedVideoCurrentChartRank,
   selectedVideoHistoricalPosition,
   selectedVideoId,
@@ -636,9 +562,7 @@ export function SelectedVideoGameActionsBundle({
     <GameSelectedVideoPriceSummary
       fallbackRankLabel={fallbackRankLabel}
       fallbackViewCountLabel={fallbackViewCountLabel}
-      gameCoinOverview={gameCoinOverview}
       maxSellQuantity={maxSellQuantity}
-      selectedOpenPositionId={selectedOpenPositionId}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
       selectedVideoHistoricalPosition={selectedVideoHistoricalPosition}
       selectedVideoId={selectedVideoId}

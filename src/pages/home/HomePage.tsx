@@ -18,9 +18,7 @@ import StickySelectedVideoControls from './sections/StickySelectedVideoControls'
 import TrendTicker from './sections/TrendTicker';
 import {
   buildOpenGameHoldings,
-  calculateEstimatedCoinYieldAfterBuy,
   formatGameOrderQuantity,
-  formatCoins,
   formatPoints,
   formatRank,
   getPointTone,
@@ -74,17 +72,18 @@ import {
   useBuyableMarketChart,
   useBuyGamePosition,
   useCurrentGameSeason,
-  useGameCoinOverview,
   useGameCoinTierProgress,
+  useGameHighlights,
   useGameLeaderboard,
-  useGameLeaderboardPositions,
+  useGameLeaderboardHighlights,
+  useGameLeaderboardPositionRankHistory,
   useGameMarket,
   useGamePositionRankHistory,
   useMyGamePositions,
   useSellGamePositions,
 } from '../../features/game/queries';
 import { useGameRealtimeInvalidation } from '../../features/game/realtime';
-import type { GamePosition, GamePositionRankHistory } from '../../features/game/types';
+import type { GameHighlight, GamePosition, GamePositionRankHistory } from '../../features/game/types';
 import { fetchGamePositionRankHistory } from '../../features/game/api';
 import {
   useFavoriteStreamerVideos,
@@ -403,21 +402,12 @@ function persistCollapsedHomeSectionIds(sectionIds: string[]) {
   window.localStorage.setItem(COLLAPSED_HOME_SECTIONS_STORAGE_KEY, JSON.stringify(sectionIds));
 }
 
-function getNextCoinRefreshSeconds(remainingSecondsList: Array<number | null | undefined>) {
-  return remainingSecondsList.reduce<number | null>((nearest, remainingSeconds) => {
-    if (typeof remainingSeconds !== 'number' || !Number.isFinite(remainingSeconds) || remainingSeconds < 0) {
-      return nearest;
-    }
-
-    return nearest === null ? remainingSeconds : Math.min(nearest, remainingSeconds);
-  }, null);
-}
-
 function HomePage() {
   const queryClient = useQueryClient();
   const { accessToken, isLoggingOut, logout, refreshCurrentUser, status: authStatus, user } = useAuth();
   const [selectedOpenPositionId, setSelectedOpenPositionId] = useState<number | null>(null);
-  const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'guide'>('positions');
+  const [activeGameTab, setActiveGameTab] = useState<'positions' | 'highlights' | 'history' | 'guide'>('positions');
+  const [rankHistoryFocusMode, setRankHistoryFocusMode] = useState<'full' | 'trade'>('full');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
   const [collapsedHomeSectionIds, setCollapsedHomeSectionIds] = useState(getInitialCollapsedHomeSectionIds);
   const [selectedLeaderboardUserId, setSelectedLeaderboardUserId] = useState<number | null>(null);
@@ -433,6 +423,7 @@ function HomePage() {
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('popular');
   const [chartSortMode, setChartSortMode] = useState<ChartSortMode>('popular-desc');
   const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(null);
+  const [selectedRankHistoryOwnerUserId, setSelectedRankHistoryOwnerUserId] = useState<number | null>(null);
   const chartSortOptions = useMemo(
     () =>
       authStatus === 'authenticated'
@@ -440,8 +431,6 @@ function HomePage() {
         : CHART_SORT_OPTIONS.filter((option) => option.id !== 'price-desc' && option.id !== 'price-asc'),
     [authStatus],
   );
-  const [coinCountdownNow, setCoinCountdownNow] = useState(() => Date.now());
-  const lastCoinAutoRefreshAtRef = useRef<number | null>(null);
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
@@ -539,15 +528,6 @@ function HomePage() {
     isError: isBuyableMarketChartError,
   } = useBuyableMarketChart(accessToken, selectedRegionCode, shouldLoadGame);
   const {
-    data: gameCoinOverview,
-    error: gameCoinOverviewError,
-    dataUpdatedAt: gameCoinOverviewUpdatedAt,
-  } = useGameCoinOverview(
-    accessToken,
-    selectedRegionCode,
-    shouldLoadGame,
-  );
-  const {
     data: gameCoinTierProgress,
     error: gameCoinTierProgressError,
   } = useGameCoinTierProgress(accessToken, selectedRegionCode, shouldLoadGame);
@@ -616,11 +596,11 @@ function HomePage() {
     isLoading: isOpenGamePositionsLoading,
   } = useMyGamePositions(accessToken, selectedRegionCode, 'OPEN', shouldLoadGame);
   const {
-    data: selectedLeaderboardPositions = [],
-    error: selectedLeaderboardPositionsError,
-    isError: isSelectedLeaderboardPositionsError,
-    isLoading: isSelectedLeaderboardPositionsLoading,
-  } = useGameLeaderboardPositions(
+    data: selectedLeaderboardHighlights = [],
+    error: selectedLeaderboardHighlightsError,
+    isError: isSelectedLeaderboardHighlightsError,
+    isLoading: isSelectedLeaderboardHighlightsLoading,
+  } = useGameLeaderboardHighlights(
     accessToken,
     selectedLeaderboardUserId,
     selectedRegionCode,
@@ -632,89 +612,20 @@ function HomePage() {
     isLoading: isGameHistoryLoading,
   } = useMyGamePositions(accessToken, selectedRegionCode, '', shouldLoadGame, 30);
   const {
+    data: gameHighlights = [],
+    error: gameHighlightsError,
+    isLoading: isGameHighlightsLoading,
+  } = useGameHighlights(accessToken, selectedRegionCode, shouldLoadGame);
+  const {
     evaluationPoints: openPositionsEvaluationPoints,
     profitPoints: openPositionsProfitPoints,
     stakePoints: openPositionsBuyPoints,
   } = useMemo(() => summarizeGamePositions(openGamePositions), [openGamePositions]);
-  const liveGameCoinOverview = useMemo(() => {
-    if (!gameCoinOverview) {
-      return undefined;
-    }
-
-    const elapsedSeconds = Math.max(0, Math.floor((coinCountdownNow - gameCoinOverviewUpdatedAt) / 1000));
-
-    return {
-      ...gameCoinOverview,
-      positions: gameCoinOverview.positions.map((position) => ({
-        ...position,
-        nextPayoutInSeconds:
-          typeof position.nextPayoutInSeconds === 'number'
-            ? Math.max(0, position.nextPayoutInSeconds - elapsedSeconds)
-            : position.nextPayoutInSeconds,
-        nextProductionInSeconds:
-          typeof position.nextProductionInSeconds === 'number'
-            ? Math.max(0, position.nextProductionInSeconds - elapsedSeconds)
-            : position.nextProductionInSeconds,
-      })),
-    };
-  }, [coinCountdownNow, gameCoinOverview, gameCoinOverviewUpdatedAt]);
-  const nextCoinRefreshInSeconds = useMemo(
-    () =>
-      getNextCoinRefreshSeconds(
-        liveGameCoinOverview?.positions.flatMap((position) => [
-          position.nextPayoutInSeconds,
-          position.nextProductionInSeconds,
-        ]) ?? [],
-      ),
-    [liveGameCoinOverview],
-  );
-  const hasCoinCountdown = nextCoinRefreshInSeconds !== null;
   const computedWalletTotalAssetPoints = currentGameSeason
     ? currentGameSeason.wallet.balancePoints + openPositionsEvaluationPoints
     : null;
   const buyGamePositionMutation = useBuyGamePosition(accessToken);
   const sellGamePositionsMutation = useSellGamePositions(accessToken);
-
-  useEffect(() => {
-    if (!shouldLoadGame || !hasCoinCountdown) {
-      return;
-    }
-
-    setCoinCountdownNow(Date.now());
-
-    const intervalId = window.setInterval(() => {
-      setCoinCountdownNow(Date.now());
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [hasCoinCountdown, shouldLoadGame]);
-
-  useEffect(() => {
-    if (!shouldLoadGame || !accessToken || nextCoinRefreshInSeconds === null || nextCoinRefreshInSeconds > 0) {
-      return;
-    }
-
-    if (lastCoinAutoRefreshAtRef.current === gameCoinOverviewUpdatedAt) {
-      return;
-    }
-
-    lastCoinAutoRefreshAtRef.current = gameCoinOverviewUpdatedAt;
-
-    void invalidateGameQueries(queryClient, {
-      accessToken,
-      includeLeaderboardPositions: true,
-      regionCode: selectedRegionCode,
-    });
-  }, [
-    accessToken,
-    gameCoinOverviewUpdatedAt,
-    nextCoinRefreshInSeconds,
-    queryClient,
-    selectedRegionCode,
-    shouldLoadGame,
-  ]);
 
   const {
     data,
@@ -1252,15 +1163,39 @@ function HomePage() {
     );
   }, []);
 
+  const isForeignSelectedRankHistory =
+    selectedRankHistoryOwnerUserId !== null && selectedRankHistoryOwnerUserId !== user?.id;
   const {
-    data: selectedPositionRankHistory,
-    error: selectedPositionRankHistoryError,
-    isLoading: isPositionRankHistoryLoading,
+    data: mySelectedPositionRankHistory,
+    error: mySelectedPositionRankHistoryError,
+    isLoading: isMyPositionRankHistoryLoading,
   } = useGamePositionRankHistory(
     accessToken,
     selectedRankHistoryPosition?.id ?? null,
-    shouldLoadGame && Boolean(selectedRankHistoryPosition),
+    shouldLoadGame &&
+      Boolean(selectedRankHistoryPosition) &&
+      !isForeignSelectedRankHistory,
   );
+  const {
+    data: leaderboardSelectedPositionRankHistory,
+    error: leaderboardSelectedPositionRankHistoryError,
+    isLoading: isLeaderboardPositionRankHistoryLoading,
+  } = useGameLeaderboardPositionRankHistory(
+    accessToken,
+    isForeignSelectedRankHistory ? selectedRankHistoryOwnerUserId : null,
+    selectedRankHistoryPosition?.id ?? null,
+    selectedRegionCode,
+    shouldLoadGame && Boolean(selectedRankHistoryPosition) && isForeignSelectedRankHistory,
+  );
+  const selectedPositionRankHistory = isForeignSelectedRankHistory
+    ? leaderboardSelectedPositionRankHistory
+    : mySelectedPositionRankHistory;
+  const selectedPositionRankHistoryError = isForeignSelectedRankHistory
+    ? leaderboardSelectedPositionRankHistoryError
+    : mySelectedPositionRankHistoryError;
+  const isPositionRankHistoryLoading = isForeignSelectedRankHistory
+    ? isLeaderboardPositionRankHistoryLoading
+    : isMyPositionRankHistoryLoading;
   const relatedRankHistoryPositions = useMemo(
     () =>
       selectedRankHistoryPosition?.videoId
@@ -1272,7 +1207,12 @@ function HomePage() {
   );
   const relatedPositionRankHistoryQueries = useQueries({
     queries: relatedRankHistoryPositions.map((position) => ({
-      enabled: shouldLoadGame && Boolean(accessToken) && Boolean(selectedRankHistoryPosition) && position.id !== selectedRankHistoryPosition?.id,
+      enabled:
+        shouldLoadGame &&
+        Boolean(accessToken) &&
+        Boolean(selectedRankHistoryPosition) &&
+        !isForeignSelectedRankHistory &&
+        position.id !== selectedRankHistoryPosition?.id,
       queryKey: gameQueryKeys.positionRankHistory(accessToken, position.id),
       queryFn: () => fetchGamePositionRankHistory(accessToken as string, position.id),
       staleTime: 1000 * 15,
@@ -1292,12 +1232,13 @@ function HomePage() {
   useLogoutOnUnauthorized(favoriteStreamerVideosError, logout);
   useLogoutOnUnauthorized(currentGameSeasonError, logout);
   useLogoutOnUnauthorized(gameLeaderboardError, logout);
-  useLogoutOnUnauthorized(gameCoinOverviewError, logout);
   useLogoutOnUnauthorized(gameCoinTierProgressError, logout);
   useLogoutOnUnauthorized(gameMarketError, logout);
   useLogoutOnUnauthorized(buyableMarketChartError, logout);
   useLogoutOnUnauthorized(openGamePositionsError, logout);
   useLogoutOnUnauthorized(gameHistoryPositionsError, logout);
+  useLogoutOnUnauthorized(gameHighlightsError, logout);
+  useLogoutOnUnauthorized(selectedLeaderboardHighlightsError, logout);
   useLogoutOnUnauthorized(selectedPositionRankHistoryError, logout);
 
   useEffect(() => {
@@ -1561,34 +1502,6 @@ function HomePage() {
     totalSelectedVideoBuyPoints,
   });
 
-  const selectedVideoBuyCoinSummary = useMemo(() => {
-    if (!liveGameCoinOverview || typeof totalSelectedVideoBuyPoints !== 'number') {
-      return null;
-    }
-
-    const matchingRank = liveGameCoinOverview.ranks.find((rank) => rank.rank === selectedVideoCurrentChartRank);
-
-    if (!matchingRank) {
-      return {
-        estimatedCoinYield: null,
-        nextEvaluationPoints: selectedVideoOpenPositionSummary.evaluationPoints + totalSelectedVideoBuyPoints,
-      };
-    }
-
-    return {
-      estimatedCoinYield: calculateEstimatedCoinYieldAfterBuy(
-        selectedVideoOpenPositionSummary.evaluationPoints,
-        totalSelectedVideoBuyPoints,
-        matchingRank.coinRatePercent,
-      ),
-      nextEvaluationPoints: selectedVideoOpenPositionSummary.evaluationPoints + totalSelectedVideoBuyPoints,
-    };
-  }, [
-    liveGameCoinOverview,
-    selectedVideoCurrentChartRank,
-    selectedVideoOpenPositionSummary.evaluationPoints,
-    totalSelectedVideoBuyPoints,
-  ]);
   const projectedWalletBalanceAfterBuy = useMemo(
     () =>
       getProjectedWalletBalance(
@@ -1945,43 +1858,66 @@ function HomePage() {
     },
     [handleSelectVideoWithPreview, scrollToPlayerStage, setGameActionStatus],
   );
-  const handleSelectLeaderboardPositionVideo = useCallback(
-    async (position: GamePosition, playbackQueueId?: string) => {
-      scrollToPlayerStage();
-
-      if (playbackQueueId) {
-        setGameActionStatus(null);
-        setSelectedOpenPositionId(position.id);
-        handleSelectVideoWithPreview(position.videoId, playbackQueueId);
-        return;
-      }
-
-      setHistoryPlaybackLoadingVideoId(position.videoId);
-
-      try {
-        const video = await fetchVideoById(position.videoId);
-        setHistoryPlaybackVideo(video);
-        setGameActionStatus(null);
-        setSelectedOpenPositionId(position.id);
-        handleSelectVideoWithPreview(video.id, HISTORY_PLAYBACK_QUEUE_ID);
-      } catch (error) {
-        setGameActionStatus(
-          error instanceof Error
-            ? error.message
-            : '이 리더보드 영상 정보를 다시 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
-        );
-      } finally {
-        setHistoryPlaybackLoadingVideoId(null);
-      }
-    },
-    [handleSelectVideoWithPreview, scrollToPlayerStage, setGameActionStatus],
-  );
-  const handleSelectGameTab = useCallback((tab: 'positions' | 'history' | 'guide') => {
+  const handleSelectGameTab = useCallback((tab: 'positions' | 'highlights' | 'history' | 'guide') => {
     startTransition(() => {
       setActiveGameTab(tab);
     });
   }, []);
+  const handleSelectGameHighlight = useCallback(
+    (highlight: GameHighlight) => {
+      setSelectedRankHistoryOwnerUserId(null);
+      setRankHistoryFocusMode('trade');
+      openRankHistoryModal(highlight.videoId, {
+        id: highlight.positionId,
+        videoId: highlight.videoId,
+        title: highlight.videoTitle,
+        channelTitle: highlight.channelTitle,
+        thumbnailUrl: highlight.thumbnailUrl,
+        buyRank: highlight.buyRank,
+        currentRank: highlight.highlightRank,
+        rankDiff: highlight.rankDiff,
+        quantity: highlight.quantity,
+        stakePoints: highlight.stakePoints,
+        currentPricePoints: highlight.currentPricePoints,
+        profitPoints: highlight.profitPoints,
+        chartOut: false,
+        status: highlight.status,
+        buyCapturedAt: highlight.createdAt,
+        createdAt: highlight.createdAt,
+        closedAt: highlight.status === 'OPEN' ? null : highlight.createdAt,
+      });
+    },
+    [openRankHistoryModal],
+  );
+  const handleSelectLeaderboardHighlight = useCallback(
+    (highlight: GameHighlight) => {
+      setSelectedRankHistoryOwnerUserId(selectedLeaderboardUserId);
+      setRankHistoryFocusMode('trade');
+      openRankHistoryModal(highlight.videoId, {
+        id: highlight.positionId,
+        videoId: highlight.videoId,
+        title: highlight.videoTitle,
+        channelTitle: highlight.channelTitle,
+        thumbnailUrl: highlight.thumbnailUrl,
+        buyRank: highlight.buyRank,
+        currentRank: highlight.highlightRank,
+        rankDiff: highlight.rankDiff,
+        quantity: highlight.quantity,
+        stakePoints: highlight.stakePoints,
+        currentPricePoints: highlight.currentPricePoints,
+        profitPoints: highlight.profitPoints,
+        chartOut: false,
+        status: highlight.status,
+        buyCapturedAt: highlight.createdAt,
+        createdAt: highlight.createdAt,
+        closedAt: highlight.status === 'OPEN' ? null : highlight.createdAt,
+      });
+    },
+    [openRankHistoryModal, selectedLeaderboardUserId],
+  );
   const handleOpenSelectedVideoRankHistory = useCallback(() => {
+    setSelectedRankHistoryOwnerUserId(null);
+    setRankHistoryFocusMode('full');
     openRankHistoryModal(
       selectedVideoId,
       selectedVideoHistoryTargetPosition,
@@ -2012,7 +1948,6 @@ function HomePage() {
       desktopPlayerDockSlotRef={options?.desktopPlayerDockSlotRef}
       fallbackRankLabel={selectedVideoRankLabel}
       fallbackViewCountLabel={selectedVideoStatLabel}
-      gameCoinOverview={liveGameCoinOverview}
       isDesktopMiniPlayerEnabled={options?.isDesktopMiniPlayerEnabled ?? false}
       isBuySubmitting={isBuySubmitting}
       isChartDisabled={isChartActionDisabled}
@@ -2031,7 +1966,6 @@ function HomePage() {
       panelControls={panelControls}
       selectedGameActionChannelTitle={selectedGameActionChannelTitle}
       selectedGameActionTitle={selectedGameActionTitle}
-      selectedOpenPositionId={selectedOpenPositionId}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
       selectedVideoHistoricalPosition={selectedVideoHistoricalPosition}
       selectedVideoId={selectedVideoId}
@@ -2044,13 +1978,17 @@ function HomePage() {
       sellActionTitle={sellActionTitle}
     />
   );
+  const handleCloseRankHistoryModal = useCallback(() => {
+    setRankHistoryFocusMode('full');
+    setSelectedRankHistoryOwnerUserId(null);
+    closeRankHistoryModal();
+  }, [closeRankHistoryModal]);
   const gameActionContent = (
     <SelectedVideoGameActionsBundle
       buyActionTitle={buyActionTitle}
       canShowGameActions={canShowGameActions}
       fallbackRankLabel={selectedVideoRankLabel}
       fallbackViewCountLabel={selectedVideoStatLabel}
-      gameCoinOverview={liveGameCoinOverview}
       isBuySubmitting={isBuySubmitting}
       isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
       isSelectedVideoSellDisabled={isSelectedVideoSellDisabled}
@@ -2060,7 +1998,6 @@ function HomePage() {
       onOpenRankHistory={handleOpenSelectedVideoRankHistory}
       onOpenSellTradeModal={openSellTradeModal}
       selectedGameActionChannelTitle={selectedGameActionChannelTitle}
-      selectedOpenPositionId={selectedOpenPositionId}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
       selectedVideoHistoricalPosition={selectedVideoHistoricalPosition}
       selectedVideoId={selectedVideoId}
@@ -2076,10 +2013,8 @@ function HomePage() {
     <GameSelectedVideoPriceSummary
       fallbackRankLabel={selectedVideoRankLabel}
       fallbackViewCountLabel={selectedVideoStatLabel}
-      gameCoinOverview={liveGameCoinOverview}
       maxSellQuantity={maxSellQuantity}
       preferMarketSummary
-      selectedOpenPositionId={selectedOpenPositionId}
       selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
       selectedVideoHistoricalPosition={selectedVideoHistoricalPosition}
       selectedVideoId={selectedVideoId}
@@ -2093,47 +2028,24 @@ function HomePage() {
   const selectedLeaderboardEntry = selectedLeaderboardUserId
     ? gameLeaderboard.find((entry) => entry.userId === selectedLeaderboardUserId) ?? null
     : null;
-  const selectedLeaderboardPositionsTitle = selectedLeaderboardEntry
-    ? `${selectedLeaderboardEntry.displayName}님의 보유 포지션`
-    : '보유 포지션';
-  const resolveLeaderboardPlaybackQueueId = useCallback(
-    (videoId: string) =>
-      findPlaybackQueueIdForVideo(videoId, {
-        favoriteStreamerVideoSection,
-        gamePortfolioSection,
-        historyPlaybackSection,
-        newChartEntriesSection: sortedNewChartEntriesSection,
-        realtimeSurgingSection: sortedRealtimeSurgingSection,
-        selectedSection: selectedPlaybackSection,
-      }),
-    [
-      favoriteStreamerVideoSection,
-      gamePortfolioSection,
-      historyPlaybackSection,
-      selectedPlaybackSection,
-      sortedNewChartEntriesSection,
-      sortedRealtimeSurgingSection,
-    ],
-  );
+  const selectedLeaderboardHighlightsTitle = selectedLeaderboardEntry
+    ? `${selectedLeaderboardEntry.displayName}님의 하이라이트`
+    : '하이라이트';
   const coinModalRankingContent = (
     <RankingGameLeaderboardTab
       entries={gameLeaderboard}
       error={gameLeaderboardError}
+      highlights={selectedLeaderboardHighlights}
+      highlightsError={selectedLeaderboardHighlightsError}
+      highlightsTitle={selectedLeaderboardHighlightsTitle}
       isError={isGameLeaderboardError}
+      isHighlightsError={isSelectedLeaderboardHighlightsError}
+      isHighlightsLoading={isSelectedLeaderboardHighlightsLoading}
       isLoading={isGameLeaderboardLoading}
-      isPositionsError={isSelectedLeaderboardPositionsError}
-      isPositionsLoading={isSelectedLeaderboardPositionsLoading}
-      loadingVideoId={historyPlaybackLoadingVideoId}
-      onSelectPosition={(position, playbackQueueId) => {
-        void handleSelectLeaderboardPositionVideo(position, playbackQueueId);
-      }}
+      onSelectHighlight={handleSelectLeaderboardHighlight}
       onToggleUser={(userId) =>
         setSelectedLeaderboardUserId((currentUserId) => (currentUserId === userId ? null : userId))
       }
-      positions={selectedLeaderboardPositions}
-      positionsError={selectedLeaderboardPositionsError}
-      positionsTitle={selectedLeaderboardPositionsTitle}
-      resolvePlaybackQueueId={resolveLeaderboardPlaybackQueueId}
       season={currentGameSeason}
       selectedUserId={selectedLeaderboardUserId}
     />
@@ -2144,7 +2056,6 @@ function HomePage() {
       activePlaybackQueueId={activePlaybackQueueId}
       authStatus={authStatus}
       canShowGameActions={canShowGameActions}
-      coinOverview={liveGameCoinOverview}
       coinTierProgress={gameCoinTierProgress}
       computedWalletTotalAssetPoints={computedWalletTotalAssetPoints}
       currentGameSeason={currentGameSeason}
@@ -2152,6 +2063,7 @@ function HomePage() {
       favoriteStreamerVideoSection={favoriteStreamerVideoSection}
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       gameHistoryPositions={gameHistoryPositions}
+      gameHighlights={gameHighlights}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}
       gamePortfolioSection={gamePortfolioSection}
       hasApiConfigured={isApiConfigured}
@@ -2159,8 +2071,10 @@ function HomePage() {
       historyPlaybackSection={historyPlaybackSection}
       isCollapsed={isModal ? false : isRankingGameCollapsed}
       isGameHistoryLoading={isGameHistoryLoading}
+      isGameHighlightsLoading={isGameHighlightsLoading}
       newChartEntriesSection={sortedNewChartEntriesSection}
       onOpenCoinModal={openCoinModal}
+      onSelectGameHighlight={handleSelectGameHighlight}
       onSelectGameHistoryVideo={handleSelectGameHistoryVideo}
       onSelectGamePositionVideo={handleSelectGamePositionVideo}
       onSelectTab={handleSelectGameTab}
@@ -2199,6 +2113,21 @@ function HomePage() {
       ),
     [relatedPositionRankHistories, selectedPositionRankHistory, selectedVideoRankHistory],
   );
+  const visibleRankHistory = rankHistoryFocusMode === 'trade'
+    ? selectedPositionRankHistory
+    : mergedRankHistory;
+  const visibleRankHistoryError =
+    rankHistoryFocusMode === 'trade'
+      ? selectedPositionRankHistoryError
+      : selectedPositionRankHistoryError instanceof Error
+        ? selectedPositionRankHistoryError
+        : relatedPositionRankHistoryError instanceof Error
+          ? relatedPositionRankHistoryError
+          : selectedVideoRankHistoryError;
+  const isVisibleRankHistoryLoading =
+    rankHistoryFocusMode === 'trade'
+      ? isPositionRankHistoryLoading
+      : isPositionRankHistoryLoading || isRelatedPositionRankHistoryLoading || isVideoRankHistoryLoading;
   const isBuyTradeModalOpen =
     activeTradeModal === 'buy' && Boolean(selectedVideoId) && Boolean(selectedVideoMarketEntry);
   const isSellTradeModalOpen =
@@ -2428,18 +2357,15 @@ function HomePage() {
       />
       <GameRankHistoryModal
         error={
-          selectedPositionRankHistoryError instanceof Error
-            ? selectedPositionRankHistoryError
-            : relatedPositionRankHistoryError instanceof Error
-              ? relatedPositionRankHistoryError
-            : selectedVideoRankHistoryError instanceof Error
-              ? selectedVideoRankHistoryError
-              : null
+          visibleRankHistoryError instanceof Error
+            ? visibleRankHistoryError
+            : null
         }
-        history={mergedRankHistory}
-        isLoading={isPositionRankHistoryLoading || isRelatedPositionRankHistoryLoading || isVideoRankHistoryLoading}
+        focusMode={rankHistoryFocusMode}
+        history={visibleRankHistory}
+        isLoading={isVisibleRankHistoryLoading}
         isOpen={isRankHistoryModalOpen}
-        onClose={closeRankHistoryModal}
+        onClose={handleCloseRankHistoryModal}
         position={selectedRankHistoryPosition}
         videoFallback={
           resolvedSelectedVideo
@@ -2485,7 +2411,6 @@ function HomePage() {
       <GameCoinModal
         isOpen={isCoinModalOpen}
         onClose={closeCoinModal}
-        overview={liveGameCoinOverview}
         rankingContent={coinModalRankingContent}
         tierProgress={gameCoinTierProgress}
       />
@@ -2520,21 +2445,6 @@ function HomePage() {
           { label: '총 매수', value: formatPoints(totalSelectedVideoBuyPoints ?? (selectedVideoUnitPricePoints ?? 0)) },
           ...(typeof projectedWalletBalanceAfterBuy === 'number'
             ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterBuy) }]
-            : []),
-          ...(selectedVideoBuyCoinSummary
-            ? [
-                {
-                  label: '매수 후 총 평가',
-                  value: formatPoints(selectedVideoBuyCoinSummary.nextEvaluationPoints),
-                },
-                {
-                  label: '코인 채굴량',
-                  value:
-                    typeof selectedVideoBuyCoinSummary.estimatedCoinYield === 'number'
-                      ? formatCoins(selectedVideoBuyCoinSummary.estimatedCoinYield)
-                      : `Top ${liveGameCoinOverview?.eligibleRankCutoff ?? 0} 진입 시 반영`,
-                },
-              ]
             : []),
         ]}
         summaryNote={undefined}

@@ -4,6 +4,7 @@ import type {
   GameCoinOverview,
   GameCoinTierProgress,
   GameCurrentSeason,
+  GameHighlight,
   GameLeaderboardEntry,
   GameMarketVideo,
   GamePosition,
@@ -62,6 +63,14 @@ export async function fetchGameCoinOverview(accessToken: string, regionCode: str
   });
 }
 
+export async function fetchGameHighlights(accessToken: string, regionCode: string) {
+  const params = new URLSearchParams({ regionCode });
+
+  return fetchApi<GameHighlight[]>(`/api/game/highlights?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
 export async function fetchGameCoinTierProgress(accessToken: string, regionCode: string) {
   const params = new URLSearchParams({ regionCode });
 
@@ -80,6 +89,14 @@ export async function fetchGameLeaderboardPositions(accessToken: string, userId:
   const params = new URLSearchParams({ regionCode });
 
   return fetchApi<GamePosition[]>(`/api/game/leaderboard/${userId}/positions?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchGameLeaderboardHighlights(accessToken: string, userId: number, regionCode: string) {
+  const params = new URLSearchParams({ regionCode });
+
+  return fetchApi<GameHighlight[]>(`/api/game/leaderboard/${userId}/highlights?${params.toString()}`, {
     headers: createAuthorizationHeader(accessToken),
   });
 }
@@ -109,6 +126,22 @@ export async function fetchGamePositionRankHistory(accessToken: string, position
   return fetchApi<GamePositionRankHistory>(`/api/game/positions/${positionId}/rank-history`, {
     headers: createAuthorizationHeader(accessToken),
   });
+}
+
+export async function fetchGameLeaderboardPositionRankHistory(
+  accessToken: string,
+  userId: number,
+  positionId: number,
+  regionCode: string,
+) {
+  const params = new URLSearchParams({ regionCode });
+
+  return fetchApi<GamePositionRankHistory>(
+    `/api/game/leaderboard/${userId}/positions/${positionId}/rank-history?${params.toString()}`,
+    {
+      headers: createAuthorizationHeader(accessToken),
+    },
+  );
 }
 
 export async function buyGamePosition(accessToken: string, input: CreateGamePositionInput) {

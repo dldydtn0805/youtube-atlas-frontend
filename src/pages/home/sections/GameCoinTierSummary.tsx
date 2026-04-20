@@ -1,10 +1,12 @@
 import { useEffect, useRef, type PointerEvent } from 'react';
 
 import type { GameCoinTierProgress } from '../../../features/game/types';
-import { formatCoins, formatFullCoins } from '../gameHelpers';
+
+function formatScore(score: number) {
+  return `${score.toLocaleString('ko-KR')}점`;
+}
 
 interface GameCoinTierSummaryProps {
-  coinYieldEstimate?: number | null;
   progress?: GameCoinTierProgress;
   surfaceVariant?: 'default' | 'season-coin';
   title?: string;
@@ -22,7 +24,7 @@ function getTierProgressPercent(progress: GameCoinTierProgress) {
   const currentFloor = progress.currentTier.minCoinBalance;
   const nextFloor = progress.nextTier.minCoinBalance;
   const range = Math.max(nextFloor - currentFloor, 1);
-  const progressed = Math.max(progress.coinBalance - currentFloor, 0);
+  const progressed = Math.max(progress.highlightScore - currentFloor, 0);
 
   return Math.max(0, Math.min(100, (progressed / range) * 100));
 }
@@ -33,9 +35,9 @@ function getTierCardNumber(progress: GameCoinTierProgress) {
   const nextFloor = progress.nextTier
     ? String(progress.nextTier.minCoinBalance).padEnd(4, '0').slice(0, 4)
     : '9999';
-  const coinBalance = String(progress.coinBalance).padStart(4, '0').slice(-4);
+  const score = String(progress.highlightScore).padStart(4, '0').slice(-4);
 
-  return `YTAT ${tierCode} ${currentFloor} ${nextFloor} ${coinBalance}`;
+  return `YTAT ${tierCode} ${currentFloor} ${nextFloor} ${score}`;
 }
 
 function setTierCardTiltFromPoint(card: HTMLDivElement, clientX: number, clientY: number) {
@@ -84,7 +86,6 @@ function handleTierCardPointerEnd(event: PointerEvent<HTMLDivElement>) {
 }
 
 export default function GameCoinTierSummary({
-  coinYieldEstimate,
   progress,
   surfaceVariant = 'default',
   title = '현재 티어',
@@ -260,19 +261,14 @@ export default function GameCoinTierSummary({
 
   const progressPercent = getTierProgressPercent(progress);
   const remainingToNextTier = progress.nextTier
-    ? Math.max(progress.nextTier.minCoinBalance - progress.coinBalance, 0)
+    ? Math.max(progress.nextTier.minCoinBalance - progress.highlightScore, 0)
     : 0;
   const tierCardNumber = getTierCardNumber(progress);
   const progressLabel = `${Math.round(progressPercent)}%`;
-  const hasCoinYieldEstimate =
-    typeof coinYieldEstimate === 'number' && Number.isFinite(coinYieldEstimate);
-  const coinYieldEstimateLabel = hasCoinYieldEstimate
-    ? `${coinYieldEstimate > 0 ? '+' : ''}${formatCoins(coinYieldEstimate)}`
-    : null;
 
   return (
     <section
-      aria-label="시즌 코인 티어 진행도"
+      aria-label="하이라이트 티어 진행도"
       className="app-shell__game-tier"
       data-current-tier={progress.currentTier.tierCode}
       data-surface-variant={surfaceVariant}
@@ -305,7 +301,7 @@ export default function GameCoinTierSummary({
         >
           <div className="app-shell__game-tier-card-top">
             <span className="app-shell__game-tier-issuer">YOUTUBE ATLAS</span>
-            <span className="app-shell__game-tier-network">Season Coin</span>
+            <span className="app-shell__game-tier-network">Highlight Tier</span>
           </div>
 
           <div className="app-shell__game-tier-card-tech" aria-hidden="true">
@@ -322,24 +318,15 @@ export default function GameCoinTierSummary({
               {progress.currentTier.displayName}
             </span>
             <span className="app-shell__game-tier-coin-side">
-              <strong className="app-shell__game-tier-balance" title={formatCoins(progress.coinBalance)}>
-                {formatCoins(progress.coinBalance)}
+              <strong className="app-shell__game-tier-balance" title={formatScore(progress.highlightScore)}>
+                {formatScore(progress.highlightScore)}
               </strong>
-              {coinYieldEstimateLabel ? (
-                <span
-                  className="app-shell__game-tier-yield"
-                  title={formatFullCoins(coinYieldEstimate as number)}
-                >
-                  <span className="app-shell__game-tier-yield-label">예상 채굴</span>
-                  <span className="app-shell__game-tier-yield-value">{coinYieldEstimateLabel}</span>
-                </span>
-              ) : null}
             </span>
           </div>
 
           <p className="app-shell__game-tier-description">
             {progress.nextTier
-              ? `${progress.nextTier.displayName}까지 ${formatCoins(remainingToNextTier)} 남음`
+              ? `${progress.nextTier.displayName}까지 ${formatScore(remainingToNextTier)} 남음`
               : '이번 시즌 최고 티어를 달성했어요.'}
           </p>
 
@@ -353,9 +340,9 @@ export default function GameCoinTierSummary({
           </div>
 
           <div className="app-shell__game-tier-progress-scale">
-            <span>{formatCoins(progress.currentTier.minCoinBalance)}</span>
+            <span>{formatScore(progress.currentTier.minCoinBalance)}</span>
             <span>
-              {progress.nextTier ? formatCoins(progress.nextTier.minCoinBalance) : 'MAX'}
+              {progress.nextTier ? formatScore(progress.nextTier.minCoinBalance) : 'MAX'}
             </span>
           </div>
         </div>
@@ -365,7 +352,7 @@ export default function GameCoinTierSummary({
         <ul className="app-shell__game-tier-ladder">
           {progress.tiers.map((tier) => {
             const isCurrent = tier.tierCode === progress.currentTier.tierCode;
-            const isReached = progress.coinBalance >= tier.minCoinBalance;
+            const isReached = progress.highlightScore >= tier.minCoinBalance;
 
             return (
               <li
@@ -376,7 +363,7 @@ export default function GameCoinTierSummary({
                 data-tier-code={tier.tierCode}
               >
                 <span className="app-shell__game-tier-step-name">{tier.displayName}</span>
-                <span className="app-shell__game-tier-step-value">{formatCoins(tier.minCoinBalance)}</span>
+                <span className="app-shell__game-tier-step-value">{formatScore(tier.minCoinBalance)}</span>
               </li>
             );
           })}

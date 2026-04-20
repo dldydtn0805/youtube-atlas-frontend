@@ -70,7 +70,7 @@ describe('GameSelectedVideoPriceSummary', () => {
       '순위 3위 · 조회수 12.5만 · 현재 단가',
     );
     expect(screen.getByText('프리미엄 +12.8%')).toBeInTheDocument();
-    expect(screen.queryByText('개당 채굴량')).not.toBeInTheDocument();
+    expect(screen.queryByText('하이라이트 점수')).not.toBeInTheDocument();
   });
 
   it('shows discount badge next to selected video metadata', () => {
@@ -228,58 +228,12 @@ describe('GameSelectedVideoPriceSummary', () => {
     expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
       '순위 3위 · 조회수 12.5만 · 현재 단가',
     );
-    expect(screen.queryByText('개당 채굴량')).not.toBeInTheDocument();
+    expect(screen.queryByText('하이라이트 점수')).not.toBeInTheDocument();
   });
 
-  it('uses the selected position hold boost instead of another position with the same video id', () => {
+  it('does not show legacy reward badges on selected positions', () => {
     render(
       <GameSelectedVideoPriceSummary
-        gameCoinOverview={{
-          eligibleRankCutoff: 100,
-          minimumHoldSeconds: 60,
-          myActiveProducerCount: 1,
-          myCoinBalance: 0,
-          myEstimatedCoinYield: 0,
-          myWarmingUpPositionCount: 0,
-          positions: [
-            {
-              coinRatePercent: 10,
-              currentRank: 3,
-              currentValuePoints: 1000,
-              effectiveCoinRatePercent: 10,
-              estimatedCoinYield: 0,
-              holdBoostPercent: 100,
-              nextPayoutInSeconds: null,
-              nextProductionInSeconds: null,
-              positionId: 1,
-              productionActive: true,
-              quantity: 1,
-              rankEligible: true,
-              thumbnailUrl: '',
-              title: '테스트 영상',
-              videoId: 'video-1',
-            },
-            {
-              coinRatePercent: 10,
-              currentRank: 3,
-              currentValuePoints: 1000,
-              effectiveCoinRatePercent: 10,
-              estimatedCoinYield: 0,
-              holdBoostPercent: 0,
-              nextPayoutInSeconds: null,
-              nextProductionInSeconds: null,
-              positionId: 2,
-              productionActive: true,
-              quantity: 1,
-              rankEligible: true,
-              thumbnailUrl: '',
-              title: '테스트 영상',
-              videoId: 'video-1',
-            },
-          ],
-          ranks: [{ coinRatePercent: 10, rank: 3 }],
-        }}
-        selectedOpenPositionId={2}
         selectedVideoCurrentChartRank={3}
         selectedVideoId="video-1"
         selectedVideoIsChartOut={false}
@@ -294,7 +248,7 @@ describe('GameSelectedVideoPriceSummary', () => {
       />,
     );
 
-    expect(screen.getByText('채굴 부스트 0')).toBeInTheDocument();
-    expect(screen.queryByText('채굴 부스트 100')).not.toBeInTheDocument();
+    expect(screen.queryByText(/채굴/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/코인/)).not.toBeInTheDocument();
   });
 });

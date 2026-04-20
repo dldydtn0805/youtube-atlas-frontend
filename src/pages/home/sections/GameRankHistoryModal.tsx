@@ -12,6 +12,7 @@ import './GameRankHistoryModal.css';
 interface GameRankHistoryModalProps {
   error?: Error | null;
   history?: GamePositionRankHistory | VideoRankHistory;
+  focusMode?: 'full' | 'trade';
   isLoading: boolean;
   isOpen: boolean;
   onClose: () => void;
@@ -32,6 +33,7 @@ const chartDateFormatter = new Intl.DateTimeFormat('ko-KR', {
   month: 'short',
 });
 const viewCountFormatter = new Intl.NumberFormat('ko-KR');
+const TRADE_FOCUS_PADDING_POINTS = 2;
 
 function formatRank(rank?: number | null, chartOut = false) {
   if (chartOut) {
@@ -76,6 +78,22 @@ function getBuyPointIndex(points: Array<GamePositionRankHistoryPoint | VideoRank
 
 function getBuyPoint(points: Array<GamePositionRankHistoryPoint | VideoRankHistory['points'][number]>) {
   return points.find((point) => 'buyPoint' in point && point.buyPoint) ?? null;
+}
+
+function getTradeFocusPoints(points: Array<GamePositionRankHistoryPoint | VideoRankHistory['points'][number]>) {
+  const buyPointIndex = getBuyPointIndex(points);
+  const sellPointIndex = points.findIndex((point) => 'sellPoint' in point && point.sellPoint);
+
+  if (buyPointIndex < 0 && sellPointIndex < 0) {
+    return points;
+  }
+
+  const startAnchor = buyPointIndex >= 0 ? buyPointIndex : sellPointIndex;
+  const endAnchor = sellPointIndex >= 0 ? sellPointIndex : points.length - 1;
+  const startIndex = Math.max(0, startAnchor - TRADE_FOCUS_PADDING_POINTS);
+  const endIndex = Math.min(points.length, endAnchor + TRADE_FOCUS_PADDING_POINTS + 1);
+
+  return points.slice(startIndex, endIndex);
 }
 
 function isPreBuyPoint(
@@ -221,6 +239,7 @@ function createChartGeometry(points: Array<GamePositionRankHistoryPoint | VideoR
 
 export default function GameRankHistoryModal({
   error,
+  focusMode = 'full',
   history,
   isLoading,
   isOpen,
@@ -251,7 +270,8 @@ export default function GameRankHistoryModal({
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
 
-  const points = history?.points ?? [];
+  const originalPoints = history?.points ?? [];
+  const points = focusMode === 'trade' ? getTradeFocusPoints(originalPoints) : originalPoints;
   const chart = createChartGeometry(points);
   const rankedPoints = points.filter((point) => typeof point.rank === 'number');
   const gameHistory = history && 'buyRank' in history ? history : null;
@@ -306,8 +326,10 @@ export default function GameRankHistoryModal({
               <h3 className="app-shell__modal-field-title">순위 추이</h3>
             </div>
             <p className="app-shell__modal-field-copy">
-              {hasBuyRank
-                ? '숫자가 낮을수록 상위 순위입니다. 매수 이전 흐름은 연한 색으로 표시되고, 매수 시점은 세로 가이드로 확인할 수 있습니다.'
+              {focusMode === 'trade'
+                ? '하이라이트가 발생한 매수-매도 구간 근처만 표시합니다. 숫자가 낮을수록 상위 순위입니다.'
+                : hasBuyRank
+                  ? '숫자가 낮을수록 상위 순위입니다. 매수 이전 흐름은 연한 색으로 표시되고, 매수 시점은 세로 가이드로 확인할 수 있습니다.'
                 : '숫자가 낮을수록 상위 순위입니다. 차트 아웃 구간은 별도 마커로 표시됩니다.'}
             </p>
             {isLoading ? (

@@ -48,6 +48,10 @@ export interface GameLeaderboardEntry {
   displayName: string;
   pictureUrl: string | null;
   currentTier: GameCoinTier;
+  highlightScore: number;
+  highlightCount: number;
+  topHighlightType: string | null;
+  topHighlightGrade: string | null;
   coinBalance: number;
   totalAssetPoints: number;
   balancePoints: number;
@@ -79,6 +83,7 @@ export interface GameCoinTierProgress {
   seasonId: number;
   seasonName: string;
   regionCode: string;
+  highlightScore: number;
   coinBalance: number;
   currentTier: GameCoinTier;
   nextTier: GameCoinTier | null;
@@ -121,6 +126,31 @@ export interface GameCoinOverview {
   myWarmingUpPositionCount: number;
   ranks: GameCoinRank[];
   positions: GameCoinPosition[];
+}
+
+export interface GameHighlight {
+  id: string;
+  highlightType: string;
+  grade: string;
+  title: string;
+  description: string;
+  positionId: number;
+  videoId: string;
+  videoTitle: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  buyRank: number;
+  highlightRank: number | null;
+  sellRank: number | null;
+  rankDiff: number | null;
+  quantity: number;
+  stakePoints: number;
+  currentPricePoints: number | null;
+  profitPoints: number | null;
+  profitRatePercent: number | null;
+  highlightScore: number;
+  status: string;
+  createdAt: string;
 }
 
 export interface GamePosition {
