@@ -66,12 +66,12 @@ function formatDurationSeconds(value: number | null | undefined) {
     .join(':');
 }
 
-function getRemainingCoinsToNextTier(coinBalance: number | null | undefined, nextTier: AdminCoinTierSummary | null | undefined) {
-  if (typeof coinBalance !== 'number' || !nextTier) {
+function getRemainingScoreToNextTier(tierScore: number | null | undefined, nextTier: AdminCoinTierSummary | null | undefined) {
+  if (typeof tierScore !== 'number' || !nextTier) {
     return null;
   }
 
-  return Math.max(nextTier.minCoinBalance - coinBalance, 0);
+  return Math.max(nextTier.minCoinBalance - tierScore, 0);
 }
 
 function getActiveSeasonGames(user: AdminUserDetail | null | undefined) {
@@ -416,10 +416,10 @@ function UserDetailPanel({
     balancePoints: string;
     reservedPoints: string;
     realizedPnlPoints: string;
-    coinBalance: string;
+    tierScore: string;
   };
   onWalletDraftChange: (
-    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'coinBalance',
+    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'tierScore',
     value: string,
   ) => void;
   onSaveWallet: () => void;
@@ -433,8 +433,8 @@ function UserDetailPanel({
     activeSeasonGames[0] ??
     null;
   const selectedPosition = positions.find((item) => item.id === selectedPositionId) ?? positions[0] ?? null;
-  const remainingCoinsToNextTier = getRemainingCoinsToNextTier(
-    selectedSeasonGame?.coinBalance,
+  const remainingScoreToNextTier = getRemainingScoreToNextTier(
+    selectedSeasonGame?.tierScore,
     selectedSeasonGame?.nextCoinTier,
   );
 
@@ -502,10 +502,10 @@ function UserDetailPanel({
               <p><span>참여 여부</span><strong>{selectedSeasonGame.participating ? '참여 중' : '미참여'}</strong></p>
               <p><span>오픈 포지션</span><strong>{formatNumber(selectedSeasonGame.openPositionCount)}</strong></p>
               <p><span>종료 포지션</span><strong>{formatNumber(selectedSeasonGame.closedPositionCount)}</strong></p>
-              <p><span>코인 보유량</span><strong>{formatNumber(selectedSeasonGame.coinBalance)}</strong></p>
+              <p><span>티어 점수</span><strong>{formatNumber(selectedSeasonGame.tierScore)}</strong></p>
               <p><span>현재 티어</span><strong>{selectedSeasonGame.currentCoinTier?.displayName ?? '-'}</strong></p>
               <p><span>다음 티어</span><strong>{selectedSeasonGame.nextCoinTier?.displayName ?? '최종 티어'}</strong></p>
-              <p><span>다음 티어까지</span><strong>{remainingCoinsToNextTier !== null ? formatNumber(remainingCoinsToNextTier) : '-'}</strong></p>
+              <p><span>다음 티어까지</span><strong>{remainingScoreToNextTier !== null ? formatNumber(remainingScoreToNextTier) : '-'}</strong></p>
               <p><span>총 자산</span><strong>{formatNumber(selectedSeasonGame.totalAssetPoints)}</strong></p>
             </div>
             <div className="admin-page__form-grid">
@@ -537,21 +537,21 @@ function UserDetailPanel({
                 />
               </label>
               <label className="admin-page__field">
-                <span>코인 잔액</span>
+                <span>티어 점수</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => onWalletDraftChange('coinBalance', event.target.value)}
+                  onChange={(event) => onWalletDraftChange('tierScore', event.target.value)}
                   type="text"
-                  value={walletDraft.coinBalance}
+                  value={walletDraft.tierScore}
                 />
               </label>
             </div>
             <p className="admin-page__muted">
-              예약 포인트는 오픈 포지션과 연결되어 있을 수 있고, 코인 잔액은 티어 상태에 직접 반영됩니다. 수동 조정은 운영 기준으로만 사용하세요.
+              예약 포인트는 오픈 포지션과 연결되어 있을 수 있고, 티어 점수는 현재 티어 상태에 직접 반영됩니다. 수동 조정은 운영 기준으로만 사용하세요.
             </p>
             <div className="admin-page__action-row">
               <button className="admin-page__button" disabled={isSaving || isDeleting} onClick={onSaveWallet} type="button">
-                {isSaving ? '저장 중...' : '지갑/코인 저장'}
+                {isSaving ? '저장 중...' : '지갑/티어 저장'}
               </button>
               <button
                 className="admin-page__button admin-page__button--danger"
@@ -684,7 +684,7 @@ export default function AdminPage() {
     balancePoints: '',
     reservedPoints: '',
     realizedPnlPoints: '',
-    coinBalance: '',
+    tierScore: '',
   });
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const [positionDraft, setPositionDraft] = useState({
@@ -817,7 +817,7 @@ export default function AdminPage() {
         balancePoints: '',
         reservedPoints: '',
         realizedPnlPoints: '',
-        coinBalance: '',
+        tierScore: '',
       });
       return;
     }
@@ -826,7 +826,7 @@ export default function AdminPage() {
       balancePoints: String(game.balancePoints ?? 0),
       reservedPoints: String(game.reservedPoints ?? 0),
       realizedPnlPoints: String(game.realizedPnlPoints ?? 0),
-      coinBalance: String(game.coinBalance ?? 0),
+      tierScore: String(game.tierScore ?? 0),
     });
   }, [detailQuery.data, selectedSeasonId]);
 
@@ -864,7 +864,7 @@ export default function AdminPage() {
     dashboardQuery.error instanceof ApiRequestError && dashboardQuery.error.status === 403;
 
   const handleWalletDraftChange = (
-    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'coinBalance',
+    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'tierScore',
     value: string,
   ) => {
     setWalletDraft((current) => ({
@@ -1002,7 +1002,7 @@ export default function AdminPage() {
         balancePoints: parsePointInput(walletDraft.balancePoints, '가용 포인트'),
         reservedPoints: parsePointInput(walletDraft.reservedPoints, '예약 포인트'),
         realizedPnlPoints: parsePointInput(walletDraft.realizedPnlPoints, '실현 손익'),
-        coinBalance: parsePointInput(walletDraft.coinBalance, '코인 잔액'),
+        tierScore: parsePointInput(walletDraft.tierScore, '티어 점수'),
       };
 
       setActionMessage(null);

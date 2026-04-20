@@ -9,6 +9,7 @@ import type { VideoTrendSignal } from '../../../features/trending/types';
 import type { YouTubeCategorySection } from '../../../features/youtube/types';
 import { findPlaybackQueueIdForVideo } from '../utils';
 import type { OpenGameHolding } from '../gameHelpers';
+import BoldNumberText from './BoldNumberText';
 import {
   RankingGameCoinOverview,
   RankingGameHistoryTab,
@@ -168,15 +169,17 @@ export default function GamePanelSection({
         <li className="app-shell__game-guide-item">
           <strong className="app-shell__game-guide-title">하이라이트로 티어 올리기</strong>
           <p className="app-shell__game-guide-copy">
-            문샷은 100위 밖에서 산 영상이 20위 안에 드는 큰 역전, 스나이프는 150위 밖에서 사서 100위 안에
-            드는 저격 플레이예요. 캐시아웃은 수익률 하이라이트로, 300% 이상은 스몰, 1000% 이상은 빅으로 기록됩니다.
+            <BoldNumberText>
+              문샷은 100위 바깥에서 매수한 영상이 20위 안으로 진입하는 대박 플레이입니다. 스나이프는 150위 바깥에서 가능성을 보고 매수해 100위 안에 진입했을 때 붙습니다. 캐시아웃은 수익률 하이라이트로, 300% 이상은 스몰, 1,000% 이상은 빅으로 기록됩니다.
+            </BoldNumberText>
           </p>
         </li>
         <li className="app-shell__game-guide-item">
           <strong className="app-shell__game-guide-title">기록과 경쟁</strong>
           <p className="app-shell__game-guide-copy">
-            거래내역에서 내가 했던 선택들을 돌아보고, 리더보드에서 다른 유저들과 이번 시즌 순위를
-            비교해보세요. 1위를 노려봐요!
+            <BoldNumberText>
+              거래내역에서 내가 했던 선택들을 돌아보고, 리더보드에서 다른 유저들과 이번 시즌 순위를 비교해보세요. 1위를 노려봐요!
+            </BoldNumberText>
           </p>
         </li>
       </ol>

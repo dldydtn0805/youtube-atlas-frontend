@@ -159,6 +159,7 @@ export interface AdminUserGameSummary {
   balancePoints: number | null;
   reservedPoints: number | null;
   realizedPnlPoints: number | null;
+  tierScore: number | null;
   coinBalance: number | null;
   totalAssetPoints: number | null;
   currentCoinTier: AdminCoinTierSummary | null;
@@ -212,7 +213,7 @@ export interface AdminWalletUpdateRequest {
   balancePoints: number;
   reservedPoints: number;
   realizedPnlPoints: number;
-  coinBalance: number;
+  tierScore: number;
 }
 
 export interface AdminPositionUpdateRequest {
