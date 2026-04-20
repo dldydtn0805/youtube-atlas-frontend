@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import GoogleLoginButton from '../../../components/GoogleLoginButton/GoogleLoginButton';
 import type { AuthStatus, AuthUser } from '../../../features/auth/types';
+import type { GameNotification } from '../../../features/game/types';
 import { formatPoints } from '../gameHelpers';
+import GameNotificationsPanel from './GameNotificationsPanel';
 import './AppHeader.css';
 
 interface AppHeaderProps {
@@ -13,12 +15,17 @@ interface AppHeaderProps {
   onLogout: () => void;
   onOpenGameModal?: () => void;
   onOpenRecentPlayback?: (videoId: string) => void;
+  onClearGameNotifications?: () => void;
+  onRefreshGameNotifications?: () => Promise<void>;
   onRefreshProfile?: () => Promise<void>;
   onOpenTierModal?: () => void;
   onOpenWalletModal?: () => void;
   onToggleThemeMode: () => void;
   themeToggleLabel: string;
   user?: AuthUser | null;
+  gameNotifications?: GameNotification[];
+  hasUnreadGameNotifications?: boolean;
+  isGameNotificationsLoading?: boolean;
   walletBalancePoints?: number | null;
 }
 
@@ -117,12 +124,17 @@ function AppHeader({
   onLogout,
   onOpenGameModal,
   onOpenRecentPlayback,
+  onClearGameNotifications,
+  onRefreshGameNotifications,
   onRefreshProfile,
   onOpenTierModal,
   onOpenWalletModal,
   onToggleThemeMode,
   themeToggleLabel,
   user,
+  gameNotifications = [],
+  hasUnreadGameNotifications = false,
+  isGameNotificationsLoading = false,
   walletBalancePoints,
 }: AppHeaderProps) {
   const userIdentityLabel = user?.displayName || user?.email || 'Google 계정';
@@ -145,7 +157,10 @@ function AppHeader({
   const handleProfileButtonClick = async () => {
     if (!isProfileCardOpen) {
       try {
-        await onRefreshProfile?.();
+        await Promise.all([
+          onRefreshProfile?.(),
+          onRefreshGameNotifications?.(),
+        ]);
       } catch {
         // Keep the profile card usable even if the background refresh fails.
       }
@@ -247,6 +262,9 @@ function AppHeader({
                 title={profileButtonLabel}
                 type="button"
               >
+                {hasUnreadGameNotifications ? (
+                  <span className="app-shell__auth-avatar-notification-dot" aria-hidden="true" />
+                ) : null}
                 {user.pictureUrl ? (
                   <img
                     alt={`${userIdentityLabel} 프로필`}
@@ -301,6 +319,13 @@ function AppHeader({
                       <span>거래</span>
                       <strong>{user.tradeCount}회</strong>
                     </p>
+                  </div>
+                  <div className="app-shell__profile-card-section">
+                    <GameNotificationsPanel
+                      isLoading={isGameNotificationsLoading}
+                      notifications={gameNotifications}
+                      onClear={onClearGameNotifications}
+                    />
                   </div>
                   <div className="app-shell__profile-card-section">
                     <span className="app-shell__profile-card-section-label">최근 재생</span>

@@ -7,6 +7,7 @@ import type {
   GameHighlight,
   GameLeaderboardEntry,
   GameMarketVideo,
+  GameNotification,
   GamePosition,
   GamePositionRankHistory,
   GameSeasonCoinResult,
@@ -67,6 +68,14 @@ export async function fetchGameHighlights(accessToken: string, regionCode: strin
   const params = new URLSearchParams({ regionCode });
 
   return fetchApi<GameHighlight[]>(`/api/game/highlights?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchGameNotifications(accessToken: string, regionCode: string) {
+  const params = new URLSearchParams({ regionCode });
+
+  return fetchApi<GameNotification[]>(`/api/game/notifications?${params.toString()}`, {
     headers: createAuthorizationHeader(accessToken),
   });
 }

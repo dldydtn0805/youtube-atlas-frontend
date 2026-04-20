@@ -12,6 +12,7 @@ import GamePanelSection from './sections/GamePanelSection';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
 import GameTradeModal from './sections/GameTradeModal';
 import GameIntroModal from './sections/GameIntroModal';
+import GameNotificationToast from './sections/GameNotificationToast';
 import GameWalletModal from './sections/GameWalletModal';
 import HomePlaybackSection from './sections/HomePlaybackSection';
 import { RankingGameLeaderboardTab } from './sections/RankingGamePanel';
@@ -79,12 +80,18 @@ import {
   useGameLeaderboardHighlights,
   useGameLeaderboardPositionRankHistory,
   useGameMarket,
+  useGameNotifications,
   useGamePositionRankHistory,
   useMyGamePositions,
   useSellGamePositions,
 } from '../../features/game/queries';
-import { useGameRealtimeInvalidation } from '../../features/game/realtime';
-import type { GameHighlight, GamePosition, GamePositionRankHistory } from '../../features/game/types';
+import { useGameNotificationRealtime, useGameRealtimeInvalidation } from '../../features/game/realtime';
+import type {
+  GameHighlight,
+  GameNotification,
+  GamePosition,
+  GamePositionRankHistory,
+} from '../../features/game/types';
 import { fetchGamePositionRankHistory } from '../../features/game/api';
 import {
   useFavoriteStreamerVideos,
@@ -100,7 +107,9 @@ import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import '../../styles/app.css';
 
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
+const DISMISSED_GAME_NOTIFICATIONS_STORAGE_KEY_PREFIX = 'youtube-atlas-dismissed-game-notifications';
 const GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY = 'youtube-atlas-game-intro-dismissed';
+const READ_GAME_NOTIFICATIONS_STORAGE_KEY_PREFIX = 'youtube-atlas-read-game-notifications';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
 const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'popular-asc',
@@ -256,6 +265,73 @@ function getInitialGameIntroModalOpen() {
   }
 
   return window.localStorage.getItem(GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY) !== 'true';
+}
+
+function getDismissedGameNotificationsStorageKey(userId?: number | null) {
+  return `${DISMISSED_GAME_NOTIFICATIONS_STORAGE_KEY_PREFIX}:${userId ?? 'anonymous'}`;
+}
+
+function getReadGameNotificationsStorageKey(userId?: number | null) {
+  return `${READ_GAME_NOTIFICATIONS_STORAGE_KEY_PREFIX}:${userId ?? 'anonymous'}`;
+}
+
+function readDismissedGameNotificationIds(userId?: number | null) {
+  if (typeof window === 'undefined' || !userId) {
+    return new Set<string>();
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(getDismissedGameNotificationsStorageKey(userId)) ?? '[]');
+    return new Set(Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function readStoredGameNotificationIds(userId?: number | null) {
+  if (typeof window === 'undefined' || !userId) {
+    return new Set<string>();
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(getReadGameNotificationsStorageKey(userId)) ?? '[]');
+    return new Set(Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function writeDismissedGameNotificationIds(userId: number | null | undefined, ids: Set<string>) {
+  if (typeof window === 'undefined' || !userId) {
+    return;
+  }
+
+  window.localStorage.setItem(getDismissedGameNotificationsStorageKey(userId), JSON.stringify([...ids]));
+}
+
+function writeReadGameNotificationIds(userId: number | null | undefined, ids: Set<string>) {
+  if (typeof window === 'undefined' || !userId) {
+    return;
+  }
+
+  window.localStorage.setItem(getReadGameNotificationsStorageKey(userId), JSON.stringify([...ids]));
+}
+
+function mergeGameNotifications(
+  dismissedIds: Set<string>,
+  ...groups: Array<GameNotification[] | undefined>
+) {
+  const notificationsById = new Map<string, GameNotification>();
+
+  groups.flatMap((group) => group ?? []).forEach((notification) => {
+    if (!dismissedIds.has(notification.id) && !notificationsById.has(notification.id)) {
+      notificationsById.set(notification.id, notification);
+    }
+  });
+
+  return [...notificationsById.values()]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 20);
 }
 
 function mapMusicTrendSignalsByVideoId(
@@ -417,6 +493,10 @@ function HomePage() {
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isGameIntroModalOpen, setIsGameIntroModalOpen] = useState(getInitialGameIntroModalOpen);
+  const [dismissedGameNotificationIds, setDismissedGameNotificationIds] = useState<Set<string>>(() => new Set());
+  const [readGameNotificationIds, setReadGameNotificationIds] = useState<Set<string>>(() => new Set());
+  const [pushedGameNotifications, setPushedGameNotifications] = useState<GameNotification[]>([]);
+  const [visibleGameNotification, setVisibleGameNotification] = useState<GameNotification | null>(null);
   const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
   const [isChartViewModalOpen, setIsChartViewModalOpen] = useState(false);
   const [pendingRegionTopVideoSelection, setPendingRegionTopVideoSelection] = useState<string | null>(null);
@@ -460,6 +540,13 @@ function HomePage() {
       setChartSortMode('popular-desc');
     }
   }, [authStatus, chartSortMode]);
+
+  useEffect(() => {
+    setDismissedGameNotificationIds(readDismissedGameNotificationIds(user?.id));
+    setReadGameNotificationIds(readStoredGameNotificationIds(user?.id));
+    setPushedGameNotifications([]);
+    setVisibleGameNotification(null);
+  }, [user?.id]);
 
   const scrollToPlayerStage = useCallback(() => {
     if (isMobileLayout) {
@@ -507,6 +594,22 @@ function HomePage() {
   }));
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
+  const handleRealtimeGameNotification = useCallback((notification: GameNotification) => {
+    if (dismissedGameNotificationIds.has(notification.id)) {
+      return;
+    }
+
+    setPushedGameNotifications((currentNotifications) =>
+      mergeGameNotifications(dismissedGameNotificationIds, [notification], currentNotifications),
+    );
+    setVisibleGameNotification(notification);
+  }, [dismissedGameNotificationIds]);
+  useGameNotificationRealtime(
+    accessToken,
+    selectedRegionCode,
+    handleRealtimeGameNotification,
+    shouldLoadGame,
+  );
 
   const {
     data: currentGameSeason,
@@ -514,6 +617,11 @@ function HomePage() {
     isLoading: isCurrentGameSeasonLoading,
     dataUpdatedAt: currentGameSeasonUpdatedAt,
   } = useCurrentGameSeason(accessToken, selectedRegionCode, shouldLoadGame);
+  const {
+    data: fetchedGameNotifications = [],
+    isFetching: isGameNotificationsFetching,
+    refetch: refetchGameNotifications,
+  } = useGameNotifications(accessToken, selectedRegionCode, false);
   const {
     data: gameMarket = [],
     error: gameMarketError,
@@ -617,6 +725,78 @@ function HomePage() {
     error: gameHighlightsError,
     isLoading: isGameHighlightsLoading,
   } = useGameHighlights(accessToken, selectedRegionCode, shouldLoadGame);
+  const gameNotifications = useMemo(
+    () => mergeGameNotifications(
+      dismissedGameNotificationIds,
+      pushedGameNotifications,
+      fetchedGameNotifications,
+      currentGameSeason?.notifications,
+    ),
+    [currentGameSeason?.notifications, dismissedGameNotificationIds, fetchedGameNotifications, pushedGameNotifications],
+  );
+  const clearGameNotifications = useCallback(() => {
+    const nextDismissedIds = new Set(dismissedGameNotificationIds);
+    const nextReadIds = new Set(readGameNotificationIds);
+    gameNotifications.forEach((notification) => {
+      nextDismissedIds.add(notification.id);
+      nextReadIds.add(notification.id);
+    });
+    setDismissedGameNotificationIds(nextDismissedIds);
+    setReadGameNotificationIds(nextReadIds);
+    writeDismissedGameNotificationIds(user?.id, nextDismissedIds);
+    writeReadGameNotificationIds(user?.id, nextReadIds);
+    setPushedGameNotifications([]);
+    setVisibleGameNotification(null);
+  }, [dismissedGameNotificationIds, gameNotifications, readGameNotificationIds, user?.id]);
+  const markGameNotificationsRead = useCallback((notifications: GameNotification[]) => {
+    if (notifications.length === 0) {
+      return;
+    }
+
+    const nextReadIds = new Set(readGameNotificationIds);
+    notifications.forEach((notification) => {
+      nextReadIds.add(notification.id);
+    });
+    setReadGameNotificationIds(nextReadIds);
+    writeReadGameNotificationIds(user?.id, nextReadIds);
+  }, [readGameNotificationIds, user?.id]);
+  const refreshGameNotifications = useCallback(async () => {
+    if (!accessToken) {
+      return;
+    }
+
+    const result = await refetchGameNotifications();
+    markGameNotificationsRead(mergeGameNotifications(
+      dismissedGameNotificationIds,
+      pushedGameNotifications,
+      result.data,
+      currentGameSeason?.notifications,
+    ));
+  }, [
+    accessToken,
+    currentGameSeason?.notifications,
+    dismissedGameNotificationIds,
+    markGameNotificationsRead,
+    pushedGameNotifications,
+    refetchGameNotifications,
+  ]);
+  const hasUnreadGameNotifications = gameNotifications.some(
+    (notification) => !readGameNotificationIds.has(notification.id),
+  );
+
+  useEffect(() => {
+    if (!visibleGameNotification) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setVisibleGameNotification(null);
+    }, 6_000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [visibleGameNotification]);
   const {
     evaluationPoints: openPositionsEvaluationPoints,
     profitPoints: openPositionsProfitPoints,
@@ -2227,12 +2407,17 @@ function HomePage() {
         onLogout={() => void logout()}
         onOpenGameModal={() => setIsGameModalOpen(true)}
         onOpenRecentPlayback={handleOpenRecentPlayback}
+        onClearGameNotifications={clearGameNotifications}
+        onRefreshGameNotifications={refreshGameNotifications}
         onRefreshProfile={refreshCurrentUser}
         onOpenTierModal={openCoinModal}
         onOpenWalletModal={() => setIsWalletModalOpen(true)}
         onToggleThemeMode={handleToggleThemeMode}
         themeToggleLabel={themeToggleLabel}
         user={user}
+        gameNotifications={gameNotifications}
+        hasUnreadGameNotifications={hasUnreadGameNotifications}
+        isGameNotificationsLoading={isGameNotificationsFetching}
         walletBalancePoints={currentGameSeason?.wallet.balancePoints}
       />
       <main className="app-shell__main">
@@ -2366,6 +2551,10 @@ function HomePage() {
           }
         />
       </main>
+      <GameNotificationToast
+        notification={visibleGameNotification}
+        onDismiss={() => setVisibleGameNotification(null)}
+      />
       <GameIntroModal
         isOpen={isGameIntroModalOpen}
         onClose={(dismissForever) => {

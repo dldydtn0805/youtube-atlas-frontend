@@ -21,6 +21,22 @@ export interface GameCurrentSeason {
   maxOpenPositions: number;
   rankPointMultiplier: number;
   wallet: GameWallet;
+  notifications?: GameNotification[];
+}
+
+export interface GameNotification {
+  id: string;
+  notificationType: GameStrategyType;
+  title: string;
+  message: string;
+  positionId: number;
+  videoId: string;
+  videoTitle: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  strategyTags: GameStrategyType[];
+  highlightScore: number;
+  createdAt: string;
 }
 
 export interface GameMarketVideo {

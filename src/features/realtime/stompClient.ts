@@ -139,6 +139,41 @@ export function subscribeToRealtimeConnection(handler: ConnectionHandler) {
   };
 }
 
+export function subscribeToAuthenticatedRealtimeTopic(
+  topic: string,
+  accessToken: string,
+  handler: TopicHandler,
+) {
+  let subscription: StompSubscription | null = null;
+  const client = new Client({
+    brokerURL: getWebSocketUrl(),
+    connectHeaders: {
+      Authorization: `Bearer ${accessToken}`,
+      [CHAT_PARTICIPANT_HEADER]: getChatParticipantId(),
+    },
+    debug: () => {},
+    reconnectDelay: 5_000,
+  });
+
+  client.onConnect = () => {
+    subscription = client.subscribe(topic, (message) => {
+      handler(message.body);
+    });
+  };
+
+  client.onWebSocketClose = () => {
+    subscription = null;
+  };
+
+  client.activate();
+
+  return () => {
+    subscription?.unsubscribe();
+    subscription = null;
+    void client.deactivate();
+  };
+}
+
 export function resetSharedRealtimeClientForTests() {
   subscriptionsByTopic.forEach((subscription) => {
     subscription.unsubscribe();

@@ -1,0 +1,105 @@
+.game-notifications {
+  display: grid;
+  gap: 8px;
+}
+
+.game-notifications__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.game-notifications__actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.game-notifications__status {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.game-notifications__clear {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 4px 0;
+}
+
+.game-notifications__clear:hover,
+.game-notifications__clear:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+
+.game-notifications__list {
+  display: grid;
+  gap: 8px;
+  max-height: 268px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.game-notifications__item {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-stat) 68%, transparent);
+  border: 1px solid var(--surface-stat-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 58px minmax(0, 1fr);
+  padding: 6px;
+}
+
+.game-notifications__thumb {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--surface-thumbnail-border);
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.game-notifications__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.game-notifications__meta {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 0.62rem;
+  font-weight: 800;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.game-notifications__copy strong,
+.game-notifications__copy p,
+.game-notifications__copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-notifications__copy strong {
+  color: var(--text);
+  font-size: 0.76rem;
+}
+
+.game-notifications__copy p,
+.game-notifications__copy span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  margin: 0;
+}

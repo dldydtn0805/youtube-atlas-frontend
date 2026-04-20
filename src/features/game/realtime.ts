@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { subscribeToRealtimeTopic } from '../realtime/stompClient';
-import { invalidateGameQueries } from './queries';
-import type { GameRealtimeEvent } from './types';
+import {
+  subscribeToAuthenticatedRealtimeTopic,
+  subscribeToRealtimeTopic,
+} from '../realtime/stompClient';
+import { gameQueryKeys, invalidateGameQueries } from './queries';
+import type { GameNotification, GameRealtimeEvent } from './types';
 
 const GAME_TOPIC_PREFIX = '/topic/game';
+const GAME_NOTIFICATIONS_QUEUE = '/user/queue/game/notifications';
 const WALLET_UPDATED_EVENT = 'wallet-updated';
 
 function toRealtimeEventKey(event: GameRealtimeEvent) {
@@ -57,6 +61,50 @@ export function useGameRealtimeInvalidation(
         // Ignore malformed realtime messages so game queries keep working.
       }
     });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [accessToken, enabled, queryClient, regionCode]);
+}
+
+export function useGameNotificationRealtime(
+  accessToken: string | null,
+  regionCode: string | null,
+  onNotification: (notification: GameNotification) => void,
+  enabled = true,
+) {
+  const queryClient = useQueryClient();
+  const notificationHandlerRef = useRef(onNotification);
+
+  useEffect(() => {
+    notificationHandlerRef.current = onNotification;
+  }, [onNotification]);
+
+  useEffect(() => {
+    if (!enabled || !accessToken) {
+      return;
+    }
+
+    const unsubscribe = subscribeToAuthenticatedRealtimeTopic(
+      GAME_NOTIFICATIONS_QUEUE,
+      accessToken,
+      (messageBody) => {
+        try {
+          const notification = JSON.parse(messageBody) as GameNotification;
+          notificationHandlerRef.current(notification);
+
+          if (regionCode) {
+            void queryClient.invalidateQueries({
+              queryKey: gameQueryKeys.notifications(accessToken, regionCode),
+              refetchType: 'active',
+            });
+          }
+        } catch {
+          // Ignore malformed notification messages.
+        }
+      },
+    );
 
     return () => {
       unsubscribe();

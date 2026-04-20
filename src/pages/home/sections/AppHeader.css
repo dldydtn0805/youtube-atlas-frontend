@@ -357,6 +357,20 @@
   cursor: pointer;
   display: inline-flex;
   padding: 0;
+  position: relative;
+}
+
+.app-shell__auth-avatar-notification-dot {
+  background: #ef4444;
+  border: 2px solid var(--surface-modal);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
+  height: 11px;
+  position: absolute;
+  right: -1px;
+  top: -1px;
+  width: 11px;
+  z-index: 1;
 }
 
 .app-shell__auth-avatar-button:focus-visible {

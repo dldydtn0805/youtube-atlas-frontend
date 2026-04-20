@@ -11,6 +11,7 @@ import {
   fetchGameLeaderboardPositionRankHistory,
   fetchGameLeaderboardPositions,
   fetchGameMarket,
+  fetchGameNotifications,
   fetchGamePositionRankHistory,
   fetchMySeasonCoinResult,
   fetchMyGamePositions,
@@ -32,6 +33,8 @@ export const gameQueryKeys = {
     ['game', 'leaderboard', accessToken, regionCode] as const,
   highlights: (accessToken: string | null, regionCode: string | null) =>
     ['game', 'highlights', accessToken, regionCode] as const,
+  notifications: (accessToken: string | null, regionCode: string | null) =>
+    ['game', 'notifications', accessToken, regionCode] as const,
   leaderboardPositions: (accessToken: string | null, userId: number | null, regionCode: string | null) =>
     ['game', 'leaderboardPositions', accessToken, userId, regionCode] as const,
   leaderboardHighlights: (accessToken: string | null, userId: number | null, regionCode: string | null) =>
@@ -96,6 +99,10 @@ export async function invalidateGameQueries(
         refetchType: 'active',
       }),
       queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.notifications(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
         queryKey: gameQueryKeys.market(accessToken, regionCode),
         refetchType: 'active',
       }),
@@ -128,6 +135,10 @@ export async function invalidateGameQueries(
       }),
       queryClient.invalidateQueries({
         queryKey: ['game', 'highlights', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'notifications', accessToken],
         refetchType: 'active',
       }),
       queryClient.invalidateQueries({
@@ -211,6 +222,15 @@ export function useGameHighlights(accessToken: string | null, regionCode: string
     enabled: enabled && Boolean(accessToken) && Boolean(regionCode),
     queryKey: gameQueryKeys.highlights(accessToken, regionCode),
     queryFn: () => fetchGameHighlights(accessToken as string, regionCode),
+    staleTime: 1000 * 15,
+  });
+}
+
+export function useGameNotifications(accessToken: string | null, regionCode: string, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && Boolean(regionCode),
+    queryKey: gameQueryKeys.notifications(accessToken, regionCode),
+    queryFn: () => fetchGameNotifications(accessToken as string, regionCode),
     staleTime: 1000 * 15,
   });
 }
