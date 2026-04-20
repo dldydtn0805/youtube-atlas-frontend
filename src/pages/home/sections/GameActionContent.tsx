@@ -148,7 +148,6 @@ export function GameSelectedVideoPriceSummary({
   preferMarketSummary = false,
   selectedVideoCurrentChartRank,
   selectedVideoHistoricalPosition,
-  selectedVideoId,
   selectedVideoIsChartOut,
   selectedVideoMarketEntry,
   selectedVideoOpenPositionCount,
