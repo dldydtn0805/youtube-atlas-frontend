@@ -5,9 +5,11 @@ import {
   fetchAdminDashboard,
   fetchAdminTrendSnapshots,
   fetchAdminUserDetail,
+  fetchAdminUserHighlights,
   fetchAdminUserPositions,
   fetchAdminUsers,
   purgeAdminComments,
+  purgeAdminHighlightHistory,
   purgeAdminTradeHistory,
   updateAdminSeasonSchedule,
   updateAdminSeasonStartingBalance,
@@ -16,6 +18,7 @@ import {
 } from './api';
 import type {
   AdminCommentCleanupRequest,
+  AdminHighlightHistoryCleanupRequest,
   AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonStartingBalanceUpdateRequest,
@@ -30,6 +33,8 @@ export const adminQueryKeys = {
     ['admin', accessToken, 'trendSnapshots', startAt ?? '', endAt ?? '', regionCode ?? 'ALL'] as const,
   users: (accessToken: string | null, query: string | null) => ['admin', accessToken, 'users', query ?? ''] as const,
   userDetail: (accessToken: string | null, userId: number | null) => ['admin', accessToken, 'user', userId] as const,
+  userHighlights: (accessToken: string | null, userId: number | null, seasonId: number | null) =>
+    ['admin', accessToken, 'userHighlights', userId, seasonId] as const,
   userPositions: (accessToken: string | null, userId: number | null, seasonId: number | null) =>
     ['admin', accessToken, 'userPositions', userId, seasonId] as const,
 };
@@ -76,6 +81,20 @@ export function useAdminUserDetail(accessToken: string | null, userId: number | 
   });
 }
 
+export function useAdminUserHighlights(
+  accessToken: string | null,
+  userId: number | null,
+  seasonId: number | null,
+  enabled = true,
+) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && typeof userId === 'number' && typeof seasonId === 'number',
+    queryKey: adminQueryKeys.userHighlights(accessToken, userId, seasonId),
+    queryFn: () => fetchAdminUserHighlights(accessToken as string, userId as number, seasonId as number),
+    staleTime: 1000 * 10,
+  });
+}
+
 export function useAdminUserPositions(
   accessToken: string | null,
   userId: number | null,
@@ -108,6 +127,7 @@ export function useUpdateAdminUserWallet(accessToken: string | null) {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'users'] }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(accessToken, data.id) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'userHighlights', data.id] }),
       ]);
     },
   });
@@ -130,6 +150,7 @@ export function useUpdateAdminUserPosition(accessToken: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(accessToken, variables.userId) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'userHighlights', variables.userId] }),
         queryClient.invalidateQueries({
           queryKey: adminQueryKeys.userPositions(accessToken, variables.userId, data.seasonId),
         }),
@@ -148,6 +169,22 @@ export function usePurgeAdminComments(accessToken: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
         queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'user'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'userHighlights'] }),
+      ]);
+    },
+  });
+}
+
+export function usePurgeAdminHighlightHistory(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AdminHighlightHistoryCleanupRequest) => purgeAdminHighlightHistory(accessToken as string, request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard(accessToken) }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'user'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', accessToken, 'userHighlights'] }),
       ]);
     },
   });

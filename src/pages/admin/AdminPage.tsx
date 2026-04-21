@@ -6,10 +6,12 @@ import {
   useAdminDashboard,
   useAdminTrendSnapshots,
   useAdminUserDetail,
+  useAdminUserHighlights,
   useAdminUserPositions,
   useAdminUsers,
   useDeleteAdminUser,
   usePurgeAdminComments,
+  usePurgeAdminHighlightHistory,
   usePurgeAdminTradeHistory,
   useUpdateAdminUserPosition,
   useUpdateAdminSeasonSchedule,
@@ -25,12 +27,14 @@ import type {
   AdminCoinTierSummary,
   AdminUserDetail,
   AdminUserGameSummary,
+  AdminUserHighlightSummary,
   AdminUserPosition,
   AdminUserSummary,
 } from '../../features/admin/types';
 import useLogoutOnUnauthorized from '../home/hooks/useLogoutOnUnauthorized';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import countryCodes from '../../constants/countryCodes';
+import AdminUserHighlightsPanel from './components/AdminUserHighlightsPanel';
 import './AdminPage.css';
 
 function formatDateTime(value: string | null | undefined) {
@@ -158,6 +162,10 @@ function parseDateTimeInput(value: string, label: string) {
 
 function formatCommentCleanupMessage(deletedCount: number, deleteBefore: string) {
   return `${formatNumber(deletedCount)}건의 댓글을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
+}
+
+function formatHighlightCleanupMessage(deletedCount: number, deleteBefore: string) {
+  return `${formatNumber(deletedCount)}건의 하이라이트 내역을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
 }
 
 function formatTradeHistoryCleanupMessage(
@@ -384,6 +392,9 @@ function UserDirectoryTable({
 function UserDetailPanel({
   user,
   positions,
+  highlightsSummary,
+  isLoadingHighlights,
+  highlightsError,
   selectedPositionId,
   onSelectPosition,
   positionDraft,
@@ -401,6 +412,9 @@ function UserDetailPanel({
 }: {
   user: AdminUserDetail;
   positions: AdminUserPosition[];
+  highlightsSummary: AdminUserHighlightSummary | null | undefined;
+  isLoadingHighlights: boolean;
+  highlightsError: unknown;
   selectedPositionId: number | null;
   onSelectPosition: (positionId: number) => void;
   positionDraft: {
@@ -454,6 +468,12 @@ function UserDetailPanel({
           <p><span>즐겨찾기 수</span><strong>{formatNumber(user.favoriteCount)}</strong></p>
         </div>
       </div>
+
+      <AdminUserHighlightsPanel
+        error={highlightsError}
+        isLoading={isLoadingHighlights}
+        summary={highlightsSummary}
+      />
 
       <div className="admin-page__detail-card">
         <div className="admin-page__section-header">
@@ -718,6 +738,7 @@ export default function AdminPage() {
     createdAt: '',
   });
   const [commentCleanupDraft, setCommentCleanupDraft] = useState('');
+  const [highlightCleanupDraft, setHighlightCleanupDraft] = useState('');
   const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState('');
   const [trendSnapshotRangeDraft, setTrendSnapshotRangeDraft] = useState(createDefaultSnapshotRange);
   const [submittedTrendSnapshotRange, setSubmittedTrendSnapshotRange] = useState<{
@@ -737,6 +758,7 @@ export default function AdminPage() {
   );
   const usersQuery = useAdminUsers(accessToken, submittedQuery, status === 'authenticated');
   const detailQuery = useAdminUserDetail(accessToken, selectedUserId, status === 'authenticated');
+  const highlightsQuery = useAdminUserHighlights(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
   const positionsQuery = useAdminUserPositions(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
   const updateSeasonMutation = useUpdateAdminSeasonSchedule(accessToken);
   const updateSeasonStartingBalanceMutation = useUpdateAdminSeasonStartingBalance(accessToken);
@@ -745,12 +767,14 @@ export default function AdminPage() {
   const updatePositionMutation = useUpdateAdminUserPosition(accessToken);
   const deleteUserMutation = useDeleteAdminUser(accessToken);
   const purgeCommentsMutation = usePurgeAdminComments(accessToken);
+  const purgeHighlightHistoryMutation = usePurgeAdminHighlightHistory(accessToken);
   const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
   useLogoutOnUnauthorized(trendSnapshotsQuery.error, logout);
   useLogoutOnUnauthorized(usersQuery.error, logout);
   useLogoutOnUnauthorized(detailQuery.error, logout);
+  useLogoutOnUnauthorized(highlightsQuery.error, logout);
   useLogoutOnUnauthorized(positionsQuery.error, logout);
 
   useEffect(() => {
@@ -806,6 +830,18 @@ export default function AdminPage() {
       setTradeHistoryCleanupDraft(formatDateTimeInput(activeSeasonEndAt));
     }
   }, [tradeHistoryCleanupDraft, dashboardQuery.data]);
+
+  useEffect(() => {
+    if (highlightCleanupDraft) {
+      return;
+    }
+
+    const activeSeasonEndAt = getDashboardActiveSeasons(dashboardQuery.data)[0]?.endAt;
+
+    if (activeSeasonEndAt) {
+      setHighlightCleanupDraft(formatDateTimeInput(activeSeasonEndAt));
+    }
+  }, [highlightCleanupDraft, dashboardQuery.data]);
 
   useEffect(() => {
     const activeSeasonGames = getActiveSeasonGames(detailQuery.data);
@@ -1170,6 +1206,34 @@ export default function AdminPage() {
     }
   };
 
+  const handleHighlightCleanup = () => {
+    try {
+      const deleteBefore = parseDateTimeInput(highlightCleanupDraft, '하이라이트 정리 기준');
+      const confirmed = window.confirm(
+        `${formatDateTime(deleteBefore)} 이전에 확정된 하이라이트 내역을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setActionMessage(null);
+      purgeHighlightHistoryMutation.mutate(
+        { deleteBefore },
+        {
+          onSuccess: (response) => {
+            setActionMessage(formatHighlightCleanupMessage(response.deletedCount, response.deleteBefore));
+          },
+          onError: (error) => {
+            setActionMessage(error instanceof Error ? error.message : '하이라이트 내역 정리에 실패했습니다.');
+          },
+        },
+      );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : '하이라이트 정리 기준 시각을 확인해주세요.');
+    }
+  };
+
   const handleTrendSnapshotSearch = () => {
     try {
       const regionCode = trendSnapshotRangeDraft.regionCode?.trim().toUpperCase() ?? '';
@@ -1476,6 +1540,38 @@ export default function AdminPage() {
           </section>
 
           <section className="admin-page__panel">
+            <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
+              <div>
+                <h2 className="admin-page__section-title">하이라이트 내역 정리</h2>
+                <p className="admin-page__section-caption">기준 시각보다 오래된 확정 하이라이트 기록을 정리합니다.</p>
+              </div>
+            </div>
+            <div className="admin-page__form-grid">
+              <label className="admin-page__field">
+                <span>삭제 기준 시각</span>
+                <input
+                  onChange={(event) => setHighlightCleanupDraft(event.target.value)}
+                  type="datetime-local"
+                  value={highlightCleanupDraft}
+                />
+              </label>
+            </div>
+            <p className="admin-page__muted">
+              입력한 시각보다 이전에 확정된 하이라이트 내역만 삭제됩니다. 연결된 거래내역이 남아 있으면 이후 계산 과정에서 다시 생성될 수 있습니다.
+            </p>
+            <div className="admin-page__action-row">
+              <button
+                className="admin-page__button admin-page__button--danger"
+                disabled={purgeHighlightHistoryMutation.isPending}
+                onClick={handleHighlightCleanup}
+                type="button"
+              >
+                {purgeHighlightHistoryMutation.isPending ? '정리 중...' : '오래된 하이라이트 삭제'}
+              </button>
+            </div>
+          </section>
+
+          <section className="admin-page__panel">
             <div className="admin-page__section-header">
               <div>
                 <h2 className="admin-page__section-title">시즌 운영</h2>
@@ -1631,6 +1727,9 @@ export default function AdminPage() {
                     onWalletDraftChange={handleWalletDraftChange}
                     positionDraft={positionDraft}
                     positions={positionsQuery.data ?? []}
+                    highlightsError={highlightsQuery.error}
+                    highlightsSummary={highlightsQuery.data}
+                    isLoadingHighlights={highlightsQuery.isLoading}
                     selectedPositionId={selectedPositionId}
                     selectedSeasonId={selectedSeasonId}
                     user={detailQuery.data}

@@ -1,3 +1,5 @@
+import type { GameHighlight } from '../game/types';
+
 export interface AdminSummaryMetrics {
   totalUsers: number;
   totalComments: number;
@@ -120,6 +122,16 @@ export interface AdminCommentCleanupResponse {
   deletedCount: number;
 }
 
+export interface AdminHighlightHistoryCleanupRequest {
+  deleteBefore: string;
+}
+
+export interface AdminHighlightHistoryCleanupResponse {
+  deleteBefore: string;
+  deletedAt: string;
+  deletedCount: number;
+}
+
 export interface AdminTradeHistoryCleanupRequest {
   deleteBefore: string;
 }
@@ -201,6 +213,18 @@ export interface AdminUserDetail {
   lastPlaybackProgress: AdminPlaybackProgress | null;
   activeSeasonGame: AdminUserGameSummary | null;
   activeSeasonGames?: AdminUserGameSummary[];
+}
+
+export interface AdminUserHighlightSummary {
+  userId: number;
+  seasonId: number;
+  seasonName: string;
+  regionCode: string;
+  calculatedHighlightScore: number;
+  manualTierScoreAdjustment: number;
+  tierScore: number;
+  highlightCount: number;
+  highlights: GameHighlight[];
 }
 
 export interface AdminUserList {

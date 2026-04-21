@@ -314,6 +314,58 @@
   color: #536072;
 }
 
+.admin-page__highlight-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.admin-page__highlight-card {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 72px minmax(0, 1fr);
+  padding: 10px;
+}
+
+.admin-page__highlight-thumb {
+  aspect-ratio: 16 / 9;
+  background: rgba(24, 32, 44, 0.08);
+  border-radius: 6px;
+  object-fit: cover;
+  width: 72px;
+}
+
+.admin-page__highlight-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-page__highlight-body strong,
+.admin-page__highlight-body span,
+.admin-page__highlight-body p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-page__highlight-body span,
+.admin-page__highlight-body p,
+.admin-page__highlight-meta {
+  color: #536072;
+  font-size: 0.82rem;
+}
+
+.admin-page__highlight-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
 .admin-page__management-grid {
   display: grid;
   gap: 18px;

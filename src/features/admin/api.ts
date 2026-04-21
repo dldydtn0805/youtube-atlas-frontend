@@ -3,6 +3,8 @@ import type {
   AdminCommentCleanupRequest,
   AdminCommentCleanupResponse,
   AdminDashboard,
+  AdminHighlightHistoryCleanupRequest,
+  AdminHighlightHistoryCleanupResponse,
   AdminPositionUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonStartingBalanceUpdateRequest,
@@ -11,6 +13,7 @@ import type {
   AdminTradeHistoryCleanupRequest,
   AdminTradeHistoryCleanupResponse,
   AdminUserDetail,
+  AdminUserHighlightSummary,
   AdminUserList,
   AdminUserPosition,
   AdminWalletUpdateRequest,
@@ -51,6 +54,20 @@ export async function purgeAdminComments(
   request: AdminCommentCleanupRequest,
 ) {
   return fetchApi<AdminCommentCleanupResponse>('/api/admin/comments/purge', {
+    method: 'POST',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function purgeAdminHighlightHistory(
+  accessToken: string,
+  request: AdminHighlightHistoryCleanupRequest,
+) {
+  return fetchApi<AdminHighlightHistoryCleanupResponse>('/api/admin/highlights/purge', {
     method: 'POST',
     headers: {
       ...createAuthorizationHeader(accessToken),
@@ -126,6 +143,14 @@ export async function fetchAdminUsers(accessToken: string, query?: string | null
 
 export async function fetchAdminUserDetail(accessToken: string, userId: number) {
   return fetchApi<AdminUserDetail>(`/api/admin/users/${userId}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchAdminUserHighlights(accessToken: string, userId: number, seasonId: number) {
+  const params = new URLSearchParams({ seasonId: String(seasonId) });
+
+  return fetchApi<AdminUserHighlightSummary>(`/api/admin/users/${userId}/highlights?${params.toString()}`, {
     headers: createAuthorizationHeader(accessToken),
   });
 }
