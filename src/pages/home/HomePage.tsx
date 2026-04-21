@@ -34,6 +34,7 @@ import {
 } from './gameHelpers';
 import useAppPreferences from './hooks/useAppPreferences';
 import useHomeChartViewState from './hooks/useHomeChartViewState';
+import useDebouncedValue from './hooks/useDebouncedValue';
 import useHomeGameTradeActions from './hooks/useHomeGameTradeActions';
 import useHomeGameUiState from './hooks/useHomeGameUiState';
 import useHomePlaybackState from './hooks/useHomePlaybackState';
@@ -130,6 +131,7 @@ function formatHighlightScore(score: number) {
 }
 const MAX_CHART_ITEM_COUNT = 200;
 const MAX_SORT_PREFETCH_PAGE_COUNT = 10;
+const SELL_PREVIEW_DEBOUNCE_MS = 300;
 const CHART_SORT_OPTIONS: Array<{ id: ChartSortMode; label: string }> = [
   { id: 'popular-desc', label: '순위 높은 순' },
   { id: 'popular-asc', label: '순위 낮은 순' },
@@ -1608,36 +1610,46 @@ function HomePage() {
         : null,
     [openGamePositions, selectedOpenPositionId],
   );
+  const debouncedSellPreviewQuantity = useDebouncedValue(normalizedSellQuantity, SELL_PREVIEW_DEBOUNCE_MS);
   const sellPreviewRequest = useMemo(
     () =>
-      normalizedSellQuantity > 0
+      debouncedSellPreviewQuantity > 0
         ? {
             positionId: selectedSellPositionId ?? undefined,
-            quantity: normalizedSellQuantity,
+            quantity: debouncedSellPreviewQuantity,
             regionCode: selectedRegionCode,
             videoId: selectedSellPositionId == null ? selectedVideoId : undefined,
           }
         : null,
-    [normalizedSellQuantity, selectedRegionCode, selectedSellPositionId, selectedVideoId],
+    [debouncedSellPreviewQuantity, selectedRegionCode, selectedSellPositionId, selectedVideoId],
   );
   const sellPreviewQuery = useGameSellPreview(
     accessToken,
     sellPreviewRequest,
     activeTradeModal === 'sell' && maxSellQuantity > 0,
   );
+  const activeSellPreview =
+    debouncedSellPreviewQuantity === normalizedSellQuantity &&
+    sellPreviewQuery.data?.quantity === normalizedSellQuantity
+      ? sellPreviewQuery.data
+      : undefined;
+  const isSellPreviewPending =
+    debouncedSellPreviewQuantity !== normalizedSellQuantity ||
+    sellPreviewQuery.isLoading ||
+    sellPreviewQuery.isFetching;
   const resolvedSellSummary = useMemo(
     () =>
-      sellPreviewQuery.data
+      activeSellPreview
         ? {
-            feePoints: sellPreviewQuery.data.sellPricePoints - sellPreviewQuery.data.settledPoints,
-            grossSellPoints: sellPreviewQuery.data.sellPricePoints,
-            pnlPoints: sellPreviewQuery.data.pnlPoints,
-            quantity: sellPreviewQuery.data.quantity,
-            settledPoints: sellPreviewQuery.data.settledPoints,
-            stakePoints: sellPreviewQuery.data.stakePoints,
+            feePoints: activeSellPreview.sellPricePoints - activeSellPreview.settledPoints,
+            grossSellPoints: activeSellPreview.sellPricePoints,
+            pnlPoints: activeSellPreview.pnlPoints,
+            quantity: activeSellPreview.quantity,
+            settledPoints: activeSellPreview.settledPoints,
+            stakePoints: activeSellPreview.stakePoints,
           }
         : selectedVideoSellSummary,
-    [selectedVideoSellSummary, sellPreviewQuery.data],
+    [activeSellPreview, selectedVideoSellSummary],
   );
   const refetchCurrentChartAfterBuy = useCallback(async () => {
     const invalidations: Array<Promise<unknown>> = [];
@@ -2744,8 +2756,8 @@ function HomePage() {
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
         detailContent={
           <GameSellPreviewDetail
-            isLoading={sellPreviewQuery.isLoading || sellPreviewQuery.isFetching}
-            preview={sellPreviewQuery.data}
+            isLoading={isSellPreviewPending}
+            preview={activeSellPreview}
           />
         }
         helperText={sellModalHelperText}
@@ -2776,20 +2788,20 @@ function HomePage() {
           {
             label: '해당 매도 시 하이라이트 점수',
             value:
-              sellPreviewQuery.isLoading || sellPreviewQuery.isFetching
+              isSellPreviewPending
                 ? '계산 중'
-                : formatHighlightScore(sellPreviewQuery.data?.projectedHighlightScore ?? 0),
+                : formatHighlightScore(activeSellPreview?.projectedHighlightScore ?? 0),
           },
           {
             label: '하이라이트 점수 증가량',
             tone:
-              (sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0) > 0
+              (activeSellPreview?.appliedHighlightScoreDelta ?? 0) > 0
                 ? 'gain'
                 : 'flat',
             value:
-              sellPreviewQuery.isLoading || sellPreviewQuery.isFetching
+              isSellPreviewPending
                 ? '계산 중'
-                : formatHighlightScore(sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0),
+                : formatHighlightScore(activeSellPreview?.appliedHighlightScoreDelta ?? 0),
           },
           ...(typeof projectedWalletBalanceAfterSell === 'number'
             ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterSell) }]
