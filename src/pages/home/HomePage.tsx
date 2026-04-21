@@ -10,6 +10,7 @@ import GamePanelModal from './sections/GamePanelModal';
 import { ChartViewModal, RegionFilterModal } from './sections/FilterPanels';
 import GamePanelSection from './sections/GamePanelSection';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
+import GameSellPreviewDetail from './sections/GameSellPreviewDetail';
 import GameTradeModal from './sections/GameTradeModal';
 import GameIntroModal from './sections/GameIntroModal';
 import GameNotificationModal from './sections/GameNotificationModal';
@@ -86,6 +87,7 @@ import {
   useGameMarket,
   useGameNotifications,
   useGamePositionRankHistory,
+  useGameSellPreview,
   useMarkGameNotificationsRead,
   useMyGamePositions,
   useSellGamePositions,
@@ -122,6 +124,10 @@ const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'rank-up',
   'rank-down',
 ]);
+
+function formatTierScore(score: number) {
+  return formatPoints(score).replace(/P$/, '점');
+}
 const MAX_CHART_ITEM_COUNT = 200;
 const MAX_SORT_PREFETCH_PAGE_COUNT = 10;
 const CHART_SORT_OPTIONS: Array<{ id: ChartSortMode; label: string }> = [
@@ -1602,6 +1608,37 @@ function HomePage() {
         : null,
     [openGamePositions, selectedOpenPositionId],
   );
+  const sellPreviewRequest = useMemo(
+    () =>
+      normalizedSellQuantity > 0
+        ? {
+            positionId: selectedSellPositionId ?? undefined,
+            quantity: normalizedSellQuantity,
+            regionCode: selectedRegionCode,
+            videoId: selectedSellPositionId == null ? selectedVideoId : undefined,
+          }
+        : null,
+    [normalizedSellQuantity, selectedRegionCode, selectedSellPositionId, selectedVideoId],
+  );
+  const sellPreviewQuery = useGameSellPreview(
+    accessToken,
+    sellPreviewRequest,
+    activeTradeModal === 'sell' && maxSellQuantity > 0,
+  );
+  const resolvedSellSummary = useMemo(
+    () =>
+      sellPreviewQuery.data
+        ? {
+            feePoints: sellPreviewQuery.data.sellPricePoints - sellPreviewQuery.data.settledPoints,
+            grossSellPoints: sellPreviewQuery.data.sellPricePoints,
+            pnlPoints: sellPreviewQuery.data.pnlPoints,
+            quantity: sellPreviewQuery.data.quantity,
+            settledPoints: sellPreviewQuery.data.settledPoints,
+            stakePoints: sellPreviewQuery.data.stakePoints,
+          }
+        : selectedVideoSellSummary,
+    [selectedVideoSellSummary, sellPreviewQuery.data],
+  );
   const refetchCurrentChartAfterBuy = useCallback(async () => {
     const invalidations: Array<Promise<unknown>> = [];
 
@@ -1694,8 +1731,8 @@ function HomePage() {
   );
   const projectedWalletBalanceAfterSell = useMemo(
     () =>
-      getProjectedWalletBalance(currentGameSeason?.wallet.balancePoints, selectedVideoSellSummary.settledPoints),
-    [currentGameSeason?.wallet.balancePoints, selectedVideoSellSummary.settledPoints],
+      getProjectedWalletBalance(currentGameSeason?.wallet.balancePoints, resolvedSellSummary.settledPoints),
+    [currentGameSeason?.wallet.balancePoints, resolvedSellSummary.settledPoints],
   );
 
   async function handleToggleFavoriteStreamer() {
@@ -2705,6 +2742,12 @@ function HomePage() {
       <GameTradeModal
         confirmLabel={`${formatGameOrderQuantity(normalizedSellQuantity)} 매도`}
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
+        detailContent={
+          <GameSellPreviewDetail
+            isLoading={sellPreviewQuery.isLoading || sellPreviewQuery.isFetching}
+            preview={sellPreviewQuery.data}
+          />
+        }
         helperText={sellModalHelperText}
         isOpen={isSellTradeModalOpen}
         isSubmitting={isSellSubmitting}
@@ -2728,23 +2771,41 @@ function HomePage() {
         onConfirm={() => void handleSellCurrentVideo()}
         quantity={normalizedSellQuantity}
         summaryItems={[
-          { label: '수량', value: formatGameOrderQuantity(normalizedSellQuantity) },
-          { label: '정산 금액', value: formatPoints(selectedVideoSellSummary.settledPoints) },
+          { label: '수량', value: formatGameOrderQuantity(resolvedSellSummary.quantity) },
+          { label: '정산 금액', value: formatPoints(resolvedSellSummary.settledPoints) },
+          {
+            label: '예상 티어 점수',
+            value:
+              sellPreviewQuery.isLoading || sellPreviewQuery.isFetching
+                ? '계산 중'
+                : formatTierScore(sellPreviewQuery.data?.projectedHighlightScore ?? 0),
+          },
+          {
+            label: '실제 반영',
+            tone:
+              (sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0) > 0
+                ? 'gain'
+                : 'flat',
+            value:
+              sellPreviewQuery.isLoading || sellPreviewQuery.isFetching
+                ? '계산 중'
+                : formatTierScore(sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0),
+          },
           ...(typeof projectedWalletBalanceAfterSell === 'number'
             ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterSell) }]
             : []),
-          { label: '매도 금액', value: formatPoints(selectedVideoSellSummary.grossSellPoints) },
-          { label: '수수료', value: formatPoints(selectedVideoSellSummary.feePoints) },
+          { label: '매도 금액', value: formatPoints(resolvedSellSummary.grossSellPoints) },
+          { label: '수수료', value: formatPoints(resolvedSellSummary.feePoints) },
           {
             label: '손익',
-            tone: getPointTone(selectedVideoSellSummary.pnlPoints),
-            value: formatPoints(selectedVideoSellSummary.pnlPoints),
+            tone: getPointTone(resolvedSellSummary.pnlPoints),
+            value: formatPoints(resolvedSellSummary.pnlPoints),
           },
         ]}
         summaryNote={`정산 금액은 매도 금액 기준 ${SELL_FEE_RATE_LABEL} 수수료를 반영한 값입니다.`}
         thumbnailUrl={selectedVideoTradeThumbnailUrl}
         title={selectedGameActionTitle}
-        unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? selectedVideoSellSummary.settledPoints ?? 0)}
+        unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? resolvedSellSummary.settledPoints ?? 0)}
       />
       {buyableVideoSearchOverlay && fullscreenOverlayContainer
         ? createPortal(buyableVideoSearchOverlay, fullscreenOverlayContainer)

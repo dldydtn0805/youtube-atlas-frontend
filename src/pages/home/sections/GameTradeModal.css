@@ -77,6 +77,53 @@
   line-height: 1.5;
 }
 
+.app-shell__game-trade-modal-detail {
+  margin-top: 14px;
+}
+
+.app-shell__game-trade-modal-detail-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.app-shell__game-trade-modal-detail-copy,
+.app-shell__game-trade-modal-preview-item p {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.app-shell__game-trade-modal-preview-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-shell__game-trade-modal-preview-item {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(var(--game-trade-accent-rgb), 0.14);
+  border-radius: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.app-shell__game-trade-modal-preview-item strong,
+.app-shell__game-trade-modal-preview-item span {
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.app-shell__game-trade-modal-preview-item span[data-tone='gain'] {
+  color: #dc2626;
+}
+
 .app-shell__game-trade-modal-controls {
   display: grid;
   gap: 12px;

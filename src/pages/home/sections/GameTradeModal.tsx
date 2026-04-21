@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DEFAULT_GAME_QUANTITY,
@@ -25,6 +26,7 @@ interface GameTradeQuickAction {
 interface GameTradeModalProps {
   confirmLabel: string;
   currentRankLabel: string;
+  detailContent?: ReactNode;
   helperText: string;
   isOpen: boolean;
   isSubmitting: boolean;
@@ -76,6 +78,7 @@ export function getGameTradeQuickActions(maxQuantity: number): GameTradeQuickAct
 export default function GameTradeModal({
   confirmLabel,
   currentRankLabel,
+  detailContent,
   helperText,
   isOpen,
   isSubmitting,
@@ -222,6 +225,7 @@ export default function GameTradeModal({
                 ))}
               </dl>
               {summaryNote ? <p className="app-shell__game-trade-modal-quantity-note">{summaryNote}</p> : null}
+              {detailContent ? <div className="app-shell__game-trade-modal-detail">{detailContent}</div> : null}
             </div>
           </div>
         </div>

@@ -240,6 +240,33 @@ export interface SellGamePositionsInput {
   quantity: number;
 }
 
+export interface SellGamePreviewItem {
+  positionId: number;
+  buyRank: number;
+  quantity: number;
+  stakePoints: number;
+  sellPricePoints: number;
+  pnlPoints: number;
+  settledPoints: number;
+  projectedHighlightScore: number;
+  bestHighlightScore: number;
+  appliedHighlightScoreDelta: number;
+  willUpdateRecord: boolean;
+}
+
+export interface SellGamePreviewResponse {
+  quantity: number;
+  sellRank: number;
+  stakePoints: number;
+  sellPricePoints: number;
+  pnlPoints: number;
+  settledPoints: number;
+  projectedHighlightScore: number;
+  appliedHighlightScoreDelta: number;
+  recordEligibleCount: number;
+  items: SellGamePreviewItem[];
+}
+
 export interface SellGamePositionResponse {
   positionId: number;
   videoId: string;
@@ -251,8 +278,9 @@ export interface SellGamePositionResponse {
   sellPricePoints: number;
   pnlPoints: number;
   settledPoints: number;
+  highlightScore: number;
   balancePoints: number;
-  closedAt: string;
+  soldAt: string;
 }
 
 export interface GameRealtimeEvent {

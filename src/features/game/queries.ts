@@ -4,6 +4,7 @@ import {
   buyGamePosition,
   deleteGameNotification,
   deleteGameNotifications,
+  fetchSellGamePreview,
   fetchCurrentGameSeason,
   fetchGameCoinOverview,
   fetchGameCoinTierProgress,
@@ -59,6 +60,13 @@ export const gameQueryKeys = {
     ['game', 'positions', accessToken, regionCode, status] as const,
   positionRankHistory: (accessToken: string | null, positionId: number | null) =>
     ['game', 'positionRankHistory', accessToken, positionId] as const,
+  sellPreview: (
+    accessToken: string | null,
+    regionCode: string | null,
+    positionId: number | null,
+    videoId: string | null,
+    quantity: number | null,
+  ) => ['game', 'sellPreview', accessToken, regionCode, positionId, videoId, quantity] as const,
   seasonCoinResult: (accessToken: string | null, seasonId: number | null) =>
     ['game', 'seasonCoinResult', accessToken, seasonId] as const,
 };
@@ -431,6 +439,31 @@ export function useGamePositionRankHistory(
     queryKey: gameQueryKeys.positionRankHistory(accessToken, positionId),
     queryFn: () => fetchGamePositionRankHistory(accessToken as string, positionId as number),
     staleTime: 1000 * 15,
+  });
+}
+
+export function useGameSellPreview(
+  accessToken: string | null,
+  input: SellGamePositionsInput | null,
+  enabled = true,
+) {
+  return useQuery({
+    enabled:
+      enabled &&
+      Boolean(accessToken) &&
+      Boolean(input?.regionCode) &&
+      typeof input?.quantity === 'number' &&
+      input.quantity > 0 &&
+      (typeof input.positionId === 'number' || Boolean(input.videoId)),
+    queryKey: gameQueryKeys.sellPreview(
+      accessToken,
+      input?.regionCode ?? null,
+      input?.positionId ?? null,
+      input?.videoId ?? null,
+      input?.quantity ?? null,
+    ),
+    queryFn: () => fetchSellGamePreview(accessToken as string, input as SellGamePositionsInput),
+    staleTime: 1000 * 5,
   });
 }
 
