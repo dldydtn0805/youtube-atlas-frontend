@@ -309,7 +309,7 @@ describe('CommentSection', () => {
     expect(screen.getByText(/3\. 22\. .*9:00/)).toBeInTheDocument();
   });
 
-  it('renders login and trade system messages in the chat list', () => {
+  it('hides trade system messages from the chat list', () => {
     useCommentsMock.mockReturnValue({
       data: [
         {
@@ -358,8 +358,8 @@ describe('CommentSection', () => {
     render(<CommentSection />);
 
     expect(screen.getByText('Atlas User님이 로그인했습니다.')).toBeInTheDocument();
-    expect(screen.getByText('Atlas User님이 [Title] 1개를 매수했습니다. (7500P)')).toBeInTheDocument();
-    expect(screen.getByText('Atlas User님이 [Title] 1개를 매도했습니다. (8200P)')).toBeInTheDocument();
+    expect(screen.queryByText('Atlas User님이 [Title] 1개를 매수했습니다. (7500P)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Atlas User님이 [Title] 1개를 매도했습니다. (8200P)')).not.toBeInTheDocument();
   });
 
   it('marks the document while the mobile composer is focused and clears it on blur', () => {

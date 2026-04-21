@@ -154,7 +154,7 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
   const feedbackMessage = isCooldownActive
     ? formatCooldownFeedback(remainingCooldownSeconds)
     : submissionError?.message;
-  const visibleMessages = commentsQuery.data ?? [];
+  const visibleMessages = (commentsQuery.data ?? []).filter((message) => !isTradeSystemMessage(message));
 
   useEffect(() => {
     setContent('');
@@ -479,7 +479,7 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
           const ownMessage = isOwnMessage(message, participantId, user?.id);
           const systemMessage = isSystemMessage(message);
 
-          if (systemMessage && !isTradeSystemMessage(message)) {
+          if (systemMessage) {
             const systemToneClassName = getSystemMessageVariant(message);
 
             return (
