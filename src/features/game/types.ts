@@ -103,6 +103,8 @@ export interface GameCoinTierProgress {
   seasonName: string;
   regionCode: string;
   highlightScore: number;
+  calculatedHighlightScore?: number;
+  manualTierScoreAdjustment?: number;
   coinBalance: number;
   currentTier: GameCoinTier;
   nextTier: GameCoinTier | null;

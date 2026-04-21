@@ -161,7 +161,7 @@ export default function useHomeGameTradeActions({
         stakePoints: selectedVideoMarketEntry.currentPricePoints,
         videoId: selectedVideoId,
       });
-      await onBuySuccess?.();
+      void onBuySuccess?.();
       setActiveTradeModal(null);
       setBuyQuantity(DEFAULT_GAME_QUANTITY);
       setGameActionStatus(

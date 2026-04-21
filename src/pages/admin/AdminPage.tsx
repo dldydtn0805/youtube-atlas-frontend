@@ -417,9 +417,10 @@ function UserDetailPanel({
     balancePoints: string;
     reservedPoints: string;
     realizedPnlPoints: string;
+    manualTierScoreAdjustment: string;
   };
   onWalletDraftChange: (
-    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints',
+    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'manualTierScoreAdjustment',
     value: string,
   ) => void;
   onSaveWallet: () => void;
@@ -502,7 +503,9 @@ function UserDetailPanel({
               <p><span>참여 여부</span><strong>{selectedSeasonGame.participating ? '참여 중' : '미참여'}</strong></p>
               <p><span>오픈 포지션</span><strong>{formatNumber(selectedSeasonGame.openPositionCount)}</strong></p>
               <p><span>종료 포지션</span><strong>{formatNumber(selectedSeasonGame.closedPositionCount)}</strong></p>
-              <p><span>티어 점수</span><strong>{formatNumber(selectedSeasonGame.tierScore)}</strong></p>
+              <p><span>계산 티어 점수</span><strong>{formatNumber(selectedSeasonGame.calculatedTierScore)}</strong></p>
+              <p><span>수동 보정값</span><strong>{formatNumber(selectedSeasonGame.manualTierScoreAdjustment)}</strong></p>
+              <p><span>최종 티어 점수</span><strong>{formatNumber(selectedSeasonGame.tierScore)}</strong></p>
               <p><span>현재 티어</span><strong>{selectedSeasonGame.currentCoinTier?.displayName ?? '-'}</strong></p>
               <p><span>다음 티어</span><strong>{selectedSeasonGame.nextCoinTier?.displayName ?? '최종 티어'}</strong></p>
               <p><span>다음 티어까지</span><strong>{remainingScoreToNextTier !== null ? formatNumber(remainingScoreToNextTier) : '-'}</strong></p>
@@ -536,9 +539,18 @@ function UserDetailPanel({
                   value={walletDraft.realizedPnlPoints}
                 />
               </label>
+              <label className="admin-page__field">
+                <span>티어 보정값</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => onWalletDraftChange('manualTierScoreAdjustment', event.target.value)}
+                  type="text"
+                  value={walletDraft.manualTierScoreAdjustment}
+                />
+              </label>
             </div>
             <p className="admin-page__muted">
-              예약 포인트는 오픈 포지션과 연결되어 있을 수 있습니다. 티어 점수는 정산된 하이라이트 총합으로 자동 계산됩니다.
+              예약 포인트는 오픈 포지션과 연결되어 있을 수 있습니다. 티어 점수는 계산 점수에 수동 보정값을 더해 최종 반영됩니다.
             </p>
             <div className="admin-page__action-row">
               <button className="admin-page__button" disabled={isSaving || isDeleting} onClick={onSaveWallet} type="button">
@@ -667,6 +679,20 @@ function parsePointInput(value: string, label: string) {
   return Number.parseInt(normalized, 10);
 }
 
+function parseSignedPointInput(value: string, label: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new Error(`${label} 값을 입력해주세요.`);
+  }
+
+  if (!/^-?\d+$/.test(normalized)) {
+    throw new Error(`${label}는 정수만 입력할 수 있습니다.`);
+  }
+
+  return Number.parseInt(normalized, 10);
+}
+
 export default function AdminPage() {
   const { accessToken, isLoggingOut, logout, status, user } = useAuth();
   const [searchInput, setSearchInput] = useState('');
@@ -683,6 +709,7 @@ export default function AdminPage() {
     balancePoints: '',
     reservedPoints: '',
     realizedPnlPoints: '',
+    manualTierScoreAdjustment: '',
   });
   const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
   const [positionDraft, setPositionDraft] = useState({
@@ -816,6 +843,7 @@ export default function AdminPage() {
         balancePoints: '',
         reservedPoints: '',
         realizedPnlPoints: '',
+        manualTierScoreAdjustment: '',
       });
       return;
     }
@@ -824,6 +852,7 @@ export default function AdminPage() {
       balancePoints: String(game.balancePoints ?? 0),
       reservedPoints: String(game.reservedPoints ?? 0),
       realizedPnlPoints: String(game.realizedPnlPoints ?? 0),
+      manualTierScoreAdjustment: String(game.manualTierScoreAdjustment ?? 0),
     });
   }, [detailQuery.data, selectedSeasonId]);
 
@@ -863,7 +892,7 @@ export default function AdminPage() {
     dashboardQuery.error instanceof ApiRequestError && dashboardQuery.error.status === 403;
 
   const handleWalletDraftChange = (
-    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints',
+    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'manualTierScoreAdjustment',
     value: string,
   ) => {
     setWalletDraft((current) => ({
@@ -1001,6 +1030,7 @@ export default function AdminPage() {
         balancePoints: parsePointInput(walletDraft.balancePoints, '가용 포인트'),
         reservedPoints: parsePointInput(walletDraft.reservedPoints, '예약 포인트'),
         realizedPnlPoints: parsePointInput(walletDraft.realizedPnlPoints, '실현 손익'),
+        manualTierScoreAdjustment: parseSignedPointInput(walletDraft.manualTierScoreAdjustment, '티어 보정값'),
       };
 
       setActionMessage(null);

@@ -159,6 +159,8 @@ export interface AdminUserGameSummary {
   balancePoints: number | null;
   reservedPoints: number | null;
   realizedPnlPoints: number | null;
+  calculatedTierScore: number | null;
+  manualTierScoreAdjustment: number | null;
   tierScore: number | null;
   coinBalance: number | null;
   totalAssetPoints: number | null;
@@ -213,6 +215,7 @@ export interface AdminWalletUpdateRequest {
   balancePoints: number;
   reservedPoints: number;
   realizedPnlPoints: number;
+  manualTierScoreAdjustment: number;
 }
 
 export interface AdminPositionUpdateRequest {

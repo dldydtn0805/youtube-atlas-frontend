@@ -475,8 +475,8 @@ export function useBuyGamePosition(accessToken: string | null) {
 
       return buyGamePosition(accessToken, input);
     },
-    onSuccess: async (_data, input) => {
-      await invalidateGameQueries(queryClient, {
+    onSuccess: (_data, input) => {
+      void invalidateGameQueries(queryClient, {
         accessToken,
         includeLeaderboardPositions: true,
         regionCode: input.regionCode,
@@ -496,8 +496,8 @@ export function useSellGamePosition(accessToken: string | null) {
 
       return sellGamePosition(accessToken, positionId);
     },
-    onSuccess: async () => {
-      await invalidateGameQueries(queryClient, {
+    onSuccess: () => {
+      void invalidateGameQueries(queryClient, {
         accessToken,
         includeLeaderboardPositions: true,
       });
@@ -516,8 +516,8 @@ export function useSellGamePositions(accessToken: string | null) {
 
       return sellGamePositions(accessToken, input);
     },
-    onSuccess: async (_data, input) => {
-      await invalidateGameQueries(queryClient, {
+    onSuccess: (_data, input) => {
+      void invalidateGameQueries(queryClient, {
         accessToken,
         includeLeaderboardPositions: true,
         regionCode: input.regionCode,
