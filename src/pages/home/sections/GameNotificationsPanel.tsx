@@ -25,19 +25,8 @@ function formatNotificationDate(value: string) {
   return notificationDateFormatter.format(parsed);
 }
 
-function getNotificationLabel(type: string) {
-  switch (type) {
-    case 'MOONSHOT':
-      return '문샷';
-    case 'BIG_CASHOUT':
-      return '빅 캐시아웃';
-    case 'SMALL_CASHOUT':
-      return '스몰 캐시아웃';
-    case 'SNIPE':
-      return '스나이핑';
-    default:
-      return '게임';
-  }
+function getNotificationLabel(notification: GameNotification) {
+  return notification.title;
 }
 
 function formatHighlightScore(score: number | null) {
@@ -84,7 +73,7 @@ function GameNotificationsPanel({
               >
                 <img alt="" className="game-notifications__thumb" src={notification.thumbnailUrl} />
                 <div className="game-notifications__copy">
-                  <span className="game-notifications__type">{getNotificationLabel(notification.notificationType)}</span>
+                  <span className="game-notifications__type">{getNotificationLabel(notification)}</span>
                   <strong>{notification.videoTitle}</strong>
                   <span
                     className="game-notifications__score"
