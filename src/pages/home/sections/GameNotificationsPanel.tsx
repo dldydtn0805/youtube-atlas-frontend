@@ -1,4 +1,5 @@
 import type { GameNotification } from '../../../features/game/types';
+import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
 import './GameNotificationsPanel.css';
 
 interface GameNotificationsPanelProps {
@@ -39,9 +40,9 @@ function getNotificationLabel(type: string) {
   }
 }
 
-function formatHighlightScore(score: number) {
-  if (!Number.isFinite(score)) {
-    return '집계 중';
+function formatHighlightScore(score: number | null) {
+  if (typeof score !== 'number' || !Number.isFinite(score)) {
+    return '매도 시 점수 확정';
   }
 
   return `+${score.toLocaleString('ko-KR')}점`;
@@ -70,7 +71,11 @@ function GameNotificationsPanel({
       {notifications.length > 0 ? (
         <div className="game-notifications__list">
           {notifications.slice(0, 8).map((notification) => (
-            <article className="game-notifications__item" key={notification.id}>
+            <article
+              className="game-notifications__item"
+              data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
+              key={notification.id}
+            >
               <button
                 aria-label={`${notification.videoTitle} 랭킹 기록 보기`}
                 className="game-notifications__select"
@@ -81,8 +86,13 @@ function GameNotificationsPanel({
                 <div className="game-notifications__copy">
                   <span className="game-notifications__type">{getNotificationLabel(notification.notificationType)}</span>
                   <strong>{notification.videoTitle}</strong>
-                  <span className="game-notifications__score">
-                    {formatHighlightScore(notification.highlightScore)}
+                  <span
+                    className="game-notifications__score"
+                    data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
+                  >
+                    {hasProjectedGameNotificationScore(notification)
+                      ? `${formatHighlightScore(notification.highlightScore)} 예상`
+                      : formatHighlightScore(notification.highlightScore)}
                   </span>
                 </div>
               </button>

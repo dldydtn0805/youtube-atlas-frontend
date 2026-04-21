@@ -81,7 +81,7 @@ interface Window {
     channelTitle?: string;
     thumbnailUrl?: string;
     strategyTags?: Array<'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE'>;
-    highlightScore?: number;
+    highlightScore?: number | null;
     readAt?: string | null;
     createdAt?: string;
     showModal?: boolean;

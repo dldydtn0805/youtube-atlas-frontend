@@ -26,7 +26,7 @@ export interface GameCurrentSeason {
 
 export interface GameNotification {
   id: string;
-  notificationType: GameStrategyType;
+  notificationType: GameStrategyType | 'TIER_PROMOTION';
   title: string;
   message: string;
   positionId: number;
@@ -35,7 +35,7 @@ export interface GameNotification {
   channelTitle: string;
   thumbnailUrl: string;
   strategyTags: GameStrategyType[];
-  highlightScore: number;
+  highlightScore: number | null;
   readAt: string | null;
   createdAt: string;
   showModal?: boolean;

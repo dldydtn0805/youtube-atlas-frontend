@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import type { GameNotification } from '../../../features/game/types';
 import { formatPoints } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
+import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
 import './GameNotificationModal.css';
 
 interface GameNotificationModalProps {
@@ -14,6 +15,9 @@ function GameNotificationModal({ notification, onClose }: GameNotificationModalP
     return null;
   }
 
+  const hasResolvedScore = hasResolvedGameNotificationScore(notification);
+  const hasProjectedScore = hasProjectedGameNotificationScore(notification);
+
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
 
@@ -23,6 +27,7 @@ function GameNotificationModal({ notification, onClose }: GameNotificationModalP
         aria-labelledby="game-notification-modal-title"
         aria-modal="true"
         className="app-shell__modal game-notification-modal"
+        data-projected={hasResolvedScore ? 'false' : 'true'}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
@@ -31,7 +36,13 @@ function GameNotificationModal({ notification, onClose }: GameNotificationModalP
           <span>{notification.title}</span>
           <h2 id="game-notification-modal-title">{notification.videoTitle}</h2>
           <p>{notification.message}</p>
-          <strong>{formatPoints(notification.highlightScore)} 하이라이트</strong>
+          <strong>
+            {hasResolvedScore
+              ? `${formatPoints(notification.highlightScore as number)} 하이라이트`
+              : hasProjectedScore
+                ? `${formatPoints(notification.highlightScore as number)} 예상 하이라이트 · 매도 시 확정`
+                : '매도 시 하이라이트 점수가 확정됩니다.'}
+          </strong>
         </div>
         <button aria-label="게임 알림 모달 닫기" className="app-shell__modal-close" onClick={onClose} type="button">
           닫기
@@ -43,4 +54,3 @@ function GameNotificationModal({ notification, onClose }: GameNotificationModalP
 }
 
 export default GameNotificationModal;
-

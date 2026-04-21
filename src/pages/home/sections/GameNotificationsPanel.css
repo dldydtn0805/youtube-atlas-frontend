@@ -57,6 +57,10 @@
   padding: 6px;
 }
 
+.game-notifications__item[data-projected='true'] {
+  background: color-mix(in srgb, var(--surface-stat) 44%, transparent);
+}
+
 .game-notifications__select {
   align-items: center;
   background: transparent;
@@ -152,4 +156,9 @@
 .game-notifications__score {
   color: var(--accent-primary);
   font-weight: 900;
+}
+
+.game-notifications__score[data-projected='true'] {
+  color: var(--text-muted);
+  font-weight: 800;
 }

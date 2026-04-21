@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { GameNotification } from '../../../features/game/types';
-import { shouldOpenGameNotificationModal } from './gameNotificationModalUtils';
+import {
+  hasProjectedGameNotificationScore,
+  hasResolvedGameNotificationScore,
+  shouldOpenGameNotificationModal,
+} from './gameNotificationModalUtils';
 
 const baseNotification: GameNotification = {
   id: 'game-1-MOONSHOT',
@@ -26,5 +30,17 @@ describe('shouldOpenGameNotificationModal', () => {
 
   it('returns false without the backend modal signal', () => {
     expect(shouldOpenGameNotificationModal({ ...baseNotification, showModal: false })).toBe(false);
+  });
+
+  it('treats null highlight score as a projected notification', () => {
+    expect(hasResolvedGameNotificationScore({ ...baseNotification, showModal: false })).toBe(false);
+  });
+
+  it('treats finite highlight score as a settled notification', () => {
+    expect(hasResolvedGameNotificationScore(baseNotification)).toBe(true);
+  });
+
+  it('treats non-modal score notification as a projected notification', () => {
+    expect(hasProjectedGameNotificationScore({ ...baseNotification, showModal: false })).toBe(true);
   });
 });

@@ -41,9 +41,16 @@
   font-size: 0.95rem;
 }
 
+.game-notification-modal[data-projected='true'] .game-notification-modal__body span {
+  color: var(--text-muted);
+}
+
+.game-notification-modal[data-projected='true'] .game-notification-modal__body strong {
+  color: var(--text-muted);
+}
+
 .game-notification-modal .app-shell__modal-close {
   position: absolute;
   right: 14px;
   top: 14px;
 }
-
