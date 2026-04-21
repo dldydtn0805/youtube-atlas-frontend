@@ -77,8 +77,12 @@
   line-height: 1.5;
 }
 
-.app-shell__game-trade-modal-detail {
+.app-shell__game-trade-modal-quantity-note {
   margin-top: 14px;
+}
+
+.app-shell__game-trade-modal-detail {
+  margin-top: 22px;
 }
 
 .app-shell__game-trade-modal-detail-stack {

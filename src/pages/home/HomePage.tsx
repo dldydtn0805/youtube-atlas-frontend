@@ -125,7 +125,7 @@ const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'rank-down',
 ]);
 
-function formatTierScore(score: number) {
+function formatHighlightScore(score: number) {
   return formatPoints(score).replace(/P$/, '점');
 }
 const MAX_CHART_ITEM_COUNT = 200;
@@ -2774,14 +2774,14 @@ function HomePage() {
           { label: '수량', value: formatGameOrderQuantity(resolvedSellSummary.quantity) },
           { label: '정산 금액', value: formatPoints(resolvedSellSummary.settledPoints) },
           {
-            label: '해당 매도 시 티어 점수',
+            label: '해당 매도 시 하이라이트 점수',
             value:
               sellPreviewQuery.isLoading || sellPreviewQuery.isFetching
                 ? '계산 중'
-                : formatTierScore(sellPreviewQuery.data?.projectedHighlightScore ?? 0),
+                : formatHighlightScore(sellPreviewQuery.data?.projectedHighlightScore ?? 0),
           },
           {
-            label: '해당 매도 시 추가되는 티어 점수',
+            label: '하이라이트 점수 증가량',
             tone:
               (sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0) > 0
                 ? 'gain'
@@ -2789,7 +2789,7 @@ function HomePage() {
             value:
               sellPreviewQuery.isLoading || sellPreviewQuery.isFetching
                 ? '계산 중'
-                : formatTierScore(sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0),
+                : formatHighlightScore(sellPreviewQuery.data?.appliedHighlightScoreDelta ?? 0),
           },
           ...(typeof projectedWalletBalanceAfterSell === 'number'
             ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterSell) }]
