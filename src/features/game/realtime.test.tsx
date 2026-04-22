@@ -92,7 +92,6 @@ describe('game realtime', () => {
       accessToken: 'token-1',
       includeLeaderboardPositions: true,
       regionCode: 'KR',
-      seasonId: 12,
     });
   });
 
@@ -205,6 +204,7 @@ describe('game realtime', () => {
     callback?.({
       body: JSON.stringify({
         id: 'tier-promotion-1-DIAMOND',
+        notificationEventType: 'TIER_PROMOTION',
         notificationType: 'TIER_PROMOTION',
         title: '티어 승급',
         message: '다이아몬드 티어에 도달했습니다. 축하합니다!',

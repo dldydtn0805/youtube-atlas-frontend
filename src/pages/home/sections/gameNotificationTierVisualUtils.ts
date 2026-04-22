@@ -1,4 +1,5 @@
 import type { GameNotification } from '../../../features/game/types';
+import { isTierPromotionNotification } from './gameNotificationEventType';
 
 const TIER_NAME_TO_CODE = {
   브론즈: 'BRONZE',
@@ -13,10 +14,6 @@ const TIER_NAME_TO_CODE = {
 type TierName = keyof typeof TIER_NAME_TO_CODE;
 
 const TIER_NAMES = Object.keys(TIER_NAME_TO_CODE) as TierName[];
-
-export function isTierPromotionNotification(notification: GameNotification) {
-  return notification.notificationType === 'TIER_PROMOTION';
-}
 
 export function getTierPromotionMeta(notification: GameNotification) {
   if (!isTierPromotionNotification(notification)) {

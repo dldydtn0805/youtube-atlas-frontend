@@ -7,6 +7,7 @@ export interface GameWallet {
 }
 
 export type GameStrategyType = 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE';
+export type GameNotificationEventType = 'PROJECTED_HIGHLIGHT' | 'TIER_SCORE_GAIN' | 'TIER_PROMOTION';
 
 export interface GameCurrentSeason {
   seasonId: number;
@@ -25,6 +26,7 @@ export interface GameCurrentSeason {
 
 export interface GameNotification {
   id: string;
+  notificationEventType?: GameNotificationEventType;
   notificationType: GameStrategyType | 'TIER_PROMOTION';
   title: string;
   message: string;

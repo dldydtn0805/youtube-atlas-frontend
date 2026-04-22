@@ -129,15 +129,29 @@
 }
 
 .game-notifications__copy strong,
-.game-notifications__copy span {
+.game-notifications__copy span,
+.game-notifications__message {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.game-notifications__copy strong,
+.game-notifications__copy span {
   white-space: nowrap;
 }
 
 .game-notifications__copy strong {
   color: var(--text);
   font-size: 0.76rem;
+}
+
+.game-notifications__message {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+  margin: 0;
+  white-space: normal;
+  word-break: keep-all;
 }
 
 .game-notifications__copy span,

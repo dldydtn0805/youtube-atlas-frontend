@@ -1,5 +1,10 @@
 import type { GameNotification } from '../../../features/game/types';
 import { getGameNotificationLabel, getGameNotificationTone } from './gameNotificationLabels';
+import {
+  getGameNotificationHeading,
+  getGameNotificationMessage,
+  getGameNotificationStatus,
+} from './gameNotificationContent';
 import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
 import './GameNotificationsPanel.css';
 
@@ -24,14 +29,6 @@ function formatNotificationDate(value: string) {
   }
 
   return notificationDateFormatter.format(parsed);
-}
-
-function formatHighlightScore(score: number | null) {
-  if (typeof score !== 'number' || !Number.isFinite(score)) {
-    return '매도 시 점수 확정';
-  }
-
-  return `+${score.toLocaleString('ko-KR')}점`;
 }
 
 function GameNotificationsPanel({
@@ -59,13 +56,18 @@ function GameNotificationsPanel({
       {visibleNotifications.length > 0 ? (
         <div className="game-notifications__list">
           {visibleNotifications.slice(0, 8).map((notification) => (
+            (() => {
+              const heading = getGameNotificationHeading(notification);
+              const message = getGameNotificationMessage(notification);
+
+              return (
             <article
               className="game-notifications__item"
               data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
               key={notification.id}
             >
               <button
-                aria-label={`${notification.videoTitle} 랭킹 기록 보기`}
+                aria-label={`${heading} 알림 보기`}
                 className="game-notifications__select"
                 onClick={() => onSelect?.(notification)}
                 type="button"
@@ -75,14 +77,15 @@ function GameNotificationsPanel({
                   <span className="game-notifications__type" data-tone={getGameNotificationTone(notification)}>
                     {getGameNotificationLabel(notification)}
                   </span>
-                  <strong>{notification.videoTitle}</strong>
+                  <strong>{heading}</strong>
+                  {message ? <p className="game-notifications__message">{message}</p> : null}
                   <span
                     className="game-notifications__score"
                     data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
                   >
                     {hasProjectedGameNotificationScore(notification)
-                      ? `${formatHighlightScore(notification.highlightScore)} 예상`
-                      : formatHighlightScore(notification.highlightScore)}
+                      ? `${getGameNotificationStatus(notification)} 예상`
+                      : getGameNotificationStatus(notification)}
                   </span>
                 </div>
               </button>
@@ -98,6 +101,8 @@ function GameNotificationsPanel({
                 </button>
               </div>
             </article>
+              );
+            })()
           ))}
         </div>
       ) : (

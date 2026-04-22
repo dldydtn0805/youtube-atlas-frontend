@@ -123,6 +123,25 @@ function formatPlaybackPosition(seconds?: number | null) {
   return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
+function logGameNotificationsDebug(notifications: GameNotification[]) {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  console.info(
+    '[game-notifications] profile-open',
+    notifications.map((notification) => ({
+      id: notification.id,
+      notificationEventType: notification.notificationEventType ?? null,
+      notificationType: notification.notificationType,
+      createdAt: notification.createdAt,
+      title: notification.title,
+      videoTitle: notification.videoTitle,
+      message: notification.message,
+    })),
+  );
+}
+
 function AppHeader({
   authStatus,
   currentTierCode,
@@ -185,6 +204,7 @@ function AppHeader({
       return;
     }
 
+    logGameNotificationsDebug(gameNotifications);
     setIsProfileCardOpen(true);
 
     const refreshTasks = [

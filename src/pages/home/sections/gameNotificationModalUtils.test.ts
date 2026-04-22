@@ -8,6 +8,7 @@ import {
 
 const baseNotification: GameNotification = {
   id: 'game-1-MOONSHOT',
+  notificationEventType: 'TIER_SCORE_GAIN',
   notificationType: 'MOONSHOT',
   title: '문샷 적중',
   message: '100위에서 잡은 영상이 10위까지 올라왔습니다.',
@@ -33,7 +34,13 @@ describe('shouldOpenGameNotificationModal', () => {
   });
 
   it('treats null highlight score as a projected notification', () => {
-    expect(hasResolvedGameNotificationScore({ ...baseNotification, showModal: false })).toBe(false);
+    expect(
+      hasResolvedGameNotificationScore({
+        ...baseNotification,
+        notificationEventType: 'PROJECTED_HIGHLIGHT',
+        showModal: false,
+      }),
+    ).toBe(false);
   });
 
   it('treats finite highlight score as a settled notification', () => {
@@ -41,6 +48,22 @@ describe('shouldOpenGameNotificationModal', () => {
   });
 
   it('treats non-modal score notification as a projected notification', () => {
-    expect(hasProjectedGameNotificationScore({ ...baseNotification, showModal: false })).toBe(true);
+    expect(
+      hasProjectedGameNotificationScore({
+        ...baseNotification,
+        notificationEventType: 'PROJECTED_HIGHLIGHT',
+        showModal: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('treats explicit tier score gain notifications as settled even without modal display', () => {
+    expect(
+      hasResolvedGameNotificationScore({
+        ...baseNotification,
+        notificationEventType: 'TIER_SCORE_GAIN',
+        showModal: false,
+      }),
+    ).toBe(true);
   });
 });

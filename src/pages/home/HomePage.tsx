@@ -292,6 +292,32 @@ function mergeGameNotifications(...groups: Array<GameNotification[] | undefined>
     .slice(0, 20);
 }
 
+function logRealtimeGameNotificationDebug(
+  notification: GameNotification,
+  currentNotifications: GameNotification[],
+) {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  const duplicatedNotification = currentNotifications.find(
+    (currentNotification) => currentNotification.id === notification.id,
+  );
+
+  console.info('[game-notification] incoming', {
+    id: notification.id,
+    notificationEventType: notification.notificationEventType ?? null,
+    notificationType: notification.notificationType,
+    createdAt: notification.createdAt,
+    title: notification.title,
+    videoTitle: notification.videoTitle,
+    duplicatedWithExistingId: Boolean(duplicatedNotification),
+    duplicatedNotificationEventType: duplicatedNotification?.notificationEventType ?? null,
+    duplicatedNotificationType: duplicatedNotification?.notificationType ?? null,
+    currentNotificationIds: currentNotifications.map((currentNotification) => currentNotification.id),
+  });
+}
+
 function createRankHistoryPositionFromNotification(notification: GameNotification): GamePosition {
   return {
     id: notification.positionId,
@@ -573,9 +599,10 @@ function HomePage() {
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
   const handleRealtimeGameNotification = useCallback((notification: GameNotification) => {
-    setPushedGameNotifications((currentNotifications) =>
-      mergeGameNotifications([notification], currentNotifications),
-    );
+    setPushedGameNotifications((currentNotifications) => {
+      logRealtimeGameNotificationDebug(notification, currentNotifications);
+      return mergeGameNotifications([notification], currentNotifications);
+    });
     setVisibleGameNotification(notification);
 
     if (shouldOpenGameNotificationModal(notification)) {
@@ -636,9 +663,16 @@ function HomePage() {
     window.__emitGameNotificationTest = (notification) => {
       const now = new Date().toISOString();
       const notificationType = notification?.notificationType ?? 'MOONSHOT';
+      const notificationEventType = notification?.notificationEventType
+        ?? (notificationType === 'TIER_PROMOTION'
+          ? 'TIER_PROMOTION'
+          : notification?.showModal === false
+            ? 'PROJECTED_HIGHLIGHT'
+            : 'TIER_SCORE_GAIN');
 
       handleRealtimeGameNotification({
         id: notification?.id ?? `game-test-${Date.now()}-${notificationType}`,
+        notificationEventType,
         notificationType,
         title: notification?.title ?? '문샷 적중',
         message: notification?.message ?? '테스트 소켓 알림입니다.',

@@ -2,10 +2,11 @@ import { createPortal } from 'react-dom';
 import type { GameNotification } from '../../../features/game/types';
 import { formatPoints } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
+import { getGameNotificationStatus } from './gameNotificationContent';
+import { isTierPromotionNotification } from './gameNotificationEventType';
 import { getGameNotificationLabel, getGameNotificationTone } from './gameNotificationLabels';
 import GameNotificationTierVisual from './GameNotificationTierVisual';
 import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
-import { isTierPromotionNotification } from './gameNotificationTierVisualUtils';
 import './GameNotificationModal.css';
 
 interface GameNotificationModalProps {
@@ -15,7 +16,7 @@ interface GameNotificationModalProps {
 }
 
 function isHighlightAchievementNotification(notification: GameNotification) {
-  return notification.notificationType !== 'TIER_PROMOTION' && notification.showModal !== false;
+  return !isTierPromotionNotification(notification) && notification.showModal !== false;
 }
 
 function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotificationModalProps) {
@@ -58,7 +59,9 @@ function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotif
           <h2 id="game-notification-modal-title">{notification.videoTitle}</h2>
           <p>{notification.message}</p>
           <strong>
-            {hasResolvedScore
+            {isTierPromotionNotification(notification)
+              ? getGameNotificationStatus(notification)
+              : hasResolvedScore
               ? `${formatPoints(notification.highlightScore as number)} 하이라이트`
               : hasProjectedScore
                 ? `${formatPoints(notification.highlightScore as number)} 예상 하이라이트 · 매도 시 확정`

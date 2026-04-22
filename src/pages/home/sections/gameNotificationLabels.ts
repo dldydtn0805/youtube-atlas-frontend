@@ -1,4 +1,5 @@
 import type { GameNotification } from '../../../features/game/types';
+import { isProjectedHighlightNotification, isTierPromotionNotification } from './gameNotificationEventType';
 import { getTierPromotionMeta } from './gameNotificationTierVisualUtils';
 
 const NOTIFICATION_LABELS = {
@@ -14,7 +15,7 @@ export function getGameNotificationLabel(notification: GameNotification) {
   }
 
   const detail = NOTIFICATION_LABELS[notification.notificationType as keyof typeof NOTIFICATION_LABELS];
-  const prefix = notification.showModal === false ? '하이라이트 포착' : '티어 점수 상승';
+  const prefix = isProjectedHighlightNotification(notification) ? '하이라이트 포착' : '티어 점수 상승';
 
   if (detail) {
     return `${prefix} : ${detail}`;
