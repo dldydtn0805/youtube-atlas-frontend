@@ -66,7 +66,7 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
                   <strong className="app-shell__game-intro-title">하이라이트로 티어 올리기</strong>
                   <p className="app-shell__game-intro-copy">
                     <BoldNumberText>
-                      문샷은 100위 바깥에서 매수한 영상이 20위 안으로 진입하는 대박 플레이입니다. 스나이프는 150위 바깥에서 가능성을 보고 매수해 100위 안에 진입했을 때 붙습니다. 캐시아웃은 수익률 하이라이트로, 300% 이상은 스몰, 1,000% 이상은 빅으로 기록됩니다.
+                      문샷은 100위 바깥에서 매수한 영상이 20위 안으로 진입할 때 붙는 핵심 하이라이트입니다. 스나이프는 150위 바깥에서 가능성을 보고 매수해 100위 안에 진입했을 때 붙습니다. 캐시아웃은 수익률 하이라이트로, 300% 이상은 스몰, 1,000% 이상은 빅으로 기록됩니다.
                     </BoldNumberText>
                   </p>
                 </li>
