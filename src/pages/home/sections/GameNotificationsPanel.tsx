@@ -17,11 +17,7 @@ const notificationDateFormatter = new Intl.DateTimeFormat('ko-KR', {
 });
 
 function shouldHideFromNotificationsPanel(notification: GameNotification) {
-  if (notification.notificationType === 'TIER_PROMOTION') {
-    return false;
-  }
-
-  return notification.showModal !== false;
+  return false;
 }
 
 function formatNotificationDate(value: string) {

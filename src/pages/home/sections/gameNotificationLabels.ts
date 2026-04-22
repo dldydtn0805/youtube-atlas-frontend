@@ -14,12 +14,13 @@ export function getGameNotificationLabel(notification: GameNotification) {
   }
 
   const detail = NOTIFICATION_LABELS[notification.notificationType as keyof typeof NOTIFICATION_LABELS];
+  const prefix = notification.showModal === false ? '하이라이트 포착' : '티어 점수 상승';
 
   if (detail) {
-    return `하이라이트 포착 : ${detail}`;
+    return `${prefix} : ${detail}`;
   }
 
-  return '하이라이트 포착';
+  return prefix;
 }
 
 export function getGameNotificationTone(notification: GameNotification) {
