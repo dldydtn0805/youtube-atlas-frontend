@@ -1,8 +1,16 @@
 import type { GameNotification } from '../../../features/game/types';
-import { isProjectedHighlightNotification, isTierScoreGainNotification } from './gameNotificationEventType';
+import {
+  isProjectedHighlightNotification,
+  isTierPromotionNotification,
+  isTierScoreGainNotification,
+} from './gameNotificationEventType';
 
 export function shouldOpenGameNotificationModal(notification: GameNotification) {
-  return notification.showModal === true;
+  return (
+    notification.showModal === true ||
+    isTierPromotionNotification(notification) ||
+    isTierScoreGainNotification(notification)
+  );
 }
 
 export function hasResolvedGameNotificationScore(notification: GameNotification) {

@@ -87,6 +87,8 @@ interface Window {
     createdAt?: string;
     showModal?: boolean;
   }) => void;
+  __emitToastOnlyGameNotificationTest?: () => void;
+  __emitModalGameNotificationTest?: (kind?: 'tier-score' | 'tier-promotion') => void;
   google?: {
     accounts?: {
       oauth2?: {

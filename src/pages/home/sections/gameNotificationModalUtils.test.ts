@@ -29,8 +29,29 @@ describe('shouldOpenGameNotificationModal', () => {
     expect(shouldOpenGameNotificationModal(baseNotification)).toBe(true);
   });
 
-  it('returns false without the backend modal signal', () => {
-    expect(shouldOpenGameNotificationModal({ ...baseNotification, showModal: false })).toBe(false);
+  it('opens tier score gain notifications even without the backend modal flag', () => {
+    expect(shouldOpenGameNotificationModal({ ...baseNotification, showModal: false })).toBe(true);
+  });
+
+  it('opens tier promotion notifications even without the backend modal flag', () => {
+    expect(
+      shouldOpenGameNotificationModal({
+        ...baseNotification,
+        notificationEventType: 'TIER_PROMOTION',
+        notificationType: 'TIER_PROMOTION',
+        showModal: false,
+      }),
+    ).toBe(true);
+  });
+
+  it('keeps projected highlight notifications out of the modal', () => {
+    expect(
+      shouldOpenGameNotificationModal({
+        ...baseNotification,
+        notificationEventType: 'PROJECTED_HIGHLIGHT',
+        showModal: false,
+      }),
+    ).toBe(false);
   });
 
   it('treats null highlight score as a projected notification', () => {

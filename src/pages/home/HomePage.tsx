@@ -22,6 +22,10 @@ import StickySelectedVideoControls from './sections/StickySelectedVideoControls'
 import TrendTicker from './sections/TrendTicker';
 import { shouldOpenGameNotificationModal } from './sections/gameNotificationModalUtils';
 import {
+  enqueueGameNotification,
+  removeGameNotification,
+} from './sections/gameNotificationQueueUtils';
+import {
   buildOpenGameHoldings,
   formatGameOrderQuantity,
   formatPoints,
@@ -501,8 +505,8 @@ function HomePage() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isGameIntroModalOpen, setIsGameIntroModalOpen] = useState(getInitialGameIntroModalOpen);
   const [pushedGameNotifications, setPushedGameNotifications] = useState<GameNotification[]>([]);
-  const [modalGameNotification, setModalGameNotification] = useState<GameNotification | null>(null);
-  const [visibleGameNotification, setVisibleGameNotification] = useState<GameNotification | null>(null);
+  const [modalGameNotificationQueue, setModalGameNotificationQueue] = useState<GameNotification[]>([]);
+  const [visibleGameNotificationQueue, setVisibleGameNotificationQueue] = useState<GameNotification[]>([]);
   const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
   const [isChartViewModalOpen, setIsChartViewModalOpen] = useState(false);
   const [pendingRegionTopVideoSelection, setPendingRegionTopVideoSelection] = useState<string | null>(null);
@@ -549,7 +553,8 @@ function HomePage() {
 
   useEffect(() => {
     setPushedGameNotifications([]);
-    setVisibleGameNotification(null);
+    setModalGameNotificationQueue([]);
+    setVisibleGameNotificationQueue([]);
   }, [user?.id]);
 
   const scrollToPlayerStage = useCallback(() => {
@@ -598,15 +603,19 @@ function HomePage() {
   }));
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
+  const modalGameNotification = modalGameNotificationQueue[0] ?? null;
+  const visibleGameNotification = visibleGameNotificationQueue[0] ?? null;
   const handleRealtimeGameNotification = useCallback((notification: GameNotification) => {
     setPushedGameNotifications((currentNotifications) => {
       logRealtimeGameNotificationDebug(notification, currentNotifications);
       return mergeGameNotifications([notification], currentNotifications);
     });
-    setVisibleGameNotification(notification);
+    setVisibleGameNotificationQueue((currentQueue) =>
+      enqueueGameNotification(currentQueue, notification));
 
     if (shouldOpenGameNotificationModal(notification)) {
-      setModalGameNotification(notification);
+      setModalGameNotificationQueue((currentQueue) =>
+        enqueueGameNotification(currentQueue, notification));
     }
   }, []);
   useGameNotificationRealtime(
@@ -651,16 +660,23 @@ function HomePage() {
       return;
     }
 
-    window.__emitGameRealtimeTest = (event) => {
-      const regionCode = event?.regionCode ?? selectedRegionCode;
-
-      void invalidateGameQueries(queryClient, {
-        accessToken,
-        includeLeaderboardPositions: true,
-        regionCode,
-      });
-    };
-    window.__emitGameNotificationTest = (notification) => {
+    const emitGameNotificationTest = (notification?: {
+      id?: string;
+      notificationEventType?: 'PROJECTED_HIGHLIGHT' | 'TIER_SCORE_GAIN' | 'TIER_PROMOTION';
+      notificationType?: 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE' | 'TIER_PROMOTION';
+      title?: string;
+      message?: string;
+      positionId?: number;
+      videoId?: string;
+      videoTitle?: string;
+      channelTitle?: string;
+      thumbnailUrl?: string;
+      strategyTags?: Array<'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE'>;
+      highlightScore?: number | null;
+      readAt?: string | null;
+      createdAt?: string;
+      showModal?: boolean;
+    }) => {
       const now = new Date().toISOString();
       const notificationType = notification?.notificationType ?? 'MOONSHOT';
       const notificationEventType = notification?.notificationEventType
@@ -689,9 +705,52 @@ function HomePage() {
       });
     };
 
+    window.__emitGameRealtimeTest = (event) => {
+      const regionCode = event?.regionCode ?? selectedRegionCode;
+
+      void invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+        regionCode,
+      });
+    };
+    window.__emitGameNotificationTest = emitGameNotificationTest;
+    window.__emitToastOnlyGameNotificationTest = () => {
+      emitGameNotificationTest({
+        message: '토스트 전용 하이라이트 포착 테스트입니다.',
+        notificationEventType: 'PROJECTED_HIGHLIGHT',
+        notificationType: 'MOONSHOT',
+        showModal: false,
+        title: '하이라이트 포착',
+      });
+    };
+    window.__emitModalGameNotificationTest = (kind = 'tier-score') => {
+      if (kind === 'tier-promotion') {
+        emitGameNotificationTest({
+          message: '티어 승급 모달 테스트입니다.',
+          notificationEventType: 'TIER_PROMOTION',
+          notificationType: 'TIER_PROMOTION',
+          showModal: false,
+          strategyTags: [],
+          title: '티어 승급',
+        });
+        return;
+      }
+
+      emitGameNotificationTest({
+        message: '티어 점수 상승 모달 테스트입니다.',
+        notificationEventType: 'TIER_SCORE_GAIN',
+        notificationType: 'MOONSHOT',
+        showModal: false,
+        title: '티어 점수 상승',
+      });
+    };
+
     return () => {
       delete window.__emitGameRealtimeTest;
       delete window.__emitGameNotificationTest;
+      delete window.__emitToastOnlyGameNotificationTest;
+      delete window.__emitModalGameNotificationTest;
     };
   }, [
     accessToken,
@@ -775,27 +834,27 @@ function HomePage() {
     }
 
     const previousPushedNotifications = pushedGameNotifications;
-    const previousModalNotification = modalGameNotification;
-    const previousVisibleNotification = visibleGameNotification;
+    const previousModalNotificationQueue = modalGameNotificationQueue;
+    const previousVisibleNotificationQueue = visibleGameNotificationQueue;
     setPushedGameNotifications([]);
-    setModalGameNotification(null);
-    setVisibleGameNotification(null);
+    setModalGameNotificationQueue([]);
+    setVisibleGameNotificationQueue([]);
 
     try {
       await deleteGameNotificationsMutation.mutateAsync();
     } catch (error) {
       setPushedGameNotifications(previousPushedNotifications);
-      setModalGameNotification(previousModalNotification);
-      setVisibleGameNotification(previousVisibleNotification);
+      setModalGameNotificationQueue(previousModalNotificationQueue);
+      setVisibleGameNotificationQueue(previousVisibleNotificationQueue);
       throw error;
     }
   }, [
     accessToken,
     deleteGameNotificationsMutation,
     gameNotifications.length,
-    modalGameNotification,
+    modalGameNotificationQueue,
     pushedGameNotifications,
-    visibleGameNotification,
+    visibleGameNotificationQueue,
   ]);
   const deleteGameNotification = useCallback(async (notificationId: string) => {
     if (!accessToken) {
@@ -803,28 +862,30 @@ function HomePage() {
     }
 
     const previousPushedNotifications = pushedGameNotifications;
-    const previousModalNotification = modalGameNotification;
-    const previousVisibleNotification = visibleGameNotification;
+    const previousModalNotificationQueue = modalGameNotificationQueue;
+    const previousVisibleNotificationQueue = visibleGameNotificationQueue;
     setPushedGameNotifications((notifications) =>
       notifications.filter((notification) => notification.id !== notificationId),
     );
-    setModalGameNotification((notification) => notification?.id === notificationId ? null : notification);
-    setVisibleGameNotification((notification) => notification?.id === notificationId ? null : notification);
+    setModalGameNotificationQueue((notifications) =>
+      removeGameNotification(notifications, notificationId));
+    setVisibleGameNotificationQueue((notifications) =>
+      removeGameNotification(notifications, notificationId));
 
     try {
       await deleteGameNotificationMutation.mutateAsync(notificationId);
     } catch (error) {
       setPushedGameNotifications(previousPushedNotifications);
-      setModalGameNotification(previousModalNotification);
-      setVisibleGameNotification(previousVisibleNotification);
+      setModalGameNotificationQueue(previousModalNotificationQueue);
+      setVisibleGameNotificationQueue(previousVisibleNotificationQueue);
       throw error;
     }
   }, [
     accessToken,
     deleteGameNotificationMutation,
-    modalGameNotification,
+    modalGameNotificationQueue,
     pushedGameNotifications,
-    visibleGameNotification,
+    visibleGameNotificationQueue,
   ]);
   const refreshGameNotifications = useCallback(async () => {
     if (!accessToken) {
@@ -833,8 +894,8 @@ function HomePage() {
 
     await refetchGameNotifications();
     setPushedGameNotifications([]);
-    setModalGameNotification(null);
-    setVisibleGameNotification(null);
+    setModalGameNotificationQueue([]);
+    setVisibleGameNotificationQueue([]);
 
     void markGameNotificationsReadMutation.mutateAsync().catch(() => {
       // The notification list should remain usable even if read marking fails.
@@ -1877,7 +1938,8 @@ function HomePage() {
       setSelectedRankHistoryOwnerUserId(null);
       setRankHistoryFocusMode('trade');
       openRankHistoryModal(notification.videoId, matchedPosition);
-      setModalGameNotification(null);
+      setModalGameNotificationQueue((notifications) =>
+        removeGameNotification(notifications, notification.id));
     },
     [gameHistoryPositions, openGamePositions, openRankHistoryModal],
   );
@@ -2727,11 +2789,25 @@ function HomePage() {
       </main>
       <GameNotificationToast
         notification={visibleGameNotification}
-        onDismiss={() => setVisibleGameNotification(null)}
+        onDismiss={() => {
+          if (!visibleGameNotification) {
+            return;
+          }
+
+          setVisibleGameNotificationQueue((notifications) =>
+            removeGameNotification(notifications, visibleGameNotification.id));
+        }}
       />
       <GameNotificationModal
         notification={modalGameNotification}
-        onClose={() => setModalGameNotification(null)}
+        onClose={() => {
+          if (!modalGameNotification) {
+            return;
+          }
+
+          setModalGameNotificationQueue((notifications) =>
+            removeGameNotification(notifications, modalGameNotification.id));
+        }}
         onOpenChart={handleOpenGameNotificationChart}
       />
       <GameIntroModal
