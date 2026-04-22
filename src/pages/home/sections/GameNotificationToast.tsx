@@ -1,4 +1,5 @@
 import type { GameNotification } from '../../../features/game/types';
+import { getGameNotificationLabel, getGameNotificationTone } from './gameNotificationLabels';
 import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
 import './GameNotificationToast.css';
 
@@ -24,7 +25,7 @@ function GameNotificationToast({ notification, onDismiss }: GameNotificationToas
     >
       <img alt="" className="game-notification-toast__thumb" src={notification.thumbnailUrl} />
       <div className="game-notification-toast__copy">
-        <span>{notification.title}</span>
+        <span data-tone={getGameNotificationTone(notification)}>{getGameNotificationLabel(notification)}</span>
         <strong>{notification.videoTitle}</strong>
         <p>{notification.message}</p>
         {!hasResolvedScore ? (

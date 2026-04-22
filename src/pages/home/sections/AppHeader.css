@@ -481,6 +481,35 @@
   padding: 10px;
 }
 
+.app-shell__profile-card-grid-button {
+  appearance: none;
+  background: var(--surface-stat);
+  border: 1px solid var(--surface-stat-border);
+  border-radius: 12px;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 10px;
+  text-align: left;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.app-shell__profile-card-grid-button:hover {
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.app-shell__profile-card-grid-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-primary, #14b8a6) 64%, white 36%);
+  outline-offset: 2px;
+}
+
 .app-shell__profile-card-playback,
 .app-shell__profile-card-empty {
   margin: 0;

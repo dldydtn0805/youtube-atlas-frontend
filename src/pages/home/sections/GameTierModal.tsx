@@ -7,6 +7,7 @@ import GameTierGuide from './GameTierGuide';
 import './GameTierModal.css';
 
 interface GameTierModalProps {
+  defaultTab?: 'tier' | 'highlights' | 'ranking';
   highlightsContent?: ReactNode;
   isOpen: boolean;
   onClose: () => void;
@@ -15,19 +16,20 @@ interface GameTierModalProps {
 }
 
 export default function GameTierModal({
+  defaultTab = 'tier',
   highlightsContent,
   isOpen,
   onClose,
   rankingContent,
   tierProgress,
 }: GameTierModalProps) {
-  const [activeTab, setActiveTab] = useState<'tier' | 'highlights' | 'ranking'>('tier');
+  const [activeTab, setActiveTab] = useState<'tier' | 'highlights' | 'ranking'>(defaultTab);
 
   useEffect(() => {
     if (isOpen) {
-      setActiveTab('tier');
+      setActiveTab(defaultTab);
     }
-  }, [isOpen]);
+  }, [defaultTab, isOpen]);
 
   if (!isOpen || typeof document === 'undefined' || (!tierProgress && !rankingContent && !highlightsContent)) {
     return null;

@@ -1,5 +1,5 @@
 import type { GameNotification } from '../../../features/game/types';
-import { getGameNotificationLabel } from './gameNotificationLabels';
+import { getGameNotificationLabel, getGameNotificationTone } from './gameNotificationLabels';
 import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
 import './GameNotificationsPanel.css';
 
@@ -15,6 +15,14 @@ const notificationDateFormatter = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'short',
   timeStyle: 'short',
 });
+
+function shouldHideFromNotificationsPanel(notification: GameNotification) {
+  const isCashout =
+    notification.notificationType === 'BIG_CASHOUT' ||
+    notification.notificationType === 'SMALL_CASHOUT';
+
+  return isCashout && notification.showModal !== false;
+}
 
 function formatNotificationDate(value: string) {
   const parsed = new Date(value);
@@ -41,22 +49,24 @@ function GameNotificationsPanel({
   onDelete,
   onSelect,
 }: GameNotificationsPanelProps) {
+  const visibleNotifications = notifications.filter((notification) => !shouldHideFromNotificationsPanel(notification));
+
   return (
     <div className="game-notifications">
       <div className="game-notifications__header">
         <span className="app-shell__profile-card-section-label">알림 내역</span>
         <div className="game-notifications__actions">
           {isLoading ? <span className="game-notifications__status">업데이트 중</span> : null}
-          {notifications.length > 0 ? (
+          {visibleNotifications.length > 0 ? (
             <button className="game-notifications__clear" onClick={onClear} type="button">
               모두 지우기
             </button>
           ) : null}
         </div>
       </div>
-      {notifications.length > 0 ? (
+      {visibleNotifications.length > 0 ? (
         <div className="game-notifications__list">
-          {notifications.slice(0, 8).map((notification) => (
+          {visibleNotifications.slice(0, 8).map((notification) => (
             <article
               className="game-notifications__item"
               data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
@@ -70,7 +80,9 @@ function GameNotificationsPanel({
               >
                 <img alt="" className="game-notifications__thumb" src={notification.thumbnailUrl} />
                 <div className="game-notifications__copy">
-                  <span className="game-notifications__type">{getGameNotificationLabel(notification)}</span>
+                  <span className="game-notifications__type" data-tone={getGameNotificationTone(notification)}>
+                    {getGameNotificationLabel(notification)}
+                  </span>
                   <strong>{notification.videoTitle}</strong>
                   <span
                     className="game-notifications__score"

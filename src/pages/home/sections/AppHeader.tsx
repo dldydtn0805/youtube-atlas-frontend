@@ -10,10 +10,14 @@ interface AppHeaderProps {
   authStatus: AuthStatus;
   currentTierCode?: string | null;
   currentTierName?: string | null;
+  currentTierScore?: number | null;
+  highlightCount?: number;
   isDarkMode: boolean;
   isLoggingOut: boolean;
   onLogout: () => void;
   onOpenGameModal?: () => void;
+  onOpenGameHistoryModal?: () => void;
+  onOpenHighlightsModal?: () => void;
   onOpenRecentPlayback?: (videoId: string) => void;
   onClearGameNotifications?: () => void;
   onDeleteGameNotification?: (notificationId: string) => void;
@@ -121,10 +125,14 @@ function AppHeader({
   authStatus,
   currentTierCode,
   currentTierName,
+  currentTierScore,
+  highlightCount = 0,
   isDarkMode,
   isLoggingOut,
   onLogout,
   onOpenGameModal,
+  onOpenGameHistoryModal,
+  onOpenHighlightsModal,
   onOpenRecentPlayback,
   onClearGameNotifications,
   onDeleteGameNotification,
@@ -147,6 +155,10 @@ function AppHeader({
       ? formatPoints(walletBalancePoints)
       : '집계 중';
   const tierSummary = currentTierName?.trim() || '미정';
+  const tierScoreSummary =
+    typeof currentTierScore === 'number' && Number.isFinite(currentTierScore)
+      ? formatPoints(currentTierScore)
+      : '집계 중';
   const [isProfileCardOpen, setIsProfileCardOpen] = useState(false);
   const [isProfileRefreshing, setIsProfileRefreshing] = useState(false);
   const profileCardRef = useRef<HTMLDivElement | null>(null);
@@ -159,6 +171,9 @@ function AppHeader({
       : playbackProgress
         ? [playbackProgress]
         : [];
+  const closeProfileCard = () => {
+    setIsProfileCardOpen(false);
+  };
 
   const handleProfileButtonClick = () => {
     if (isProfileCardOpen) {
@@ -336,18 +351,39 @@ function AppHeader({
                       <span>Atlas에 함께한지</span>
                       <strong>{formatAtlasDays(user.createdAt)}</strong>
                     </p>
-                    <p>
-                      <span>즐겨찾기</span>
-                      <strong>{user.favoriteCount}명</strong>
-                    </p>
-                    <p>
-                      <span>댓글</span>
-                      <strong>{user.commentCount}회</strong>
-                    </p>
-                    <p>
+                    <button
+                      className="app-shell__profile-card-grid-button"
+                      onClick={() => {
+                        closeProfileCard();
+                        onOpenHighlightsModal?.();
+                      }}
+                      type="button"
+                    >
+                      <span>하이라이트</span>
+                      <strong>{highlightCount}개</strong>
+                    </button>
+                    <button
+                      className="app-shell__profile-card-grid-button"
+                      onClick={() => {
+                        closeProfileCard();
+                        onOpenTierModal?.();
+                      }}
+                      type="button"
+                    >
+                      <span>티어 점수</span>
+                      <strong>{tierScoreSummary}</strong>
+                    </button>
+                    <button
+                      className="app-shell__profile-card-grid-button"
+                      onClick={() => {
+                        closeProfileCard();
+                        onOpenGameHistoryModal?.();
+                      }}
+                      type="button"
+                    >
                       <span>거래</span>
                       <strong>{user.tradeCount}회</strong>
-                    </p>
+                    </button>
                   </div>
                   <div className="app-shell__profile-card-section">
                     <GameNotificationsPanel

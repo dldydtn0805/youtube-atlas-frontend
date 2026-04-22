@@ -29,6 +29,10 @@
   width: 100%;
 }
 
+.game-notification-toast__tier-visual {
+  width: 82px;
+}
+
 .game-notification-toast__copy {
   display: grid;
   gap: 2px;
@@ -39,6 +43,50 @@
   color: var(--text-muted);
   font-size: 0.68rem;
   font-weight: 800;
+}
+
+.game-notification-toast__copy span[data-tone='moonshot'] {
+  color: #60a5fa;
+}
+
+.game-notification-toast__copy span[data-tone='snipe'] {
+  color: #14b8a6;
+}
+
+.game-notification-toast__copy span[data-tone='small-cashout'] {
+  color: #f59e0b;
+}
+
+.game-notification-toast__copy span[data-tone='big-cashout'] {
+  color: #f43f5e;
+}
+
+.game-notification-toast__copy span[data-tone='bronze'] {
+  color: #c26832;
+}
+
+.game-notification-toast__copy span[data-tone='silver'] {
+  color: #94a3b8;
+}
+
+.game-notification-toast__copy span[data-tone='gold'] {
+  color: #eab308;
+}
+
+.game-notification-toast__copy span[data-tone='platinum'] {
+  color: #14b8a6;
+}
+
+.game-notification-toast__copy span[data-tone='diamond'] {
+  color: #60a5fa;
+}
+
+.game-notification-toast__copy span[data-tone='master'] {
+  color: #a855f7;
+}
+
+.game-notification-toast__copy span[data-tone='legend'] {
+  color: #f43f5e;
 }
 
 .game-notification-toast__copy strong,
@@ -87,5 +135,9 @@
 
   .game-notification-toast__close {
     grid-column: 1 / -1;
+  }
+
+  .game-notification-toast__tier-visual {
+    width: 64px;
   }
 }

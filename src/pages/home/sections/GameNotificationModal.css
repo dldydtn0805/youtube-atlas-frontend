@@ -4,11 +4,24 @@
   padding: 0;
 }
 
+.game-notification-modal__header {
+  justify-content: flex-end;
+  padding: 4px 14px 16px;
+}
+
+.game-notification-modal__header .app-shell__modal-close {
+  width: auto;
+}
+
 .game-notification-modal__thumb {
   aspect-ratio: 16 / 9;
   background: var(--surface-interactive);
   object-fit: cover;
   width: 100%;
+}
+
+.game-notification-modal__tier-visual {
+  padding: 0 14px;
 }
 
 .game-notification-modal__body {
@@ -21,6 +34,50 @@
   color: var(--brand-primary, #14b8a6);
   font-size: 0.78rem;
   font-weight: 900;
+}
+
+.game-notification-modal__body span[data-tone='moonshot'] {
+  color: #60a5fa;
+}
+
+.game-notification-modal__body span[data-tone='snipe'] {
+  color: #14b8a6;
+}
+
+.game-notification-modal__body span[data-tone='small-cashout'] {
+  color: #f59e0b;
+}
+
+.game-notification-modal__body span[data-tone='big-cashout'] {
+  color: #f43f5e;
+}
+
+.game-notification-modal__body span[data-tone='bronze'] {
+  color: #c26832;
+}
+
+.game-notification-modal__body span[data-tone='silver'] {
+  color: #94a3b8;
+}
+
+.game-notification-modal__body span[data-tone='gold'] {
+  color: #eab308;
+}
+
+.game-notification-modal__body span[data-tone='platinum'] {
+  color: #14b8a6;
+}
+
+.game-notification-modal__body span[data-tone='diamond'] {
+  color: #60a5fa;
+}
+
+.game-notification-modal__body span[data-tone='master'] {
+  color: #a855f7;
+}
+
+.game-notification-modal__body span[data-tone='legend'] {
+  color: #f43f5e;
 }
 
 .game-notification-modal__body h2 {
@@ -41,6 +98,25 @@
   font-size: 0.95rem;
 }
 
+.game-notification-modal__chart-button {
+  background: color-mix(in srgb, var(--accent-primary) 18%, var(--surface-interactive));
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 34%, var(--border));
+  border-radius: 12px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+.game-notification-modal__chart-button:hover,
+.game-notification-modal__chart-button:focus-visible {
+  background: color-mix(in srgb, var(--accent-primary) 24%, var(--surface-interactive));
+  outline: none;
+}
+
 .game-notification-modal[data-projected='true'] .game-notification-modal__body span {
   color: var(--text-muted);
 }
@@ -49,8 +125,16 @@
   color: var(--text-muted);
 }
 
-.game-notification-modal .app-shell__modal-close {
-  position: absolute;
-  right: 14px;
-  top: 14px;
+@media (max-width: 768px) {
+  :root[data-mobile-layout='true'] .game-notification-modal {
+    padding: 0;
+  }
+
+  :root[data-mobile-layout='true'] .game-notification-modal__header {
+    padding: 4px 14px 16px;
+  }
+
+  :root[data-mobile-layout='true'] .game-notification-modal__header .app-shell__modal-close {
+    width: 100%;
+  }
 }

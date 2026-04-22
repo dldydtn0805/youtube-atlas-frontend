@@ -292,6 +292,28 @@ function mergeGameNotifications(...groups: Array<GameNotification[] | undefined>
     .slice(0, 20);
 }
 
+function createRankHistoryPositionFromNotification(notification: GameNotification): GamePosition {
+  return {
+    id: notification.positionId,
+    videoId: notification.videoId,
+    title: notification.videoTitle,
+    channelTitle: notification.channelTitle,
+    thumbnailUrl: notification.thumbnailUrl,
+    buyRank: 0,
+    currentRank: null,
+    rankDiff: null,
+    quantity: 0,
+    stakePoints: 0,
+    currentPricePoints: null,
+    profitPoints: null,
+    chartOut: false,
+    status: 'CLOSED',
+    buyCapturedAt: notification.createdAt,
+    createdAt: notification.createdAt,
+    closedAt: notification.createdAt,
+  };
+}
+
 function mapMusicTrendSignalsByVideoId(
   section: {
     categoryId: string;
@@ -449,6 +471,7 @@ function HomePage() {
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [tierModalDefaultTab, setTierModalDefaultTab] = useState<'tier' | 'highlights' | 'ranking'>('tier');
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isGameIntroModalOpen, setIsGameIntroModalOpen] = useState(getInitialGameIntroModalOpen);
   const [pushedGameNotifications, setPushedGameNotifications] = useState<GameNotification[]>([]);
@@ -791,19 +814,6 @@ function HomePage() {
     (notification) => !notification.readAt,
   );
 
-  useEffect(() => {
-    if (!visibleGameNotification) {
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setVisibleGameNotification(null);
-    }, 6_000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [visibleGameNotification]);
   const {
     evaluationPoints: openPositionsEvaluationPoints,
     profitPoints: openPositionsProfitPoints,
@@ -1811,6 +1821,20 @@ function HomePage() {
       sortedRealtimeSurgingSection,
     ],
   );
+  const handleOpenGameNotificationChart = useCallback(
+    (notification: GameNotification) => {
+      const matchedPosition =
+        openGamePositions.find((position) => position.id === notification.positionId) ??
+        gameHistoryPositions.find((position) => position.id === notification.positionId) ??
+        createRankHistoryPositionFromNotification(notification);
+
+      setSelectedRankHistoryOwnerUserId(null);
+      setRankHistoryFocusMode('trade');
+      openRankHistoryModal(notification.videoId, matchedPosition);
+      setModalGameNotification(null);
+    },
+    [gameHistoryPositions, openGamePositions, openRankHistoryModal],
+  );
   const headerTrendTicker = useMemo(
     () => {
       if (!isAllCategorySelected || topRankRisersSignals.length === 0 || !topRankRisersSection?.categoryId) {
@@ -2122,6 +2146,18 @@ function HomePage() {
       setActiveGameTab(tab);
     });
   }, []);
+  const handleOpenGameHistoryModal = useCallback(() => {
+    setActiveGameTab('history');
+    setIsGameModalOpen(true);
+  }, []);
+  const handleOpenTierHighlightsModal = useCallback(() => {
+    setTierModalDefaultTab('highlights');
+    openTierModal();
+  }, [openTierModal]);
+  const handleOpenTierOverviewModal = useCallback(() => {
+    setTierModalDefaultTab('tier');
+    openTierModal();
+  }, [openTierModal]);
   const handleSelectGameHighlight = useCallback(
     (highlight: GameHighlight) => {
       setSelectedRankHistoryOwnerUserId(null);
@@ -2179,10 +2215,10 @@ function HomePage() {
       const matchedPosition =
         openGamePositions.find((position) => position.id === notification.positionId) ??
         gameHistoryPositions.find((position) => position.id === notification.positionId) ??
-        null;
+        createRankHistoryPositionFromNotification(notification);
 
       setSelectedRankHistoryOwnerUserId(null);
-      setRankHistoryFocusMode(matchedPosition ? 'trade' : 'full');
+      setRankHistoryFocusMode('trade');
       openRankHistoryModal(notification.videoId, matchedPosition);
     },
     [gameHistoryPositions, openGamePositions, openRankHistoryModal],
@@ -2482,17 +2518,21 @@ function HomePage() {
         authStatus={authStatus}
         currentTierCode={gameTierProgress?.currentTier.tierCode}
         currentTierName={gameTierProgress?.currentTier.displayName}
+        currentTierScore={gameTierProgress?.highlightScore}
+        highlightCount={gameHighlights.length}
         isDarkMode={isDarkMode}
         isLoggingOut={isLoggingOut}
         onLogout={() => void logout()}
         onOpenGameModal={() => setIsGameModalOpen(true)}
+        onOpenGameHistoryModal={handleOpenGameHistoryModal}
+        onOpenHighlightsModal={handleOpenTierHighlightsModal}
         onOpenRecentPlayback={handleOpenRecentPlayback}
         onClearGameNotifications={clearGameNotifications}
         onDeleteGameNotification={deleteGameNotification}
         onSelectGameNotification={handleSelectGameNotification}
         onRefreshGameNotifications={refreshGameNotifications}
         onRefreshProfile={refreshCurrentUser}
-        onOpenTierModal={openTierModal}
+        onOpenTierModal={handleOpenTierOverviewModal}
         onOpenWalletModal={() => setIsWalletModalOpen(true)}
         onToggleThemeMode={handleToggleThemeMode}
         themeToggleLabel={themeToggleLabel}
@@ -2640,6 +2680,7 @@ function HomePage() {
       <GameNotificationModal
         notification={modalGameNotification}
         onClose={() => setModalGameNotification(null)}
+        onOpenChart={handleOpenGameNotificationChart}
       />
       <GameIntroModal
         isOpen={isGameIntroModalOpen}
@@ -2705,6 +2746,7 @@ function HomePage() {
         viewOptions={chartViewOptions}
       />
       <GameTierModal
+        defaultTab={tierModalDefaultTab}
         highlightsContent={tierModalHighlightsContent}
         isOpen={isTierModalOpen}
         onClose={closeTierModal}

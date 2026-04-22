@@ -1,0 +1,136 @@
+.game-notification-tier-visual {
+  gap: 0;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-card-frame {
+  width: 100%;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-card {
+  --game-tier-card-max-width: 100%;
+  min-height: 0;
+  padding: 14px 16px 16px;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-card-top {
+  margin-bottom: 18px;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-head {
+  align-items: end;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-name {
+  font-size: 1.1rem;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-balance {
+  font-size: 1rem;
+}
+
+.game-notification-tier-visual .app-shell__game-tier-description {
+  margin-top: 12px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-card {
+  aspect-ratio: 0.72;
+  border-radius: 20px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: 0;
+  padding: 10px 10px 12px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-card-top {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-issuer,
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-network {
+  font-size: 0.46rem;
+  line-height: 1.15;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-card-tech {
+  margin-bottom: 10px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-chip {
+  height: 24px;
+  width: 32px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-contactless {
+  height: 18px;
+  width: 18px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-head {
+  align-items: start;
+  gap: 6px;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-name {
+  font-size: 0.8rem;
+  line-height: 1.1;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-balance {
+  font-size: 0.66rem;
+  line-height: 1.1;
+}
+
+.game-notification-tier-visual[data-variant='toast'] .app-shell__game-tier-description {
+  display: none;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-card {
+  border-radius: 18px;
+  padding: 10px 12px 12px;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-card-top {
+  margin-bottom: 10px;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-issuer,
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-network {
+  font-size: 0.5rem;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-card-tech {
+  margin-bottom: 12px;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-chip {
+  height: 22px;
+  width: 30px;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-contactless {
+  height: 18px;
+  width: 18px;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-name {
+  font-size: 0.82rem;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-balance {
+  font-size: 0.72rem;
+}
+
+.game-notification-tier-visual[data-compact='true'] .app-shell__game-tier-description {
+  font-size: 0.62rem;
+  margin-top: 8px;
+}
+
+.game-notification-tier-visual__fallback {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--surface-thumbnail-border);
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
