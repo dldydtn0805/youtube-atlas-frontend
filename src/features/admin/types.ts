@@ -124,6 +124,7 @@ export interface AdminCommentCleanupResponse {
 
 export interface AdminHighlightHistoryCleanupRequest {
   deleteBefore: string;
+  userId?: number;
 }
 
 export interface AdminHighlightHistoryCleanupResponse {
@@ -134,6 +135,7 @@ export interface AdminHighlightHistoryCleanupResponse {
 
 export interface AdminTradeHistoryCleanupRequest {
   deleteBefore: string;
+  userId?: number;
 }
 
 export interface AdminTradeHistoryCleanupResponse {

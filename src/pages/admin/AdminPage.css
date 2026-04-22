@@ -569,6 +569,12 @@
   gap: 8px;
 }
 
+.admin-page__subtext {
+  color: #6f7a8b;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
 .admin-page__content-cell {
   max-width: 460px;
   min-width: 280px;

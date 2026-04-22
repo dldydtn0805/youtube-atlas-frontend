@@ -164,8 +164,12 @@ function formatCommentCleanupMessage(deletedCount: number, deleteBefore: string)
   return `${formatNumber(deletedCount)}건의 댓글을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
 }
 
-function formatHighlightCleanupMessage(deletedCount: number, deleteBefore: string) {
-  return `${formatNumber(deletedCount)}건의 하이라이트 내역을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
+function formatCleanupScopeLabel(userId: number | null) {
+  return userId === null ? '전체' : `유저 #${userId}`;
+}
+
+function formatHighlightCleanupMessage(deletedCount: number, deleteBefore: string, userId: number | null) {
+  return `${formatCleanupScopeLabel(userId)} 기준으로 ${formatNumber(deletedCount)}건의 하이라이트 내역을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
 }
 
 function formatTradeHistoryCleanupMessage(
@@ -174,9 +178,10 @@ function formatTradeHistoryCleanupMessage(
   deletedCoinPayoutCount: number,
   deletedDividendPayoutCount: number,
   deleteBefore: string,
+  userId: number | null,
 ) {
   return [
-    `${formatNumber(deletedPositionCount)}건의 거래내역을 정리했습니다.`,
+    `${formatCleanupScopeLabel(userId)} 기준으로 ${formatNumber(deletedPositionCount)}건의 거래내역을 정리했습니다.`,
     `원장 ${formatNumber(deletedLedgerCount)}건`,
     `코인 지급 ${formatNumber(deletedCoinPayoutCount)}건`,
     `배당 지급 ${formatNumber(deletedDividendPayoutCount)}건`,
@@ -220,7 +225,10 @@ function RecentUsersTable({ items }: { items: AdminUserSummary[] }) {
             <tr key={item.id}>
               <td>
                 <div className="admin-page__user-cell">
-                  <span>{item.displayName}</span>
+                  <div>
+                    <strong>{item.displayName}</strong>
+                    <div className="admin-page__subtext">ID #{item.id}</div>
+                  </div>
                   <UserBadge admin={item.admin} />
                 </div>
               </td>
@@ -377,7 +385,12 @@ function UserDirectoryTable({
               key={item.id}
               onClick={() => onSelect(item.id)}
             >
-              <td>{item.displayName}</td>
+              <td>
+                <div>
+                  <strong>{item.displayName}</strong>
+                  <div className="admin-page__subtext">ID #{item.id}</div>
+                </div>
+              </td>
               <td>{item.email}</td>
               <td>{item.admin ? '관리자' : '일반'}</td>
               <td>{formatDateTime(item.lastLoginAt)}</td>
@@ -461,6 +474,7 @@ function UserDetailPanel({
           <UserBadge admin={user.admin} />
         </div>
         <div className="admin-page__detail-list">
+          <p><span>유저 ID</span><strong>#{user.id}</strong></p>
           <p><span>이름</span><strong>{user.displayName}</strong></p>
           <p><span>이메일</span><strong>{user.email}</strong></p>
           <p><span>가입일</span><strong>{formatDateTime(user.createdAt)}</strong></p>
@@ -713,6 +727,25 @@ function parseSignedPointInput(value: string, label: string) {
   return Number.parseInt(normalized, 10);
 }
 
+function parseOptionalUserIdInput(value: string, label: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (!/^\d+$/.test(normalized)) {
+    throw new Error(`${label}는 1 이상의 정수만 입력할 수 있습니다.`);
+  }
+
+  const parsedValue = Number.parseInt(normalized, 10);
+  if (parsedValue <= 0) {
+    throw new Error(`${label}는 1 이상의 정수만 입력할 수 있습니다.`);
+  }
+
+  return parsedValue;
+}
+
 export default function AdminPage() {
   const { accessToken, isLoggingOut, logout, status, user } = useAuth();
   const [searchInput, setSearchInput] = useState('');
@@ -740,6 +773,8 @@ export default function AdminPage() {
   const [commentCleanupDraft, setCommentCleanupDraft] = useState('');
   const [highlightCleanupDraft, setHighlightCleanupDraft] = useState('');
   const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState('');
+  const [highlightCleanupUserIdDraft, setHighlightCleanupUserIdDraft] = useState('');
+  const [tradeHistoryCleanupUserIdDraft, setTradeHistoryCleanupUserIdDraft] = useState('');
   const [trendSnapshotRangeDraft, setTrendSnapshotRangeDraft] = useState(createDefaultSnapshotRange);
   const [submittedTrendSnapshotRange, setSubmittedTrendSnapshotRange] = useState<{
     startAt: string | null;
@@ -1173,8 +1208,10 @@ export default function AdminPage() {
   const handleTradeHistoryCleanup = () => {
     try {
       const deleteBefore = parseDateTimeInput(tradeHistoryCleanupDraft, '거래내역 정리 기준');
+      const userId = parseOptionalUserIdInput(tradeHistoryCleanupUserIdDraft, '거래내역 정리 유저 ID');
+      const targetLabel = userId === null ? '전체 유저' : `유저 #${userId}`;
       const confirmed = window.confirm(
-        `${formatDateTime(deleteBefore)} 이전에 종료된 거래내역을 삭제할까요? 연결된 원장/지급 내역도 함께 삭제되며 이 작업은 되돌릴 수 없습니다.`,
+        `${targetLabel} 기준으로 ${formatDateTime(deleteBefore)} 이전에 종료된 거래내역을 삭제할까요? 연결된 원장/지급 내역도 함께 삭제되며 이 작업은 되돌릴 수 없습니다.`,
       );
 
       if (!confirmed) {
@@ -1183,7 +1220,7 @@ export default function AdminPage() {
 
       setActionMessage(null);
       purgeTradeHistoryMutation.mutate(
-        { deleteBefore },
+        userId === null ? { deleteBefore } : { deleteBefore, userId },
         {
           onSuccess: (response) => {
             setActionMessage(
@@ -1193,6 +1230,7 @@ export default function AdminPage() {
                 response.deletedCoinPayoutCount,
                 response.deletedDividendPayoutCount,
                 response.deleteBefore,
+                userId,
               ),
             );
           },
@@ -1209,8 +1247,10 @@ export default function AdminPage() {
   const handleHighlightCleanup = () => {
     try {
       const deleteBefore = parseDateTimeInput(highlightCleanupDraft, '하이라이트 정리 기준');
+      const userId = parseOptionalUserIdInput(highlightCleanupUserIdDraft, '하이라이트 정리 유저 ID');
+      const targetLabel = userId === null ? '전체 유저' : `유저 #${userId}`;
       const confirmed = window.confirm(
-        `${formatDateTime(deleteBefore)} 이전에 확정된 하이라이트 내역을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
+        `${targetLabel} 기준으로 ${formatDateTime(deleteBefore)} 이전에 확정된 하이라이트 내역을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
       );
 
       if (!confirmed) {
@@ -1219,10 +1259,10 @@ export default function AdminPage() {
 
       setActionMessage(null);
       purgeHighlightHistoryMutation.mutate(
-        { deleteBefore },
+        userId === null ? { deleteBefore } : { deleteBefore, userId },
         {
           onSuccess: (response) => {
-            setActionMessage(formatHighlightCleanupMessage(response.deletedCount, response.deleteBefore));
+            setActionMessage(formatHighlightCleanupMessage(response.deletedCount, response.deleteBefore, userId));
           },
           onError: (error) => {
             setActionMessage(error instanceof Error ? error.message : '하이라이트 내역 정리에 실패했습니다.');
@@ -1523,9 +1563,19 @@ export default function AdminPage() {
                   value={tradeHistoryCleanupDraft}
                 />
               </label>
+              <label className="admin-page__field">
+                <span>대상 유저 ID</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => setTradeHistoryCleanupUserIdDraft(event.target.value)}
+                  placeholder="비워두면 전체"
+                  type="text"
+                  value={tradeHistoryCleanupUserIdDraft}
+                />
+              </label>
             </div>
             <p className="admin-page__muted">
-              입력한 시각보다 이전에 종료된 거래내역만 삭제됩니다. 보유 중인 포지션은 유지되며, 연결된 원장·코인 지급·배당 지급 기록은 함께 제거됩니다.
+              입력한 시각보다 이전에 종료된 거래내역만 삭제됩니다. 유저 ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 보유 중인 포지션은 유지되며, 연결된 원장·코인 지급·배당 지급 기록은 함께 제거됩니다.
             </p>
             <div className="admin-page__action-row">
               <button
@@ -1555,9 +1605,19 @@ export default function AdminPage() {
                   value={highlightCleanupDraft}
                 />
               </label>
+              <label className="admin-page__field">
+                <span>대상 유저 ID</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => setHighlightCleanupUserIdDraft(event.target.value)}
+                  placeholder="비워두면 전체"
+                  type="text"
+                  value={highlightCleanupUserIdDraft}
+                />
+              </label>
             </div>
             <p className="admin-page__muted">
-              입력한 시각보다 이전에 확정된 하이라이트 내역만 삭제됩니다. 연결된 거래내역이 남아 있으면 이후 계산 과정에서 다시 생성될 수 있습니다.
+              입력한 시각보다 이전에 확정된 하이라이트 내역만 삭제됩니다. 유저 ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 연결된 거래내역이 남아 있으면 이후 계산 과정에서 다시 생성될 수 있습니다.
             </p>
             <div className="admin-page__action-row">
               <button
