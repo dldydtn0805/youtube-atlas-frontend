@@ -6,7 +6,7 @@ export interface GameWallet {
   totalAssetPoints: number;
 }
 
-export type GameStrategyType = 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE';
+export type GameStrategyType = 'ATLAS_SHOT' | 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE';
 export type GameNotificationEventType = 'PROJECTED_HIGHLIGHT' | 'TIER_SCORE_GAIN' | 'TIER_PROMOTION';
 
 export interface GameCurrentSeason {

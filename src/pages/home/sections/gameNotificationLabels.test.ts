@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GameNotification } from '../../../features/game/types';
-import { getGameNotificationLabel } from './gameNotificationLabels';
+import { getGameNotificationLabel, getGameNotificationTone } from './gameNotificationLabels';
 
 const notice = (overrides: Partial<GameNotification> = {}) => ({
   id: 'notice-1',
@@ -49,6 +49,17 @@ describe('getGameNotificationLabel', () => {
 
   it('labels non-cashout resolved notifications as tier score increases', () => {
     expect(getGameNotificationLabel(notice())).toBe('티어 점수 상승 : 문샷');
+  });
+
+  it('labels atlas shot notifications and tone distinctly', () => {
+    const notification = notice({
+      notificationType: 'ATLAS_SHOT',
+      strategyTags: ['ATLAS_SHOT', 'MOONSHOT'],
+      title: '아틀라스 샷 기록',
+    });
+
+    expect(getGameNotificationLabel(notification)).toBe('티어 점수 상승 : 아틀라스 샷');
+    expect(getGameNotificationTone(notification)).toBe('atlas-shot');
   });
 
   it('labels projected moonshots as captured highlights', () => {

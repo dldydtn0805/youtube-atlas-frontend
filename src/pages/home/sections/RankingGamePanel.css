@@ -1171,6 +1171,12 @@
   color: #b91c1c;
 }
 
+.app-shell__game-position-trend[data-tone='atlas-shot'] {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  color: #6d28d9;
+}
+
 .app-shell__game-position-trend[data-tone='cashout'] {
   background: rgba(37, 99, 235, 0.1);
   border: 1px solid rgba(37, 99, 235, 0.16);
@@ -1789,6 +1795,12 @@
   color: #b91c1c;
 }
 
+.app-shell__game-leaderboard-position-tag[data-tone='atlas-shot'] {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  color: #6d28d9;
+}
+
 .app-shell__game-leaderboard-position-tag[data-tone='cashout'] {
   background: rgba(37, 99, 235, 0.1);
   border: 1px solid rgba(37, 99, 235, 0.16);
@@ -1823,6 +1835,12 @@
   background: rgba(248, 113, 113, 0.14);
   border-color: rgba(248, 113, 113, 0.24);
   color: #fecaca;
+}
+
+:root[data-theme='dark'] .app-shell__game-leaderboard-position-tag[data-tone='atlas-shot'] {
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.26);
+  color: #ddd6fe;
 }
 
 :root[data-theme='dark'] .app-shell__game-leaderboard-position-tag[data-tone='cashout'] {
@@ -2086,6 +2104,12 @@
   background: rgba(248, 113, 113, 0.14);
   border-color: rgba(248, 113, 113, 0.24);
   color: #fecaca;
+}
+
+:root[data-theme='dark'] .app-shell__game-position-trend[data-tone='atlas-shot'] {
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.26);
+  color: #ddd6fe;
 }
 
 :root[data-theme='dark'] .app-shell__game-position-trend[data-tone='cashout'] {

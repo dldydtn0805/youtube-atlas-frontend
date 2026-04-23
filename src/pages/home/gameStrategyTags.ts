@@ -1,6 +1,6 @@
 import type { GameStrategyType } from '../../features/game/types';
 
-type GameStrategyTone = 'moonshot' | 'cashout' | 'snipe';
+type GameStrategyTone = 'atlas-shot' | 'moonshot' | 'cashout' | 'snipe';
 type GameStrategyContext = 'highlight' | 'position';
 type PositionStrategyState = 'achieved' | 'target';
 
@@ -15,6 +15,7 @@ export interface PositionStrategyBadge extends GameStrategyBadge {
 }
 
 const STRATEGY_TONE_BY_TYPE: Record<GameStrategyType, GameStrategyTone> = {
+  ATLAS_SHOT: 'atlas-shot',
   BIG_CASHOUT: 'cashout',
   MOONSHOT: 'moonshot',
   SMALL_CASHOUT: 'cashout',
@@ -22,11 +23,21 @@ const STRATEGY_TONE_BY_TYPE: Record<GameStrategyType, GameStrategyTone> = {
 };
 
 function isGameStrategyType(value: string): value is GameStrategyType {
-  return value === 'MOONSHOT' || value === 'SMALL_CASHOUT' || value === 'BIG_CASHOUT' || value === 'SNIPE';
+  return (
+    value === 'ATLAS_SHOT'
+    || value === 'MOONSHOT'
+    || value === 'SMALL_CASHOUT'
+    || value === 'BIG_CASHOUT'
+    || value === 'SNIPE'
+  );
 }
 
 function getStrategyLabel(type: GameStrategyType, context: GameStrategyContext) {
   if (context === 'position') {
+    if (type === 'ATLAS_SHOT') {
+      return '아틀라스 샷 노림';
+    }
+
     if (type === 'MOONSHOT') {
       return '문샷 노림';
     }
@@ -40,6 +51,10 @@ function getStrategyLabel(type: GameStrategyType, context: GameStrategyContext) 
     }
 
     return '스나이프 노림';
+  }
+
+  if (type === 'ATLAS_SHOT') {
+    return '아틀라스 샷';
   }
 
   if (type === 'MOONSHOT') {

@@ -40,6 +40,10 @@
   color: #60a5fa;
 }
 
+.game-notification-modal__body span[data-tone='atlas-shot'] {
+  color: #8b5cf6;
+}
+
 .game-notification-modal__body span[data-tone='snipe'] {
   color: #14b8a6;
 }

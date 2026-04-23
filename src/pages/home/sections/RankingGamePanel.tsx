@@ -196,6 +196,10 @@ function formatHighlightScore(score?: number | null) {
 }
 
 function getLeaderboardHighlightTypeLabel(type: string) {
+  if (type === 'ATLAS_SHOT') {
+    return '아틀라스 샷';
+  }
+
   if (type === 'MOONSHOT') {
     return '문샷';
   }

@@ -170,6 +170,10 @@
   color: #60a5fa;
 }
 
+.game-notifications__type[data-tone='atlas-shot'] {
+  color: #8b5cf6;
+}
+
 .game-notifications__type[data-tone='snipe'] {
   color: #14b8a6;
 }

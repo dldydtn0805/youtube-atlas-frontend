@@ -3,6 +3,7 @@ import { isProjectedHighlightNotification } from './gameNotificationEventType';
 import { getTierPromotionMeta } from './gameNotificationTierVisualUtils';
 
 const NOTIFICATION_LABELS = {
+  ATLAS_SHOT: '아틀라스 샷',
   BIG_CASHOUT: '빅 캐시아웃',
   SMALL_CASHOUT: '스몰 캐시아웃',
   MOONSHOT: '문샷',
@@ -36,6 +37,10 @@ export function getGameNotificationTone(notification: GameNotification) {
 
   if (notification.notificationType === 'SMALL_CASHOUT') {
     return 'small-cashout';
+  }
+
+  if (notification.notificationType === 'ATLAS_SHOT') {
+    return 'atlas-shot';
   }
 
   if (notification.notificationType === 'MOONSHOT') {

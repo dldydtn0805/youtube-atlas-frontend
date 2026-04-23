@@ -27,6 +27,8 @@ function formatSignedRate(rate?: number | null) {
 
 function getHighlightTypeLabel(type: string) {
   switch (type) {
+    case 'ATLAS_SHOT':
+      return '아틀라스 샷';
     case 'MOONSHOT':
       return '문샷';
     case 'SMALL_CASHOUT':

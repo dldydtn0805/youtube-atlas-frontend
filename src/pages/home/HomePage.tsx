@@ -663,7 +663,7 @@ function HomePage() {
     const emitGameNotificationTest = (notification?: {
       id?: string;
       notificationEventType?: 'PROJECTED_HIGHLIGHT' | 'TIER_SCORE_GAIN' | 'TIER_PROMOTION';
-      notificationType?: 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE' | 'TIER_PROMOTION';
+      notificationType?: 'ATLAS_SHOT' | 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE' | 'TIER_PROMOTION';
       title?: string;
       message?: string;
       positionId?: number;
@@ -671,7 +671,7 @@ function HomePage() {
       videoTitle?: string;
       channelTitle?: string;
       thumbnailUrl?: string;
-      strategyTags?: Array<'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE'>;
+      strategyTags?: Array<'ATLAS_SHOT' | 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE'>;
       highlightScore?: number | null;
       readAt?: string | null;
       createdAt?: string;

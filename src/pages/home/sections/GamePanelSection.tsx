@@ -176,7 +176,7 @@ export default function GamePanelSection({
           <strong className="app-shell__game-guide-title">하이라이트로 티어 올리기</strong>
           <p className="app-shell__game-guide-copy">
             <BoldNumberText>
-              문샷은 100위 바깥에서 매수한 영상이 20위 안으로 진입할 때 붙는 핵심 하이라이트입니다. 스나이프는 150위 바깥에서 가능성을 보고 매수해 100위 안에 진입했을 때 붙습니다. 캐시아웃은 수익률 하이라이트로, 300% 이상은 스몰, 1,000% 이상은 빅으로 기록됩니다.
+              아틀라스 샷은 50위 또는 그 바깥에서 매수한 영상이 10위 안으로 진입할 때 붙는 최상위 하이라이트입니다. 문샷은 100위 바깥에서 50위 안, 스나이프는 150위 바깥에서 100위 안에 진입했을 때 붙습니다. 캐시아웃은 수익률 하이라이트로, 300% 이상은 스몰, 1,000% 이상은 빅으로 기록됩니다.
             </BoldNumberText>
           </p>
         </li>
