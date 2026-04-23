@@ -450,6 +450,56 @@
   min-width: 0;
 }
 
+.app-shell__profile-card-title {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  min-width: 0;
+  padding: 1px 0;
+}
+
+.app-shell__profile-card-title .app-shell__achievement-title-badge {
+  color: color-mix(in srgb, #111827 58%, rgb(var(--achievement-title-rgb)) 42%);
+}
+
+.app-shell__profile-card-title .app-shell__achievement-title-badge-name {
+  color: inherit;
+}
+
+:root[data-theme='dark'] .app-shell__profile-card-title .app-shell__achievement-title-badge {
+  color: color-mix(in srgb, #f8fafc 72%, rgb(var(--achievement-title-rgb)) 28%);
+}
+
+.app-shell__profile-card-title:hover .app-shell__achievement-title-badge,
+.app-shell__profile-card-title:focus-visible .app-shell__achievement-title-badge {
+  transform: translateY(-1px);
+}
+
+.app-shell__profile-card-title:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-primary, #14b8a6) 64%, white 36%);
+  outline-offset: 3px;
+}
+
+.app-shell__profile-card-title-row {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.app-shell__profile-card-title-empty {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.app-shell__profile-card-title--empty {
+  justify-content: flex-start;
+}
+
 .app-shell__profile-card-identity strong {
   color: var(--text);
   font-size: 0.92rem;

@@ -22,7 +22,6 @@ export default function AchievementTitleBadge({ compact = false, title }: Achiev
       data-grade={title.grade}
       title={`${gradeLabels[title.grade]} ${title.displayName}: ${title.description}`}
     >
-      <span className="app-shell__achievement-title-badge-grade">{gradeLabels[title.grade]}</span>
       <span className="app-shell__achievement-title-badge-name">{label}</span>
     </span>
   );

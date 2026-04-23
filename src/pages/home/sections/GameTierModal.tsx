@@ -1,21 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import type { AchievementTitleCollection, GameTierProgress } from '../../../features/game/types';
+import type { GameTierProgress } from '../../../features/game/types';
 import { getFullscreenElement } from '../utils';
 import GameTierSummary from './GameTierSummary';
 import GameTierGuide from './GameTierGuide';
-import AchievementTitlePanel from './AchievementTitlePanel';
 import './GameTierModal.css';
 
 interface GameTierModalProps {
   defaultTab?: 'tier' | 'highlights' | 'ranking';
   highlightsContent?: ReactNode;
   isOpen: boolean;
-  isTitleSaving?: boolean;
   onClose: () => void;
-  onSelectTitle?: (titleCode: string | null) => void;
   rankingContent?: ReactNode;
-  titleCollection?: AchievementTitleCollection;
   tierProgress?: GameTierProgress;
 }
 
@@ -23,11 +19,8 @@ export default function GameTierModal({
   defaultTab = 'tier',
   highlightsContent,
   isOpen,
-  isTitleSaving = false,
   onClose,
-  onSelectTitle,
   rankingContent,
-  titleCollection,
   tierProgress,
 }: GameTierModalProps) {
   const [activeTab, setActiveTab] = useState<'tier' | 'highlights' | 'ranking'>(defaultTab);
@@ -116,13 +109,6 @@ export default function GameTierModal({
                     title="티어 진행 현황"
                   />
                 </section>
-              ) : null}
-              {onSelectTitle ? (
-                <AchievementTitlePanel
-                  collection={titleCollection}
-                  isSaving={isTitleSaving}
-                  onSelectTitle={onSelectTitle}
-                />
               ) : null}
 
               <section className="app-shell__modal-field">

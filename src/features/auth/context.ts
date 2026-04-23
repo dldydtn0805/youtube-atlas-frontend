@@ -3,6 +3,7 @@ import type { AuthStatus, AuthUser } from './types';
 
 export interface AuthContextValue {
   accessToken: string | null;
+  applyCurrentUser: (updater: (user: AuthUser | null) => AuthUser | null) => void;
   authError: string | null;
   clearAuthError: () => void;
   googleClientId: string;

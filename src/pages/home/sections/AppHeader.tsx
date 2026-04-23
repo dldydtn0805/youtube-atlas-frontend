@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import GoogleLoginButton from '../../../components/GoogleLoginButton/GoogleLoginButton';
 import type { AuthStatus, AuthUser } from '../../../features/auth/types';
-import type { GameNotification } from '../../../features/game/types';
+import type { AchievementTitleCollection, GameNotification } from '../../../features/game/types';
 import { formatPoints } from '../gameHelpers';
+import AchievementTitleBadge from './AchievementTitleBadge';
+import AchievementTitleModal from './AchievementTitleModal';
 import GameNotificationsPanel from './GameNotificationsPanel';
 import './AppHeader.css';
 
@@ -34,7 +36,10 @@ interface AppHeaderProps {
   gameNotifications?: GameNotification[];
   hasUnreadGameNotifications?: boolean;
   isGameNotificationsLoading?: boolean;
+  isTitleSaving?: boolean;
+  onSelectTitle?: (titleCode: string | null) => Promise<void> | void;
   walletBalancePoints?: number | null;
+  titleCollection?: AchievementTitleCollection;
 }
 
 function ThemeToggleIcon({ isDarkMode }: { isDarkMode: boolean }) {
@@ -170,7 +175,10 @@ function AppHeader({
   gameNotifications = [],
   hasUnreadGameNotifications = false,
   isGameNotificationsLoading = false,
+  isTitleSaving = false,
+  onSelectTitle,
   walletBalancePoints,
+  titleCollection,
 }: AppHeaderProps) {
   const userIdentityLabel = user?.displayName || user?.email || 'Google 계정';
   const walletSummary =
@@ -183,6 +191,7 @@ function AppHeader({
       ? formatPoints(currentTierScore)
       : '집계 중';
   const [isProfileCardOpen, setIsProfileCardOpen] = useState(false);
+  const [isAchievementTitleModalOpen, setIsAchievementTitleModalOpen] = useState(false);
   const [isProfileRefreshing, setIsProfileRefreshing] = useState(false);
   const profileCardRef = useRef<HTMLDivElement | null>(null);
   const profileRefreshRequestIdRef = useRef(0);
@@ -196,6 +205,21 @@ function AppHeader({
         : [];
   const closeProfileCard = () => {
     setIsProfileCardOpen(false);
+  };
+
+  const openAchievementTitleModal = () => {
+    setIsProfileCardOpen(false);
+    setIsAchievementTitleModalOpen(true);
+  };
+
+  const handleSelectTitle = async (titleCode: string | null) => {
+    if (!onSelectTitle) {
+      return;
+    }
+
+    setIsAchievementTitleModalOpen(false);
+    setIsProfileCardOpen(true);
+    await onSelectTitle(titleCode);
   };
 
   const handleProfileButtonClick = () => {
@@ -367,6 +391,27 @@ function AppHeader({
                     )}
                     <div className="app-shell__profile-card-identity">
                       <strong>{user.displayName || '이름 없음'}</strong>
+                      <div className="app-shell__profile-card-title-row">
+                        {user.selectedTitle ? (
+                          <button
+                            className="app-shell__profile-card-title"
+                            onClick={openAchievementTitleModal}
+                            type="button"
+                          >
+                            <AchievementTitleBadge title={user.selectedTitle} />
+                          </button>
+                        ) : (
+                          <button
+                            className="app-shell__profile-card-title app-shell__profile-card-title--empty"
+                          onClick={openAchievementTitleModal}
+                          type="button"
+                        >
+                            <span className="app-shell__profile-card-title-empty">
+                              현재 설정한 칭호 없음
+                            </span>
+                          </button>
+                        )}
+                      </div>
                       <span>{`Atlas에 함께한지 ${formatAtlasDays(user.createdAt)}`}</span>
                     </div>
                   </div>
@@ -487,6 +532,13 @@ function AppHeader({
               >
                 {isLoggingOut ? '...' : '로그아웃'}
               </button>
+              <AchievementTitleModal
+                collection={titleCollection}
+                isOpen={isAchievementTitleModalOpen}
+                isSaving={isTitleSaving}
+                onClose={() => setIsAchievementTitleModalOpen(false)}
+                onSelectTitle={(titleCode) => void handleSelectTitle(titleCode)}
+              />
             </div>
           ) : (
             <div className="app-shell__auth-panel">

@@ -1,0 +1,66 @@
+.app-shell__modal--achievement-title {
+  max-width: 760px;
+}
+
+.app-shell__modal-body--achievement-title {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.app-shell__achievement-title-saving {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 8px;
+}
+
+.app-shell__achievement-title-saving-spinner {
+  animation: achievement-title-saving-spin 0.72s linear infinite;
+  border: 2px solid rgba(148, 163, 184, 0.26);
+  border-radius: 999px;
+  border-top-color: var(--brand-primary, #14b8a6);
+  display: inline-block;
+  height: 14px;
+  width: 14px;
+}
+
+.app-shell__modal-body--achievement-title .app-shell__achievement-title-panel {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+:root[data-theme='dark']
+  .app-shell__modal-body--achievement-title
+  .app-shell__achievement-title-panel {
+  background: transparent;
+  border-color: transparent;
+}
+
+.app-shell__modal-body--achievement-title .app-shell__achievement-title-option {
+  background: transparent;
+}
+
+:root[data-theme='dark']
+  .app-shell__modal-body--achievement-title
+  .app-shell__achievement-title-option {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@keyframes achievement-title-saving-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell__modal--achievement-title {
+    max-height: calc(100dvh - 24px);
+  }
+}

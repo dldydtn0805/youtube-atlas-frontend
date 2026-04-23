@@ -1,5 +1,6 @@
 import type { AuthSession } from './types';
 import type { PlaybackProgress } from '../playback/types';
+import type { SelectedAchievementTitle } from '../game/types';
 
 const AUTH_SESSION_STORAGE_KEY = 'youtube-atlas-auth-session';
 
@@ -39,6 +40,23 @@ function isPlaybackProgress(value: unknown): value is PlaybackProgress {
   );
 }
 
+function isSelectedAchievementTitle(value: unknown): value is SelectedAchievementTitle {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.code === 'string' &&
+    typeof value.displayName === 'string' &&
+    typeof value.shortName === 'string' &&
+    (value.grade === 'NORMAL' ||
+      value.grade === 'RARE' ||
+      value.grade === 'SUPER' ||
+      value.grade === 'ULTIMATE') &&
+    typeof value.description === 'string'
+  );
+}
+
 export function readStoredAuthSession() {
   if (typeof window === 'undefined') {
     return null;
@@ -71,6 +89,9 @@ export function readStoredAuthSession() {
             typeof parsedValue.user.createdAt === 'string'
               ? parsedValue.user.createdAt
               : parsedValue.user.lastLoginAt,
+          selectedTitle: isSelectedAchievementTitle(parsedValue.user.selectedTitle)
+            ? parsedValue.user.selectedTitle
+            : null,
           favoriteCount:
             typeof parsedValue.user.favoriteCount === 'number'
               ? parsedValue.user.favoriteCount

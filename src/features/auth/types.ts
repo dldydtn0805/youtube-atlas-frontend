@@ -1,10 +1,12 @@
 import type { PlaybackProgress } from '../playback/types';
+import type { SelectedAchievementTitle } from '../game/types';
 
 export interface AuthUser {
   id: number;
   email: string;
   displayName: string;
   pictureUrl: string | null;
+  selectedTitle: SelectedAchievementTitle | null;
   createdAt: string;
   lastLoginAt: string;
   favoriteCount: number;

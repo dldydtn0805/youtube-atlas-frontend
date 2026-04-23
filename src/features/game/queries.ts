@@ -1,4 +1,6 @@
 import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { authQueryKeys } from '../auth/queries';
+import type { AuthUser } from '../auth/types';
 import {
   fetchAchievementTitles,
   fetchBuyableMarketChart,
@@ -23,6 +25,7 @@ import {
   updateSelectedAchievementTitle,
 } from './api';
 import type {
+  AchievementTitleCollection,
   CreateGamePositionInput,
   GameCurrentSeason,
   GameNotification,
@@ -418,6 +421,7 @@ export function useDeleteGameNotification(accessToken: string | null, regionCode
 export function useUpdateSelectedAchievementTitle(accessToken: string | null, regionCode: string | null) {
   const queryClient = useQueryClient();
   const titlesKey = gameQueryKeys.achievementTitles(accessToken);
+  const currentUserKey = authQueryKeys.currentUser(accessToken);
 
   return useMutation({
     mutationFn: (titleCode: string | null) => {
@@ -427,8 +431,60 @@ export function useUpdateSelectedAchievementTitle(accessToken: string | null, re
 
       return updateSelectedAchievementTitle(accessToken, titleCode);
     },
+    onMutate: async (titleCode) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: titlesKey }),
+        queryClient.cancelQueries({ queryKey: currentUserKey }),
+      ]);
+
+      const previousTitles = queryClient.getQueryData<AchievementTitleCollection>(titlesKey);
+      const previousUser = queryClient.getQueryData<AuthUser>(currentUserKey);
+      const optimisticSelectedTitle =
+        titleCode && previousTitles
+          ? previousTitles.titles.find((title) => title.code === titleCode && title.earned) ?? null
+          : null;
+
+      queryClient.setQueryData<AchievementTitleCollection | undefined>(titlesKey, (currentTitles) => {
+        if (!currentTitles) {
+          return currentTitles;
+        }
+
+        return {
+          selectedTitle: optimisticSelectedTitle,
+          titles: currentTitles.titles.map((title) => ({
+            ...title,
+            selected: titleCode !== null && title.code === titleCode,
+          })),
+        };
+      });
+
+      queryClient.setQueryData<AuthUser | undefined>(currentUserKey, (currentUser) => {
+        if (!currentUser) {
+          return currentUser;
+        }
+
+        return {
+          ...currentUser,
+          selectedTitle: optimisticSelectedTitle,
+        };
+      });
+
+      return { previousTitles, previousUser };
+    },
+    onError: (_error, _titleCode, context) => {
+      queryClient.setQueryData(titlesKey, context?.previousTitles);
+      queryClient.setQueryData(currentUserKey, context?.previousUser);
+    },
     onSuccess: async (data) => {
       queryClient.setQueryData(titlesKey, data);
+      queryClient.setQueryData<AuthUser | undefined>(currentUserKey, (currentUser) =>
+        currentUser
+          ? {
+              ...currentUser,
+              selectedTitle: data.selectedTitle,
+            }
+          : currentUser,
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: titlesKey,

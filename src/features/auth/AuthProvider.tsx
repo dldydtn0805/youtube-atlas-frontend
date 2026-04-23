@@ -21,7 +21,7 @@ import {
 } from './storage';
 import { AuthContext } from './context';
 import { authQueryKeys } from './queries';
-import type { AuthSession, AuthStatus } from './types';
+import type { AuthSession, AuthStatus, AuthUser } from './types';
 
 const initialSession = readStoredAuthSession();
 
@@ -136,18 +136,48 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setAuthError(null);
   }, []);
 
+  const applyCurrentUser = useCallback(
+    (updater: (user: AuthUser | null) => AuthUser | null) => {
+      setSession((currentSession) => {
+        if (!currentSession) {
+          return currentSession;
+        }
+
+        const nextUser = updater(currentSession.user);
+        if (!nextUser) {
+          return currentSession;
+        }
+
+        const nextSession = { ...currentSession, user: nextUser };
+        queryClient.setQueryData(authQueryKeys.currentUser(currentSession.accessToken), nextUser);
+        writeStoredAuthSession(nextSession);
+        return nextSession;
+      });
+    },
+    [queryClient],
+  );
+
   const refreshCurrentUser = useCallback(async () => {
     if (!accessToken) {
       return;
     }
 
-    await queryClient.refetchQueries(
-      {
-        queryKey: authQueryKeys.currentUser(accessToken),
-        type: 'active',
-      },
-      { throwOnError: true },
-    );
+    const refreshedUser = await queryClient.fetchQuery({
+      queryKey: authQueryKeys.currentUser(accessToken),
+      queryFn: () => fetchCurrentUser(accessToken),
+      staleTime: 0,
+    });
+
+    setSession((currentSession) => {
+      if (!currentSession || currentSession.accessToken !== accessToken) {
+        return currentSession;
+      }
+
+      const nextSession = { ...currentSession, user: refreshedUser };
+      writeStoredAuthSession(nextSession);
+      return nextSession;
+    });
+    setStatus('authenticated');
   }, [accessToken, queryClient]);
 
   const loginWithGoogleCode = useCallback(
@@ -210,6 +240,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const value = useMemo(
     () => ({
       accessToken: session?.accessToken ?? null,
+      applyCurrentUser,
       authError,
       clearAuthError,
       googleClientId,
@@ -225,6 +256,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }),
     [
       authError,
+      applyCurrentUser,
       clearAuthError,
       googleClientId,
       isGoogleAuthAvailable,

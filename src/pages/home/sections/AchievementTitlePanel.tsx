@@ -13,7 +13,7 @@ export default function AchievementTitlePanel({ collection, isSaving = false, on
   const earnedTitles = titles.filter((title) => title.earned);
 
   return (
-    <section className="app-shell__achievement-title-panel">
+    <section className="app-shell__achievement-title-panel" data-saving={isSaving}>
       <div className="app-shell__section-heading">
         <p className="app-shell__section-eyebrow">칭호</p>
         <h3 className="app-shell__modal-field-title">대표 칭호</h3>
@@ -29,6 +29,7 @@ export default function AchievementTitlePanel({ collection, isSaving = false, on
             className="app-shell__achievement-title-option"
             data-earned={title.earned}
             data-selected={title.selected}
+            data-saving={isSaving}
             disabled={!title.earned || isSaving}
             key={title.code}
             onClick={() => onSelectTitle(title.code)}
@@ -36,6 +37,11 @@ export default function AchievementTitlePanel({ collection, isSaving = false, on
           >
             <AchievementTitleBadge title={title} />
             <span className="app-shell__achievement-title-description">{title.description}</span>
+            {isSaving && title.selected ? (
+              <span className="app-shell__achievement-title-status" role="status">
+                저장 중...
+              </span>
+            ) : null}
           </button>
         ))}
       </div>

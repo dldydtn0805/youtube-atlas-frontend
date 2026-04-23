@@ -2,6 +2,7 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState, typ
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import type { VideoPlayerHandle } from '../../components/VideoPlayer/VideoPlayer';
+import AchievementTitleToast from './sections/AchievementTitleToast';
 import AppHeader from './sections/AppHeader';
 import { GameSelectedVideoPriceSummary, SelectedVideoGameActionsBundle } from './sections/GameActionContent';
 import GameTierModal from './sections/GameTierModal';
@@ -493,7 +494,7 @@ function persistCollapsedHomeSectionIds(sectionIds: string[]) {
 
 function HomePage() {
   const queryClient = useQueryClient();
-  const { accessToken, isLoggingOut, logout, refreshCurrentUser, status: authStatus, user } = useAuth();
+  const { accessToken, applyCurrentUser, isLoggingOut, logout, refreshCurrentUser, status: authStatus, user } = useAuth();
   const [selectedOpenPositionId, setSelectedOpenPositionId] = useState<number | null>(null);
   const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'guide'>('positions');
   const [rankHistoryFocusMode, setRankHistoryFocusMode] = useState<'full' | 'trade'>('full');
@@ -558,6 +559,20 @@ function HomePage() {
     setModalGameNotificationQueue([]);
     setVisibleGameNotificationQueue([]);
   }, [user?.id]);
+
+  const [achievementTitleToastMessage, setAchievementTitleToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!achievementTitleToastMessage) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setAchievementTitleToastMessage(null);
+    }, 2400);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [achievementTitleToastMessage]);
 
   const scrollToPlayerStage = useCallback(() => {
     if (isMobileLayout) {
@@ -2660,7 +2675,31 @@ function HomePage() {
         gameNotifications={gameNotifications}
         hasUnreadGameNotifications={hasUnreadGameNotifications}
         isGameNotificationsLoading={isGameNotificationsFetching}
+        isTitleSaving={updateSelectedAchievementTitleMutation.isPending}
         walletBalancePoints={currentGameSeason?.wallet.balancePoints}
+        onSelectTitle={async (titleCode) => {
+          const optimisticSelectedTitle =
+            titleCode && achievementTitleCollection
+              ? achievementTitleCollection.titles.find((title) => title.code === titleCode && title.earned) ?? null
+              : null;
+
+          applyCurrentUser((currentUser) =>
+            currentUser
+              ? {
+                  ...currentUser,
+                  selectedTitle: optimisticSelectedTitle,
+                }
+              : currentUser,
+          );
+          await updateSelectedAchievementTitleMutation.mutateAsync(titleCode);
+          await refreshCurrentUser();
+          setAchievementTitleToastMessage(
+            optimisticSelectedTitle
+              ? `${optimisticSelectedTitle.displayName}으로 변경했어요.`
+              : '대표 칭호를 해제했어요.',
+          );
+        }}
+        titleCollection={achievementTitleCollection}
       />
       <main className="app-shell__main">
         <HomePlaybackSection
@@ -2804,6 +2843,10 @@ function HomePage() {
             removeGameNotification(notifications, visibleGameNotification.id));
         }}
       />
+      <AchievementTitleToast
+        message={achievementTitleToastMessage}
+        onDismiss={() => setAchievementTitleToastMessage(null)}
+      />
       <GameNotificationModal
         notification={modalGameNotification}
         onClose={() => {
@@ -2883,11 +2926,8 @@ function HomePage() {
         defaultTab={tierModalDefaultTab}
         highlightsContent={tierModalHighlightsContent}
         isOpen={isTierModalOpen}
-        isTitleSaving={updateSelectedAchievementTitleMutation.isPending}
         onClose={closeTierModal}
-        onSelectTitle={(titleCode) => updateSelectedAchievementTitleMutation.mutate(titleCode)}
         rankingContent={tierModalRankingContent}
-        titleCollection={achievementTitleCollection}
         tierProgress={gameTierProgress}
       />
       <GameTradeModal
