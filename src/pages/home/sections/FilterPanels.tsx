@@ -66,7 +66,7 @@ export function RegionFilterModal({
             <p className="app-shell__section-eyebrow">Region</p>
             <h2 className="app-shell__section-title">국가 선택</h2>
           </div>
-          <button className="app-shell__modal-close" onClick={onClose} type="button">
+          <button aria-label="국가 선택 모달 닫기" className="app-shell__modal-close" onClick={onClose} type="button">
             닫기
           </button>
         </div>
@@ -122,7 +122,7 @@ export function ChartViewModal({
             <p className="app-shell__section-eyebrow">View Mode</p>
             <h2 className="app-shell__section-title">보기 모드 선택</h2>
           </div>
-          <button className="app-shell__modal-close" onClick={onClose} type="button">
+          <button aria-label="보기 모드 선택 모달 닫기" className="app-shell__modal-close" onClick={onClose} type="button">
             닫기
           </button>
         </div>

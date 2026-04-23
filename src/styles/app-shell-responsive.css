@@ -190,13 +190,26 @@
     width: 100%;
   }
 
-  :root[data-mobile-layout='true'] .app-shell__modal-header,
+  :root[data-mobile-layout='true'] .app-shell__modal-header {
+    align-items: flex-start;
+    flex-direction: row;
+  }
+
   :root[data-mobile-layout='true'] .app-shell__modal-footer {
     align-items: stretch;
     flex-direction: column;
   }
 
-  :root[data-mobile-layout='true'] .app-shell__modal-close,
+  :root[data-mobile-layout='true'] .app-shell__modal-header .app-shell__modal-close {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: auto;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__modal-footer .app-shell__modal-close {
+    width: 100%;
+  }
+
   :root[data-mobile-layout='true'] .app-shell__modal-action {
     width: 100%;
   }

@@ -74,7 +74,7 @@ export default function GameTierModal({
               role="tab"
               type="button"
             >
-              티어
+              내 카드
             </button>
             <button
               aria-selected={activeTab === 'highlights'}
@@ -106,7 +106,7 @@ export default function GameTierModal({
                     progress={tierProgress}
                     showLadder={false}
                     surfaceVariant="highlight-tier"
-                    title="티어 진행 현황"
+                    title=""
                   />
                 </section>
               ) : null}

@@ -91,6 +91,7 @@ export default function GameTierSummary({
   title = '현재 티어',
   showLadder = true,
 }: GameTierSummaryProps) {
+  const normalizedTitle = title?.trim() ?? '';
   const longPressTimeoutRef = useRef<number | null>(null);
   const mouseInteractionRef = useRef<{
     active: boolean;
@@ -273,10 +274,12 @@ export default function GameTierSummary({
       data-current-tier={progress.currentTier.tierCode}
       data-surface-variant={surfaceVariant}
     >
-      <div className="app-shell__game-tier-copy">
-        <p className="app-shell__game-tier-eyebrow">티어</p>
-        <h5 className="app-shell__game-tier-title">{title}</h5>
-      </div>
+      {normalizedTitle ? (
+        <div className="app-shell__game-tier-copy">
+          <p className="app-shell__game-tier-eyebrow">티어</p>
+          <h5 className="app-shell__game-tier-title">{normalizedTitle}</h5>
+        </div>
+      ) : null}
 
       <div className="app-shell__game-tier-card-frame">
         <div

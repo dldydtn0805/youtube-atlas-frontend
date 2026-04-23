@@ -543,7 +543,7 @@ export function RankingGamePanelShell({
               role="tab"
               type="button"
             >
-              내 포지션
+              인벤토리
             </button>
             <button
               aria-selected={activeGameTab === 'history'}
@@ -553,7 +553,7 @@ export function RankingGamePanelShell({
               role="tab"
               type="button"
             >
-              거래내역
+              로그
             </button>
             <button
               aria-selected={activeGameTab === 'guide'}
@@ -563,7 +563,7 @@ export function RankingGamePanelShell({
               role="tab"
               type="button"
             >
-              게임 설명
+              튜토리얼
             </button>
           </div>
           <div className="app-shell__game-tab-panel" role="tabpanel">
