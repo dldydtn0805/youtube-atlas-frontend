@@ -1432,7 +1432,6 @@ function HomePage() {
     user,
     videoPlayerRef,
   });
-  const [previewVideoId, setPreviewVideoId] = useState<string | undefined>();
   const selectedPlaybackCategoryLabel = useMemo(
     () =>
       resolvePlaybackCategoryLabel({
@@ -1918,7 +1917,6 @@ function HomePage() {
   }
 
   useEffect(() => {
-    setPreviewVideoId(selectedVideoId);
   }, [selectedVideoId]);
 
   const handleSelectVideoWithPreview = useCallback(
@@ -1928,7 +1926,6 @@ function HomePage() {
       }
 
       const nextPreviewVideoId = videoId;
-      setPreviewVideoId(nextPreviewVideoId);
       handleSelectVideo(nextPreviewVideoId, playbackQueueId);
     },
     [handleSelectVideo],
@@ -2043,7 +2040,6 @@ function HomePage() {
 
       if (topChartVideoId && topChartQueueId) {
         setSelectedOpenPositionId(null);
-        setPreviewVideoId(topChartVideoId);
         handleSelectVideo(topChartVideoId, topChartQueueId);
         return;
       }
@@ -2059,7 +2055,6 @@ function HomePage() {
 
       if (nextOpenPosition) {
         setSelectedOpenPositionId(nextOpenPosition.id);
-        setPreviewVideoId(nextOpenPosition.videoId);
         syncPlaybackSelection(nextOpenPosition.videoId, GAME_PORTFOLIO_QUEUE_ID);
         return;
       }
@@ -2075,7 +2070,6 @@ function HomePage() {
 
       if (nextHistoryPosition) {
         setSelectedOpenPositionId(nextHistoryPosition.id);
-        setPreviewVideoId(nextHistoryPosition.videoId);
         syncPlaybackSelection(nextHistoryPosition.videoId, HISTORY_PLAYBACK_QUEUE_ID);
         return;
       }
@@ -2089,7 +2083,6 @@ function HomePage() {
         : undefined;
 
     if (nextVideoId) {
-      setPreviewVideoId(nextVideoId);
     }
 
     handlePlayNextVideo();
@@ -2117,7 +2110,6 @@ function HomePage() {
 
       if (previousOpenPosition) {
         setSelectedOpenPositionId(previousOpenPosition.id);
-        setPreviewVideoId(previousOpenPosition.videoId);
         syncPlaybackSelection(previousOpenPosition.videoId, GAME_PORTFOLIO_QUEUE_ID);
         return;
       }
@@ -2133,7 +2125,6 @@ function HomePage() {
 
       if (previousHistoryPosition) {
         setSelectedOpenPositionId(previousHistoryPosition.id);
-        setPreviewVideoId(previousHistoryPosition.videoId);
         syncPlaybackSelection(previousHistoryPosition.videoId, HISTORY_PLAYBACK_QUEUE_ID);
         return;
       }
@@ -2147,7 +2138,6 @@ function HomePage() {
         : undefined;
 
     if (previousVideoId) {
-      setPreviewVideoId(previousVideoId);
     }
 
     handlePlayPreviousVideo();
@@ -2715,7 +2705,6 @@ function HomePage() {
       />
       <main className="app-shell__main">
         <HomePlaybackSection
-          preferredPreviewVideoId={previewVideoId}
           isStickySelectedVideoPlaybackPaused={isPlaybackPaused}
           onPauseStickySelectedVideo={handlePauseCurrentVideo}
           onPlayNextStickySelectedVideo={handlePlayNextVideoWithPreview}

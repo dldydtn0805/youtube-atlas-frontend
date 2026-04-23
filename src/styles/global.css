@@ -98,7 +98,6 @@
     radial-gradient(circle at top, rgba(46, 118, 255, 0.2), transparent 26%),
     rgba(15, 23, 42, 0.42);
   --layer-sticky-selected-video: 1200;
-  --layer-sticky-player-preview: 1201;
   --layer-modal-backdrop: 1400;
   --layer-loading-overlay: 1410;
   --focus-ring: 0 0 0 4px rgba(0, 113, 227, 0.1);
