@@ -14,15 +14,19 @@ export default function AchievementTitlePanel({ collection, isSaving = false, on
 
   return (
     <section className="app-shell__achievement-title-panel" data-saving={isSaving}>
-      <div className="app-shell__section-heading">
-        <p className="app-shell__section-eyebrow">칭호</p>
-        <h3 className="app-shell__modal-field-title">대표 칭호</h3>
+      <div className="app-shell__achievement-title-summary">
+        <div className="app-shell__section-heading">
+          <p className="app-shell__section-eyebrow">칭호</p>
+          <h3 className="app-shell__modal-field-title">대표 칭호</h3>
+        </div>
+        <div className="app-shell__achievement-title-current">
+          {collection?.selectedTitle ? (
+            <AchievementTitleBadge title={collection.selectedTitle} />
+          ) : (
+            <p className="app-shell__achievement-title-empty">대표 칭호가 없습니다.</p>
+          )}
+        </div>
       </div>
-      {collection?.selectedTitle ? (
-        <AchievementTitleBadge title={collection.selectedTitle} />
-      ) : (
-        <p className="app-shell__achievement-title-empty">대표 칭호가 없습니다.</p>
-      )}
       <div className="app-shell__achievement-title-grid" aria-label="획득 칭호">
         {titles.map((title) => (
           <button

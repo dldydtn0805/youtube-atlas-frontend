@@ -2887,6 +2887,12 @@
     gap: 4px 10px;
   }
 
+  :root[data-mobile-layout='true'] .app-shell__game-leaderboard-identity {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .app-shell__game-leaderboard-name {
     font-size: 0.84rem;
     line-height: 1.3;

@@ -433,7 +433,7 @@ function LeaderboardRow({
             <div className="app-shell__game-leaderboard-identity">
               <p className="app-shell__game-leaderboard-name">{entry.displayName}</p>
               {entry.selectedAchievementTitle ? (
-                <AchievementTitleBadge compact title={entry.selectedAchievementTitle} />
+                <AchievementTitleBadge title={entry.selectedAchievementTitle} />
               ) : null}
             </div>
             <p className="app-shell__game-leaderboard-total" title={formatHighlightScore(entry.highlightScore)}>

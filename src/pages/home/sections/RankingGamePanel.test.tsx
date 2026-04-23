@@ -450,7 +450,7 @@ describe('RankingGameLeaderboardTab', () => {
     expect(within(row).queryByText('스몰 캐시아웃')).not.toBeInTheDocument();
   });
 
-  it('renders the selected achievement title next to the tier', () => {
+  it('renders the selected achievement title with its full name in the leaderboard row', () => {
     render(
       <RankingGameLeaderboardTab
         entries={[
@@ -479,9 +479,9 @@ describe('RankingGameLeaderboardTab', () => {
     );
 
     const row = screen.getByRole('button', { name: /소몰 캐시아웃/ });
-    const badge = within(row).getByText('A. Sniper').closest('.app-shell__achievement-title-badge');
+    const badge = within(row).getByText('Atlas Sniper').closest('.app-shell__achievement-title-badge');
 
-    expect(within(row).getByText('A. Sniper')).toBeInTheDocument();
+    expect(within(row).getByText('Atlas Sniper')).toBeInTheDocument();
     expect(badge).toHaveAttribute(
       'title',
       '슈퍼 Atlas Sniper: 150위 밖에서 잡은 영상이 10위 안까지 올라온 복합 하이라이트 달성자입니다.',
