@@ -204,6 +204,13 @@
   font-weight: 700;
 }
 
+.app-shell__game-scheduled-sell-note {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .app-shell__game-scheduled-sell-error {
   background: rgba(220, 38, 38, 0.08);
   border: 1px solid rgba(220, 38, 38, 0.18);
