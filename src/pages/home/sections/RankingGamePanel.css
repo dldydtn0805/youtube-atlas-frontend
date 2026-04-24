@@ -865,6 +865,55 @@
   gap: 10px;
 }
 
+.app-shell__game-scheduled-orders {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+
+.app-shell__game-scheduled-order-filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.app-shell__game-scheduled-order-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell__game-scheduled-order-filter {
+  background: var(--surface-chip-muted);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 22px;
+  padding: 0 8px;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+.app-shell__game-scheduled-order-filter[data-active='true'] {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(var(--game-panel-tier-accent-rgb), 0.28);
+  box-shadow: 0 8px 18px rgba(148, 163, 184, 0.12);
+  color: var(--text);
+}
+
+.app-shell__game-scheduled-order-filter:focus-visible {
+  outline: 2px solid rgba(20, 184, 166, 0.45);
+  outline-offset: 2px;
+}
+
 .app-shell__game-guide {
   background: rgba(255, 255, 255, 0.64);
   border: 1px solid rgba(148, 163, 184, 0.18);
@@ -912,12 +961,29 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.18);
+  border-left-width: 4px;
   border-radius: 18px;
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
   position: relative;
   padding: 10px;
+}
+
+.app-shell__game-position[data-scheduled-status='PENDING'] {
+  border-left-color: #0ea5e9;
+}
+
+.app-shell__game-position[data-scheduled-status='EXECUTED'] {
+  border-left-color: #22c55e;
+}
+
+.app-shell__game-position[data-scheduled-status='CANCELED'] {
+  border-left-color: #94a3b8;
+}
+
+.app-shell__game-position[data-scheduled-status='FAILED'] {
+  border-left-color: #ef4444;
 }
 
 .app-shell__game-position[data-selected='true'] {
@@ -1241,6 +1307,30 @@
   background: rgba(148, 163, 184, 0.14);
   border: 1px solid rgba(148, 163, 184, 0.16);
   color: var(--text-muted);
+}
+
+.app-shell__game-position-trend[data-tone='info'] {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.22);
+  color: #0369a1;
+}
+
+.app-shell__game-position-trend[data-tone='success'] {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  color: #15803d;
+}
+
+.app-shell__game-position-trend[data-tone='neutral'] {
+  background: rgba(100, 116, 139, 0.12);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: #475569;
+}
+
+.app-shell__game-position-trend[data-tone='danger'] {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #b91c1c;
 }
 
 .app-shell__game-position-side {
@@ -2182,6 +2272,22 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+:root[data-theme='dark'] .app-shell__game-position[data-scheduled-status='PENDING'] {
+  border-left-color: #38bdf8;
+}
+
+:root[data-theme='dark'] .app-shell__game-position[data-scheduled-status='EXECUTED'] {
+  border-left-color: #4ade80;
+}
+
+:root[data-theme='dark'] .app-shell__game-position[data-scheduled-status='CANCELED'] {
+  border-left-color: #cbd5e1;
+}
+
+:root[data-theme='dark'] .app-shell__game-position[data-scheduled-status='FAILED'] {
+  border-left-color: #f87171;
+}
+
 :root[data-theme='dark'] .app-shell__game-position-overlay {
   background: rgba(14, 14, 14, 0.78);
 }
@@ -2242,12 +2348,57 @@
   color: #a5f3fc;
 }
 
+:root[data-theme='dark'] .app-shell__game-position-trend[data-tone='info'] {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.28);
+  color: #bae6fd;
+}
+
+:root[data-theme='dark'] .app-shell__game-position-trend[data-tone='success'] {
+  background: rgba(74, 222, 128, 0.16);
+  border-color: rgba(74, 222, 128, 0.28);
+  color: #bbf7d0;
+}
+
+:root[data-theme='dark'] .app-shell__game-position-trend[data-tone='neutral'] {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .app-shell__game-position-trend[data-tone='danger'] {
+  background: rgba(248, 113, 113, 0.16);
+  border-color: rgba(248, 113, 113, 0.28);
+  color: #fecaca;
+}
+
 :root[data-theme='dark'] .app-shell__coin-boost-badge-label {
   color: inherit;
 }
 
 :root[data-theme='dark'] .app-shell__coin-boost-badge-rate {
   color: inherit;
+}
+
+:root[data-theme='dark'] .app-shell__game-scheduled-order-filter {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.64);
+}
+
+:root[data-theme='dark'] .app-shell__game-scheduled-order-filter[data-active='true'] {
+  background:
+    linear-gradient(180deg, rgba(14, 116, 144, 0.98), rgba(8, 47, 73, 0.98));
+  border-color: rgba(125, 211, 252, 0.74);
+  box-shadow:
+    inset 0 1px 0 rgba(186, 230, 253, 0.2),
+    inset 0 0 0 1px rgba(125, 211, 252, 0.16),
+    0 10px 22px rgba(2, 6, 23, 0.34);
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .app-shell__game-scheduled-order-filter:focus-visible {
+  outline-color: rgba(124, 196, 255, 0.5);
 }
 
 :root[data-theme='dark'] .app-shell__game-history-item {

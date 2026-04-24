@@ -558,7 +558,7 @@ export function RankingGamePanelShell({
               role="tab"
               type="button"
             >
-              예약
+              대기열
             </button>
             <button
               aria-selected={activeGameTab === 'history'}
