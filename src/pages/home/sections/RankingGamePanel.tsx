@@ -35,7 +35,7 @@ import GameWalletSummary from './GameWalletSummary';
 import MiniVideoPreview from './MiniVideoPreview';
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
 
-type GameTab = 'positions' | 'history' | 'guide';
+type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
 
 function inferGrossSellPointsFromSettled(settledPoints?: number | null) {
   if (typeof settledPoints !== 'number' || !Number.isFinite(settledPoints) || settledPoints < 0) {
@@ -261,6 +261,10 @@ function mapHoldingToGamePosition(holding: OpenGameHolding): GamePosition {
     buyCapturedAt: holding.createdAt,
     createdAt: holding.createdAt,
     closedAt: null,
+    reservedForSell: holding.reservedForSell,
+    scheduledSellOrderId: holding.scheduledSellOrderId,
+    scheduledSellTargetRank: holding.scheduledSellTargetRank,
+    scheduledSellQuantity: holding.scheduledSellQuantity,
   };
 }
 
@@ -544,6 +548,16 @@ export function RankingGamePanelShell({
               type="button"
             >
               인벤토리
+            </button>
+            <button
+              aria-selected={activeGameTab === 'scheduledOrders'}
+              className="app-shell__game-tab"
+              data-active={activeGameTab === 'scheduledOrders'}
+              onClick={() => onSelectTab('scheduledOrders')}
+              role="tab"
+              type="button"
+            >
+              예약
             </button>
             <button
               aria-selected={activeGameTab === 'history'}
@@ -911,7 +925,9 @@ export function RankingGamePositionsTab({
             ? calculateGameUnitPricePoints(holding.currentPricePoints, holding.quantity)
             : null;
         const positionStatusBadge = holding.chartOut ? '차트 아웃' : null;
-        const sellableStatusBadge = !canShowGameActions
+        const sellableStatusBadge = holding.reservedForSell
+          ? `예약 ${formatGameQuantity(holding.scheduledSellQuantity)} · ${formatRank(holding.scheduledSellTargetRank)} 이내`
+          : !canShowGameActions
           ? '전체 카테고리에서 매도 가능'
           : holding.sellableQuantity > 0
             ? `${formatGameQuantity(holding.sellableQuantity)} 매도 가능`
@@ -1057,6 +1073,8 @@ export function RankingGamePositionsTab({
                       ? '전체 카테고리에서만 매도할 수 있습니다.'
                       : holding.sellableQuantity > 0
                         ? '매도'
+                        : holding.reservedForSell
+                          ? '예약 취소 후 매도할 수 있습니다.'
                         : '아직 매도 가능한 수량이 없습니다.'
                   }
                   type="button"

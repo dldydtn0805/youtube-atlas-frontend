@@ -83,6 +83,8 @@ import {
   useAchievementTitles,
   useBuyableMarketChart,
   useBuyGamePosition,
+  useCancelScheduledSellOrder,
+  useCreateScheduledSellOrder,
   useCurrentGameSeason,
   useDeleteGameNotification,
   useDeleteGameNotifications,
@@ -97,6 +99,7 @@ import {
   useGameSellPreview,
   useMarkGameNotificationsRead,
   useMyGamePositions,
+  useScheduledSellOrders,
   useSellGamePositions,
   useUpdateSelectedAchievementTitle,
 } from '../../features/game/queries';
@@ -496,7 +499,9 @@ function HomePage() {
   const queryClient = useQueryClient();
   const { accessToken, applyCurrentUser, isLoggingOut, logout, refreshCurrentUser, status: authStatus, user } = useAuth();
   const [selectedOpenPositionId, setSelectedOpenPositionId] = useState<number | null>(null);
-  const [activeGameTab, setActiveGameTab] = useState<'positions' | 'history' | 'guide'>('positions');
+  const [activeGameTab, setActiveGameTab] = useState<'positions' | 'scheduledOrders' | 'history' | 'guide'>('positions');
+  const [sellOrderMode, setSellOrderMode] = useState<'instant' | 'scheduled'>('instant');
+  const [scheduledSellTargetRank, setScheduledSellTargetRank] = useState(10);
   const [rankHistoryFocusMode, setRankHistoryFocusMode] = useState<'full' | 'trade'>('full');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
   const [collapsedHomeSectionIds, setCollapsedHomeSectionIds] = useState(getInitialCollapsedHomeSectionIds);
@@ -830,6 +835,11 @@ function HomePage() {
     isLoading: isOpenGamePositionsLoading,
   } = useMyGamePositions(accessToken, selectedRegionCode, 'OPEN', shouldLoadGame);
   const {
+    data: scheduledSellOrders = [],
+    error: scheduledSellOrdersError,
+    isLoading: isScheduledSellOrdersLoading,
+  } = useScheduledSellOrders(accessToken, selectedRegionCode, shouldLoadGame);
+  const {
     data: selectedLeaderboardHighlights = [],
     error: selectedLeaderboardHighlightsError,
     isError: isSelectedLeaderboardHighlightsError,
@@ -952,6 +962,8 @@ function HomePage() {
     : null;
   const buyGamePositionMutation = useBuyGamePosition(accessToken);
   const sellGamePositionsMutation = useSellGamePositions(accessToken);
+  const createScheduledSellOrderMutation = useCreateScheduledSellOrder(accessToken);
+  const cancelScheduledSellOrderMutation = useCancelScheduledSellOrder(accessToken, selectedRegionCode);
 
   const {
     data,
@@ -1563,6 +1575,7 @@ function HomePage() {
   useLogoutOnUnauthorized(gameMarketError, logout);
   useLogoutOnUnauthorized(buyableMarketChartError, logout);
   useLogoutOnUnauthorized(openGamePositionsError, logout);
+  useLogoutOnUnauthorized(scheduledSellOrdersError, logout);
   useLogoutOnUnauthorized(gameHistoryPositionsError, logout);
   useLogoutOnUnauthorized(gameHighlightsError, logout);
   useLogoutOnUnauthorized(selectedLeaderboardHighlightsError, logout);
@@ -1575,9 +1588,16 @@ function HomePage() {
 
     setSelectedOpenPositionId(null);
     setActiveGameTab('positions');
+    setSellOrderMode('instant');
+    setScheduledSellTargetRank(10);
     setHistoryPlaybackLoadingVideoId(null);
     setHistoryPlaybackVideo(null);
   }, [authStatus]);
+
+  useEffect(() => {
+    setSellOrderMode('instant');
+    setScheduledSellTargetRank(10);
+  }, [selectedOpenPositionId, selectedVideoId]);
 
   useEffect(() => {
     if (selectedOpenPositionId == null) {
@@ -1747,6 +1767,7 @@ function HomePage() {
         : null,
     [openGamePositions, selectedOpenPositionId],
   );
+  const canScheduleSellCurrentSelection = selectedSellPositionId != null;
   const debouncedSellPreviewQuantity = useDebouncedValue(normalizedSellQuantity, SELL_PREVIEW_DEBOUNCE_MS);
   const sellPreviewRequest = useMemo(
     () =>
@@ -1763,7 +1784,7 @@ function HomePage() {
   const sellPreviewQuery = useGameSellPreview(
     accessToken,
     sellPreviewRequest,
-    activeTradeModal === 'sell' && maxSellQuantity > 0,
+    activeTradeModal === 'sell' && sellOrderMode === 'instant' && maxSellQuantity > 0,
   );
   const activeSellPreview =
     debouncedSellPreviewQuantity === normalizedSellQuantity &&
@@ -1772,7 +1793,7 @@ function HomePage() {
       : undefined;
   const [lastSuccessfulSellPreview, setLastSuccessfulSellPreview] = useState<typeof activeSellPreview>();
   useEffect(() => {
-    if (activeTradeModal !== 'sell') {
+    if (activeTradeModal !== 'sell' || sellOrderMode !== 'instant') {
       setLastSuccessfulSellPreview(undefined);
       return;
     }
@@ -1780,8 +1801,13 @@ function HomePage() {
     if (activeSellPreview) {
       setLastSuccessfulSellPreview(activeSellPreview);
     }
-  }, [activeSellPreview, activeTradeModal]);
+  }, [activeSellPreview, activeTradeModal, sellOrderMode]);
   const displaySellPreview = activeSellPreview ?? lastSuccessfulSellPreview;
+  useEffect(() => {
+    if (sellOrderMode === 'scheduled' && !canScheduleSellCurrentSelection) {
+      setSellOrderMode('instant');
+    }
+  }, [canScheduleSellCurrentSelection, sellOrderMode]);
   const isSellPreviewPending =
     debouncedSellPreviewQuantity !== normalizedSellQuantity ||
     sellPreviewQuery.isLoading ||
@@ -1894,6 +1920,76 @@ function HomePage() {
     () =>
       getProjectedWalletBalance(currentGameSeason?.wallet.balancePoints, resolvedSellSummary.settledPoints),
     [currentGameSeason?.wallet.balancePoints, resolvedSellSummary.settledPoints],
+  );
+  const handleCreateScheduledSellOrder = useCallback(async () => {
+    if (!currentGameSeason) {
+      setGameActionStatus('지금은 게임 시즌을 불러올 수 없습니다.');
+      return;
+    }
+
+    if (selectedSellPositionId == null) {
+      setGameActionStatus('예약 매도는 인벤토리의 단일 포지션에서 설정할 수 있습니다.');
+      return;
+    }
+
+    const normalizedTargetRank = Math.max(1, Math.floor(scheduledSellTargetRank));
+
+    try {
+      const order = await createScheduledSellOrderMutation.mutateAsync({
+        positionId: selectedSellPositionId,
+        quantity: normalizedSellQuantity,
+        regionCode: currentGameSeason.regionCode,
+        targetRank: normalizedTargetRank,
+      });
+
+      setActiveTradeModal(null);
+      setSellOrderMode('instant');
+      setScheduledSellTargetRank(10);
+      setActiveGameTab('scheduledOrders');
+      setGameActionStatus(`${order.videoTitle} 포지션을 ${formatRank(order.targetRank)} 이내 진입 시 자동 매도하도록 예약했어요.`);
+    } catch (error) {
+      if (
+        error instanceof ApiRequestError &&
+        (error.code === 'unauthorized' || error.code === 'session_expired')
+      ) {
+        void logout();
+        return;
+      }
+
+      setGameActionStatus(
+        error instanceof Error ? error.message : '예약 매도 등록에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+      );
+    }
+  }, [
+    createScheduledSellOrderMutation,
+    currentGameSeason,
+    logout,
+    normalizedSellQuantity,
+    scheduledSellTargetRank,
+    selectedSellPositionId,
+    setActiveTradeModal,
+    setGameActionStatus,
+  ]);
+  const handleCancelScheduledSellOrder = useCallback(
+    async (orderId: number) => {
+      try {
+        await cancelScheduledSellOrderMutation.mutateAsync(orderId);
+        setGameActionStatus('예약 매도 주문을 취소했어요.');
+      } catch (error) {
+        if (
+          error instanceof ApiRequestError &&
+          (error.code === 'unauthorized' || error.code === 'session_expired')
+        ) {
+          void logout();
+          return;
+        }
+
+        setGameActionStatus(
+          error instanceof Error ? error.message : '예약 매도 취소에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        );
+      }
+    },
+    [cancelScheduledSellOrderMutation, logout, setGameActionStatus],
   );
 
   async function handleToggleFavoriteStreamer() {
@@ -2274,7 +2370,7 @@ function HomePage() {
     },
     [openRankHistoryModal],
   );
-  const handleSelectGameTab = useCallback((tab: 'positions' | 'history' | 'guide') => {
+  const handleSelectGameTab = useCallback((tab: 'positions' | 'scheduledOrders' | 'history' | 'guide') => {
     startTransition(() => {
       setActiveGameTab(tab);
     });
@@ -2522,7 +2618,11 @@ function HomePage() {
       historyPlaybackSection={historyPlaybackSection}
       isCollapsed={isModal ? false : isRankingGameCollapsed}
       isGameHistoryLoading={isGameHistoryLoading}
+      isScheduledSellOrdersLoading={isScheduledSellOrdersLoading}
       newChartEntriesSection={sortedNewChartEntriesSection}
+      onCancelScheduledSellOrder={(orderId) => {
+        void handleCancelScheduledSellOrder(orderId);
+      }}
       onOpenTierModal={openTierModal}
       onOpenHistoryChart={handleOpenGameHistoryChart}
       onOpenPositionChart={handleOpenGamePositionChart}
@@ -2543,6 +2643,12 @@ function HomePage() {
       selectedVideoActions={null}
       selectedPositionId={selectedOpenPositionId}
       selectedVideoId={selectedVideoId}
+      scheduledSellOrders={scheduledSellOrders}
+      scheduledSellOrderCancelingId={
+        cancelScheduledSellOrderMutation.isPending
+          ? Number(cancelScheduledSellOrderMutation.variables)
+          : null
+      }
       trendSignalsByVideoId={chartTrendSignalsByVideoId}
     />
   );
@@ -2975,17 +3081,21 @@ function HomePage() {
         unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? 0)}
       />
       <GameTradeModal
-        confirmLabel={`${formatGameOrderQuantity(normalizedSellQuantity)} 매도`}
+        confirmLabel={
+          sellOrderMode === 'scheduled'
+            ? `${formatRank(scheduledSellTargetRank)} 이내 예약`
+            : `${formatGameOrderQuantity(normalizedSellQuantity)} 매도`
+        }
         currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
-        detailContent={
+        detailContent={sellOrderMode === 'instant' ? (
           <GameSellPreviewDetail
             isLoading={isSellPreviewPending}
             preview={displaySellPreview}
           />
-        }
+        ) : null}
         helperText={sellModalHelperText}
         isOpen={isSellTradeModalOpen}
-        isSubmitting={isSellSubmitting}
+        isSubmitting={isSellSubmitting || createScheduledSellOrderMutation.isPending}
         maxQuantity={maxSellQuantity}
         mode="sell"
         onChangeQuantity={(quantity) => {
@@ -3003,45 +3113,64 @@ function HomePage() {
           );
         }}
         onClose={closeTradeModal}
-        onConfirm={() => void handleSellCurrentVideo()}
+        onChangeSellOrderMode={canScheduleSellCurrentSelection ? setSellOrderMode : undefined}
+        onChangeScheduledSellTargetRank={setScheduledSellTargetRank}
+        onConfirm={() => {
+          void (sellOrderMode === 'scheduled' ? handleCreateScheduledSellOrder() : handleSellCurrentVideo());
+        }}
         quantity={normalizedSellQuantity}
-        summaryItems={[
-          { label: '수량', value: formatGameOrderQuantity(resolvedSellSummary.quantity) },
-          { label: '정산 금액', value: formatPoints(resolvedSellSummary.settledPoints) },
-          {
-            label: '해당 매도 시 하이라이트 점수',
-            value:
-              isSellPreviewPending
-                ? '계산 중'
-                : displaySellPreview
-                  ? formatHighlightScore(displaySellPreview.projectedHighlightScore)
-                  : '--',
-          },
-          {
-            label: '하이라이트 점수 증가량',
-            tone:
-              (displaySellPreview?.appliedHighlightScoreDelta ?? 0) > 0
-                ? 'gain'
-                : 'flat',
-            value:
-              isSellPreviewPending
-                ? '계산 중'
-                : displaySellPreview
-                  ? formatHighlightScore(displaySellPreview.appliedHighlightScoreDelta)
-                  : '--',
-          },
-          ...(typeof projectedWalletBalanceAfterSell === 'number'
-            ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterSell) }]
-            : []),
-          { label: '매도 금액', value: formatPoints(resolvedSellSummary.grossSellPoints) },
-          { label: '수수료', value: formatPoints(resolvedSellSummary.feePoints) },
-          {
-            label: '손익',
-            tone: getPointTone(resolvedSellSummary.pnlPoints),
-            value: formatPoints(resolvedSellSummary.pnlPoints),
-          },
-        ]}
-        summaryNote={`정산 금액은 매도 금액 기준 ${SELL_FEE_RATE_LABEL} 수수료를 반영한 값입니다.`}
+        scheduledSellTargetRank={scheduledSellTargetRank}
+        sellOrderMode={sellOrderMode}
+        summaryItems={
+          sellOrderMode === 'scheduled'
+            ? [
+                { label: '예약 조건', value: `${formatRank(scheduledSellTargetRank)} 이내` },
+                { label: '대상 수량', value: formatGameOrderQuantity(normalizedSellQuantity) },
+                { label: '현재 순위', value: formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut }) },
+                { label: '처리 방식', value: '조건 도달 시 자동 매도' },
+              ]
+            : [
+                { label: '수량', value: formatGameOrderQuantity(resolvedSellSummary.quantity) },
+                { label: '정산 금액', value: formatPoints(resolvedSellSummary.settledPoints) },
+                {
+                  label: '해당 매도 시 하이라이트 점수',
+                  value:
+                    isSellPreviewPending
+                      ? '계산 중'
+                      : displaySellPreview
+                        ? formatHighlightScore(displaySellPreview.projectedHighlightScore)
+                        : '--',
+                },
+                {
+                  label: '하이라이트 점수 증가량',
+                  tone:
+                    (displaySellPreview?.appliedHighlightScoreDelta ?? 0) > 0
+                      ? 'gain'
+                      : 'flat',
+                  value:
+                    isSellPreviewPending
+                      ? '계산 중'
+                      : displaySellPreview
+                        ? formatHighlightScore(displaySellPreview.appliedHighlightScoreDelta)
+                        : '--',
+                },
+                ...(typeof projectedWalletBalanceAfterSell === 'number'
+                  ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterSell) }]
+                  : []),
+                { label: '매도 금액', value: formatPoints(resolvedSellSummary.grossSellPoints) },
+                { label: '수수료', value: formatPoints(resolvedSellSummary.feePoints) },
+                {
+                  label: '손익',
+                  tone: getPointTone(resolvedSellSummary.pnlPoints),
+                  value: formatPoints(resolvedSellSummary.pnlPoints),
+                },
+              ]
+        }
+        summaryNote={
+          sellOrderMode === 'scheduled'
+            ? '예약 매도는 현재 가격을 확정하지 않고, 조건이 충족되는 시점의 매도 로직으로 정산됩니다.'
+            : `정산 금액은 매도 금액 기준 ${SELL_FEE_RATE_LABEL} 수수료를 반영한 값입니다.`
+        }
         thumbnailUrl={selectedVideoTradeThumbnailUrl}
         title={selectedGameActionTitle}
         unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? resolvedSellSummary.settledPoints ?? 0)}

@@ -10,6 +10,7 @@ import {
   normalizeGameOrderQuantity,
 } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
+import GameScheduledSellFields from './GameScheduledSellFields';
 import './GameTradeModal.css';
 
 interface GameTradeModalSummaryItem {
@@ -33,9 +34,13 @@ interface GameTradeModalProps {
   maxQuantity: number;
   mode: 'buy' | 'sell';
   onChangeQuantity: (quantity: number) => void;
+  onChangeSellOrderMode?: (mode: 'instant' | 'scheduled') => void;
+  onChangeScheduledSellTargetRank?: (rank: number) => void;
   onClose: () => void;
   onConfirm: () => void;
   quantity: number;
+  scheduledSellTargetRank?: number;
+  sellOrderMode?: 'instant' | 'scheduled';
   summaryItems: GameTradeModalSummaryItem[];
   summaryNote?: string;
   thumbnailUrl?: string | null;
@@ -85,9 +90,13 @@ export default function GameTradeModal({
   maxQuantity,
   mode,
   onChangeQuantity,
+  onChangeSellOrderMode,
+  onChangeScheduledSellTargetRank,
   onClose,
   onConfirm,
   quantity,
+  scheduledSellTargetRank = 10,
+  sellOrderMode = 'instant',
   summaryItems,
   summaryNote,
   thumbnailUrl,
@@ -112,6 +121,8 @@ export default function GameTradeModal({
     normalizedQuantity >= normalizedMaxQuantity ? GAME_ORDER_QUANTITY_STEP : normalizedQuantity + GAME_ORDER_QUANTITY_STEP;
   const displayQuantity = toDisplayGameOrderQuantity(normalizedQuantity);
   const quickActions = getGameTradeQuickActions(normalizedMaxQuantity);
+  const isScheduledSellMode = mode === 'sell' && sellOrderMode === 'scheduled';
+  const disableQuantityControls = isSubmitting || normalizedMaxQuantity <= 0;
 
   return createPortal(
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
@@ -144,6 +155,29 @@ export default function GameTradeModal({
           </div>
 
           <div className="app-shell__modal-fields">
+            {mode === 'sell' && onChangeSellOrderMode ? (
+              <div className="app-shell__game-trade-mode-switch" aria-label="매도 방식">
+                <button
+                  className="app-shell__game-trade-mode-option"
+                  data-active={!isScheduledSellMode}
+                  disabled={isSubmitting}
+                  onClick={() => onChangeSellOrderMode('instant')}
+                  type="button"
+                >
+                  즉시 매도
+                </button>
+                <button
+                  className="app-shell__game-trade-mode-option"
+                  data-active={isScheduledSellMode}
+                  disabled={isSubmitting}
+                  onClick={() => onChangeSellOrderMode('scheduled')}
+                  type="button"
+                >
+                  예약 매도
+                </button>
+              </div>
+            ) : null}
+
             <div className="app-shell__modal-field">
               <div className="app-shell__section-heading">
                 <p className="app-shell__section-eyebrow">Quantity</p>
@@ -158,7 +192,7 @@ export default function GameTradeModal({
                         key={action.label}
                         className="app-shell__game-trade-modal-quick-action"
                         data-active={action.quantity === normalizedQuantity}
-                        disabled={isSubmitting || maxQuantity <= 0}
+                        disabled={disableQuantityControls}
                         onClick={() => onChangeQuantity(action.quantity)}
                         type="button"
                       >
@@ -170,7 +204,7 @@ export default function GameTradeModal({
                 <div className="app-shell__game-panel-quantity">
                   <button
                     className="app-shell__game-panel-quantity-button"
-                    disabled={isSubmitting || normalizedMaxQuantity <= 0}
+                    disabled={disableQuantityControls}
                     onClick={() => onChangeQuantity(previousQuantity)}
                     type="button"
                   >
@@ -178,7 +212,7 @@ export default function GameTradeModal({
                   </button>
                   <input
                     className="app-shell__game-panel-quantity-input"
-                    disabled={isSubmitting || normalizedMaxQuantity <= 0}
+                    disabled={disableQuantityControls}
                     inputMode="numeric"
                     max={normalizedMaxQuantity > 0 ? toDisplayGameOrderQuantity(normalizedMaxQuantity) : undefined}
                     min={mode === 'buy' ? 0 : toDisplayGameOrderQuantity(GAME_ORDER_QUANTITY_STEP)}
@@ -198,21 +232,39 @@ export default function GameTradeModal({
                   />
                   <button
                     className="app-shell__game-panel-quantity-button"
-                    disabled={isSubmitting || normalizedMaxQuantity <= 0}
+                    disabled={disableQuantityControls}
                     onClick={() => onChangeQuantity(nextQuantity)}
                     type="button"
                   >
                     +
                   </button>
                 </div>
-                <p className="app-shell__modal-field-copy">1개 단위로만 주문할 수 있습니다. 현재 선택: {formatGameOrderQuantity(normalizedQuantity)}</p>
+                <p className="app-shell__modal-field-copy">
+                  1개 단위로만 주문할 수 있습니다. 현재 선택: {formatGameOrderQuantity(normalizedQuantity)}
+                </p>
               </div>
             </div>
+
+            {isScheduledSellMode && onChangeScheduledSellTargetRank ? (
+              <div className="app-shell__modal-field">
+                <div className="app-shell__section-heading">
+                  <p className="app-shell__section-eyebrow">Trigger</p>
+                  <h3 className="app-shell__modal-field-title">예약 조건</h3>
+                </div>
+                <GameScheduledSellFields
+                  disabled={isSubmitting}
+                  onChangeTargetRank={onChangeScheduledSellTargetRank}
+                  targetRank={scheduledSellTargetRank}
+                />
+              </div>
+            ) : null}
 
             <div className="app-shell__modal-field">
               <div className="app-shell__section-heading">
                 <p className="app-shell__section-eyebrow">Summary</p>
-                <h3 className="app-shell__modal-field-title">{mode === 'buy' ? '주문 요약' : '정리 요약'}</h3>
+                <h3 className="app-shell__modal-field-title">
+                  {mode === 'buy' ? '주문 요약' : isScheduledSellMode ? '예약 요약' : '정리 요약'}
+                </h3>
               </div>
               <dl className="app-shell__game-trade-modal-summary">
                 {summaryItems.map((item) => (

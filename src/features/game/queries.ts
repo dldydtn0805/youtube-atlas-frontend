@@ -2,9 +2,11 @@ import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } 
 import { authQueryKeys } from '../auth/queries';
 import type { AuthUser } from '../auth/types';
 import {
+  cancelScheduledSellOrder,
   fetchAchievementTitles,
   fetchBuyableMarketChart,
   buyGamePosition,
+  createScheduledSellOrder,
   deleteGameNotification,
   deleteGameNotifications,
   fetchSellGamePreview,
@@ -17,6 +19,7 @@ import {
   fetchGameMarket,
   fetchGameNotifications,
   fetchGamePositionRankHistory,
+  fetchScheduledSellOrders,
   fetchGameTierProgress,
   fetchMyGamePositions,
   markGameNotificationsRead,
@@ -26,6 +29,7 @@ import {
 } from './api';
 import type {
   AchievementTitleCollection,
+  CreateScheduledSellOrderInput,
   CreateGamePositionInput,
   GameCurrentSeason,
   GameNotification,
@@ -59,6 +63,8 @@ export const gameQueryKeys = {
     ['game', 'market', accessToken, regionCode] as const,
   positions: (accessToken: string | null, regionCode: string | null, status = 'OPEN') =>
     ['game', 'positions', accessToken, regionCode, status] as const,
+  scheduledSellOrders: (accessToken: string | null, regionCode: string | null) =>
+    ['game', 'scheduledSellOrders', accessToken, regionCode] as const,
   positionRankHistory: (accessToken: string | null, positionId: number | null) =>
     ['game', 'positionRankHistory', accessToken, positionId] as const,
   sellPreview: (
@@ -122,6 +128,10 @@ export async function invalidateGameQueries(
         refetchType: 'active',
       }),
       queryClient.invalidateQueries({
+        queryKey: gameQueryKeys.scheduledSellOrders(accessToken, regionCode),
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
         queryKey: gameQueryKeys.achievementTitles(accessToken),
         refetchType: 'active',
       }),
@@ -158,6 +168,10 @@ export async function invalidateGameQueries(
       }),
       queryClient.invalidateQueries({
         queryKey: ['game', 'positions', accessToken],
+        refetchType: 'active',
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['game', 'scheduledSellOrders', accessToken],
         refetchType: 'active',
       }),
       queryClient.invalidateQueries({
@@ -553,6 +567,15 @@ export function useMyGamePositions(
   });
 }
 
+export function useScheduledSellOrders(accessToken: string | null, regionCode: string, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken) && Boolean(regionCode),
+    queryKey: gameQueryKeys.scheduledSellOrders(accessToken, regionCode),
+    queryFn: () => fetchScheduledSellOrders(accessToken as string, regionCode),
+    staleTime: 1000 * 15,
+  });
+}
+
 export function useGamePositionRankHistory(
   accessToken: string | null,
   positionId: number | null,
@@ -669,6 +692,48 @@ export function useSellGamePositions(accessToken: string | null) {
         accessToken,
         includeLeaderboardPositions: true,
         regionCode: input.regionCode,
+      });
+    },
+  });
+}
+
+export function useCreateScheduledSellOrder(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateScheduledSellOrderInput) => {
+      if (!accessToken) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      return createScheduledSellOrder(accessToken, input);
+    },
+    onSuccess: (_data, input) => {
+      void invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+        regionCode: input.regionCode,
+      });
+    },
+  });
+}
+
+export function useCancelScheduledSellOrder(accessToken: string | null, regionCode: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: number) => {
+      if (!accessToken) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      return cancelScheduledSellOrder(accessToken, orderId);
+    },
+    onSuccess: () => {
+      void invalidateGameQueries(queryClient, {
+        accessToken,
+        includeLeaderboardPositions: true,
+        regionCode,
       });
     },
   });

@@ -14,6 +14,7 @@ import {
   formatPoints,
   getBuyRemainingPointsText,
   getBuyShortfallPointsText,
+  getGamePositionManualSellQuantity,
   getGamePositionQuantity,
   normalizeGameOrderCapacity,
   normalizeGameOrderQuantity,
@@ -366,11 +367,11 @@ export default function useSelectedVideoGameState({
     () =>
       [...selectedVideoOpenPositions]
         .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
-        .filter((position) => getRemainingHoldSeconds(position) <= 0),
+        .filter((position) => getRemainingHoldSeconds(position) <= 0 && getGamePositionManualSellQuantity(position) > 0),
     [getRemainingHoldSeconds, selectedVideoOpenPositions],
   );
   const maxSellQuantity = sellableSelectedVideoOpenPositions.reduce(
-    (count, position) => count + getGamePositionQuantity(position),
+    (count, position) => count + getGamePositionManualSellQuantity(position),
     0,
   );
   const normalizedSellQuantity = normalizeGameOrderQuantity(sellQuantity);

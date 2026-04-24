@@ -3,6 +3,7 @@ import type { AuthStatus } from '../../../features/auth/types';
 import type {
   GameCurrentSeason,
   GamePosition,
+  GameScheduledSellOrder,
   GameTierProgress,
 } from '../../../features/game/types';
 import type { VideoTrendSignal } from '../../../features/trending/types';
@@ -10,6 +11,7 @@ import type { YouTubeCategorySection } from '../../../features/youtube/types';
 import { findPlaybackQueueIdForVideo } from '../utils';
 import type { OpenGameHolding } from '../gameHelpers';
 import BoldNumberText from './BoldNumberText';
+import GameScheduledSellOrdersTab from './GameScheduledSellOrdersTab';
 import {
   RankingGameTierOverview,
   RankingGameHistoryTab,
@@ -17,7 +19,7 @@ import {
   RankingGamePositionsTab,
 } from './RankingGamePanel';
 
-type GameTab = 'positions' | 'history' | 'guide';
+type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
 
 interface GamePanelSectionProps {
   activeGameTab: GameTab;
@@ -37,6 +39,7 @@ interface GamePanelSectionProps {
   historyPlaybackLoadingVideoId: string | null;
   historyPlaybackSection?: YouTubeCategorySection;
   isGameHistoryLoading: boolean;
+  isScheduledSellOrdersLoading: boolean;
   isCollapsed: boolean;
   newChartEntriesSection?: YouTubeCategorySection;
   onOpenTierModal: () => void;
@@ -44,6 +47,7 @@ interface GamePanelSectionProps {
   onOpenPositionChart: (position: GamePosition) => void;
   onOpenPositionBuyTradeModal?: (position: GamePosition) => void;
   onOpenPositionSellTradeModal?: (position: GamePosition) => void;
+  onCancelScheduledSellOrder?: (orderId: number) => void;
   onSelectGameHistoryVideo: (position: GamePosition, playbackQueueId?: string) => void | Promise<void>;
   onSelectGamePositionVideo: (position: GamePosition) => void;
   onSelectTab: (tab: GameTab) => void;
@@ -59,6 +63,8 @@ interface GamePanelSectionProps {
   selectedPlaybackSection?: YouTubeCategorySection;
   selectedVideoActions?: ReactNode;
   selectedVideoId?: string;
+  scheduledSellOrders: GameScheduledSellOrder[];
+  scheduledSellOrderCancelingId?: number | null;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
 }
 
@@ -80,6 +86,7 @@ export default function GamePanelSection({
   historyPlaybackLoadingVideoId,
   historyPlaybackSection,
   isGameHistoryLoading,
+  isScheduledSellOrdersLoading,
   isCollapsed,
   newChartEntriesSection,
   onOpenTierModal,
@@ -87,6 +94,7 @@ export default function GamePanelSection({
   onOpenPositionChart,
   onOpenPositionBuyTradeModal,
   onOpenPositionSellTradeModal,
+  onCancelScheduledSellOrder,
   onSelectGameHistoryVideo,
   onSelectGamePositionVideo,
   onSelectTab,
@@ -102,6 +110,8 @@ export default function GamePanelSection({
   selectedPlaybackSection,
   selectedVideoActions,
   selectedVideoId,
+  scheduledSellOrders,
+  scheduledSellOrderCancelingId,
   trendSignalsByVideoId,
 }: GamePanelSectionProps) {
   const historyEmptyMessage = currentGameSeason ? '아직 현재 시즌 거래내역이 없습니다.' : null;
@@ -162,6 +172,14 @@ export default function GamePanelSection({
       selectedVideoId={selectedVideoId}
     />
   );
+  const scheduledOrdersContent = (
+    <GameScheduledSellOrdersTab
+      isCancelingOrderId={scheduledSellOrderCancelingId}
+      isLoading={isScheduledSellOrdersLoading}
+      onCancelOrder={onCancelScheduledSellOrder}
+      orders={scheduledSellOrders}
+    />
+  );
   const guideContent = (
     <div className="app-shell__game-guide" aria-label="랭킹 게임 설명">
       <ol className="app-shell__game-guide-list">
@@ -195,6 +213,8 @@ export default function GamePanelSection({
   const activeGameTabContent =
     activeGameTab === 'positions'
       ? positionsContent
+      : activeGameTab === 'scheduledOrders'
+        ? scheduledOrdersContent
       : activeGameTab === 'history'
         ? historyContent
         : guideContent;

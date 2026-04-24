@@ -9,6 +9,7 @@ export interface GameWallet {
 export type GameStrategyType = 'ATLAS_SHOT' | 'MOONSHOT' | 'SMALL_CASHOUT' | 'BIG_CASHOUT' | 'SNIPE';
 export type GameNotificationEventType = 'PROJECTED_HIGHLIGHT' | 'TIER_SCORE_GAIN' | 'TIER_PROMOTION' | 'TITLE_UNLOCK';
 export type AchievementTitleGrade = 'NORMAL' | 'RARE' | 'SUPER' | 'ULTIMATE';
+export type ScheduledSellOrderStatus = 'PENDING' | 'EXECUTED' | 'CANCELED' | 'FAILED';
 
 export interface SelectedAchievementTitle {
   code: string;
@@ -176,6 +177,37 @@ export interface GamePosition {
   buyCapturedAt: string;
   createdAt: string;
   closedAt: string | null;
+  reservedForSell?: boolean;
+  scheduledSellOrderId?: number | null;
+  scheduledSellTargetRank?: number | null;
+  scheduledSellQuantity?: number | null;
+}
+
+export interface GameScheduledSellOrder {
+  id: number;
+  userId: number;
+  seasonId: number;
+  positionId: number;
+  videoId: string;
+  videoTitle: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  regionCode: string;
+  targetRank: number;
+  status: ScheduledSellOrderStatus;
+  currentRank: number | null;
+  buyRank: number;
+  quantity: number;
+  stakePoints: number;
+  sellPricePoints?: number | null;
+  settledPoints?: number | null;
+  pnlPoints?: number | null;
+  failureReason: string | null;
+  triggeredAt: string | null;
+  executedAt: string | null;
+  canceledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface GamePositionRankHistoryPoint {
@@ -217,6 +249,13 @@ export interface SellGamePositionsInput {
   regionCode: string;
   positionId?: number;
   videoId?: string;
+  quantity: number;
+}
+
+export interface CreateScheduledSellOrderInput {
+  positionId: number;
+  regionCode: string;
+  targetRank: number;
   quantity: number;
 }
 

@@ -115,6 +115,10 @@ function createOpenGameHolding(overrides: Partial<OpenGameHolding> = {}): OpenGa
     targetStrategyTags: [],
     projectedHighlightScore: 2500,
     createdAt: '2026-01-01T00:00:00.000Z',
+    reservedForSell: false,
+    scheduledSellOrderId: null,
+    scheduledSellTargetRank: null,
+    scheduledSellQuantity: 0,
     ...overrides,
   };
 }

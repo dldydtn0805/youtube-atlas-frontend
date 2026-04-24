@@ -1,6 +1,7 @@
 import { fetchApi } from '../../lib/api';
 import type {
   AchievementTitleCollection,
+  CreateScheduledSellOrderInput,
   CreateGamePositionInput,
   GameCurrentSeason,
   GameHighlight,
@@ -9,6 +10,7 @@ import type {
   GameNotification,
   GamePosition,
   GamePositionRankHistory,
+  GameScheduledSellOrder,
   GameTier,
   GameTierProgress,
   SellGamePreviewResponse,
@@ -224,6 +226,14 @@ export async function fetchMyGamePositions(accessToken: string, regionCode: stri
   );
 }
 
+export async function fetchScheduledSellOrders(accessToken: string, regionCode: string) {
+  const params = new URLSearchParams({ regionCode });
+
+  return fetchApi<GameScheduledSellOrder[]>(`/api/game/scheduled-sell-orders?${params.toString()}`, {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
 export async function fetchGamePositionRankHistory(accessToken: string, positionId: number) {
   return fetchApi<GamePositionRankHistory>(`/api/game/positions/${positionId}/rank-history`, {
     headers: createAuthorizationHeader(accessToken),
@@ -283,5 +293,23 @@ export async function fetchSellGamePreview(accessToken: string, input: SellGameP
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(input),
+  });
+}
+
+export async function createScheduledSellOrder(accessToken: string, input: CreateScheduledSellOrderInput) {
+  return fetchApi<GameScheduledSellOrder>('/api/game/scheduled-sell-orders', {
+    method: 'POST',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function cancelScheduledSellOrder(accessToken: string, orderId: number) {
+  return fetchApi<GameScheduledSellOrder>(`/api/game/scheduled-sell-orders/${orderId}`, {
+    method: 'DELETE',
+    headers: createAuthorizationHeader(accessToken),
   });
 }

@@ -46,6 +46,10 @@ export interface OpenGameHolding {
   targetStrategyTags: GameStrategyType[];
   projectedHighlightScore: number;
   createdAt: string;
+  reservedForSell: boolean;
+  scheduledSellOrderId: number | null;
+  scheduledSellTargetRank: number | null;
+  scheduledSellQuantity: number;
 }
 
 export interface GamePositionSummary {
@@ -417,6 +421,26 @@ export function getGamePositionQuantity(position: Pick<GamePosition, 'quantity'>
   return normalizeGameQuantity(position.quantity);
 }
 
+export function getGamePositionReservedSellQuantity(
+  position: Pick<GamePosition, 'reservedForSell' | 'scheduledSellQuantity'>,
+) {
+  if (
+    position.reservedForSell !== true ||
+    typeof position.scheduledSellQuantity !== 'number' ||
+    !Number.isFinite(position.scheduledSellQuantity)
+  ) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(position.scheduledSellQuantity));
+}
+
+export function getGamePositionManualSellQuantity(
+  position: Pick<GamePosition, 'quantity' | 'reservedForSell' | 'scheduledSellQuantity'>,
+) {
+  return Math.max(0, getGamePositionQuantity(position) - getGamePositionReservedSellQuantity(position));
+}
+
 export function summarizeGamePositions(positions: GamePosition[]): GamePositionSummary {
   return positions.reduce<GamePositionSummary>(
     (totals, position) => {
@@ -448,7 +472,14 @@ export function buildOpenGameHoldings(
       const remainingHoldSeconds = getRemainingHoldSeconds(position);
       const currentPricePoints = resolveEvaluationPoints(position);
       const profitPoints = resolveProfitPoints(position, currentPricePoints);
-      const sellableQuantity = remainingHoldSeconds <= 0 ? quantity : 0;
+      const reservedForSell = position.reservedForSell === true;
+      const scheduledSellQuantity =
+        reservedForSell &&
+        typeof position.scheduledSellQuantity === 'number' &&
+        Number.isFinite(position.scheduledSellQuantity)
+          ? Math.max(0, Math.floor(position.scheduledSellQuantity))
+          : 0;
+      const sellableQuantity = remainingHoldSeconds <= 0 ? Math.max(0, quantity - scheduledSellQuantity) : 0;
       const lockedQuantity = Math.max(0, quantity - sellableQuantity);
 
       return {
@@ -472,6 +503,10 @@ export function buildOpenGameHoldings(
         targetStrategyTags: position.targetStrategyTags ?? [],
         projectedHighlightScore: position.projectedHighlightScore ?? 0,
         createdAt: position.createdAt,
+        reservedForSell,
+        scheduledSellOrderId: position.scheduledSellOrderId ?? null,
+        scheduledSellTargetRank: position.scheduledSellTargetRank ?? null,
+        scheduledSellQuantity,
       };
     })
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
@@ -489,7 +524,12 @@ export function buildSellCandidates(
     }
 
     const fullQuantity = getGamePositionQuantity(position);
-    const quantity = Math.min(remainingQuantity, fullQuantity);
+    const availableQuantity = getGamePositionManualSellQuantity(position);
+    const quantity = Math.min(remainingQuantity, availableQuantity);
+
+    if (quantity <= 0) {
+      return [];
+    }
 
     remainingQuantity -= quantity;
 
