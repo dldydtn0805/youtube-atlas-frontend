@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { AchievementTitleCollection } from '../../../features/game/types';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import AchievementTitlePanel from './AchievementTitlePanel';
 import './AchievementTitleModal.css';
@@ -21,6 +22,8 @@ export default function AchievementTitleModal({
   onSelectTitle,
 }: AchievementTitleModalProps) {
   const [optimisticTitleCode, setOptimisticTitleCode] = useState<string | null>(null);
+
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     setOptimisticTitleCode(collection?.selectedTitle?.code ?? null);

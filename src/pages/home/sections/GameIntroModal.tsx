@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import BoldNumberText from './BoldNumberText';
 import { strategyTagCriteriaCopy } from './gameTierGuideContent';
@@ -12,6 +13,8 @@ interface GameIntroModalProps {
 
 export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps) {
   const [dismissForever, setDismissForever] = useState(false);
+
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

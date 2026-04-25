@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ScheduledSellTriggerDirection } from '../../../features/game/types';
-import useSwipeableTabs from '../hooks/useSwipeableTabs';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import {
   DEFAULT_GAME_QUANTITY,
   GAME_ORDER_QUANTITY_STEP,
@@ -111,12 +111,7 @@ export default function GameTradeModal({
   title,
   unitPointsLabel,
 }: GameTradeModalProps) {
-  const sellModeSwipeHandlers = useSwipeableTabs({
-    enabled: mode === 'sell' && Boolean(onChangeSellOrderMode),
-    onChange: (nextMode) => onChangeSellOrderMode?.(nextMode),
-    order: ['instant', 'scheduled'] as const,
-    value: sellOrderMode,
-  });
+  useBodyScrollLock(isOpen);
 
   if (!isOpen || typeof document === 'undefined') {
     return null;
@@ -169,10 +164,7 @@ export default function GameTradeModal({
             </div>
           </div>
 
-          <div
-            className="app-shell__modal-fields app-shell__swipeable-tab-panel"
-            {...(mode === 'sell' ? sellModeSwipeHandlers : {})}
-          >
+          <div className="app-shell__modal-fields">
             {mode === 'sell' && onChangeSellOrderMode ? (
               <div className="app-shell__game-trade-mode-switch" aria-label="매도 방식">
                 <button

@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import type { GameNotification } from '../../../features/game/types';
 import { formatPoints } from '../gameHelpers';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import { getGameNotificationStatus } from './gameNotificationContent';
 import { isTierPromotionNotification } from './gameNotificationEventType';
@@ -20,6 +21,8 @@ function isHighlightAchievementNotification(notification: GameNotification) {
 }
 
 function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotificationModalProps) {
+  useBodyScrollLock(Boolean(notification));
+
   if (!notification || typeof document === 'undefined') {
     return null;
   }

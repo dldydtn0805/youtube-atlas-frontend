@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import type { GameCurrentSeason } from '../../../features/game/types';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import GameWalletSummary from './GameWalletSummary';
 import './GameWalletModal.css';
@@ -29,6 +30,8 @@ export default function GameWalletModal({
   season,
   walletUpdatedAt,
 }: GameWalletModalProps) {
+  useBodyScrollLock(isOpen);
+
   if (!isOpen || typeof document === 'undefined') {
     return null;
   }

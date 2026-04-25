@@ -6,6 +6,7 @@ import type {
   GamePositionRankHistoryPoint,
 } from '../../../features/game/types';
 import type { VideoRankHistory } from '../../../features/trending/types';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import './GameRankHistoryModal.css';
 
@@ -246,6 +247,8 @@ export default function GameRankHistoryModal({
   onClose,
   position,
 }: GameRankHistoryModalProps) {
+  useBodyScrollLock(isOpen);
+
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const wasOpenRef = useRef(false);
 

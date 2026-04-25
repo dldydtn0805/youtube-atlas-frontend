@@ -65,7 +65,7 @@ describe('GameTradeModal', () => {
     expect(screen.getByText('10,900P')).toBeInTheDocument();
   });
 
-  it('switches to scheduled sell mode on swipe left', () => {
+  it('switches to scheduled sell mode from the mode buttons', () => {
     const onChangeSellOrderMode = vi.fn();
 
     render(
@@ -89,20 +89,12 @@ describe('GameTradeModal', () => {
       />,
     );
 
-    const fields = screen.getByText('수량').closest('.app-shell__modal-fields');
-
-    if (!fields) {
-      throw new Error('modal fields not found');
-    }
-
-    fireEvent.pointerDown(fields, { clientX: 220, clientY: 48, pointerId: 1 });
-    fireEvent.pointerMove(fields, { clientX: 132, clientY: 50, pointerId: 1 });
-    fireEvent.pointerUp(fields, { clientX: 132, clientY: 50, pointerId: 1 });
+    fireEvent.click(screen.getByRole('button', { name: '예약 매도' }));
 
     expect(onChangeSellOrderMode).toHaveBeenCalledWith('scheduled');
   });
 
-  it('wraps from scheduled sell mode back to instant mode on swipe left', () => {
+  it('switches from scheduled sell mode back to instant mode from the mode buttons', () => {
     const onChangeSellOrderMode = vi.fn();
 
     render(
@@ -127,15 +119,7 @@ describe('GameTradeModal', () => {
       />,
     );
 
-    const fields = screen.getByText('수량').closest('.app-shell__modal-fields');
-
-    if (!fields) {
-      throw new Error('modal fields not found');
-    }
-
-    fireEvent.pointerDown(fields, { clientX: 220, clientY: 48, pointerId: 2 });
-    fireEvent.pointerMove(fields, { clientX: 132, clientY: 50, pointerId: 2 });
-    fireEvent.pointerUp(fields, { clientX: 132, clientY: 50, pointerId: 2 });
+    fireEvent.click(screen.getByRole('button', { name: '즉시 매도' }));
 
     expect(onChangeSellOrderMode).toHaveBeenCalledWith('instant');
   });

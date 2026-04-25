@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import './GamePanelModal.css';
 
@@ -10,6 +11,8 @@ interface GamePanelModalProps {
 }
 
 export default function GamePanelModal({ children, isOpen, onClose }: GamePanelModalProps) {
+  useBodyScrollLock(isOpen);
+
   if (!isOpen || typeof document === 'undefined') {
     return null;
   }
