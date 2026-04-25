@@ -130,6 +130,7 @@
 }
 
 .app-shell__tier-modal-panel {
+  contain: layout paint;
   display: grid;
   gap: 12px;
   height: 100%;
@@ -139,6 +140,7 @@
 }
 
 .app-shell__tier-modal-carousel {
+  contain: layout paint;
   height: 100%;
   min-height: 0;
   overflow-x: hidden;
@@ -170,17 +172,15 @@
 }
 
 .app-shell__tier-modal-slide[data-active='true'] .app-shell__tier-modal-panel {
-  filter: saturate(1);
   opacity: 1;
 }
 
 .app-shell__tier-modal-slide .app-shell__tier-modal-panel {
-  filter: saturate(0.92);
   opacity: 0.72;
   overflow-y: auto;
   padding-bottom: 20px;
   scrollbar-width: none;
-  transition: opacity 0.2s ease, filter 0.2s ease;
+  transition: opacity 0.2s ease;
   width: 100%;
 }
 
