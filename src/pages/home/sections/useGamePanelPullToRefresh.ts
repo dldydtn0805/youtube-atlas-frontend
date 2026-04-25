@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type TouchEvent, type WheelEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent, type WheelEvent } from 'react';
 
 const PULL_REFRESH_TRIGGER_PX = 125;
 const MAX_PULL_DISTANCE_PX = 154;
@@ -19,19 +19,65 @@ export default function useGamePanelPullToRefresh<TTab extends string>({
 }: UseGamePanelPullToRefreshOptions<TTab>) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const animationFrameRef = useRef<number | null>(null);
+  const pendingPullDistanceRef = useRef<number | null>(null);
+  const pullDistanceRef = useRef(0);
   const touchStartYRef = useRef<number | null>(null);
   const wheelPullDistanceRef = useRef(0);
   const wheelRefreshTimeoutRef = useRef<number | null>(null);
 
-  const resetPullState = () => {
+  const syncPullDistance = useCallback((nextPullDistance: number, immediate = false) => {
+    pullDistanceRef.current = nextPullDistance;
+
+    if (typeof window === 'undefined' || immediate) {
+      if (animationFrameRef.current !== null && typeof window !== 'undefined') {
+        window.cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      pendingPullDistanceRef.current = null;
+      setPullDistance((currentPullDistance) =>
+        currentPullDistance === nextPullDistance ? currentPullDistance : nextPullDistance,
+      );
+      return;
+    }
+
+    pendingPullDistanceRef.current = nextPullDistance;
+
+    if (animationFrameRef.current !== null) {
+      return;
+    }
+
+    animationFrameRef.current = window.requestAnimationFrame(() => {
+      animationFrameRef.current = null;
+      const committedPullDistance = pendingPullDistanceRef.current ?? pullDistanceRef.current;
+      pendingPullDistanceRef.current = null;
+      setPullDistance((currentPullDistance) =>
+        currentPullDistance === committedPullDistance ? currentPullDistance : committedPullDistance,
+      );
+    });
+  }, []);
+
+  const resetPullState = useCallback(() => {
     touchStartYRef.current = null;
     wheelPullDistanceRef.current = 0;
     if (wheelRefreshTimeoutRef.current !== null && typeof window !== 'undefined') {
       window.clearTimeout(wheelRefreshTimeoutRef.current);
       wheelRefreshTimeoutRef.current = null;
     }
-    setPullDistance(0);
-  };
+    syncPullDistance(0, true);
+  }, [syncPullDistance]);
+
+  useEffect(
+    () => () => {
+      if (animationFrameRef.current !== null && typeof window !== 'undefined') {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (wheelRefreshTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(wheelRefreshTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const runRefresh = useCallback(async () => {
     if (disabled || isRefreshing || !onRefresh) {
@@ -39,7 +85,7 @@ export default function useGamePanelPullToRefresh<TTab extends string>({
     }
 
     setIsRefreshing(true);
-    setPullDistance(PULL_REFRESH_TRIGGER_PX);
+    syncPullDistance(PULL_REFRESH_TRIGGER_PX, true);
 
     try {
       await onRefresh(activeTab);
@@ -47,7 +93,7 @@ export default function useGamePanelPullToRefresh<TTab extends string>({
       resetPullState();
       setIsRefreshing(false);
     }
-  }, [activeTab, disabled, isRefreshing, onRefresh]);
+  }, [activeTab, disabled, isRefreshing, onRefresh, resetPullState, syncPullDistance]);
 
   const bind = useMemo(
     () => ({
@@ -69,10 +115,10 @@ export default function useGamePanelPullToRefresh<TTab extends string>({
         }
 
         const nextDistance = Math.max(0, (event.touches[0]?.clientY ?? 0) - touchStartYRef.current);
-        setPullDistance(Math.min(nextDistance, MAX_PULL_DISTANCE_PX));
+        syncPullDistance(Math.min(nextDistance, MAX_PULL_DISTANCE_PX));
       },
       onTouchEnd: () => {
-        if (pullDistance >= PULL_REFRESH_TRIGGER_PX) {
+        if (pullDistanceRef.current >= PULL_REFRESH_TRIGGER_PX) {
           void runRefresh();
           return;
         }
@@ -101,7 +147,7 @@ export default function useGamePanelPullToRefresh<TTab extends string>({
           wheelPullDistanceRef.current + normalizedWheelDelta,
           MAX_PULL_DISTANCE_PX,
         );
-        setPullDistance(wheelPullDistanceRef.current);
+        syncPullDistance(wheelPullDistanceRef.current);
 
         if (wheelPullDistanceRef.current >= PULL_REFRESH_TRIGGER_PX) {
           if (wheelRefreshTimeoutRef.current !== null && typeof window !== 'undefined') {
@@ -117,7 +163,7 @@ export default function useGamePanelPullToRefresh<TTab extends string>({
         }
       },
     }),
-    [disabled, isRefreshing, pullDistance, runRefresh],
+    [disabled, isRefreshing, resetPullState, runRefresh, syncPullDistance],
   );
 
   return {

@@ -1081,6 +1081,7 @@
 }
 
 .app-shell__game-positions {
+  contain: layout paint;
   display: grid;
   gap: 10px;
   list-style: none;
@@ -1094,6 +1095,8 @@
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-left-width: 4px;
   border-radius: 18px;
+  contain-intrinsic-size: 118px;
+  content-visibility: auto;
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
