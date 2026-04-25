@@ -861,11 +861,28 @@ function HomePage() {
     shouldLoadGame && selectedLeaderboardUserId !== null,
   );
   const {
-    data: gameHistoryPositions = [],
+    data: allGameHistoryPositions = [],
     error: gameHistoryPositionsError,
     isLoading: isGameHistoryLoading,
     refetch: refetchGameHistoryPositions,
   } = useMyGamePositions(accessToken, selectedRegionCode, '', shouldLoadGame, 30);
+  const gameHistoryPositions = useMemo(
+    () =>
+      allGameHistoryPositions
+        .filter((position) => position.status !== 'OPEN')
+        .slice()
+        .sort((left, right) => {
+          const leftTime = new Date(left.closedAt ?? left.createdAt).getTime();
+          const rightTime = new Date(right.closedAt ?? right.createdAt).getTime();
+
+          if (leftTime !== rightTime) {
+            return rightTime - leftTime;
+          }
+
+          return right.id - left.id;
+        }),
+    [allGameHistoryPositions],
+  );
   const {
     data: gameHighlights = [],
     error: gameHighlightsError,
