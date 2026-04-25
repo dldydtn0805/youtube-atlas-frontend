@@ -1,5 +1,17 @@
 import './RankingGamePanel.css';
-import { memo, useEffect, useRef, type ReactNode, type RefObject } from 'react';
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
 import type {
   GameCurrentSeason,
@@ -22,7 +34,6 @@ import {
   getPointTone,
   type OpenGameHolding,
 } from '../gameHelpers';
-import useSwipeableTabs from '../hooks/useSwipeableTabs';
 import { buildGameStrategyBadges, buildPositionStrategyBadges } from '../gameStrategyTags';
 import {
   calculateSellFeePoints,
@@ -37,6 +48,26 @@ import MiniVideoPreview from './MiniVideoPreview';
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
 
 type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
+
+const GAME_PANEL_TABS: ReadonlyArray<{ id: GameTab; label: string }> = [
+  { id: 'positions', label: '인벤토리' },
+  { id: 'scheduledOrders', label: '대기열' },
+  { id: 'history', label: '로그' },
+  { id: 'guide', label: '튜토리얼' },
+];
+
+const GAME_PANEL_SWIPE_THRESHOLD = 56;
+const GAME_PANEL_DIRECTION_LOCK_THRESHOLD = 10;
+const GAME_PANEL_CAROUSEL_GAP = 10;
+const GAME_PANEL_INTERACTIVE_SWIPE_SELECTOR = 'input, textarea, select';
+
+function getWrappedGamePanelTabIndex(index: number) {
+  return (index + GAME_PANEL_TABS.length) % GAME_PANEL_TABS.length;
+}
+
+function shouldIgnoreGamePanelSwipeTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && target.closest(GAME_PANEL_INTERACTIVE_SWIPE_SELECTOR);
+}
 
 function inferGrossSellPointsFromSettled(settledPoints?: number | null) {
   if (typeof settledPoints !== 'number' || !Number.isFinite(settledPoints) || settledPoints < 0) {
@@ -62,7 +93,7 @@ interface RankingGamePanelShellProps {
     openPositionsEvaluationPoints: number;
     openPositionsProfitPoints: number;
   };
-  tabContent?: ReactNode;
+  tabContentById: Record<GameTab, ReactNode>;
   walletUpdatedAt?: number;
 }
 
@@ -113,6 +144,7 @@ interface RankingGamePositionsTabProps {
   favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
   holdings: OpenGameHolding[];
+  isLoading?: boolean;
   onOpenPositionChart?: (position: GamePosition) => void;
   onOpenBuyTradeModal?: (position: GamePosition) => void;
   onOpenSellTradeModal?: (position: GamePosition) => void;
@@ -474,16 +506,204 @@ export function RankingGamePanelShell({
   season,
   selectedVideoActions,
   summary,
-  tabContent,
+  tabContentById,
   walletUpdatedAt,
 }: RankingGamePanelShellProps) {
   const hasDividendOverview = Boolean(dividendOverview);
   const hasSelectedVideoActions = Boolean(selectedVideoActions);
-  const swipeHandlers = useSwipeableTabs({
-    onChange: onSelectTab,
-    order: ['positions', 'scheduledOrders', 'history', 'guide'] as const,
-    value: activeGameTab,
-  });
+  const [dragOffset, setDragOffset] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab) + 1);
+  const [isTrackAnimating, setIsTrackAnimating] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(1);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
+  const skipNextActiveTabSyncRef = useRef(false);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const directionLockRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const shouldSuppressClickRef = useRef(false);
+  const viewportWidthRef = useRef(0);
+  const activeIndex = GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab);
+  const carouselTabs = useMemo(
+    () => [GAME_PANEL_TABS[GAME_PANEL_TABS.length - 1], ...GAME_PANEL_TABS, GAME_PANEL_TABS[0]],
+    [],
+  );
+
+  useEffect(() => {
+    const nextIndex = GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab);
+
+    if (nextIndex < 0) {
+      return;
+    }
+
+    if (skipNextActiveTabSyncRef.current) {
+      skipNextActiveTabSyncRef.current = false;
+      return;
+    }
+
+    setIsTrackAnimating(true);
+    setDragOffset(0);
+    setTrackIndex(nextIndex + 1);
+  }, [activeGameTab]);
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+
+    if (!viewport || typeof window === 'undefined') {
+      return;
+    }
+
+    const syncViewportWidth = () => {
+      const nextWidth = Math.max(viewport.clientWidth, 1);
+      viewportWidthRef.current = nextWidth;
+      setViewportWidth(nextWidth);
+    };
+
+    syncViewportWidth();
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(syncViewportWidth);
+    resizeObserver?.observe(viewport);
+    window.addEventListener('resize', syncViewportWidth);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', syncViewportWidth);
+    };
+  }, []);
+
+  useEffect(() => {
+    viewportRef.current
+      ?.querySelectorAll<HTMLElement>(`[data-game-panel-tab="${activeGameTab}"]`)
+      .forEach((panel) => {
+        panel.scrollTo({ top: 0 });
+      });
+  }, [activeGameTab]);
+
+  const handleSelectTab = (nextTab: GameTab) => {
+    const nextIndex = GAME_PANEL_TABS.findIndex((tab) => tab.id === nextTab);
+
+    if (nextIndex < 0) {
+      return;
+    }
+
+    skipNextActiveTabSyncRef.current = true;
+    setIsTrackAnimating(true);
+    setDragOffset(0);
+    setTrackIndex(nextIndex + 1);
+    onSelectTab(nextTab);
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if ((event.pointerType === 'mouse' && event.button !== 0) || shouldIgnoreGamePanelSwipeTarget(event.target)) {
+      return;
+    }
+
+    pointerIdRef.current = event.pointerId;
+    startXRef.current = event.clientX;
+    startYRef.current = event.clientY;
+    directionLockRef.current = null;
+    shouldSuppressClickRef.current = false;
+    viewportWidthRef.current = event.currentTarget.clientWidth;
+    setIsTrackAnimating(false);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (pointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - startXRef.current;
+    const deltaY = event.clientY - startYRef.current;
+
+    if (directionLockRef.current === null) {
+      if (
+        Math.abs(deltaX) < GAME_PANEL_DIRECTION_LOCK_THRESHOLD &&
+        Math.abs(deltaY) < GAME_PANEL_DIRECTION_LOCK_THRESHOLD
+      ) {
+        return;
+      }
+
+      directionLockRef.current = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+    }
+
+    if (directionLockRef.current !== 'horizontal') {
+      return;
+    }
+
+    shouldSuppressClickRef.current = true;
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    setDragOffset(deltaX);
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (pointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - startXRef.current;
+    const nextViewportWidth = viewportWidthRef.current || event.currentTarget.clientWidth;
+    const shouldChangeTab =
+      directionLockRef.current === 'horizontal' &&
+      (Math.abs(deltaX) >= GAME_PANEL_SWIPE_THRESHOLD || Math.abs(deltaX) >= nextViewportWidth * 0.18);
+
+    setIsTrackAnimating(true);
+    setDragOffset(0);
+
+    if (shouldChangeTab) {
+      const nextIndex = deltaX < 0 ? activeIndex + 1 : activeIndex - 1;
+      const wrappedIndex = getWrappedGamePanelTabIndex(nextIndex);
+      const nextTrackIndex =
+        deltaX < 0 && activeIndex === GAME_PANEL_TABS.length - 1
+          ? GAME_PANEL_TABS.length + 1
+          : deltaX > 0 && activeIndex === 0
+            ? 0
+            : wrappedIndex + 1;
+
+      skipNextActiveTabSyncRef.current = true;
+      setTrackIndex(nextTrackIndex);
+      onSelectTab(GAME_PANEL_TABS[wrappedIndex].id);
+    }
+
+    pointerIdRef.current = null;
+    directionLockRef.current = null;
+  };
+
+  const handlePointerCancel = () => {
+    pointerIdRef.current = null;
+    directionLockRef.current = null;
+    setDragOffset(0);
+    setIsTrackAnimating(true);
+  };
+
+  const handleTrackTransitionEnd = () => {
+    if (trackIndex === 0) {
+      setIsTrackAnimating(false);
+      setTrackIndex(GAME_PANEL_TABS.length);
+      return;
+    }
+
+    if (trackIndex === GAME_PANEL_TABS.length + 1) {
+      setIsTrackAnimating(false);
+      setTrackIndex(1);
+    }
+  };
+
+  const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!shouldSuppressClickRef.current) {
+      return;
+    }
+
+    shouldSuppressClickRef.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const slideWidth = Math.max(viewportWidth, 1);
+  const slideSpan = slideWidth + GAME_PANEL_CAROUSEL_GAP;
+  const trackTranslateX = -trackIndex * slideSpan + dragOffset;
 
   return (
     <div className="app-shell__game-panel" data-current-tier={tierProgress?.currentTier.tierCode}>
@@ -546,49 +766,48 @@ export function RankingGamePanelShell({
             ) : null}
           </div>
           <div aria-label="게임 패널 탭" className="app-shell__game-tabs" role="tablist">
-            <button
-              aria-selected={activeGameTab === 'positions'}
-              className="app-shell__game-tab"
-              data-active={activeGameTab === 'positions'}
-              onClick={() => onSelectTab('positions')}
-              role="tab"
-              type="button"
-            >
-              인벤토리
-            </button>
-            <button
-              aria-selected={activeGameTab === 'scheduledOrders'}
-              className="app-shell__game-tab"
-              data-active={activeGameTab === 'scheduledOrders'}
-              onClick={() => onSelectTab('scheduledOrders')}
-              role="tab"
-              type="button"
-            >
-              대기열
-            </button>
-            <button
-              aria-selected={activeGameTab === 'history'}
-              className="app-shell__game-tab"
-              data-active={activeGameTab === 'history'}
-              onClick={() => onSelectTab('history')}
-              role="tab"
-              type="button"
-            >
-              로그
-            </button>
-            <button
-              aria-selected={activeGameTab === 'guide'}
-              className="app-shell__game-tab"
-              data-active={activeGameTab === 'guide'}
-              onClick={() => onSelectTab('guide')}
-              role="tab"
-              type="button"
-            >
-              튜토리얼
-            </button>
+            {GAME_PANEL_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                aria-selected={activeGameTab === tab.id}
+                className="app-shell__game-tab"
+                data-active={activeGameTab === tab.id}
+                onClick={() => handleSelectTab(tab.id)}
+                role="tab"
+                type="button"
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-          <div className="app-shell__game-tab-panel app-shell__swipeable-tab-panel" role="tabpanel" {...swipeHandlers}>
-            {tabContent}
+          <div
+            ref={viewportRef}
+            className="app-shell__game-tab-panel app-shell__game-tab-panel--carousel app-shell__swipeable-tab-panel"
+            onClickCapture={handleClickCapture}
+            onPointerCancel={handlePointerCancel}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            role="tabpanel"
+          >
+            <div
+              className="app-shell__game-tab-track"
+              data-animating={isTrackAnimating ? 'true' : 'false'}
+              onTransitionEnd={handleTrackTransitionEnd}
+              style={{
+                '--game-panel-carousel-gap': `${GAME_PANEL_CAROUSEL_GAP}px`,
+                '--game-panel-slide-width': `${slideWidth}px`,
+                transform: `translateX(${trackTranslateX}px)`,
+              } as CSSProperties}
+            >
+              {carouselTabs.map((tab, index) => (
+                <div key={`${tab.id}-${index}`} className="app-shell__game-tab-slide">
+                  <div className="app-shell__game-tab-slide-panel" data-game-panel-tab={tab.id}>
+                    {tabContentById[tab.id]}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </>
       ) : null}
@@ -850,10 +1069,6 @@ export function RankingGameLeaderboardTab({
   const topEntries = entries.slice(0, 10);
   const myEntry = entries.find((entry) => entry.me);
 
-  if (isLoading && !isError) {
-    return <p className="app-shell__game-empty">리더보드를 불러오는 중입니다.</p>;
-  }
-
   if (isError) {
     return (
       <p className="app-shell__game-empty">
@@ -863,43 +1078,63 @@ export function RankingGameLeaderboardTab({
   }
 
   if (topEntries.length === 0) {
-    return season ? <p className="app-shell__game-empty">아직 리더보드에 표시할 참가자가 없습니다.</p> : null;
+    return season ? (
+      <div className="app-shell__game-leaderboard-shell" data-loading={isLoading}>
+        {!isLoading ? (
+          <p className="app-shell__game-empty app-shell__game-leaderboard-empty">아직 리더보드에 표시할 참가자가 없습니다.</p>
+        ) : null}
+        {isLoading ? (
+          <div className="app-shell__game-leaderboard-overlay" role="status" aria-live="polite">
+            <span className="app-shell__game-leaderboard-overlay-spinner" aria-hidden="true" />
+            <span className="sr-only">리더보드 불러오는 중</span>
+          </div>
+        ) : null}
+      </div>
+    ) : null;
   }
 
   return (
-    <div className="app-shell__game-leaderboard-stack">
-      <ol className="app-shell__game-leaderboard">
-        {topEntries.map((entry) => (
-          <li key={entry.userId} className="app-shell__game-leaderboard-row">
+    <div className="app-shell__game-leaderboard-shell" data-loading={isLoading}>
+      <div className="app-shell__game-leaderboard-stack">
+        <ol className="app-shell__game-leaderboard">
+          {topEntries.map((entry) => (
+            <li key={entry.userId} className="app-shell__game-leaderboard-row">
+              <LeaderboardRow
+                entry={entry}
+                highlights={highlights}
+                highlightsError={highlightsError}
+                highlightsTitle={highlightsTitle}
+                isExpanded={selectedUserId === entry.userId}
+                isHighlightsError={isHighlightsError}
+                isHighlightsLoading={isHighlightsLoading}
+                onSelectHighlight={onSelectHighlight}
+                onToggleUser={onToggleUser}
+              />
+            </li>
+          ))}
+        </ol>
+        {myEntry ? (
+          <section className="app-shell__game-leaderboard-pinned" aria-label="내 순위">
+            <p className="app-shell__game-leaderboard-pinned-label">내 순위</p>
             <LeaderboardRow
-              entry={entry}
+              entry={myEntry}
               highlights={highlights}
               highlightsError={highlightsError}
               highlightsTitle={highlightsTitle}
-              isExpanded={selectedUserId === entry.userId}
+              isExpanded={selectedUserId === myEntry.userId}
               isHighlightsError={isHighlightsError}
               isHighlightsLoading={isHighlightsLoading}
               onSelectHighlight={onSelectHighlight}
               onToggleUser={onToggleUser}
             />
-          </li>
-        ))}
-      </ol>
-      {myEntry ? (
-        <section className="app-shell__game-leaderboard-pinned" aria-label="내 순위">
-          <p className="app-shell__game-leaderboard-pinned-label">내 순위</p>
-          <LeaderboardRow
-            entry={myEntry}
-            highlights={highlights}
-            highlightsError={highlightsError}
-            highlightsTitle={highlightsTitle}
-            isExpanded={selectedUserId === myEntry.userId}
-            isHighlightsError={isHighlightsError}
-            isHighlightsLoading={isHighlightsLoading}
-            onSelectHighlight={onSelectHighlight}
-            onToggleUser={onToggleUser}
-          />
-        </section>
+          </section>
+        ) : null}
+      </div>
+      {isLoading ? (
+        <div className="app-shell__game-leaderboard-overlay" role="status" aria-live="polite">
+          <span className="app-shell__game-leaderboard-overlay-spinner" aria-hidden="true" />
+          <span className="sr-only">리더보드 불러오는 중</span>
+        </div>
       ) : null}
     </div>
   );
@@ -910,12 +1145,24 @@ export function RankingGamePositionsTab({
   canShowGameActions,
   emptyMessage,
   holdings,
+  isLoading = false,
   onOpenPositionChart,
   onOpenBuyTradeModal,
   onOpenSellTradeModal,
   onSelectPosition,
   selectedPositionId,
 }: RankingGamePositionsTabProps) {
+  if (isLoading) {
+    return (
+      <div className="app-shell__game-tab-loading-shell" data-loading>
+        <div className="app-shell__game-tab-loading-overlay" role="status" aria-live="polite">
+          <span className="app-shell__game-tab-loading-spinner" aria-hidden="true" />
+          <span className="sr-only">인벤토리 불러오는 중</span>
+        </div>
+      </div>
+    );
+  }
+
   if (holdings.length === 0) {
     return emptyMessage ? <p className="app-shell__game-empty">{emptyMessage}</p> : null;
   }
@@ -1150,7 +1397,14 @@ function RankingGameHistoryTabComponent({
   }, [activePlaybackQueueId, positions, selectedPositionId, selectedVideoId]);
 
   if (isLoading) {
-    return <p className="app-shell__game-empty">거래내역을 불러오는 중입니다.</p>;
+    return (
+      <div className="app-shell__game-tab-loading-shell app-shell__game-tab-loading-shell--history" data-loading>
+        <div className="app-shell__game-tab-loading-overlay" role="status" aria-live="polite">
+          <span className="app-shell__game-tab-loading-spinner" aria-hidden="true" />
+          <span className="sr-only">거래내역 불러오는 중</span>
+        </div>
+      </div>
+    );
   }
 
   if (positions.length === 0) {

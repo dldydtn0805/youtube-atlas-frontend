@@ -13,9 +13,12 @@
 .app-shell__modal--dividend .app-shell__modal-body {
   display: grid;
   gap: 16px;
+  grid-template-rows: auto minmax(0, 1fr);
   max-width: 100%;
   min-width: 0;
+  overflow-y: hidden;
   overflow-x: hidden;
+  padding-bottom: 0;
   padding-right: 18px;
 }
 
@@ -30,6 +33,41 @@
   border: 0;
   border-radius: 0;
   padding: 0;
+}
+
+.app-shell__tier-modal-card-shell {
+  min-height: 220px;
+  position: relative;
+}
+
+.app-shell__tier-modal-card-overlay {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  display: grid;
+  inset: 0;
+  justify-items: center;
+  position: absolute;
+}
+
+.app-shell__tier-modal-card-spinner {
+  animation: app-shell__tier-modal-card-spin 0.9s linear infinite;
+  border: 2px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  border-top-color: rgba(217, 119, 6, 0.92);
+  height: 22px;
+  width: 22px;
+}
+
+@keyframes app-shell__tier-modal-card-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .app-shell__modal--dividend .app-shell__modal-field--tier .app-shell__game-tier {
@@ -94,8 +132,68 @@
 .app-shell__tier-modal-panel {
   display: grid;
   gap: 12px;
+  height: 100%;
   max-width: 100%;
+  min-height: 0;
   min-width: 0;
+}
+
+.app-shell__tier-modal-carousel {
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding-inline: 0;
+}
+
+.app-shell__tier-modal-track {
+  align-items: stretch;
+  display: flex;
+  gap: var(--tier-modal-carousel-gap, 0px);
+  height: 100%;
+  min-height: 0;
+  will-change: transform;
+}
+
+.app-shell__tier-modal-track[data-animating='true'] {
+  transition: transform 0.28s ease;
+}
+
+.app-shell__tier-modal-slide {
+  align-self: stretch;
+  display: flex;
+  flex: 0 0 var(--tier-modal-slide-width, 100%);
+  height: 100%;
+  max-width: var(--tier-modal-slide-width, 100%);
+  min-height: 0;
+  min-width: 0;
+}
+
+.app-shell__tier-modal-slide[data-active='true'] .app-shell__tier-modal-panel {
+  filter: saturate(1);
+  opacity: 1;
+}
+
+.app-shell__tier-modal-slide .app-shell__tier-modal-panel {
+  filter: saturate(0.92);
+  opacity: 0.72;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  scrollbar-width: none;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+  width: 100%;
+}
+
+.app-shell__tier-modal-slide .app-shell__tier-modal-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell__tier-modal-empty-state {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 220px;
+  text-align: center;
 }
 
 .app-shell__modal--dividend .app-shell__game-dividend-metric {
@@ -334,6 +432,10 @@
 :root[data-theme='dark'] .app-shell__tier-modal-tabs {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .app-shell__tier-modal-card-overlay {
+  background: rgba(10, 10, 10, 0.7);
 }
 
 :root[data-theme='dark'] .app-shell__tier-modal-tab[data-active='true'] {

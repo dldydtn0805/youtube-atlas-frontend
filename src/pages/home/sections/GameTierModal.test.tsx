@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { GameTierProgress } from '../../../features/game/types';
 import GameTierModal from './GameTierModal';
 
@@ -21,12 +21,19 @@ const tierProgress: GameTierProgress = {
 };
 
 describe('GameTierModal', () => {
+  it('shows a tier card loading overlay while tier progress is loading', () => {
+    render(<GameTierModal isOpen isTierProgressLoading onClose={() => undefined} />);
+
+    expect(screen.getAllByRole('status').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('티어 카드 불러오는 중').length).toBeGreaterThan(0);
+  });
+
   it('shows highlight tier guidance in the tier modal', () => {
     render(<GameTierModal isOpen onClose={() => undefined} tierProgress={tierProgress} />);
 
     expect(screen.getByRole('heading', { name: '티어' })).toBeInTheDocument();
-    expect(screen.getByText('하이라이트 티어 기준')).toBeInTheDocument();
-    expect(screen.getByText('하이라이트 점수로 티어가 정해집니다')).toBeInTheDocument();
+    expect(screen.getAllByText('하이라이트 티어 기준').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('하이라이트 점수로 티어가 정해집니다').length).toBeGreaterThan(0);
   });
 
   it('shows the highlights tab when highlight content is provided', () => {
@@ -59,7 +66,7 @@ describe('GameTierModal', () => {
     fireEvent.pointerMove(panel, { clientX: 120, clientY: 36, pointerId: 1 });
     fireEvent.pointerUp(panel, { clientX: 120, clientY: 36, pointerId: 1 });
 
-    expect(screen.getByText('하이라이트 목록')).toBeInTheDocument();
+    expect(screen.getAllByText('하이라이트 목록').length).toBeGreaterThan(0);
   });
 
   it('wraps from the first tab to the last tab on swipe right', () => {
@@ -79,6 +86,47 @@ describe('GameTierModal', () => {
     fireEvent.pointerMove(panel, { clientX: 220, clientY: 36, pointerId: 2 });
     fireEvent.pointerUp(panel, { clientX: 220, clientY: 36, pointerId: 2 });
 
-    expect(screen.getByText('랭킹 목록')).toBeInTheDocument();
+    expect(screen.getAllByText('랭킹 목록').length).toBeGreaterThan(0);
+  });
+
+  it('still clicks buttons inside a panel without triggering a swipe', () => {
+    const onPanelButtonClick = vi.fn();
+
+    render(
+      <GameTierModal
+        highlightsContent={<button onClick={onPanelButtonClick} type="button">하이라이트 액션</button>}
+        isOpen
+        onClose={() => undefined}
+        rankingContent={<div>랭킹 목록</div>}
+        tierProgress={tierProgress}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: '하이라이트' }));
+    fireEvent.click(screen.getByRole('button', { name: '하이라이트 액션' }));
+
+    expect(onPanelButtonClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('can start a swipe from a button inside a panel', () => {
+    render(
+      <GameTierModal
+        highlightsContent={<button type="button">하이라이트 액션</button>}
+        isOpen
+        onClose={() => undefined}
+        rankingContent={<div>랭킹 목록</div>}
+        tierProgress={tierProgress}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: '하이라이트' }));
+
+    const panelButton = screen.getByRole('button', { name: '하이라이트 액션' });
+
+    fireEvent.pointerDown(panelButton, { clientX: 220, clientY: 32, pointerId: 3 });
+    fireEvent.pointerMove(panelButton, { clientX: 120, clientY: 36, pointerId: 3 });
+    fireEvent.pointerUp(panelButton, { clientX: 120, clientY: 36, pointerId: 3 });
+
+    expect(screen.getAllByText('랭킹 목록').length).toBeGreaterThan(0);
   });
 });

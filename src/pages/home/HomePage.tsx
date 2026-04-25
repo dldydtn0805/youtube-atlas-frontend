@@ -680,6 +680,7 @@ function HomePage() {
   const {
     data: gameTierProgress,
     error: gameTierProgressError,
+    isLoading: isGameTierProgressLoading,
   } = useGameTierProgress(accessToken, selectedRegionCode, shouldLoadGame);
 
   useEffect(() => {
@@ -2240,16 +2241,6 @@ function HomePage() {
       }
     }
 
-    const playbackItems = selectedPlaybackSection?.items ?? [];
-    const currentIndex = playbackItems.findIndex((item) => item.id === selectedVideoId);
-    const nextVideoId =
-      currentIndex >= 0 && currentIndex < playbackItems.length - 1
-        ? playbackItems[currentIndex + 1]?.id
-        : undefined;
-
-    if (nextVideoId) {
-    }
-
     handlePlayNextVideo();
   }, [
     activePlaybackQueueId,
@@ -2295,16 +2286,6 @@ function HomePage() {
       }
     }
 
-    const playbackItems = selectedPlaybackSection?.items ?? [];
-    const currentIndex = playbackItems.findIndex((item) => item.id === selectedVideoId);
-    const previousVideoId =
-      currentIndex > 0
-        ? playbackItems[currentIndex - 1]?.id
-        : undefined;
-
-    if (previousVideoId) {
-    }
-
     handlePlayPreviousVideo();
   }, [
     activePlaybackQueueId,
@@ -2313,7 +2294,6 @@ function HomePage() {
     syncPlaybackSelection,
     openGamePositions,
     selectedOpenPositionId,
-    selectedPlaybackSection,
     selectedVideoId,
   ]);
 
@@ -2685,6 +2665,7 @@ function HomePage() {
       historyPlaybackSection={historyPlaybackSection}
       isCollapsed={isModal ? false : isRankingGameCollapsed}
       isGameHistoryLoading={isGameHistoryLoading}
+      isOpenGamePositionsLoading={isOpenGamePositionsLoading}
       isScheduledSellOrdersLoading={isScheduledSellOrdersLoading}
       newChartEntriesSection={sortedNewChartEntriesSection}
       onCancelScheduledSellOrder={(orderId) => {
@@ -3111,6 +3092,7 @@ function HomePage() {
         defaultTab={tierModalDefaultTab}
         highlightsContent={tierModalHighlightsContent}
         isOpen={isTierModalOpen}
+        isTierProgressLoading={isGameTierProgressLoading}
         onClose={closeTierModal}
         rankingContent={tierModalRankingContent}
         tierProgress={gameTierProgress}

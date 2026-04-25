@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { GameHighlight, GameLeaderboardEntry, GamePosition } from '../../../features/game/types';
 import type { OpenGameHolding } from '../gameHelpers';
@@ -221,6 +222,24 @@ describe('RankingGameSelectedVideoActions', () => {
 });
 
 describe('RankingGamePositionsTab', () => {
+  it('shows a loading overlay instead of the empty holdings message while loading', () => {
+    render(
+      <RankingGamePositionsTab
+        canShowGameActions
+        emptyMessage="아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다."
+        favoriteTrendSignalsByVideoId={{}}
+        gameMarketSignalsByVideoId={{}}
+        holdings={[]}
+        isLoading
+        onSelectPosition={vi.fn()}
+        trendSignalsByVideoId={{}}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByText('아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.')).not.toBeInTheDocument();
+  });
+
   it('shows buy rank into current rank for open positions', () => {
     render(
       <RankingGamePositionsTab
@@ -302,6 +321,32 @@ describe('RankingGamePositionsTab', () => {
 });
 
 describe('RankingGamePanelShell', () => {
+  function ControlledRankingGamePanelShell({ initialTab = 'positions' as const }) {
+    const [activeGameTab, setActiveGameTab] = useState(initialTab);
+
+    return (
+      <RankingGamePanelShell
+        activeGameTab={activeGameTab}
+        isCollapsed={false}
+        onSelectTab={setActiveGameTab}
+        onToggleCollapse={vi.fn()}
+        summary={{
+          computedWalletTotalAssetPoints: 1000,
+          openDistinctVideoCount: 1,
+          openPositionsBuyPoints: 100,
+          openPositionsEvaluationPoints: 120,
+          openPositionsProfitPoints: 20,
+        }}
+        tabContentById={{
+          guide: <div>튜토리얼 패널</div>,
+          history: <div>로그 패널</div>,
+          positions: <div>인벤토리 패널</div>,
+          scheduledOrders: <div>대기열 패널</div>,
+        }}
+      />
+    );
+  }
+
   it('changes tabs when the panel content is swiped', () => {
     const onSelectTab = vi.fn();
 
@@ -318,7 +363,12 @@ describe('RankingGamePanelShell', () => {
           openPositionsEvaluationPoints: 120,
           openPositionsProfitPoints: 20,
         }}
-        tabContent={<div>인벤토리 패널</div>}
+        tabContentById={{
+          guide: <div>튜토리얼 패널</div>,
+          history: <div>로그 패널</div>,
+          positions: <div>인벤토리 패널</div>,
+          scheduledOrders: <div>대기열 패널</div>,
+        }}
       />,
     );
 
@@ -347,7 +397,12 @@ describe('RankingGamePanelShell', () => {
           openPositionsEvaluationPoints: 120,
           openPositionsProfitPoints: 20,
         }}
-        tabContent={<div>튜토리얼 패널</div>}
+        tabContentById={{
+          guide: <div>튜토리얼 패널</div>,
+          history: <div>로그 패널</div>,
+          positions: <div>인벤토리 패널</div>,
+          scheduledOrders: <div>대기열 패널</div>,
+        }}
       />,
     );
 
@@ -359,9 +414,41 @@ describe('RankingGamePanelShell', () => {
 
     expect(onSelectTab).toHaveBeenCalledWith('positions');
   });
+
+  it('keeps the wrap swipe animation on the clone slide until the transition ends', () => {
+    const { container } = render(<ControlledRankingGamePanelShell initialTab="guide" />);
+    const panel = screen.getByRole('tabpanel');
+    const track = container.querySelector('.app-shell__game-tab-track') as HTMLDivElement;
+
+    Object.defineProperty(panel, 'clientWidth', { configurable: true, value: 320 });
+    fireEvent(window, new Event('resize'));
+
+    fireEvent.pointerDown(panel, { clientX: 240, clientY: 40, pointerId: 3 });
+    fireEvent.pointerMove(panel, { clientX: 150, clientY: 44, pointerId: 3 });
+    fireEvent.pointerUp(panel, { clientX: 150, clientY: 44, pointerId: 3 });
+
+    expect(screen.getByRole('tab', { name: '인벤토리' })).toHaveAttribute('aria-selected', 'true');
+    expect(track.style.transform).toContain('-1650px');
+  });
 });
 
 describe('RankingGameHistoryTab', () => {
+  it('shows a loading overlay instead of the old loading sentence', () => {
+    render(
+      <RankingGameHistoryTab
+        emptyMessage={null}
+        historyPlaybackLoadingVideoId={null}
+        isLoading
+        onSelectPosition={vi.fn()}
+        positions={[]}
+        resolvePlaybackQueueId={() => undefined}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByText('거래내역을 불러오는 중입니다.')).not.toBeInTheDocument();
+  });
+
   it('opens the chart from the history title without selecting playback', () => {
     const onOpenPositionChart = vi.fn();
     const onSelectPosition = vi.fn();
@@ -489,6 +576,36 @@ describe('RankingGameHistoryTab', () => {
 });
 
 describe('RankingGameLeaderboardTab', () => {
+  it('hides the empty leaderboard message while ranking is loading', () => {
+    render(
+      <RankingGameLeaderboardTab
+        entries={[]}
+        error={null}
+        highlights={[]}
+        highlightsError={null}
+        highlightsTitle="하이라이트"
+        isError={false}
+        isHighlightsError={false}
+        isHighlightsLoading={false}
+        isLoading
+        onSelectHighlight={vi.fn()}
+        onToggleUser={vi.fn()}
+        season={{
+          endAt: '2026-04-30T00:00:00.000Z',
+          maxOpenPositions: 3,
+          regionCode: 'KR',
+          seasonId: 1,
+          seasonName: '테스트 시즌',
+          startAt: '2026-04-01T00:00:00.000Z',
+        }}
+        selectedUserId={null}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByText('아직 리더보드에 표시할 참가자가 없습니다.')).not.toBeInTheDocument();
+  });
+
   it('keeps highlight summary metadata out of the tier ranking row', () => {
     render(
       <RankingGameLeaderboardTab

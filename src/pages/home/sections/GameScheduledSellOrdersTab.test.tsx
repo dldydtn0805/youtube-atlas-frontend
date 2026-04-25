@@ -4,6 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 import GameScheduledSellOrdersTab from './GameScheduledSellOrdersTab';
 
 describe('GameScheduledSellOrdersTab', () => {
+  it('shows a loading overlay instead of the old loading sentence', () => {
+    render(<GameScheduledSellOrdersTab isLoading orders={[]} />);
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.queryByText('예약 매도 주문을 불러오는 중입니다.')).not.toBeInTheDocument();
+  });
+
   it('shows pending orders by default and lets the user switch filters', async () => {
     const user = userEvent.setup();
 

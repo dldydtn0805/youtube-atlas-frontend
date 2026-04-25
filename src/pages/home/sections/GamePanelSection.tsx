@@ -40,6 +40,7 @@ interface GamePanelSectionProps {
   historyPlaybackLoadingVideoId: string | null;
   historyPlaybackSection?: YouTubeCategorySection;
   isGameHistoryLoading: boolean;
+  isOpenGamePositionsLoading: boolean;
   isScheduledSellOrdersLoading: boolean;
   isCollapsed: boolean;
   newChartEntriesSection?: YouTubeCategorySection;
@@ -87,6 +88,7 @@ export default function GamePanelSection({
   historyPlaybackLoadingVideoId,
   historyPlaybackSection,
   isGameHistoryLoading,
+  isOpenGamePositionsLoading,
   isScheduledSellOrdersLoading,
   isCollapsed,
   newChartEntriesSection,
@@ -148,6 +150,7 @@ export default function GamePanelSection({
       favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}
       holdings={openGameHoldings}
+      isLoading={isOpenGamePositionsLoading}
       onOpenPositionChart={onOpenPositionChart}
       onOpenBuyTradeModal={onOpenPositionBuyTradeModal}
       onOpenSellTradeModal={onOpenPositionSellTradeModal}
@@ -209,15 +212,6 @@ export default function GamePanelSection({
     </div>
   );
 
-  const activeGameTabContent =
-    activeGameTab === 'positions'
-      ? positionsContent
-      : activeGameTab === 'scheduledOrders'
-        ? scheduledOrdersContent
-      : activeGameTab === 'history'
-        ? historyContent
-        : guideContent;
-
   return (
     <RankingGamePanelShell
       activeGameTab={activeGameTab}
@@ -242,7 +236,12 @@ export default function GamePanelSection({
         openPositionsEvaluationPoints,
         openPositionsProfitPoints,
       }}
-      tabContent={activeGameTabContent}
+      tabContentById={{
+        guide: guideContent,
+        history: historyContent,
+        positions: positionsContent,
+        scheduledOrders: scheduledOrdersContent,
+      }}
     />
   );
 }

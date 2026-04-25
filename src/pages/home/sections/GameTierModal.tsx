@@ -1,7 +1,15 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import type { GameTierProgress } from '../../../features/game/types';
-import useSwipeableTabs from '../hooks/useSwipeableTabs';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import GameTierSummary from './GameTierSummary';
 import GameTierGuide from './GameTierGuide';
@@ -11,38 +19,271 @@ interface GameTierModalProps {
   defaultTab?: 'tier' | 'highlights' | 'ranking';
   highlightsContent?: ReactNode;
   isOpen: boolean;
+  isTierProgressLoading?: boolean;
   onClose: () => void;
   rankingContent?: ReactNode;
   tierProgress?: GameTierProgress;
+}
+
+type TierModalTab = 'tier' | 'highlights' | 'ranking';
+
+const TIER_MODAL_TABS: ReadonlyArray<{ id: TierModalTab; label: string }> = [
+  { id: 'tier', label: '내 카드' },
+  { id: 'highlights', label: '하이라이트' },
+  { id: 'ranking', label: '랭킹' },
+];
+
+const SWIPE_THRESHOLD = 56;
+const DIRECTION_LOCK_THRESHOLD = 10;
+const TIER_MODAL_CAROUSEL_GAP = 0;
+const TIER_MODAL_CAROUSEL_SIDE_PADDING = 0;
+const INTERACTIVE_SWIPE_SELECTOR = 'input, textarea, select';
+
+function getWrappedTierModalIndex(index: number) {
+  return (index + TIER_MODAL_TABS.length) % TIER_MODAL_TABS.length;
+}
+
+function shouldIgnoreSwipeTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && target.closest(INTERACTIVE_SWIPE_SELECTOR);
 }
 
 export default function GameTierModal({
   defaultTab = 'tier',
   highlightsContent,
   isOpen,
+  isTierProgressLoading = false,
   onClose,
   rankingContent,
   tierProgress,
 }: GameTierModalProps) {
-  const [activeTab, setActiveTab] = useState<'tier' | 'highlights' | 'ranking'>(defaultTab);
-  const swipeHandlers = useSwipeableTabs({
-    onChange: setActiveTab,
-    order: ['tier', 'highlights', 'ranking'] as const,
-    value: activeTab,
-  });
+  useBodyScrollLock(isOpen);
+
+  const [activeTab, setActiveTab] = useState<TierModalTab>(defaultTab);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(TIER_MODAL_TABS.findIndex((tab) => tab.id === defaultTab) + 1);
+  const [isTrackAnimating, setIsTrackAnimating] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const directionLockRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const shouldSuppressClickRef = useRef(false);
+  const viewportWidthRef = useRef(0);
+  const activeIndex = TIER_MODAL_TABS.findIndex((tab) => tab.id === activeTab);
+  const carouselTabs = useMemo(
+    () => [TIER_MODAL_TABS[TIER_MODAL_TABS.length - 1], ...TIER_MODAL_TABS, TIER_MODAL_TABS[0]],
+    [],
+  );
+
+  const tierPanelContent = (
+    <div className="app-shell__modal-fields">
+      {tierProgress || isTierProgressLoading ? (
+        <section
+          className="app-shell__modal-field app-shell__modal-field--tier app-shell__tier-modal-card-shell"
+          data-loading={isTierProgressLoading}
+        >
+          {tierProgress ? (
+            <GameTierSummary
+              progress={tierProgress}
+              showLadder={false}
+              surfaceVariant="highlight-tier"
+              title=""
+            />
+          ) : null}
+          {isTierProgressLoading ? (
+            <div className="app-shell__tier-modal-card-overlay" role="status" aria-live="polite">
+              <span className="app-shell__tier-modal-card-spinner" aria-hidden="true" />
+              <span className="sr-only">티어 카드 불러오는 중</span>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      <section className="app-shell__modal-field">
+        <div className="app-shell__section-heading">
+          <p className="app-shell__section-eyebrow">티어 설명</p>
+          <h3 className="app-shell__modal-field-title">하이라이트 티어 기준</h3>
+        </div>
+        <GameTierGuide />
+      </section>
+    </div>
+  );
+
+  const tabPanels = {
+    highlights: highlightsContent ?? (
+      <p className="app-shell__game-empty app-shell__tier-modal-empty-state">하이라이트가 없습니다.</p>
+    ),
+    ranking: rankingContent ?? <p className="app-shell__game-empty">랭킹 정보를 불러올 수 없습니다.</p>,
+    tier: tierPanelContent,
+  };
 
   useEffect(() => {
     if (isOpen) {
       setActiveTab(defaultTab);
+      setTrackIndex(TIER_MODAL_TABS.findIndex((tab) => tab.id === defaultTab) + 1);
+      setDragOffset(0);
+      setIsTrackAnimating(false);
     }
   }, [defaultTab, isOpen]);
 
-  if (!isOpen || typeof document === 'undefined' || (!tierProgress && !rankingContent && !highlightsContent)) {
+  useEffect(() => {
+    const viewport = viewportRef.current;
+
+    if (!viewport || typeof window === 'undefined') {
+      return;
+    }
+
+    const syncViewportWidth = () => {
+      const nextWidth = viewport.clientWidth;
+      viewportWidthRef.current = nextWidth;
+      setViewportWidth(nextWidth);
+    };
+
+    syncViewportWidth();
+    window.addEventListener('resize', syncViewportWidth);
+
+    return () => {
+      window.removeEventListener('resize', syncViewportWidth);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    viewportRef.current
+      ?.querySelectorAll<HTMLElement>(`[data-tier-modal-panel="${activeTab}"]`)
+      .forEach((panel) => {
+        panel.scrollTo({ top: 0 });
+      });
+  }, [activeTab]);
+
+  if (
+    !isOpen ||
+    typeof document === 'undefined' ||
+    (!tierProgress && !isTierProgressLoading && !rankingContent && !highlightsContent)
+  ) {
     return null;
   }
 
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
+  const handleSelectTab = (nextTab: TierModalTab) => {
+    const nextIndex = TIER_MODAL_TABS.findIndex((tab) => tab.id === nextTab);
+
+    if (nextIndex < 0) {
+      return;
+    }
+
+    setIsTrackAnimating(true);
+    setDragOffset(0);
+    setActiveTab(nextTab);
+    setTrackIndex(nextIndex + 1);
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (
+      (event.pointerType === 'mouse' && event.button !== 0) ||
+      shouldIgnoreSwipeTarget(event.target)
+    ) {
+      return;
+    }
+
+    pointerIdRef.current = event.pointerId;
+    startXRef.current = event.clientX;
+    startYRef.current = event.clientY;
+    directionLockRef.current = null;
+    shouldSuppressClickRef.current = false;
+    viewportWidthRef.current = event.currentTarget.clientWidth;
+    setIsTrackAnimating(false);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (pointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - startXRef.current;
+    const deltaY = event.clientY - startYRef.current;
+
+    if (directionLockRef.current === null) {
+      if (Math.abs(deltaX) < DIRECTION_LOCK_THRESHOLD && Math.abs(deltaY) < DIRECTION_LOCK_THRESHOLD) {
+        return;
+      }
+
+      directionLockRef.current = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+    }
+
+    if (directionLockRef.current !== 'horizontal') {
+      return;
+    }
+
+    shouldSuppressClickRef.current = true;
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    setDragOffset(deltaX);
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (pointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - startXRef.current;
+    const viewportWidth = viewportWidthRef.current || event.currentTarget.clientWidth;
+    const shouldChangeTab =
+      directionLockRef.current === 'horizontal' &&
+      (Math.abs(deltaX) >= SWIPE_THRESHOLD || Math.abs(deltaX) >= viewportWidth * 0.18);
+
+    setIsTrackAnimating(true);
+    setDragOffset(0);
+
+    if (shouldChangeTab) {
+      const nextIndex = deltaX < 0 ? activeIndex + 1 : activeIndex - 1;
+      const wrappedIndex = getWrappedTierModalIndex(nextIndex);
+      const nextTrackIndex = deltaX < 0 && activeIndex === TIER_MODAL_TABS.length - 1 ? TIER_MODAL_TABS.length + 1 : deltaX > 0 && activeIndex === 0 ? 0 : wrappedIndex + 1;
+
+      setActiveTab(TIER_MODAL_TABS[wrappedIndex].id);
+      setTrackIndex(nextTrackIndex);
+    }
+
+    pointerIdRef.current = null;
+    directionLockRef.current = null;
+  };
+
+  const handlePointerCancel = () => {
+    pointerIdRef.current = null;
+    directionLockRef.current = null;
+    setDragOffset(0);
+    setIsTrackAnimating(true);
+  };
+
+  const handleTrackTransitionEnd = () => {
+    if (trackIndex === 0) {
+      setIsTrackAnimating(false);
+      setTrackIndex(TIER_MODAL_TABS.length);
+      return;
+    }
+
+    if (trackIndex === TIER_MODAL_TABS.length + 1) {
+      setIsTrackAnimating(false);
+      setTrackIndex(1);
+    }
+  };
+
+  const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!shouldSuppressClickRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    shouldSuppressClickRef.current = false;
+  };
+  const slideWidth = Math.max(viewportWidth - TIER_MODAL_CAROUSEL_SIDE_PADDING * 2, 0);
+  const slideSpan = slideWidth + TIER_MODAL_CAROUSEL_GAP;
+  const trackTranslateX = TIER_MODAL_CAROUSEL_SIDE_PADDING - trackIndex * slideSpan + dragOffset;
 
   return createPortal(
     <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
@@ -72,68 +313,58 @@ export default function GameTierModal({
 
         <div className="app-shell__modal-body">
           <div aria-label="티어 모달 탭" className="app-shell__tier-modal-tabs" role="tablist">
-            <button
-              aria-selected={activeTab === 'tier'}
-              className="app-shell__tier-modal-tab"
-              data-active={activeTab === 'tier'}
-              onClick={() => setActiveTab('tier')}
-              role="tab"
-              type="button"
-            >
-              내 카드
-            </button>
-            <button
-              aria-selected={activeTab === 'highlights'}
-              className="app-shell__tier-modal-tab"
-              data-active={activeTab === 'highlights'}
-              onClick={() => setActiveTab('highlights')}
-              role="tab"
-              type="button"
-            >
-              하이라이트
-            </button>
-            <button
-              aria-selected={activeTab === 'ranking'}
-              className="app-shell__tier-modal-tab"
-              data-active={activeTab === 'ranking'}
-              onClick={() => setActiveTab('ranking')}
-              role="tab"
-              type="button"
-            >
-              랭킹
-            </button>
+            {TIER_MODAL_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                aria-selected={activeTab === tab.id}
+                className="app-shell__tier-modal-tab"
+                data-active={activeTab === tab.id}
+                onClick={() => handleSelectTab(tab.id)}
+                role="tab"
+                type="button"
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-
-          {activeTab === 'tier' ? (
-            <div className="app-shell__modal-fields app-shell__swipeable-tab-panel" role="tabpanel" {...swipeHandlers}>
-              {tierProgress ? (
-                <section className="app-shell__modal-field app-shell__modal-field--tier">
-                  <GameTierSummary
-                    progress={tierProgress}
-                    showLadder={false}
-                    surfaceVariant="highlight-tier"
-                    title=""
-                  />
-                </section>
-              ) : null}
-
-              <section className="app-shell__modal-field">
-                <div className="app-shell__section-heading">
-                  <p className="app-shell__section-eyebrow">티어 설명</p>
-                  <h3 className="app-shell__modal-field-title">하이라이트 티어 기준</h3>
+          <div
+            ref={viewportRef}
+            className="app-shell__tier-modal-carousel app-shell__swipeable-tab-panel"
+            onClickCapture={handleClickCapture}
+            onPointerCancel={handlePointerCancel}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            role="tabpanel"
+          >
+            <div
+              className="app-shell__tier-modal-track"
+              data-animating={isTrackAnimating}
+              onTransitionEnd={handleTrackTransitionEnd}
+              style={{
+                '--tier-modal-carousel-gap': `${TIER_MODAL_CAROUSEL_GAP}px`,
+                '--tier-modal-carousel-side-padding': `${TIER_MODAL_CAROUSEL_SIDE_PADDING}px`,
+                '--tier-modal-slide-width': `${slideWidth}px`,
+                transform: `translateX(${trackTranslateX}px)`,
+              }}
+            >
+              {carouselTabs.map((tab, index) => (
+                <div
+                  key={`${tab.id}-${index}`}
+                  aria-hidden={activeTab !== tab.id}
+                  className="app-shell__tier-modal-slide"
+                  data-active={activeTab === tab.id}
+                >
+                  <div
+                    className="app-shell__tier-modal-panel"
+                    data-tier-modal-panel={tab.id}
+                  >
+                    {tabPanels[tab.id]}
+                  </div>
                 </div>
-                <GameTierGuide />
-              </section>
+              ))}
             </div>
-          ) : activeTab === 'highlights' ? (
-            <div className="app-shell__tier-modal-panel app-shell__swipeable-tab-panel" role="tabpanel" {...swipeHandlers}>
-              {highlightsContent ?? <p className="app-shell__game-empty">하이라이트를 불러올 수 없습니다.</p>}
-            </div>
-          ) : (
-            <div className="app-shell__tier-modal-panel app-shell__swipeable-tab-panel" role="tabpanel" {...swipeHandlers}>
-              {rankingContent ?? <p className="app-shell__game-empty">랭킹 정보를 불러올 수 없습니다.</p>}
-            </div>
-          )}
+          </div>
         </div>
       </section>
     </div>,

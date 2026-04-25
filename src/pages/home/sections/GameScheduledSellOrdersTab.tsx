@@ -107,10 +107,6 @@ export default function GameScheduledSellOrdersTab({
     value: activeFilter,
   });
 
-  if (isLoading) {
-    return <p className="app-shell__game-empty">예약 매도 주문을 불러오는 중입니다.</p>;
-  }
-
   return (
     <div className="app-shell__game-scheduled-orders app-shell__swipeable-tab-panel" {...swipeHandlers}>
       <div className="app-shell__game-scheduled-order-filters" aria-label="예약 주문 상태 필터" role="tablist">
@@ -129,30 +125,36 @@ export default function GameScheduledSellOrdersTab({
         ))}
       </div>
 
-      {filteredOrders.length === 0 ? (
-        emptyMessage ? (
-          <p className="app-shell__game-empty">{getScheduledSellEmptyMessage(activeFilter, emptyMessage)}</p>
-        ) : null
-      ) : (
-        <ul className="app-shell__game-positions">
-          {filteredOrders.map((order) => {
-            const canCancel = order.status === 'PENDING' && Boolean(onCancelOrder);
-            const isCanceling = isCancelingOrderId === order.id;
+      <div className="app-shell__game-tab-loading-shell" data-loading={isLoading}>
+        {isLoading ? (
+          <div className="app-shell__game-tab-loading-overlay" role="status" aria-live="polite">
+            <span className="app-shell__game-tab-loading-spinner" aria-hidden="true" />
+            <span className="sr-only">예약 매도 주문 불러오는 중</span>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          emptyMessage ? (
+            <p className="app-shell__game-empty">{getScheduledSellEmptyMessage(activeFilter, emptyMessage)}</p>
+          ) : null
+        ) : (
+          <ul className="app-shell__game-positions">
+            {filteredOrders.map((order) => {
+              const canCancel = order.status === 'PENDING' && Boolean(onCancelOrder);
+              const isCanceling = isCancelingOrderId === order.id;
 
-            return (
-              <li
-                key={order.id}
-                aria-busy={isCanceling}
-                className="app-shell__game-position"
-                data-scheduled-status={order.status}
-              >
-                {isCanceling ? (
-                  <div className="app-shell__game-position-overlay" role="status" aria-live="polite">
-                    <span className="app-shell__game-position-overlay-spinner" aria-hidden="true" />
-                    <span className="app-shell__game-position-overlay-label">예약 취소 처리 중</span>
-                  </div>
-                ) : null}
-                <div className="app-shell__game-position-select">
+              return (
+                <li
+                  key={order.id}
+                  aria-busy={isCanceling}
+                  className="app-shell__game-position"
+                  data-scheduled-status={order.status}
+                >
+                  {isCanceling ? (
+                    <div className="app-shell__game-position-overlay" role="status" aria-live="polite">
+                      <span className="app-shell__game-position-overlay-spinner" aria-hidden="true" />
+                      <span className="app-shell__game-position-overlay-label">예약 취소 처리 중</span>
+                    </div>
+                  ) : null}
+                  <div className="app-shell__game-position-select">
                   <img
                     alt=""
                     className="app-shell__game-position-thumb"
@@ -219,12 +221,13 @@ export default function GameScheduledSellOrdersTab({
                       </span>
                     </button>
                   </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

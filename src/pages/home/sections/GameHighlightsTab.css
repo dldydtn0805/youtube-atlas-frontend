@@ -1,9 +1,53 @@
+.app-shell__game-highlights-shell {
+  min-height: 220px;
+  position: relative;
+}
+
 .app-shell__game-highlights {
   display: grid;
   gap: 10px;
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.app-shell__game-highlights-empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 220px;
+  text-align: center;
+}
+
+.app-shell__game-highlights-overlay {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(8px);
+  border-radius: 18px;
+  display: grid;
+  gap: 10px;
+  inset: 0;
+  justify-items: center;
+  position: absolute;
+}
+
+.app-shell__game-highlights-overlay-spinner {
+  animation: app-shell__game-highlights-spin 0.9s linear infinite;
+  border: 2px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  border-top-color: rgba(217, 119, 6, 0.92);
+  height: 22px;
+  width: 22px;
+}
+
+@keyframes app-shell__game-highlights-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .app-shell__game-highlight {
@@ -185,6 +229,10 @@
 :root[data-theme='dark'] .app-shell__game-highlight-select {
   background: rgba(14, 14, 14, 0.72);
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .app-shell__game-highlights-overlay {
+  background: rgba(10, 10, 10, 0.7);
 }
 
 :root[data-theme='dark'] .app-shell__game-highlight-type {
