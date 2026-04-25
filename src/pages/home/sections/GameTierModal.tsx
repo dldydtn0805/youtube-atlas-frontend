@@ -11,6 +11,7 @@ import {
 import { createPortal } from 'react-dom';
 import type { GameTierProgress } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { lockSwipeScroll } from '../hooks/swipeScrollLock';
 import { resolveSwipeDirection } from '../hooks/swipeDirection';
 import { getFullscreenElement } from '../utils';
@@ -74,6 +75,10 @@ export default function GameTierModal({
   tierProgress,
 }: GameTierModalProps) {
   useBodyScrollLock(isOpen);
+  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+    disabled: !isOpen,
+    onClose,
+  });
 
   const [activeTab, setActiveTab] = useState<TierModalTab>(defaultTab);
   const [trackIndex, setTrackIndex] = useState(TIER_MODAL_TABS.findIndex((tab) => tab.id === defaultTab) + 1);
@@ -314,15 +319,21 @@ export default function GameTierModal({
   const trackTranslateX = TIER_MODAL_CAROUSEL_SIDE_PADDING - trackIndex * slideSpan;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop app-shell__modal-backdrop--dividend" onClick={onClose} role="presentation">
+    <div
+      className="app-shell__modal-backdrop app-shell__modal-backdrop--dividend"
+      onClick={onClose}
+      role="presentation"
+      style={backdropStyle}
+    >
       <section
         aria-labelledby="game-dividend-modal-title"
         aria-modal="true"
         className="app-shell__modal app-shell__modal--dividend"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        style={modalStyle}
       >
-        <div className="app-shell__modal-header">
+        <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Highlight Tier</p>
             <h2 className="app-shell__section-title" id="game-dividend-modal-title">

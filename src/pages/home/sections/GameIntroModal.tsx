@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import BoldNumberText from './BoldNumberText';
 import { strategyTagCriteriaCopy } from './gameTierGuideContent';
@@ -15,6 +16,10 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
   const [dismissForever, setDismissForever] = useState(false);
 
   useBodyScrollLock(isOpen);
+  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+    disabled: !isOpen,
+    onClose: () => onClose(dismissForever),
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -30,15 +35,21 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop" onClick={() => onClose(dismissForever)} role="presentation">
+    <div
+      className="app-shell__modal-backdrop"
+      onClick={() => onClose(dismissForever)}
+      role="presentation"
+      style={backdropStyle}
+    >
       <section
         aria-labelledby="game-intro-modal-title"
         aria-modal="true"
         className="app-shell__modal app-shell__modal--game-intro"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        style={modalStyle}
       >
-        <div className="app-shell__modal-header">
+        <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">처음 오셨나요?</p>
             <h2 className="app-shell__section-title" id="game-intro-modal-title">

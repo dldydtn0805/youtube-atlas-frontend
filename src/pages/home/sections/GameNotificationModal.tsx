@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import type { GameNotification } from '../../../features/game/types';
 import { formatPoints } from '../gameHelpers';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import { getGameNotificationStatus } from './gameNotificationContent';
 import { isTierPromotionNotification } from './gameNotificationEventType';
@@ -22,6 +23,10 @@ function isHighlightAchievementNotification(notification: GameNotification) {
 
 function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotificationModalProps) {
   useBodyScrollLock(Boolean(notification));
+  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+    disabled: !notification,
+    onClose,
+  });
 
   if (!notification || typeof document === 'undefined') {
     return null;
@@ -35,7 +40,7 @@ function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotif
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
+    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation" style={backdropStyle}>
       <section
         aria-labelledby="game-notification-modal-title"
         aria-modal="true"
@@ -44,8 +49,12 @@ function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotif
         data-projected={hasResolvedScore ? 'false' : 'true'}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        style={modalStyle}
       >
-        <div className="app-shell__modal-header game-notification-modal__header">
+        <div
+          className="app-shell__modal-header app-shell__modal-header--swipe-close game-notification-modal__header"
+          {...headerSwipeHandlers}
+        >
           <button aria-label="게임 알림 모달 닫기" className="app-shell__modal-close" onClick={onClose} type="button">
             닫기
           </button>

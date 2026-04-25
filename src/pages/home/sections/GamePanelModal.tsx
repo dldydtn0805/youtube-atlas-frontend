@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import './GamePanelModal.css';
 
@@ -12,6 +13,10 @@ interface GamePanelModalProps {
 
 export default function GamePanelModal({ children, isOpen, onClose }: GamePanelModalProps) {
   useBodyScrollLock(isOpen);
+  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+    disabled: !isOpen,
+    onClose,
+  });
 
   if (!isOpen || typeof document === 'undefined') {
     return null;
@@ -21,15 +26,21 @@ export default function GamePanelModal({ children, isOpen, onClose }: GamePanelM
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop app-shell__modal-backdrop--game-panel" onClick={onClose} role="presentation">
+    <div
+      className="app-shell__modal-backdrop app-shell__modal-backdrop--game-panel"
+      onClick={onClose}
+      role="presentation"
+      style={backdropStyle}
+    >
       <section
         aria-labelledby="game-panel-modal-title"
         aria-modal="true"
         className="app-shell__modal app-shell__modal--game-panel"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        style={modalStyle}
       >
-        <div className="app-shell__modal-header">
+        <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">My Game</p>
             <h2 className="app-shell__section-title" id="game-panel-modal-title">

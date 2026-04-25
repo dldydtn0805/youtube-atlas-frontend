@@ -51,6 +51,10 @@
   padding-bottom: 8px;
 }
 
+.app-shell__modal-header--swipe-close {
+  touch-action: none;
+}
+
 .app-shell__modal-body {
   display: grid;
   gap: 20px;

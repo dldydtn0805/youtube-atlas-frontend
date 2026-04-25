@@ -7,6 +7,7 @@ import type {
 } from '../../../features/game/types';
 import type { VideoRankHistory } from '../../../features/trending/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import './GameRankHistoryModal.css';
 
@@ -248,6 +249,10 @@ export default function GameRankHistoryModal({
   position,
 }: GameRankHistoryModalProps) {
   useBodyScrollLock(isOpen);
+  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+    disabled: !isOpen,
+    onClose,
+  });
 
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const wasOpenRef = useRef(false);
@@ -297,6 +302,7 @@ export default function GameRankHistoryModal({
       className="app-shell__modal-backdrop app-shell__modal-backdrop--history"
       onClick={onClose}
       role="presentation"
+      style={backdropStyle}
     >
       <section
         aria-labelledby="game-rank-history-title"
@@ -304,8 +310,9 @@ export default function GameRankHistoryModal({
         className="app-shell__modal app-shell__modal--history"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        style={modalStyle}
       >
-        <div className="app-shell__modal-header">
+        <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Ranking History</p>
             <h2 className="app-shell__section-title" id="game-rank-history-title">

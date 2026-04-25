@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { AchievementTitleCollection } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import AchievementTitlePanel from './AchievementTitlePanel';
 import './AchievementTitleModal.css';
@@ -24,6 +25,10 @@ export default function AchievementTitleModal({
   const [optimisticTitleCode, setOptimisticTitleCode] = useState<string | null>(null);
 
   useBodyScrollLock(isOpen);
+  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+    disabled: !isOpen,
+    onClose,
+  });
 
   useEffect(() => {
     setOptimisticTitleCode(collection?.selectedTitle?.code ?? null);
@@ -55,15 +60,16 @@ export default function AchievementTitleModal({
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
+    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation" style={backdropStyle}>
       <section
         aria-labelledby="achievement-title-modal-title"
         aria-modal="true"
         className="app-shell__modal app-shell__modal--achievement-title"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
+        style={modalStyle}
       >
-        <div className="app-shell__modal-header">
+        <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Profile Title</p>
             <h2 className="app-shell__section-title" id="achievement-title-modal-title">
