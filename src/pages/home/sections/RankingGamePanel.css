@@ -963,7 +963,7 @@
 
 .app-shell__game-tab-pull-indicator[data-visible='true'],
 .app-shell__game-tab-pull-indicator[data-ready='true'] {
-  height: calc(var(--game-tab-pull-distance, 0px) * 0.6);
+  height: var(--game-tab-pull-distance, 0px);
   opacity: 1;
 }
 

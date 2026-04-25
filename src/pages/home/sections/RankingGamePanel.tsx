@@ -23,6 +23,7 @@ import {
   calculateGameUnitPricePoints,
   formatGameQuantity,
   formatGameTimestamp,
+  formatHoldCountdown,
   formatMaybePoints,
   formatPercent,
   formatPoints,
@@ -1100,7 +1101,7 @@ export function RankingGamePositionsTab({
           : holding.sellableQuantity > 0
             ? `${formatGameQuantity(holding.sellableQuantity)} 매도 가능`
             : typeof holding.nextSellableInSeconds === 'number' && holding.nextSellableInSeconds > 0
-              ? '매도 대기'
+              ? `매도 대기 · ${formatHoldCountdown(holding.nextSellableInSeconds)}`
               : '매도 가능 수량 없음';
         const hasDetailBadges = Boolean(
           strategyBadges.length || holdingRankTrendBadge || positionStatusBadge || reservedSellBadge || sellableStatusBadge,
