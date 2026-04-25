@@ -46,6 +46,7 @@ import GameTierSummary from './GameTierSummary';
 import GameWalletSummary from './GameWalletSummary';
 import MiniVideoPreview from './MiniVideoPreview';
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
+import { resolveSwipeDirection } from '../hooks/swipeDirection';
 
 type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
 
@@ -615,14 +616,15 @@ export function RankingGamePanelShell({
     const deltaY = event.clientY - startYRef.current;
 
     if (directionLockRef.current === null) {
-      if (
-        Math.abs(deltaX) < GAME_PANEL_DIRECTION_LOCK_THRESHOLD &&
-        Math.abs(deltaY) < GAME_PANEL_DIRECTION_LOCK_THRESHOLD
-      ) {
-        return;
-      }
+      directionLockRef.current = resolveSwipeDirection(
+        deltaX,
+        deltaY,
+        GAME_PANEL_DIRECTION_LOCK_THRESHOLD,
+      );
+    }
 
-      directionLockRef.current = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+    if (directionLockRef.current === null) {
+      return;
     }
 
     if (directionLockRef.current !== 'horizontal') {
@@ -645,8 +647,11 @@ export function RankingGamePanelShell({
 
     const deltaX = event.clientX - startXRef.current;
     const nextViewportWidth = viewportWidthRef.current || event.currentTarget.clientWidth;
+    const swipeDirection =
+      directionLockRef.current ??
+      resolveSwipeDirection(deltaX, event.clientY - startYRef.current, GAME_PANEL_DIRECTION_LOCK_THRESHOLD);
     const shouldChangeTab =
-      directionLockRef.current === 'horizontal' &&
+      swipeDirection === 'horizontal' &&
       (Math.abs(deltaX) >= GAME_PANEL_SWIPE_THRESHOLD || Math.abs(deltaX) >= nextViewportWidth * 0.18);
 
     setIsTrackAnimating(true);

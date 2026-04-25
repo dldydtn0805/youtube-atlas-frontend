@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { resolveSwipeDirection } from './swipeDirection';
 
 interface UseSwipeableTabsOptions<TTab extends string> {
   enabled?: boolean;
@@ -61,15 +62,11 @@ export default function useSwipeableTabs<TTab extends string>({
       const deltaY = event.clientY - startYRef.current;
 
       if (lockDirectionRef.current === null) {
-        if (
-          Math.abs(deltaX) < DIRECTION_LOCK_THRESHOLD &&
-          Math.abs(deltaY) < DIRECTION_LOCK_THRESHOLD
-        ) {
-          return;
-        }
+        lockDirectionRef.current = resolveSwipeDirection(deltaX, deltaY, DIRECTION_LOCK_THRESHOLD);
+      }
 
-        lockDirectionRef.current =
-          Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+      if (lockDirectionRef.current === null) {
+        return;
       }
 
       if (lockDirectionRef.current === 'horizontal' && event.cancelable) {
@@ -88,8 +85,11 @@ export default function useSwipeableTabs<TTab extends string>({
       const deltaX = event.clientX - startXRef.current;
       const activeIndex = order.indexOf(value);
 
+      const swipeDirection =
+        lockDirectionRef.current ?? resolveSwipeDirection(deltaX, event.clientY - startYRef.current, DIRECTION_LOCK_THRESHOLD);
+
       if (
-        lockDirectionRef.current === 'horizontal' &&
+        swipeDirection === 'horizontal' &&
         activeIndex >= 0 &&
         Math.abs(deltaX) >= threshold
       ) {

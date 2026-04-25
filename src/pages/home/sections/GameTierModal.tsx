@@ -11,6 +11,7 @@ import {
 import { createPortal } from 'react-dom';
 import type { GameTierProgress } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import { resolveSwipeDirection } from '../hooks/swipeDirection';
 import { getFullscreenElement } from '../utils';
 import GameTierSummary from './GameTierSummary';
 import GameTierGuide from './GameTierGuide';
@@ -206,11 +207,11 @@ export default function GameTierModal({
     const deltaY = event.clientY - startYRef.current;
 
     if (directionLockRef.current === null) {
-      if (Math.abs(deltaX) < DIRECTION_LOCK_THRESHOLD && Math.abs(deltaY) < DIRECTION_LOCK_THRESHOLD) {
-        return;
-      }
+      directionLockRef.current = resolveSwipeDirection(deltaX, deltaY, DIRECTION_LOCK_THRESHOLD);
+    }
 
-      directionLockRef.current = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+    if (directionLockRef.current === null) {
+      return;
     }
 
     if (directionLockRef.current !== 'horizontal') {
@@ -233,8 +234,10 @@ export default function GameTierModal({
 
     const deltaX = event.clientX - startXRef.current;
     const viewportWidth = viewportWidthRef.current || event.currentTarget.clientWidth;
+    const swipeDirection =
+      directionLockRef.current ?? resolveSwipeDirection(deltaX, event.clientY - startYRef.current, DIRECTION_LOCK_THRESHOLD);
     const shouldChangeTab =
-      directionLockRef.current === 'horizontal' &&
+      swipeDirection === 'horizontal' &&
       (Math.abs(deltaX) >= SWIPE_THRESHOLD || Math.abs(deltaX) >= viewportWidth * 0.18);
 
     setIsTrackAnimating(true);
