@@ -47,6 +47,7 @@ import useHomePlaybackState from './hooks/useHomePlaybackState';
 import useHomeTrendSections from './hooks/useHomeTrendSections';
 import useLogoutOnUnauthorized from './hooks/useLogoutOnUnauthorized';
 import useSelectedVideoGameState from './hooks/useSelectedVideoGameState';
+import { openGameModal as openGameModalAction } from './homeGameModalActions';
 import {
   DEFAULT_CATEGORY_ID,
   FAVORITE_STREAMER_VIDEO_SECTION,
@@ -839,11 +840,13 @@ function HomePage() {
     data: openGamePositions = [],
     error: openGamePositionsError,
     isLoading: isOpenGamePositionsLoading,
+    refetch: refetchOpenGamePositions,
   } = useMyGamePositions(accessToken, selectedRegionCode, 'OPEN', shouldLoadGame);
   const {
     data: scheduledSellOrders = [],
     error: scheduledSellOrdersError,
     isLoading: isScheduledSellOrdersLoading,
+    refetch: refetchScheduledSellOrders,
   } = useScheduledSellOrders(accessToken, selectedRegionCode, shouldLoadGame);
   const {
     data: selectedLeaderboardHighlights = [],
@@ -860,6 +863,7 @@ function HomePage() {
     data: gameHistoryPositions = [],
     error: gameHistoryPositionsError,
     isLoading: isGameHistoryLoading,
+    refetch: refetchGameHistoryPositions,
   } = useMyGamePositions(accessToken, selectedRegionCode, '', shouldLoadGame, 30);
   const {
     data: gameHighlights = [],
@@ -1897,6 +1901,16 @@ function HomePage() {
 
     await Promise.all(invalidations);
   }, [accessToken, effectiveChartView, queryClient, selectedCategory?.id, selectedRegionCode]);
+  const refetchGameTradePanels = useCallback(async () => {
+    await Promise.all([
+      refetchOpenGamePositions(),
+      refetchScheduledSellOrders(),
+      refetchGameHistoryPositions(),
+    ]);
+  }, [refetchGameHistoryPositions, refetchOpenGamePositions, refetchScheduledSellOrders]);
+  const refetchGameDataAfterBuy = useCallback(async () => {
+    await Promise.all([refetchCurrentChartAfterBuy(), refetchGameTradePanels()]);
+  }, [refetchCurrentChartAfterBuy, refetchGameTradePanels]);
 
   const {
     handleBuyCurrentVideo,
@@ -1916,7 +1930,8 @@ function HomePage() {
     maxSellQuantity,
     mutateBuyGamePosition: buyGamePositionMutation.mutateAsync,
     mutateSellGamePositions: sellGamePositionsMutation.mutateAsync,
-    onBuySuccess: refetchCurrentChartAfterBuy,
+    onBuySuccess: refetchGameDataAfterBuy,
+    onSellSuccess: refetchGameTradePanels,
     selectedOpenPositionId: selectedSellPositionId,
     selectedGameActionTitle,
     selectedVideoId,
@@ -2010,6 +2025,7 @@ function HomePage() {
       setScheduledSellTriggerDirection('RANK_IMPROVES_TO');
       setActiveGameTab('scheduledOrders');
       setGameActionStatus('매도 예약이 완료됐어요.');
+      void refetchGameTradePanels();
     } catch (error) {
       if (
         error instanceof ApiRequestError &&
@@ -2030,6 +2046,7 @@ function HomePage() {
     currentGameSeason,
     logout,
     normalizedSellQuantity,
+    refetchGameTradePanels,
     scheduledSellConditionError,
     scheduledSellTargetRank,
     scheduledSellTriggerDirection,
@@ -2042,6 +2059,7 @@ function HomePage() {
     async (orderId: number) => {
       try {
         await cancelScheduledSellOrderMutation.mutateAsync(orderId);
+        await refetchGameTradePanels();
         setGameActionStatus('예약 취소가 완료됐어요.');
       } catch (error) {
         if (
@@ -2057,7 +2075,7 @@ function HomePage() {
         );
       }
     },
-    [cancelScheduledSellOrderMutation, logout, setGameActionStatus],
+    [cancelScheduledSellOrderMutation, logout, refetchGameTradePanels, setGameActionStatus],
   );
 
   async function handleToggleFavoriteStreamer() {
@@ -2422,14 +2440,24 @@ function HomePage() {
       setActiveGameTab(tab);
     });
   }, []);
+  const openGameModal = useCallback(
+    (tab: 'positions' | 'history') => {
+      openGameModalAction({
+        refetchGameTradePanels,
+        setActiveGameTab,
+        setIsGameModalOpen,
+        shouldLoadGame,
+        tab,
+      });
+    },
+    [refetchGameTradePanels, shouldLoadGame],
+  );
   const handleOpenGameHistoryModal = useCallback(() => {
-    setActiveGameTab('history');
-    setIsGameModalOpen(true);
-  }, []);
+    openGameModal('history');
+  }, [openGameModal]);
   const handleOpenGamePositionsModal = useCallback(() => {
-    setActiveGameTab('positions');
-    setIsGameModalOpen(true);
-  }, []);
+    openGameModal('positions');
+  }, [openGameModal]);
   const handleOpenTierHighlightsModal = useCallback(() => {
     setTierModalDefaultTab('highlights');
     openTierModal();

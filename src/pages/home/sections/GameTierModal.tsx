@@ -4,16 +4,12 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { GameTierProgress } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
-import { lockSwipeScroll } from '../hooks/swipeScrollLock';
-import { resolveSwipeDirection } from '../hooks/swipeDirection';
 import { getFullscreenElement } from '../utils';
 import GameTierSummary from './GameTierSummary';
 import GameTierGuide from './GameTierGuide';
@@ -37,33 +33,8 @@ const TIER_MODAL_TABS: ReadonlyArray<{ id: TierModalTab; label: string }> = [
   { id: 'ranking', label: '랭킹' },
 ];
 
-const SWIPE_THRESHOLD = 56;
-const DIRECTION_LOCK_THRESHOLD = 10;
 const TIER_MODAL_CAROUSEL_GAP = 0;
 const TIER_MODAL_CAROUSEL_SIDE_PADDING = 0;
-const INTERACTIVE_SWIPE_SELECTOR = 'input, textarea, select';
-
-function getWrappedTierModalIndex(index: number) {
-  return (index + TIER_MODAL_TABS.length) % TIER_MODAL_TABS.length;
-}
-
-function shouldIgnoreSwipeTarget(target: EventTarget | null) {
-  return target instanceof HTMLElement && target.closest(INTERACTIVE_SWIPE_SELECTOR);
-}
-
-function releasePointerCapture(target: EventTarget | null, pointerId: number | null) {
-  if (
-    pointerId === null ||
-    !(target instanceof HTMLElement) ||
-    typeof target.hasPointerCapture !== 'function' ||
-    typeof target.releasePointerCapture !== 'function' ||
-    !target.hasPointerCapture(pointerId)
-  ) {
-    return;
-  }
-
-  target.releasePointerCapture(pointerId);
-}
 
 export default function GameTierModal({
   defaultTab = 'tier',
@@ -85,14 +56,6 @@ export default function GameTierModal({
   const [isTrackAnimating, setIsTrackAnimating] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const pointerIdRef = useRef<number | null>(null);
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
-  const directionLockRef = useRef<'horizontal' | 'vertical' | null>(null);
-  const shouldSuppressClickRef = useRef(false);
-  const viewportWidthRef = useRef(0);
-  const releaseScrollLockRef = useRef<(() => void) | null>(null);
-  const activeIndex = TIER_MODAL_TABS.findIndex((tab) => tab.id === activeTab);
   const carouselTabs = useMemo(
     () => [TIER_MODAL_TABS[TIER_MODAL_TABS.length - 1], ...TIER_MODAL_TABS, TIER_MODAL_TABS[0]],
     [],
@@ -156,9 +119,7 @@ export default function GameTierModal({
     }
 
     const syncViewportWidth = () => {
-      const nextWidth = viewport.clientWidth;
-      viewportWidthRef.current = nextWidth;
-      setViewportWidth(nextWidth);
+      setViewportWidth(viewport.clientWidth);
     };
 
     syncViewportWidth();
@@ -199,99 +160,6 @@ export default function GameTierModal({
     setTrackIndex(nextIndex + 1);
   };
 
-  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (
-      (event.pointerType === 'mouse' && event.button !== 0) ||
-      shouldIgnoreSwipeTarget(event.target)
-    ) {
-      return;
-    }
-
-    pointerIdRef.current = event.pointerId;
-    startXRef.current = event.clientX;
-    startYRef.current = event.clientY;
-    directionLockRef.current = null;
-    shouldSuppressClickRef.current = false;
-    viewportWidthRef.current = event.currentTarget.clientWidth;
-    releaseScrollLockRef.current?.();
-    releaseScrollLockRef.current = null;
-    setIsTrackAnimating(false);
-    if (typeof event.currentTarget.setPointerCapture === 'function') {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    }
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    const deltaX = event.clientX - startXRef.current;
-    const deltaY = event.clientY - startYRef.current;
-
-    if (directionLockRef.current === null) {
-      directionLockRef.current = resolveSwipeDirection(deltaX, deltaY, DIRECTION_LOCK_THRESHOLD);
-    }
-
-    if (directionLockRef.current === null) {
-      return;
-    }
-
-    if (directionLockRef.current !== 'horizontal') {
-      return;
-    }
-
-    if (releaseScrollLockRef.current === null) {
-      releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
-    }
-
-    shouldSuppressClickRef.current = true;
-
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-  };
-
-  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    const deltaX = event.clientX - startXRef.current;
-    const viewportWidth = viewportWidthRef.current || event.currentTarget.clientWidth;
-    const swipeDirection =
-      directionLockRef.current ?? resolveSwipeDirection(deltaX, event.clientY - startYRef.current, DIRECTION_LOCK_THRESHOLD);
-    const shouldChangeTab =
-      swipeDirection === 'horizontal' &&
-      (Math.abs(deltaX) >= SWIPE_THRESHOLD || Math.abs(deltaX) >= viewportWidth * 0.18);
-
-    setIsTrackAnimating(true);
-
-    if (shouldChangeTab) {
-      const nextIndex = deltaX < 0 ? activeIndex + 1 : activeIndex - 1;
-      const wrappedIndex = getWrappedTierModalIndex(nextIndex);
-      const nextTrackIndex = deltaX < 0 && activeIndex === TIER_MODAL_TABS.length - 1 ? TIER_MODAL_TABS.length + 1 : deltaX > 0 && activeIndex === 0 ? 0 : wrappedIndex + 1;
-
-      setActiveTab(TIER_MODAL_TABS[wrappedIndex].id);
-      setTrackIndex(nextTrackIndex);
-    }
-
-    pointerIdRef.current = null;
-    directionLockRef.current = null;
-    releaseScrollLockRef.current?.();
-    releaseScrollLockRef.current = null;
-    releasePointerCapture(event.currentTarget, event.pointerId);
-  };
-
-  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
-    releaseScrollLockRef.current?.();
-    releaseScrollLockRef.current = null;
-    releasePointerCapture(event.currentTarget, event.pointerId);
-    pointerIdRef.current = null;
-    directionLockRef.current = null;
-    setIsTrackAnimating(true);
-  };
-
   const handleTrackTransitionEnd = () => {
     if (trackIndex === 0) {
       setIsTrackAnimating(false);
@@ -305,15 +173,6 @@ export default function GameTierModal({
     }
   };
 
-  const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (!shouldSuppressClickRef.current) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    shouldSuppressClickRef.current = false;
-  };
   const slideWidth = Math.max(viewportWidth - TIER_MODAL_CAROUSEL_SIDE_PADDING * 2, 0);
   const slideSpan = slideWidth + TIER_MODAL_CAROUSEL_GAP;
   const trackTranslateX = TIER_MODAL_CAROUSEL_SIDE_PADDING - trackIndex * slideSpan;
@@ -368,12 +227,7 @@ export default function GameTierModal({
           </div>
           <div
             ref={viewportRef}
-            className="app-shell__tier-modal-carousel app-shell__swipeable-tab-panel"
-            onClickCapture={handleClickCapture}
-            onPointerCancel={handlePointerCancel}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
+            className="app-shell__tier-modal-carousel"
             role="tabpanel"
           >
             <div

@@ -130,4 +130,49 @@ describe('GameScheduledSellOrdersTab', () => {
 
     expect(screen.getByText('완료된 예약 매도 주문이 아직 없습니다.')).toBeInTheDocument();
   });
+
+  it('calls cancel when the pending order cancel button is clicked', async () => {
+    const user = userEvent.setup();
+    const onCancelOrder = vi.fn();
+
+    render(
+      <GameScheduledSellOrdersTab
+        isLoading={false}
+        onCancelOrder={onCancelOrder}
+        orders={[
+          {
+            id: 1,
+            userId: 1,
+            seasonId: 1,
+            positionId: 10,
+            videoId: 'video-1',
+            videoTitle: '대기 주문',
+            channelTitle: '채널 A',
+            thumbnailUrl: 'https://example.com/a.jpg',
+            regionCode: 'KR',
+            targetRank: 10,
+            triggerDirection: 'RANK_IMPROVES_TO',
+            status: 'PENDING',
+            currentRank: 12,
+            buyRank: 15,
+            quantity: 100,
+            stakePoints: 5000,
+            sellPricePoints: null,
+            settledPoints: null,
+            pnlPoints: null,
+            failureReason: null,
+            triggeredAt: null,
+            executedAt: null,
+            canceledAt: null,
+            createdAt: '2026-04-24T00:00:00.000Z',
+            updatedAt: '2026-04-24T00:00:00.000Z',
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '예약 취소' }));
+
+    expect(onCancelOrder).toHaveBeenCalledWith(1);
+  });
 });

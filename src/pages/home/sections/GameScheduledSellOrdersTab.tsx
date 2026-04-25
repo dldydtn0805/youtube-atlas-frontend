@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { GameScheduledSellOrder } from '../../../features/game/types';
-import useSwipeableTabs from '../hooks/useSwipeableTabs';
 import {
   formatGameOrderQuantity,
   formatGameTimestamp,
@@ -101,14 +100,9 @@ export default function GameScheduledSellOrdersTab({
 }: GameScheduledSellOrdersTabProps) {
   const [activeFilter, setActiveFilter] = useState<ScheduledSellOrderFilter>('PENDING');
   const filteredOrders = getScheduledSellOrdersByFilter(orders, activeFilter);
-  const swipeHandlers = useSwipeableTabs({
-    onChange: setActiveFilter,
-    order: ['ALL', 'PENDING', 'EXECUTED', 'CANCELED'] as const,
-    value: activeFilter,
-  });
 
   return (
-    <div className="app-shell__game-scheduled-orders app-shell__swipeable-tab-panel" {...swipeHandlers}>
+    <div className="app-shell__game-scheduled-orders">
       <div className="app-shell__game-scheduled-order-filters" aria-label="예약 주문 상태 필터" role="tablist">
         {SCHEDULED_SELL_ORDER_FILTERS.map((filter) => (
           <button
@@ -133,7 +127,7 @@ export default function GameScheduledSellOrdersTab({
           </div>
         ) : filteredOrders.length === 0 ? (
           emptyMessage ? (
-            <p className="app-shell__game-empty">{getScheduledSellEmptyMessage(activeFilter, emptyMessage)}</p>
+            <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{getScheduledSellEmptyMessage(activeFilter, emptyMessage)}</p>
           ) : null
         ) : (
           <ul className="app-shell__game-positions">

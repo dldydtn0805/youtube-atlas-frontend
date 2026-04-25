@@ -51,6 +51,21 @@ describe('PlayerStage', () => {
     expect(screen.queryByRole('button', { name: '시네마틱 모드' })).not.toBeInTheDocument();
   });
 
+  it('hides mobile game summary buttons for anonymous users', () => {
+    render(
+      <PlayerStage
+        {...createProps({
+          authStatus: 'anonymous',
+          isMobileLayout: true,
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: '내 게임 열기' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '지갑 현황 열기' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '티어 현황 열기' })).not.toBeInTheDocument();
+  });
+
   it('keeps the mobile panel layout while only the docked video player uses the cinematic path', () => {
     const { container } = render(
       <PlayerStage

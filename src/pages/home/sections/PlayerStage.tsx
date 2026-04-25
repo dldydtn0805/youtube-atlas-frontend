@@ -24,6 +24,7 @@ interface PlayerViewportContentProps {
 }
 
 interface PlayerStageHeaderProps {
+  authStatus: AuthStatus;
   cinematicToggleLabel: string;
   currentTierCode?: string | null;
   currentTierName?: string | null;
@@ -135,6 +136,7 @@ export function PlayerViewportContent({
 }
 
 export function PlayerStageHeader({
+  authStatus,
   cinematicToggleLabel,
   currentTierCode,
   currentTierName,
@@ -153,6 +155,7 @@ export function PlayerStageHeader({
   selectedCountryName,
   walletBalancePoints,
 }: PlayerStageHeaderProps) {
+  const isAuthenticated = authStatus === 'authenticated';
   const walletSummary =
     typeof walletBalancePoints === 'number' && Number.isFinite(walletBalancePoints)
       ? formatHeaderPoints(walletBalancePoints)
@@ -180,38 +183,40 @@ export function PlayerStageHeader({
                   ) : null}
                 </h2>
               </div>
-              <div className="app-shell__player-mobile-summary" aria-label="내 게임 요약">
-                <button
-                  aria-label="내 게임 열기"
-                  className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button app-shell__player-mobile-summary-item--game"
-                  data-tier-code={currentTierCode ?? undefined}
-                  data-limit-reached={isOpenPositionLimitReached ? 'true' : undefined}
-                  onClick={onOpenGameModal}
-                  type="button"
-                >
-                  <span className="app-shell__player-mobile-summary-label">내 게임</span>
-                  <span className="app-shell__player-mobile-summary-value">{openPositionCount}개</span>
-                </button>
-                <button
-                  aria-label="지갑 현황 열기"
-                  className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button app-shell__player-mobile-summary-item--wallet"
-                  onClick={onOpenWalletModal}
-                  type="button"
-                >
-                  <span className="app-shell__player-mobile-summary-label">잔액</span>
-                  <span className="app-shell__player-mobile-summary-value">{walletSummary}</span>
-                </button>
-                <button
-                  aria-label="티어 현황 열기"
-                  className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button"
-                  data-tier-code={currentTierCode ?? undefined}
-                  onClick={onOpenTierModal}
-                  type="button"
-                >
-                  <span className="app-shell__player-mobile-summary-label">티어</span>
-                  <span className="app-shell__player-mobile-summary-value">{tierSummary}</span>
-                </button>
-              </div>
+              {isAuthenticated ? (
+                <div className="app-shell__player-mobile-summary" aria-label="내 게임 요약">
+                  <button
+                    aria-label="내 게임 열기"
+                    className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button app-shell__player-mobile-summary-item--game"
+                    data-tier-code={currentTierCode ?? undefined}
+                    data-limit-reached={isOpenPositionLimitReached ? 'true' : undefined}
+                    onClick={onOpenGameModal}
+                    type="button"
+                  >
+                    <span className="app-shell__player-mobile-summary-label">내 게임</span>
+                    <span className="app-shell__player-mobile-summary-value">{openPositionCount}개</span>
+                  </button>
+                  <button
+                    aria-label="지갑 현황 열기"
+                    className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button app-shell__player-mobile-summary-item--wallet"
+                    onClick={onOpenWalletModal}
+                    type="button"
+                  >
+                    <span className="app-shell__player-mobile-summary-label">잔액</span>
+                    <span className="app-shell__player-mobile-summary-value">{walletSummary}</span>
+                  </button>
+                  <button
+                    aria-label="티어 현황 열기"
+                    className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button"
+                    data-tier-code={currentTierCode ?? undefined}
+                    onClick={onOpenTierModal}
+                    type="button"
+                  >
+                    <span className="app-shell__player-mobile-summary-label">티어</span>
+                    <span className="app-shell__player-mobile-summary-value">{tierSummary}</span>
+                  </button>
+                </div>
+              ) : null}
             </div>
             {headerSupplementalContent ? (
               <div className="app-shell__player-heading-supplemental app-shell__player-heading-supplemental--mobile">
@@ -365,6 +370,7 @@ function PlayerStage({
         >
           {renderHeaderInline ? (
             <PlayerStageHeader
+              authStatus={authStatus}
               cinematicToggleLabel={cinematicToggleLabel}
               currentTierCode={currentTierCode}
               currentTierName={currentTierName}

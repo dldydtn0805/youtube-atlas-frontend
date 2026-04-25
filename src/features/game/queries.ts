@@ -85,6 +85,207 @@ interface InvalidateGameQueriesOptions {
   regionCode?: string | null;
 }
 
+type GamePositionsQuerySnapshot = [ReadonlyArray<unknown>, GamePosition[] | undefined];
+
+interface ScheduledSellOptimisticContext {
+  previousOrders?: GameScheduledSellOrder[];
+  previousPositions: GamePositionsQuerySnapshot[];
+}
+
+interface OptimisticSellHistoryEntry {
+  position: GamePosition;
+}
+
+interface SellPositionsOptimisticContext {
+  previousHistoryPositions: GamePositionsQuerySnapshot[];
+  previousOpenPositions: GamePositionsQuerySnapshot[];
+}
+
+function getGamePositionsQueryData(
+  queryClient: QueryClient,
+  accessToken: string | null,
+  regionCode: string,
+  status: string,
+) {
+  return queryClient.getQueriesData<GamePosition[]>({
+    queryKey: ['game', 'positions', accessToken, regionCode, status],
+  }) as GamePositionsQuerySnapshot[];
+}
+
+function getPositionUnitValue(value: number | null | undefined, quantity: number) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || quantity <= 0) {
+    return null;
+  }
+
+  return value / quantity;
+}
+
+function pickOptimisticPositionValue(unitValue: number | null, quantity: number, fallback: number) {
+  if (unitValue === null) {
+    return fallback;
+  }
+
+  return Math.round(unitValue * quantity);
+}
+
+function buildOptimisticSellHistoryEntries(
+  positions: GamePosition[],
+  input: SellGamePositionsInput,
+  soldAt: string,
+) {
+  let remainingQuantity = Math.max(0, Math.floor(input.quantity));
+  let tempHistoryId = 1;
+  const entries: OptimisticSellHistoryEntry[] = [];
+
+  positions.forEach((position) => {
+    if (remainingQuantity <= 0) {
+      return;
+    }
+
+    const isTargetPosition =
+      typeof input.positionId === 'number' ? position.id === input.positionId : position.videoId === input.videoId;
+
+    if (!isTargetPosition || position.quantity <= 0) {
+      return;
+    }
+
+    const soldQuantity = Math.min(position.quantity, remainingQuantity);
+
+    if (soldQuantity <= 0) {
+      return;
+    }
+
+    remainingQuantity -= soldQuantity;
+
+    const stakeUnitValue = position.stakePoints / position.quantity;
+    const currentPriceUnitValue = getPositionUnitValue(position.currentPricePoints, position.quantity);
+    const profitUnitValue = getPositionUnitValue(position.profitPoints, position.quantity);
+    const soldStakePoints = Math.round(stakeUnitValue * soldQuantity);
+    const soldCurrentPricePoints = pickOptimisticPositionValue(
+      currentPriceUnitValue,
+      soldQuantity,
+      soldStakePoints,
+    );
+    const soldProfitPoints =
+      profitUnitValue === null ? soldCurrentPricePoints - soldStakePoints : Math.round(profitUnitValue * soldQuantity);
+
+    entries.push({
+      position: {
+        ...position,
+        id: -(Date.now() + tempHistoryId),
+        quantity: soldQuantity,
+        stakePoints: soldStakePoints,
+        currentPricePoints: soldCurrentPricePoints,
+        profitPoints: soldProfitPoints,
+        status: 'CLOSED',
+        closedAt: soldAt,
+      },
+    });
+    tempHistoryId += 1;
+  });
+
+  return entries;
+}
+
+function applyOptimisticSellToOpenPositions(positions: GamePosition[], input: SellGamePositionsInput) {
+  let remainingQuantity = Math.max(0, Math.floor(input.quantity));
+
+  return positions.reduce<GamePosition[]>((nextPositions, position) => {
+    if (remainingQuantity <= 0) {
+      nextPositions.push(position);
+      return nextPositions;
+    }
+
+    const isTargetPosition =
+      typeof input.positionId === 'number' ? position.id === input.positionId : position.videoId === input.videoId;
+
+    if (!isTargetPosition || position.quantity <= 0) {
+      nextPositions.push(position);
+      return nextPositions;
+    }
+
+    const soldQuantity = Math.min(position.quantity, remainingQuantity);
+
+    if (soldQuantity <= 0) {
+      nextPositions.push(position);
+      return nextPositions;
+    }
+
+    remainingQuantity -= soldQuantity;
+
+    if (soldQuantity >= position.quantity) {
+      return nextPositions;
+    }
+
+    const remainingPositionQuantity = position.quantity - soldQuantity;
+    const stakeUnitValue = position.stakePoints / position.quantity;
+    const currentPriceUnitValue = getPositionUnitValue(position.currentPricePoints, position.quantity);
+    const profitUnitValue = getPositionUnitValue(position.profitPoints, position.quantity);
+    const remainingStakePoints = Math.round(stakeUnitValue * remainingPositionQuantity);
+    const remainingCurrentPricePoints =
+      currentPriceUnitValue === null ? null : Math.round(currentPriceUnitValue * remainingPositionQuantity);
+    const remainingProfitPoints =
+      profitUnitValue === null ? null : Math.round(profitUnitValue * remainingPositionQuantity);
+    const remainingScheduledSellQuantity = Math.max(0, (position.scheduledSellQuantity ?? 0) - soldQuantity);
+
+    nextPositions.push({
+      ...position,
+      quantity: remainingPositionQuantity,
+      stakePoints: remainingStakePoints,
+      currentPricePoints: remainingCurrentPricePoints,
+      profitPoints: remainingProfitPoints,
+      reservedForSell: remainingScheduledSellQuantity > 0,
+      scheduledSellQuantity: remainingScheduledSellQuantity,
+      scheduledSellOrderId: remainingScheduledSellQuantity > 0 ? position.scheduledSellOrderId ?? null : null,
+      scheduledSellTargetRank:
+        remainingScheduledSellQuantity > 0 ? position.scheduledSellTargetRank ?? null : null,
+      scheduledSellTriggerDirection:
+        remainingScheduledSellQuantity > 0 ? position.scheduledSellTriggerDirection ?? null : null,
+    });
+
+    return nextPositions;
+  }, []);
+}
+
+function buildOptimisticScheduledSellOrder(
+  input: CreateScheduledSellOrderInput,
+  sourcePosition: GamePosition | null,
+) {
+  const now = new Date().toISOString();
+  const quantity = Math.max(0, Math.floor(input.quantity));
+  const sourceQuantity = sourcePosition?.quantity ?? 0;
+  const unitStakePoints =
+    sourcePosition && sourceQuantity > 0 ? sourcePosition.stakePoints / sourceQuantity : 0;
+
+  return {
+    id: -Date.now(),
+    userId: 0,
+    seasonId: 0,
+    positionId: input.positionId,
+    videoId: sourcePosition?.videoId ?? '',
+    videoTitle: sourcePosition?.title ?? '',
+    channelTitle: sourcePosition?.channelTitle ?? '',
+    thumbnailUrl: sourcePosition?.thumbnailUrl ?? '',
+    regionCode: input.regionCode,
+    targetRank: input.targetRank,
+    triggerDirection: input.triggerDirection,
+    status: 'PENDING',
+    currentRank: sourcePosition?.currentRank ?? null,
+    buyRank: sourcePosition?.buyRank ?? 0,
+    quantity,
+    stakePoints: Math.round(unitStakePoints * quantity),
+    sellPricePoints: null,
+    settledPoints: null,
+    pnlPoints: null,
+    failureReason: null,
+    triggeredAt: null,
+    executedAt: null,
+    canceledAt: null,
+    createdAt: now,
+    updatedAt: now,
+  } satisfies GameScheduledSellOrder;
+}
+
 export async function invalidateGameQueries(
   queryClient: QueryClient,
   { accessToken, includeLeaderboardPositions = false, regionCode = null }: InvalidateGameQueriesOptions,
@@ -689,6 +890,52 @@ export function useSellGamePositions(accessToken: string | null) {
 
       return sellGamePositions(accessToken, input);
     },
+    onMutate: async (input) => {
+      const openPositionsKey = ['game', 'positions', accessToken, input.regionCode, 'OPEN'] as const;
+      const historyPositionsKey = ['game', 'positions', accessToken, input.regionCode, ''] as const;
+
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: openPositionsKey }),
+        queryClient.cancelQueries({ queryKey: historyPositionsKey }),
+      ]);
+
+      const previousOpenPositions = getGamePositionsQueryData(queryClient, accessToken, input.regionCode, 'OPEN');
+      const previousHistoryPositions = getGamePositionsQueryData(queryClient, accessToken, input.regionCode, '');
+      const sourceOpenPositions = previousOpenPositions[0]?.[1] ?? [];
+      const soldAt = new Date().toISOString();
+      const optimisticHistoryEntries = buildOptimisticSellHistoryEntries(sourceOpenPositions, input, soldAt);
+
+      previousOpenPositions.forEach(([queryKey]) => {
+        queryClient.setQueryData<GamePosition[]>(queryKey, (positions) =>
+          positions ? applyOptimisticSellToOpenPositions(positions, input) : positions,
+        );
+      });
+
+      previousHistoryPositions.forEach(([queryKey]) => {
+        queryClient.setQueryData<GamePosition[]>(queryKey, (positions) => {
+          const nextPositions = positions ? [...positions] : [];
+
+          optimisticHistoryEntries.forEach(({ position }) => {
+            nextPositions.unshift(position);
+          });
+
+          return nextPositions;
+        });
+      });
+
+      return {
+        previousHistoryPositions,
+        previousOpenPositions,
+      } satisfies SellPositionsOptimisticContext;
+    },
+    onError: (_error, _input, context) => {
+      context?.previousOpenPositions.forEach(([queryKey, positions]) => {
+        queryClient.setQueryData(queryKey, positions);
+      });
+      context?.previousHistoryPositions.forEach(([queryKey, positions]) => {
+        queryClient.setQueryData(queryKey, positions);
+      });
+    },
     onSuccess: (_data, input) => {
       void invalidateGameQueries(queryClient, {
         accessToken,
@@ -709,6 +956,58 @@ export function useCreateScheduledSellOrder(accessToken: string | null) {
       }
 
       return createScheduledSellOrder(accessToken, input);
+    },
+    onMutate: async (input) => {
+      const scheduledOrdersKey = gameQueryKeys.scheduledSellOrders(accessToken, input.regionCode);
+      const positionsKey = ['game', 'positions', accessToken, input.regionCode, 'OPEN'] as const;
+
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: scheduledOrdersKey }),
+        queryClient.cancelQueries({ queryKey: positionsKey }),
+      ]);
+
+      const previousOrders = queryClient.getQueryData<GameScheduledSellOrder[]>(scheduledOrdersKey);
+      const previousPositions = getGamePositionsQueryData(queryClient, accessToken, input.regionCode, 'OPEN');
+      const sourcePosition =
+        previousPositions.flatMap(([, positions]) => positions ?? []).find((position) => position.id === input.positionId) ??
+        null;
+      const optimisticOrder = buildOptimisticScheduledSellOrder(input, sourcePosition);
+
+      queryClient.setQueryData<GameScheduledSellOrder[]>(scheduledOrdersKey, (orders) => [
+        optimisticOrder,
+        ...(orders ?? []),
+      ]);
+
+      previousPositions.forEach(([queryKey]) => {
+        queryClient.setQueryData<GamePosition[]>(queryKey, (positions) =>
+          (positions ?? []).map((position) =>
+            position.id === input.positionId
+              ? {
+                  ...position,
+                  reservedForSell: true,
+                  scheduledSellOrderId: optimisticOrder.id,
+                  scheduledSellQuantity: input.quantity,
+                  scheduledSellTargetRank: input.targetRank,
+                  scheduledSellTriggerDirection: input.triggerDirection,
+                }
+              : position,
+          ),
+        );
+      });
+
+      return {
+        previousOrders,
+        previousPositions,
+      } satisfies ScheduledSellOptimisticContext;
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(
+        gameQueryKeys.scheduledSellOrders(accessToken, _input.regionCode),
+        context?.previousOrders,
+      );
+      context?.previousPositions.forEach(([queryKey, positions]) => {
+        queryClient.setQueryData(queryKey, positions);
+      });
     },
     onSuccess: (_data, input) => {
       void invalidateGameQueries(queryClient, {

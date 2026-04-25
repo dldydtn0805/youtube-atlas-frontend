@@ -28,6 +28,7 @@ interface UseHomeGameTradeActionsOptions {
   mutateBuyGamePosition: (input: CreateGamePositionInput) => Promise<unknown>;
   mutateSellGamePositions: (input: SellGamePositionsInput) => Promise<SellGamePositionResponse[]>;
   onBuySuccess?: () => Promise<void> | void;
+  onSellSuccess?: () => Promise<void> | void;
   selectedOpenPositionId?: number | null;
   selectedGameActionTitle: string;
   selectedVideoId?: string;
@@ -62,6 +63,7 @@ export default function useHomeGameTradeActions({
   mutateBuyGamePosition,
   mutateSellGamePositions,
   onBuySuccess,
+  onSellSuccess,
   selectedOpenPositionId,
   selectedGameActionTitle,
   selectedVideoId,
@@ -231,6 +233,7 @@ export default function useHomeGameTradeActions({
       setActiveTradeModal(null);
       setSellQuantity(DEFAULT_GAME_QUANTITY);
       setGameActionStatus('매도 완료됐어요.');
+      void onSellSuccess?.();
     } catch (error) {
       if (
         error instanceof ApiRequestError &&
@@ -252,6 +255,7 @@ export default function useHomeGameTradeActions({
     logout,
     maxSellQuantity,
     mutateSellGamePositions,
+    onSellSuccess,
     selectedOpenPositionId,
     selectedGameActionTitle,
     selectedRegionCode,

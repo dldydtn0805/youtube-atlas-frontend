@@ -7,8 +7,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -46,8 +44,6 @@ import GameTierSummary from './GameTierSummary';
 import GameWalletSummary from './GameWalletSummary';
 import MiniVideoPreview from './MiniVideoPreview';
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
-import { lockSwipeScroll } from '../hooks/swipeScrollLock';
-import { resolveSwipeDirection } from '../hooks/swipeDirection';
 
 type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
 
@@ -58,18 +54,7 @@ const GAME_PANEL_TABS: ReadonlyArray<{ id: GameTab; label: string }> = [
   { id: 'guide', label: '튜토리얼' },
 ];
 
-const GAME_PANEL_SWIPE_THRESHOLD = 56;
-const GAME_PANEL_DIRECTION_LOCK_THRESHOLD = 10;
 const GAME_PANEL_CAROUSEL_GAP = 10;
-const GAME_PANEL_INTERACTIVE_SWIPE_SELECTOR = 'input, textarea, select';
-
-function getWrappedGamePanelTabIndex(index: number) {
-  return (index + GAME_PANEL_TABS.length) % GAME_PANEL_TABS.length;
-}
-
-function shouldIgnoreGamePanelSwipeTarget(target: EventTarget | null) {
-  return target instanceof HTMLElement && target.closest(GAME_PANEL_INTERACTIVE_SWIPE_SELECTOR);
-}
 
 function inferGrossSellPointsFromSettled(settledPoints?: number | null) {
   if (typeof settledPoints !== 'number' || !Number.isFinite(settledPoints) || settledPoints < 0) {
@@ -517,15 +502,7 @@ export function RankingGamePanelShell({
   const [isTrackAnimating, setIsTrackAnimating] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const pointerIdRef = useRef<number | null>(null);
   const skipNextActiveTabSyncRef = useRef(false);
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
-  const directionLockRef = useRef<'horizontal' | 'vertical' | null>(null);
-  const shouldSuppressClickRef = useRef(false);
-  const viewportWidthRef = useRef(0);
-  const releaseScrollLockRef = useRef<(() => void) | null>(null);
-  const activeIndex = GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab);
   const carouselTabs = useMemo(
     () => [GAME_PANEL_TABS[GAME_PANEL_TABS.length - 1], ...GAME_PANEL_TABS, GAME_PANEL_TABS[0]],
     [],
@@ -556,7 +533,6 @@ export function RankingGamePanelShell({
 
     const syncViewportWidth = () => {
       const nextWidth = Math.max(viewport.clientWidth, 1);
-      viewportWidthRef.current = nextWidth;
       setViewportWidth(nextWidth);
     };
 
@@ -592,102 +568,6 @@ export function RankingGamePanelShell({
     onSelectTab(nextTab);
   };
 
-  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if ((event.pointerType === 'mouse' && event.button !== 0) || shouldIgnoreGamePanelSwipeTarget(event.target)) {
-      return;
-    }
-
-    pointerIdRef.current = event.pointerId;
-    startXRef.current = event.clientX;
-    startYRef.current = event.clientY;
-    directionLockRef.current = null;
-    shouldSuppressClickRef.current = false;
-    viewportWidthRef.current = event.currentTarget.clientWidth;
-    releaseScrollLockRef.current?.();
-    releaseScrollLockRef.current = null;
-    setIsTrackAnimating(false);
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    const deltaX = event.clientX - startXRef.current;
-    const deltaY = event.clientY - startYRef.current;
-
-    if (directionLockRef.current === null) {
-      directionLockRef.current = resolveSwipeDirection(
-        deltaX,
-        deltaY,
-        GAME_PANEL_DIRECTION_LOCK_THRESHOLD,
-      );
-    }
-
-    if (directionLockRef.current === null) {
-      return;
-    }
-
-    if (directionLockRef.current !== 'horizontal') {
-      return;
-    }
-
-    if (releaseScrollLockRef.current === null) {
-      releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
-    }
-
-    shouldSuppressClickRef.current = true;
-
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-  };
-
-  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    const deltaX = event.clientX - startXRef.current;
-    const nextViewportWidth = viewportWidthRef.current || event.currentTarget.clientWidth;
-    const swipeDirection =
-      directionLockRef.current ??
-      resolveSwipeDirection(deltaX, event.clientY - startYRef.current, GAME_PANEL_DIRECTION_LOCK_THRESHOLD);
-    const shouldChangeTab =
-      swipeDirection === 'horizontal' &&
-      (Math.abs(deltaX) >= GAME_PANEL_SWIPE_THRESHOLD || Math.abs(deltaX) >= nextViewportWidth * 0.18);
-
-    setIsTrackAnimating(true);
-
-    if (shouldChangeTab) {
-      const nextIndex = deltaX < 0 ? activeIndex + 1 : activeIndex - 1;
-      const wrappedIndex = getWrappedGamePanelTabIndex(nextIndex);
-      const nextTrackIndex =
-        deltaX < 0 && activeIndex === GAME_PANEL_TABS.length - 1
-          ? GAME_PANEL_TABS.length + 1
-          : deltaX > 0 && activeIndex === 0
-            ? 0
-            : wrappedIndex + 1;
-
-      skipNextActiveTabSyncRef.current = true;
-      setTrackIndex(nextTrackIndex);
-      onSelectTab(GAME_PANEL_TABS[wrappedIndex].id);
-    }
-
-    pointerIdRef.current = null;
-    directionLockRef.current = null;
-    releaseScrollLockRef.current?.();
-    releaseScrollLockRef.current = null;
-  };
-
-  const handlePointerCancel = () => {
-    releaseScrollLockRef.current?.();
-    releaseScrollLockRef.current = null;
-    pointerIdRef.current = null;
-    directionLockRef.current = null;
-    setIsTrackAnimating(true);
-  };
-
   const handleTrackTransitionEnd = () => {
     if (trackIndex === 0) {
       setIsTrackAnimating(false);
@@ -699,16 +579,6 @@ export function RankingGamePanelShell({
       setIsTrackAnimating(false);
       setTrackIndex(1);
     }
-  };
-
-  const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (!shouldSuppressClickRef.current) {
-      return;
-    }
-
-    shouldSuppressClickRef.current = false;
-    event.preventDefault();
-    event.stopPropagation();
   };
 
   const isViewportReady = viewportWidth > 1;
@@ -793,12 +663,7 @@ export function RankingGamePanelShell({
           </div>
           <div
             ref={viewportRef}
-            className="app-shell__game-tab-panel app-shell__game-tab-panel--carousel app-shell__swipeable-tab-panel"
-            onClickCapture={handleClickCapture}
-            onPointerCancel={handlePointerCancel}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
+            className="app-shell__game-tab-panel app-shell__game-tab-panel--carousel"
             role="tabpanel"
           >
             {isViewportReady ? (
@@ -1177,7 +1042,7 @@ export function RankingGamePositionsTab({
   }
 
   if (holdings.length === 0) {
-    return emptyMessage ? <p className="app-shell__game-empty">{emptyMessage}</p> : null;
+    return emptyMessage ? <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{emptyMessage}</p> : null;
   }
 
   return (
@@ -1421,7 +1286,7 @@ function RankingGameHistoryTabComponent({
   }
 
   if (positions.length === 0) {
-    return emptyMessage ? <p className="app-shell__game-empty">{emptyMessage}</p> : null;
+    return emptyMessage ? <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{emptyMessage}</p> : null;
   }
 
   return (

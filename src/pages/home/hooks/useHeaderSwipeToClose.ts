@@ -46,7 +46,11 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         resetSwipeState();
       },
       onPointerDown(event: ReactPointerEvent<HTMLElement>) {
-        if (disabled || event.pointerType === 'mouse' || isInteractiveTarget(event.target)) {
+        if (
+          disabled ||
+          (event.pointerType === 'mouse' && event.button !== 0) ||
+          isInteractiveTarget(event.target)
+        ) {
           return;
         }
 
@@ -65,6 +69,9 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         );
         setIsDragging(true);
         setDragOffset(0);
+        if (typeof event.currentTarget.setPointerCapture === 'function') {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
       },
       onPointerMove(event: ReactPointerEvent<HTMLElement>) {
         if (disabled || pointerIdRef.current !== event.pointerId || !isSwipeCandidateRef.current) {
@@ -111,6 +118,13 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
           deltaX <= deltaY * 0.7;
 
         resetSwipeState();
+        if (
+          typeof event.currentTarget.hasPointerCapture === 'function' &&
+          typeof event.currentTarget.releasePointerCapture === 'function' &&
+          event.currentTarget.hasPointerCapture(event.pointerId)
+        ) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
 
         if (shouldClose) {
           onClose();

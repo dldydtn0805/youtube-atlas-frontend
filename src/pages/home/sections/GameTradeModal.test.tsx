@@ -156,4 +156,37 @@ describe('GameTradeModal', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('closes when the modal header is dragged down with a mouse', () => {
+    const onClose = vi.fn();
+    render(
+      <GameTradeModal
+        confirmLabel="매도"
+        currentRankLabel="3위"
+        helperText="테스트"
+        isOpen
+        isSubmitting={false}
+        maxQuantity={200}
+        mode="sell"
+        onChangeQuantity={vi.fn()}
+        onClose={onClose}
+        onConfirm={vi.fn()}
+        quantity={100}
+        summaryItems={[{ label: '정산 금액', value: '900P' }]}
+        thumbnailUrl={null}
+        title="테스트 영상"
+        unitPointsLabel="1,000P"
+      />,
+    );
+
+    const header = document.querySelector('.app-shell__modal-header');
+
+    expect(header).not.toBeNull();
+
+    fireEvent.pointerDown(header as Element, { button: 0, clientX: 40, clientY: 20, pointerId: 2, pointerType: 'mouse' });
+    fireEvent.pointerMove(header as Element, { clientX: 56, clientY: 460, pointerId: 2, pointerType: 'mouse' });
+    fireEvent.pointerUp(header as Element, { clientX: 56, clientY: 460, pointerId: 2, pointerType: 'mouse' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

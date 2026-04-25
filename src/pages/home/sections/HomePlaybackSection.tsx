@@ -643,6 +643,7 @@ export default function HomePlaybackSection({
       {shouldRenderDetachedMobileViewport ? (
         <>
           <PlayerStageHeader
+            authStatus={playerStageProps.authStatus}
             cinematicToggleLabel={playerStageProps.cinematicToggleLabel}
             currentTierCode={playerStageProps.currentTierCode}
             currentTierName={playerStageProps.currentTierName}

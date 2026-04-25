@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AuthStatus } from '../../../features/auth/types';
 import type { GameCurrentSeason, GamePosition } from '../../../features/game/types';
 import { DEFAULT_GAME_QUANTITY } from '../gameHelpers';
@@ -71,19 +71,30 @@ export default function useHomeGameUiState({
     setGameActionStatus(null);
   }, [selectedVideoId]);
 
+  const hasPendingHoldPositions = useMemo(() => {
+    if (!currentGameSeason || openGamePositions.length === 0) {
+      return false;
+    }
+
+    return openGamePositions.some((position) => {
+      const elapsedSeconds = Math.floor((gameClock - new Date(position.createdAt).getTime()) / 1000);
+      return currentGameSeason.minHoldSeconds - elapsedSeconds > 0;
+    });
+  }, [currentGameSeason, gameClock, openGamePositions]);
+
   useEffect(() => {
-    if (openGamePositions.length === 0) {
+    if (!hasPendingHoldPositions) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
       setGameClock(Date.now());
-    }, 30_000);
+    }, 1_000);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [openGamePositions.length]);
+  }, [hasPendingHoldPositions]);
 
   const getRemainingHoldSeconds = useCallback(
     (position: GamePosition) => {

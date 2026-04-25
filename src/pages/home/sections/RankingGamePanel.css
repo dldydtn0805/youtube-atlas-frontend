@@ -457,8 +457,8 @@
 
 .app-shell__game-tab-loading-overlay {
   align-items: center;
-  background: rgba(255, 255, 255, 0.76);
-  backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
   border-radius: 18px;
   display: grid;
   inset: 0;
@@ -952,6 +952,14 @@
   display: grid;
   gap: 12px;
   min-height: 0;
+}
+
+.app-shell__game-empty--panel-centered {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 220px;
+  text-align: center;
 }
 
 .app-shell__game-scheduled-order-filters {
@@ -1701,8 +1709,8 @@
 
 .app-shell__game-leaderboard-overlay {
   align-items: center;
-  background: rgba(255, 255, 255, 0.76);
-  backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
   border-radius: 18px;
   display: grid;
   gap: 10px;
@@ -2618,11 +2626,11 @@
 }
 
 :root[data-theme='dark'] .app-shell__game-leaderboard-overlay {
-  background: rgba(10, 10, 10, 0.7);
+  background: transparent;
 }
 
 :root[data-theme='dark'] .app-shell__game-tab-loading-overlay {
-  background: rgba(10, 10, 10, 0.7);
+  background: transparent;
 }
 
 @media (max-width: 768px) {

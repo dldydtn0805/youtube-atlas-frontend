@@ -21,8 +21,8 @@
 
 .app-shell__game-highlights-overlay {
   align-items: center;
-  background: rgba(255, 255, 255, 0.76);
-  backdrop-filter: blur(8px);
+  background: transparent;
+  backdrop-filter: none;
   border-radius: 18px;
   display: grid;
   gap: 10px;
@@ -232,7 +232,7 @@
 }
 
 :root[data-theme='dark'] .app-shell__game-highlights-overlay {
-  background: rgba(10, 10, 10, 0.7);
+  background: transparent;
 }
 
 :root[data-theme='dark'] .app-shell__game-highlight-type {

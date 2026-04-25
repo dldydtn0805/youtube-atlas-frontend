@@ -49,7 +49,7 @@ describe('GameTierModal', () => {
     expect(screen.getByRole('tab', { name: '하이라이트' })).toBeInTheDocument();
   });
 
-  it('moves to the next tab when the modal panel is swiped left', () => {
+  it('switches tabs when a tab button is clicked', () => {
     render(
       <GameTierModal
         highlightsContent={<div>하이라이트 목록</div>}
@@ -60,36 +60,13 @@ describe('GameTierModal', () => {
       />,
     );
 
-    const panel = screen.getByRole('tabpanel');
-
-    fireEvent.pointerDown(panel, { clientX: 220, clientY: 32, pointerId: 1 });
-    fireEvent.pointerMove(panel, { clientX: 120, clientY: 36, pointerId: 1 });
-    fireEvent.pointerUp(panel, { clientX: 120, clientY: 36, pointerId: 1 });
+    fireEvent.click(screen.getByRole('tab', { name: '하이라이트' }));
 
     expect(screen.getAllByText('하이라이트 목록').length).toBeGreaterThan(0);
+    expect(screen.getByRole('tab', { name: '하이라이트' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('wraps from the first tab to the last tab on swipe right', () => {
-    render(
-      <GameTierModal
-        highlightsContent={<div>하이라이트 목록</div>}
-        isOpen
-        onClose={() => undefined}
-        rankingContent={<div>랭킹 목록</div>}
-        tierProgress={tierProgress}
-      />,
-    );
-
-    const panel = screen.getByRole('tabpanel');
-
-    fireEvent.pointerDown(panel, { clientX: 120, clientY: 32, pointerId: 2 });
-    fireEvent.pointerMove(panel, { clientX: 220, clientY: 36, pointerId: 2 });
-    fireEvent.pointerUp(panel, { clientX: 220, clientY: 36, pointerId: 2 });
-
-    expect(screen.getAllByText('랭킹 목록').length).toBeGreaterThan(0);
-  });
-
-  it('still clicks buttons inside a panel without triggering a swipe', () => {
+  it('still clicks buttons inside a panel', () => {
     const onPanelButtonClick = vi.fn();
 
     render(
@@ -106,28 +83,6 @@ describe('GameTierModal', () => {
     fireEvent.click(screen.getByRole('button', { name: '하이라이트 액션' }));
 
     expect(onPanelButtonClick).toHaveBeenCalledTimes(1);
-  });
-
-  it('can start a swipe from a button inside a panel', () => {
-    render(
-      <GameTierModal
-        highlightsContent={<button type="button">하이라이트 액션</button>}
-        isOpen
-        onClose={() => undefined}
-        rankingContent={<div>랭킹 목록</div>}
-        tierProgress={tierProgress}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: '하이라이트' }));
-
-    const panelButton = screen.getByRole('button', { name: '하이라이트 액션' });
-
-    fireEvent.pointerDown(panelButton, { clientX: 220, clientY: 32, pointerId: 3 });
-    fireEvent.pointerMove(panelButton, { clientX: 120, clientY: 36, pointerId: 3 });
-    fireEvent.pointerUp(panelButton, { clientX: 120, clientY: 36, pointerId: 3 });
-
-    expect(screen.getAllByText('랭킹 목록').length).toBeGreaterThan(0);
   });
 
   it('closes when the modal header is swiped down on touch', () => {

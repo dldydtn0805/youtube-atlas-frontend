@@ -68,10 +68,6 @@
   gap: 14px;
 }
 
-.app-shell__swipeable-tab-panel {
-  touch-action: pan-y;
-}
-
 .app-shell__modal-field {
   background: var(--surface-modal-field);
   border: 1px solid var(--border);

@@ -151,6 +151,15 @@ function createOpenGameHolding(overrides: Partial<OpenGameHolding> = {}): OpenGa
   };
 }
 
+function setGamePanelViewportWidth(width = 320) {
+  const panel = screen.getByRole('tabpanel');
+
+  Object.defineProperty(panel, 'clientWidth', { configurable: true, value: width });
+  fireEvent(window, new Event('resize'));
+
+  return panel;
+}
+
 describe('RankingGameSelectedVideoActions', () => {
   it('keeps the now playing label and selected title click targets separate', () => {
     const onContentClick = vi.fn();
@@ -341,7 +350,7 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Holding Video 매도' })).toBeDisabled();
+    expect(screen.getByLabelText('Holding Video 매도')).toBeDisabled();
   });
 });
 
@@ -372,96 +381,24 @@ describe('RankingGamePanelShell', () => {
     );
   }
 
-  it('changes tabs when the panel content is swiped', () => {
-    const onSelectTab = vi.fn();
+  it('changes tabs when a tab button is clicked', () => {
+    render(<ControlledRankingGamePanelShell initialTab="positions" />);
+    setGamePanelViewportWidth();
 
-    render(
-      <RankingGamePanelShell
-        activeGameTab="positions"
-        isCollapsed={false}
-        onSelectTab={onSelectTab}
-        onToggleCollapse={vi.fn()}
-        summary={{
-          computedWalletTotalAssetPoints: 1000,
-          openDistinctVideoCount: 1,
-          openPositionsBuyPoints: 100,
-          openPositionsEvaluationPoints: 120,
-          openPositionsProfitPoints: 20,
-        }}
-        tabContentById={{
-          guide: <div>튜토리얼 패널</div>,
-          history: <div>로그 패널</div>,
-          positions: <div>인벤토리 패널</div>,
-          scheduledOrders: <div>대기열 패널</div>,
-        }}
-      />,
-    );
+    fireEvent.click(screen.getByRole('tab', { name: '대기열' }));
 
-    const panel = screen.getByRole('tabpanel');
-
-    fireEvent.pointerDown(panel, { clientX: 240, clientY: 40, pointerId: 1 });
-    fireEvent.pointerMove(panel, { clientX: 150, clientY: 44, pointerId: 1 });
-    fireEvent.pointerUp(panel, { clientX: 150, clientY: 44, pointerId: 1 });
-
-    expect(onSelectTab).toHaveBeenCalledWith('scheduledOrders');
+    expect(screen.getByRole('tab', { name: '대기열' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('대기열 패널')).toBeInTheDocument();
   });
 
-  it('does not animate the carousel on the initial render', () => {
+  it('renders the carousel track after measuring the panel width', () => {
     const { container } = render(<ControlledRankingGamePanelShell initialTab="positions" />);
+    setGamePanelViewportWidth();
     const track = container.querySelector('.app-shell__game-tab-track');
 
-    expect(track).toHaveAttribute('data-animating', 'false');
+    expect(track).toBeInTheDocument();
   });
 
-  it('wraps from the last tab to the first tab on swipe left', () => {
-    const onSelectTab = vi.fn();
-
-    render(
-      <RankingGamePanelShell
-        activeGameTab="guide"
-        isCollapsed={false}
-        onSelectTab={onSelectTab}
-        onToggleCollapse={vi.fn()}
-        summary={{
-          computedWalletTotalAssetPoints: 1000,
-          openDistinctVideoCount: 1,
-          openPositionsBuyPoints: 100,
-          openPositionsEvaluationPoints: 120,
-          openPositionsProfitPoints: 20,
-        }}
-        tabContentById={{
-          guide: <div>튜토리얼 패널</div>,
-          history: <div>로그 패널</div>,
-          positions: <div>인벤토리 패널</div>,
-          scheduledOrders: <div>대기열 패널</div>,
-        }}
-      />,
-    );
-
-    const panel = screen.getByRole('tabpanel');
-
-    fireEvent.pointerDown(panel, { clientX: 240, clientY: 40, pointerId: 2 });
-    fireEvent.pointerMove(panel, { clientX: 150, clientY: 44, pointerId: 2 });
-    fireEvent.pointerUp(panel, { clientX: 150, clientY: 44, pointerId: 2 });
-
-    expect(onSelectTab).toHaveBeenCalledWith('positions');
-  });
-
-  it('keeps the wrap swipe animation on the clone slide until the transition ends', () => {
-    const { container } = render(<ControlledRankingGamePanelShell initialTab="guide" />);
-    const panel = screen.getByRole('tabpanel');
-    const track = container.querySelector('.app-shell__game-tab-track') as HTMLDivElement;
-
-    Object.defineProperty(panel, 'clientWidth', { configurable: true, value: 320 });
-    fireEvent(window, new Event('resize'));
-
-    fireEvent.pointerDown(panel, { clientX: 240, clientY: 40, pointerId: 3 });
-    fireEvent.pointerMove(panel, { clientX: 150, clientY: 44, pointerId: 3 });
-    fireEvent.pointerUp(panel, { clientX: 150, clientY: 44, pointerId: 3 });
-
-    expect(screen.getByRole('tab', { name: '인벤토리' })).toHaveAttribute('aria-selected', 'true');
-    expect(track.style.transform).toContain('-1650px');
-  });
 });
 
 describe('RankingGameHistoryTab', () => {
