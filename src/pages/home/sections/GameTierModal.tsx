@@ -11,6 +11,7 @@ import {
 import { createPortal } from 'react-dom';
 import type { GameTierProgress } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import { lockSwipeScroll } from '../hooks/swipeScrollLock';
 import { resolveSwipeDirection } from '../hooks/swipeDirection';
 import { getFullscreenElement } from '../utils';
 import GameTierSummary from './GameTierSummary';
@@ -49,6 +50,20 @@ function shouldIgnoreSwipeTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && target.closest(INTERACTIVE_SWIPE_SELECTOR);
 }
 
+function releasePointerCapture(target: EventTarget | null, pointerId: number | null) {
+  if (
+    pointerId === null ||
+    !(target instanceof HTMLElement) ||
+    typeof target.hasPointerCapture !== 'function' ||
+    typeof target.releasePointerCapture !== 'function' ||
+    !target.hasPointerCapture(pointerId)
+  ) {
+    return;
+  }
+
+  target.releasePointerCapture(pointerId);
+}
+
 export default function GameTierModal({
   defaultTab = 'tier',
   highlightsContent,
@@ -72,6 +87,7 @@ export default function GameTierModal({
   const directionLockRef = useRef<'horizontal' | 'vertical' | null>(null);
   const shouldSuppressClickRef = useRef(false);
   const viewportWidthRef = useRef(0);
+  const releaseScrollLockRef = useRef<(() => void) | null>(null);
   const activeIndex = TIER_MODAL_TABS.findIndex((tab) => tab.id === activeTab);
   const carouselTabs = useMemo(
     () => [TIER_MODAL_TABS[TIER_MODAL_TABS.length - 1], ...TIER_MODAL_TABS, TIER_MODAL_TABS[0]],
@@ -195,7 +211,12 @@ export default function GameTierModal({
     directionLockRef.current = null;
     shouldSuppressClickRef.current = false;
     viewportWidthRef.current = event.currentTarget.clientWidth;
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
     setIsTrackAnimating(false);
+    if (typeof event.currentTarget.setPointerCapture === 'function') {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -254,9 +275,15 @@ export default function GameTierModal({
 
     pointerIdRef.current = null;
     directionLockRef.current = null;
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = null;
+    releasePointerCapture(event.currentTarget, event.pointerId);
   };
 
-  const handlePointerCancel = () => {
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = null;
+    releasePointerCapture(event.currentTarget, event.pointerId);
     pointerIdRef.current = null;
     directionLockRef.current = null;
     setDragOffset(0);

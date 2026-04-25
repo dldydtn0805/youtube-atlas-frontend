@@ -1,6 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { resolveSwipeDirection } from './swipeDirection';
+import { lockSwipeScroll } from './swipeScrollLock';
 
 interface UseSwipeableTabsOptions<TTab extends string> {
   enabled?: boolean;
@@ -17,6 +18,20 @@ function isIgnoredSwipeTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && target.closest('input, textarea, select');
 }
 
+function releasePointerCapture(target: EventTarget | null, pointerId: number | null) {
+  if (
+    pointerId === null ||
+    !(target instanceof HTMLElement) ||
+    typeof target.hasPointerCapture !== 'function' ||
+    typeof target.releasePointerCapture !== 'function' ||
+    !target.hasPointerCapture(pointerId)
+  ) {
+    return;
+  }
+
+  target.releasePointerCapture(pointerId);
+}
+
 export default function useSwipeableTabs<TTab extends string>({
   enabled = true,
   onChange,
@@ -28,8 +43,11 @@ export default function useSwipeableTabs<TTab extends string>({
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const lockDirectionRef = useRef<'horizontal' | 'vertical' | null>(null);
+  const releaseScrollLockRef = useRef<(() => void) | null>(null);
 
   const resetGesture = useCallback(() => {
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = null;
     pointerIdRef.current = null;
     lockDirectionRef.current = null;
   }, []);
@@ -48,6 +66,11 @@ export default function useSwipeableTabs<TTab extends string>({
       startXRef.current = event.clientX;
       startYRef.current = event.clientY;
       lockDirectionRef.current = null;
+      releaseScrollLockRef.current?.();
+      releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
+      if (typeof event.currentTarget.setPointerCapture === 'function') {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
     },
     [enabled],
   );
@@ -102,12 +125,14 @@ export default function useSwipeableTabs<TTab extends string>({
         }
       }
 
+      releasePointerCapture(event.currentTarget, event.pointerId);
       resetGesture();
     },
     [enabled, onChange, order, resetGesture, threshold, value],
   );
 
-  const onPointerCancel = useCallback(() => {
+  const onPointerCancel = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    releasePointerCapture(event.currentTarget, event.pointerId);
     resetGesture();
   }, [resetGesture]);
 

@@ -46,6 +46,7 @@ import GameTierSummary from './GameTierSummary';
 import GameWalletSummary from './GameWalletSummary';
 import MiniVideoPreview from './MiniVideoPreview';
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
+import { lockSwipeScroll } from '../hooks/swipeScrollLock';
 import { resolveSwipeDirection } from '../hooks/swipeDirection';
 
 type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
@@ -524,6 +525,7 @@ export function RankingGamePanelShell({
   const directionLockRef = useRef<'horizontal' | 'vertical' | null>(null);
   const shouldSuppressClickRef = useRef(false);
   const viewportWidthRef = useRef(0);
+  const releaseScrollLockRef = useRef<(() => void) | null>(null);
   const activeIndex = GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab);
   const carouselTabs = useMemo(
     () => [GAME_PANEL_TABS[GAME_PANEL_TABS.length - 1], ...GAME_PANEL_TABS, GAME_PANEL_TABS[0]],
@@ -604,6 +606,8 @@ export function RankingGamePanelShell({
     directionLockRef.current = null;
     shouldSuppressClickRef.current = false;
     viewportWidthRef.current = event.currentTarget.clientWidth;
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
     setIsTrackAnimating(false);
   };
 
@@ -674,9 +678,13 @@ export function RankingGamePanelShell({
 
     pointerIdRef.current = null;
     directionLockRef.current = null;
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = null;
   };
 
   const handlePointerCancel = () => {
+    releaseScrollLockRef.current?.();
+    releaseScrollLockRef.current = null;
     pointerIdRef.current = null;
     directionLockRef.current = null;
     setDragOffset(0);
