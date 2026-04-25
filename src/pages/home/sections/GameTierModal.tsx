@@ -325,7 +325,7 @@ export default function GameTierModal({
   const trackTranslateX = TIER_MODAL_CAROUSEL_SIDE_PADDING - trackIndex * slideSpan + dragOffset;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation">
+    <div className="app-shell__modal-backdrop app-shell__modal-backdrop--dividend" onClick={onClose} role="presentation">
       <section
         aria-labelledby="game-dividend-modal-title"
         aria-modal="true"
