@@ -97,7 +97,7 @@ export default function useSwipeableTabs<TTab extends string>({
       }
 
       if (releaseScrollLockRef.current === null) {
-        releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
+        releaseScrollLockRef.current = lockSwipeScroll([event.currentTarget]);
       }
 
       if (event.cancelable) {

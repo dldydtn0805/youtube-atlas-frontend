@@ -11,6 +11,7 @@ import {
 import { createPortal } from 'react-dom';
 import type { GameTierProgress } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import useRafDragOffset from '../hooks/useRafDragOffset';
 import { lockSwipeScroll } from '../hooks/swipeScrollLock';
 import { resolveSwipeDirection } from '../hooks/swipeDirection';
 import { getFullscreenElement } from '../utils';
@@ -76,7 +77,6 @@ export default function GameTierModal({
   useBodyScrollLock(isOpen);
 
   const [activeTab, setActiveTab] = useState<TierModalTab>(defaultTab);
-  const [dragOffset, setDragOffset] = useState(0);
   const [trackIndex, setTrackIndex] = useState(TIER_MODAL_TABS.findIndex((tab) => tab.id === defaultTab) + 1);
   const [isTrackAnimating, setIsTrackAnimating] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -88,6 +88,7 @@ export default function GameTierModal({
   const shouldSuppressClickRef = useRef(false);
   const viewportWidthRef = useRef(0);
   const releaseScrollLockRef = useRef<(() => void) | null>(null);
+  const { dragOffset, setDragOffset } = useRafDragOffset();
   const activeIndex = TIER_MODAL_TABS.findIndex((tab) => tab.id === activeTab);
   const carouselTabs = useMemo(
     () => [TIER_MODAL_TABS[TIER_MODAL_TABS.length - 1], ...TIER_MODAL_TABS, TIER_MODAL_TABS[0]],
@@ -240,7 +241,10 @@ export default function GameTierModal({
     }
 
     if (releaseScrollLockRef.current === null) {
-      releaseScrollLockRef.current = lockSwipeScroll(event.currentTarget);
+      const activePanel = event.currentTarget.querySelector<HTMLElement>(`[data-tier-modal-panel="${activeTab}"]`);
+      releaseScrollLockRef.current = lockSwipeScroll(
+        activePanel ? [event.currentTarget, activePanel] : [event.currentTarget],
+      );
     }
 
     shouldSuppressClickRef.current = true;
