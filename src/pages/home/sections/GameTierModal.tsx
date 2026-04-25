@@ -76,7 +76,6 @@ export default function GameTierModal({
   useBodyScrollLock(isOpen);
 
   const [activeTab, setActiveTab] = useState<TierModalTab>(defaultTab);
-  const [dragOffset, setDragOffset] = useState(0);
   const [trackIndex, setTrackIndex] = useState(TIER_MODAL_TABS.findIndex((tab) => tab.id === defaultTab) + 1);
   const [isTrackAnimating, setIsTrackAnimating] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -140,7 +139,6 @@ export default function GameTierModal({
     if (isOpen) {
       setActiveTab(defaultTab);
       setTrackIndex(TIER_MODAL_TABS.findIndex((tab) => tab.id === defaultTab) + 1);
-      setDragOffset(0);
       setIsTrackAnimating(false);
     }
   }, [defaultTab, isOpen]);
@@ -192,7 +190,6 @@ export default function GameTierModal({
     }
 
     setIsTrackAnimating(true);
-    setDragOffset(0);
     setActiveTab(nextTab);
     setTrackIndex(nextIndex + 1);
   };
@@ -248,8 +245,6 @@ export default function GameTierModal({
     if (event.cancelable) {
       event.preventDefault();
     }
-
-    setDragOffset(deltaX);
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -266,7 +261,6 @@ export default function GameTierModal({
       (Math.abs(deltaX) >= SWIPE_THRESHOLD || Math.abs(deltaX) >= viewportWidth * 0.18);
 
     setIsTrackAnimating(true);
-    setDragOffset(0);
 
     if (shouldChangeTab) {
       const nextIndex = deltaX < 0 ? activeIndex + 1 : activeIndex - 1;
@@ -290,7 +284,6 @@ export default function GameTierModal({
     releasePointerCapture(event.currentTarget, event.pointerId);
     pointerIdRef.current = null;
     directionLockRef.current = null;
-    setDragOffset(0);
     setIsTrackAnimating(true);
   };
 
@@ -318,7 +311,7 @@ export default function GameTierModal({
   };
   const slideWidth = Math.max(viewportWidth - TIER_MODAL_CAROUSEL_SIDE_PADDING * 2, 0);
   const slideSpan = slideWidth + TIER_MODAL_CAROUSEL_GAP;
-  const trackTranslateX = TIER_MODAL_CAROUSEL_SIDE_PADDING - trackIndex * slideSpan + dragOffset;
+  const trackTranslateX = TIER_MODAL_CAROUSEL_SIDE_PADDING - trackIndex * slideSpan;
 
   return createPortal(
     <div className="app-shell__modal-backdrop app-shell__modal-backdrop--dividend" onClick={onClose} role="presentation">
