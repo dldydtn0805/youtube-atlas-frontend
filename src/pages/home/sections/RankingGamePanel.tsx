@@ -718,6 +718,7 @@ export function RankingGamePanelShell({
     event.stopPropagation();
   };
 
+  const isViewportReady = viewportWidth > 1;
   const slideWidth = Math.max(viewportWidth, 1);
   const slideSpan = slideWidth + GAME_PANEL_CAROUSEL_GAP;
   const trackTranslateX = -trackIndex * slideSpan + dragOffset;
@@ -807,24 +808,26 @@ export function RankingGamePanelShell({
             onPointerUp={handlePointerUp}
             role="tabpanel"
           >
-            <div
-              className="app-shell__game-tab-track"
-              data-animating={isTrackAnimating ? 'true' : 'false'}
-              onTransitionEnd={handleTrackTransitionEnd}
-              style={{
-                '--game-panel-carousel-gap': `${GAME_PANEL_CAROUSEL_GAP}px`,
-                '--game-panel-slide-width': `${slideWidth}px`,
-                transform: `translateX(${trackTranslateX}px)`,
-              } as CSSProperties}
-            >
-              {carouselTabs.map((tab, index) => (
-                <div key={`${tab.id}-${index}`} className="app-shell__game-tab-slide">
-                  <div className="app-shell__game-tab-slide-panel" data-game-panel-tab={tab.id}>
-                    {tabContentById[tab.id]}
+            {isViewportReady ? (
+              <div
+                className="app-shell__game-tab-track"
+                data-animating={isTrackAnimating ? 'true' : 'false'}
+                onTransitionEnd={handleTrackTransitionEnd}
+                style={{
+                  '--game-panel-carousel-gap': `${GAME_PANEL_CAROUSEL_GAP}px`,
+                  '--game-panel-slide-width': `${slideWidth}px`,
+                  transform: `translateX(${trackTranslateX}px)`,
+                } as CSSProperties}
+              >
+                {carouselTabs.map((tab, index) => (
+                  <div key={`${tab.id}-${index}`} className="app-shell__game-tab-slide">
+                    <div className="app-shell__game-tab-slide-panel" data-game-panel-tab={tab.id}>
+                      {tabContentById[tab.id]}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </>
       ) : null}

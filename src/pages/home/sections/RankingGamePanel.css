@@ -907,7 +907,7 @@
 
 .app-shell__game-tab-panel--carousel {
   height: 100%;
-  min-height: 0;
+  min-height: clamp(240px, 34vh, 360px);
   overflow: hidden;
 }
 
