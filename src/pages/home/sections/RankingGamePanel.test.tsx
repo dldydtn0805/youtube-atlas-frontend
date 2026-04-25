@@ -337,11 +337,10 @@ describe('RankingGamePositionsTab', () => {
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it('hides holdings that have no sellable quantity', () => {
+  it('disables sell action until a holding has sellable quantity', () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        emptyMessage="표시할 인벤토리가 없습니다."
         favoriteTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding({ sellableQuantity: 0 })]}
@@ -351,27 +350,23 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.queryByText('Holding Video')).not.toBeInTheDocument();
-    expect(screen.getByText('표시할 인벤토리가 없습니다.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Holding Video 매도')).toBeDisabled();
   });
 
-  it('keeps only holdings with sellable quantity greater than zero', () => {
+  it('does not show a zero-second sell wait badge when sellable quantity is zero', () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
         favoriteTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
-        holdings={[
-          createOpenGameHolding({ positionId: 1, title: 'Visible Holding', sellableQuantity: 2 }),
-          createOpenGameHolding({ positionId: 2, title: 'Hidden Holding', sellableQuantity: 0 }),
-        ]}
+        holdings={[createOpenGameHolding({ sellableQuantity: 0, nextSellableInSeconds: 0 })]}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    expect(screen.getByText('Visible Holding')).toBeInTheDocument();
-    expect(screen.queryByText('Hidden Holding')).not.toBeInTheDocument();
+    expect(screen.queryByText('매도 대기 · 0초')).not.toBeInTheDocument();
+    expect(screen.getByText('아직 매도 가능 수량 없음')).toBeInTheDocument();
   });
 });
 
