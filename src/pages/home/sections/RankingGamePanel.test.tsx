@@ -337,10 +337,11 @@ describe('RankingGamePositionsTab', () => {
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it('disables sell action until a holding has sellable quantity', () => {
+  it('hides holdings that have no sellable quantity', () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
+        emptyMessage="표시할 인벤토리가 없습니다."
         favoriteTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding({ sellableQuantity: 0 })]}
@@ -350,7 +351,27 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Holding Video 매도')).toBeDisabled();
+    expect(screen.queryByText('Holding Video')).not.toBeInTheDocument();
+    expect(screen.getByText('표시할 인벤토리가 없습니다.')).toBeInTheDocument();
+  });
+
+  it('keeps only holdings with sellable quantity greater than zero', () => {
+    render(
+      <RankingGamePositionsTab
+        canShowGameActions
+        favoriteTrendSignalsByVideoId={{}}
+        gameMarketSignalsByVideoId={{}}
+        holdings={[
+          createOpenGameHolding({ positionId: 1, title: 'Visible Holding', sellableQuantity: 2 }),
+          createOpenGameHolding({ positionId: 2, title: 'Hidden Holding', sellableQuantity: 0 }),
+        ]}
+        onSelectPosition={vi.fn()}
+        trendSignalsByVideoId={{}}
+      />,
+    );
+
+    expect(screen.getByText('Visible Holding')).toBeInTheDocument();
+    expect(screen.queryByText('Hidden Holding')).not.toBeInTheDocument();
   });
 });
 

@@ -1030,6 +1030,11 @@ export function RankingGamePositionsTab({
   onSelectPosition,
   selectedPositionId,
 }: RankingGamePositionsTabProps) {
+  const visibleHoldings = useMemo(
+    () => holdings.filter((holding) => holding.sellableQuantity > 0),
+    [holdings],
+  );
+
   if (isLoading) {
     return (
       <div className="app-shell__game-tab-loading-shell" data-loading>
@@ -1041,13 +1046,13 @@ export function RankingGamePositionsTab({
     );
   }
 
-  if (holdings.length === 0) {
+  if (visibleHoldings.length === 0) {
     return emptyMessage ? <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{emptyMessage}</p> : null;
   }
 
   return (
     <ul className="app-shell__game-positions">
-      {holdings.map((holding) => {
+      {visibleHoldings.map((holding) => {
         const isSelectedPosition =
           activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID && holding.positionId === selectedPositionId;
         const holdingRankTrendBadge = getHoldingRankDiffBadge(holding);
@@ -1057,9 +1062,6 @@ export function RankingGamePositionsTab({
             ? calculateGameUnitPricePoints(holding.currentPricePoints, holding.quantity)
             : null;
         const positionStatusBadge = holding.chartOut ? '차트 아웃' : null;
-        const reservedStatusBadge = holding.reservedForSell
-          ? `${formatGameQuantity(holding.scheduledSellQuantity)} 예약`
-          : null;
         const sellableStatusBadge = !canShowGameActions
           ? '전체 카테고리에서 매도 가능'
           : holding.sellableQuantity > 0
@@ -1068,7 +1070,7 @@ export function RankingGamePositionsTab({
               ? `매도 대기 · ${formatHoldCountdown(holding.nextSellableInSeconds)}`
               : '아직 매도 가능 수량 없음';
         const hasDetailBadges = Boolean(
-          strategyBadges.length || holdingRankTrendBadge || positionStatusBadge || reservedStatusBadge || sellableStatusBadge,
+          strategyBadges.length || holdingRankTrendBadge || positionStatusBadge || sellableStatusBadge,
         );
         const projectedHighlightScoreValue = formatHighlightScore(holding.projectedHighlightScore);
         const projectedHighlightStateText =
@@ -1156,11 +1158,6 @@ export function RankingGamePositionsTab({
                           {positionStatusBadge ? (
                             <span className="app-shell__game-position-trend" data-tone="steady">
                               {positionStatusBadge}
-                            </span>
-                          ) : null}
-                          {reservedStatusBadge ? (
-                            <span className="app-shell__game-position-trend" data-tone="steady">
-                              {reservedStatusBadge}
                             </span>
                           ) : null}
                           {sellableStatusBadge ? (
