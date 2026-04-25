@@ -147,8 +147,8 @@ describe('GameTierModal', () => {
     expect(header).not.toBeNull();
 
     fireEvent.pointerDown(header as Element, { clientX: 64, clientY: 20, pointerId: 4, pointerType: 'touch' });
-    fireEvent.pointerMove(header as Element, { clientX: 68, clientY: 116, pointerId: 4, pointerType: 'touch' });
-    fireEvent.pointerUp(header as Element, { clientX: 68, clientY: 116, pointerId: 4, pointerType: 'touch' });
+    fireEvent.pointerMove(header as Element, { clientX: 78, clientY: 460, pointerId: 4, pointerType: 'touch' });
+    fireEvent.pointerUp(header as Element, { clientX: 78, clientY: 460, pointerId: 4, pointerType: 'touch' });
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

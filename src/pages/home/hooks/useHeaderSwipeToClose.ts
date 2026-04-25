@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 
-const SWIPE_CLOSE_THRESHOLD = 72;
-const MAX_DRAG_OFFSET = 108;
+const SWIPE_CLOSE_THRESHOLD_RATIO = 0.5;
+const MIN_SWIPE_CLOSE_THRESHOLD = 216;
+const MAX_DRAG_OFFSET_RATIO = 0.6;
+const MIN_DRAG_OFFSET = 216;
 const INTERACTIVE_TARGET_SELECTOR = 'button, a, input, textarea, select, label';
 
 interface HeaderSwipeToCloseOptions {
@@ -14,7 +16,7 @@ function isInteractiveTarget(target: EventTarget | null) {
 }
 
 function clampDragOffset(offset: number) {
-  return Math.max(0, Math.min(offset, MAX_DRAG_OFFSET));
+  return Math.max(0, offset);
 }
 
 export default function useHeaderSwipeToClose({ disabled = false, onClose }: HeaderSwipeToCloseOptions) {
@@ -22,6 +24,8 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const isSwipeCandidateRef = useRef(false);
+  const swipeCloseThresholdRef = useRef(MIN_SWIPE_CLOSE_THRESHOLD);
+  const maxDragOffsetRef = useRef(MIN_DRAG_OFFSET);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -50,6 +54,15 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         startXRef.current = event.clientX;
         startYRef.current = event.clientY;
         isSwipeCandidateRef.current = true;
+        const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight;
+        swipeCloseThresholdRef.current = Math.max(
+          MIN_SWIPE_CLOSE_THRESHOLD,
+          Math.round(viewportHeight * SWIPE_CLOSE_THRESHOLD_RATIO),
+        );
+        maxDragOffsetRef.current = Math.max(
+          MIN_DRAG_OFFSET,
+          Math.round(viewportHeight * MAX_DRAG_OFFSET_RATIO),
+        );
         setIsDragging(true);
         setDragOffset(0);
       },
@@ -79,7 +92,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
           return;
         }
 
-        setDragOffset(clampDragOffset(deltaY * 0.92));
+        setDragOffset(Math.min(clampDragOffset(deltaY * 0.92), maxDragOffsetRef.current));
 
         if (event.cancelable) {
           event.preventDefault();
@@ -94,7 +107,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         const deltaY = event.clientY - startYRef.current;
         const shouldClose =
           isSwipeCandidateRef.current &&
-          deltaY >= SWIPE_CLOSE_THRESHOLD &&
+          deltaY >= swipeCloseThresholdRef.current &&
           deltaX <= deltaY * 0.7;
 
         resetSwipeState();

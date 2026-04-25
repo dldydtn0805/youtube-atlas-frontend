@@ -151,8 +151,8 @@ describe('GameTradeModal', () => {
     expect(header).not.toBeNull();
 
     fireEvent.pointerDown(header as Element, { clientX: 40, clientY: 20, pointerId: 1, pointerType: 'touch' });
-    fireEvent.pointerMove(header as Element, { clientX: 46, clientY: 112, pointerId: 1, pointerType: 'touch' });
-    fireEvent.pointerUp(header as Element, { clientX: 46, clientY: 112, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerMove(header as Element, { clientX: 56, clientY: 460, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerUp(header as Element, { clientX: 56, clientY: 460, pointerId: 1, pointerType: 'touch' });
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
