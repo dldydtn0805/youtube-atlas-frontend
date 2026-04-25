@@ -158,7 +158,7 @@
 }
 
 .app-shell__tier-modal-track[data-animating='true'] {
-  transition: transform 0.28s ease;
+  transition: transform 0.36s ease;
 }
 
 .app-shell__tier-modal-slide {

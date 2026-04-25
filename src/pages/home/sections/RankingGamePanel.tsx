@@ -513,7 +513,6 @@ export function RankingGamePanelShell({
 }: RankingGamePanelShellProps) {
   const hasDividendOverview = Boolean(dividendOverview);
   const hasSelectedVideoActions = Boolean(selectedVideoActions);
-  const [dragOffset, setDragOffset] = useState(0);
   const [trackIndex, setTrackIndex] = useState(GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab) + 1);
   const [isTrackAnimating, setIsTrackAnimating] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1);
@@ -545,7 +544,6 @@ export function RankingGamePanelShell({
     }
 
     setIsTrackAnimating(true);
-    setDragOffset(0);
     setTrackIndex(nextIndex + 1);
   }, [activeGameTab]);
 
@@ -590,7 +588,6 @@ export function RankingGamePanelShell({
 
     skipNextActiveTabSyncRef.current = true;
     setIsTrackAnimating(true);
-    setDragOffset(0);
     setTrackIndex(nextIndex + 1);
     onSelectTab(nextTab);
   };
@@ -644,8 +641,6 @@ export function RankingGamePanelShell({
     if (event.cancelable) {
       event.preventDefault();
     }
-
-    setDragOffset(deltaX);
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -663,7 +658,6 @@ export function RankingGamePanelShell({
       (Math.abs(deltaX) >= GAME_PANEL_SWIPE_THRESHOLD || Math.abs(deltaX) >= nextViewportWidth * 0.18);
 
     setIsTrackAnimating(true);
-    setDragOffset(0);
 
     if (shouldChangeTab) {
       const nextIndex = deltaX < 0 ? activeIndex + 1 : activeIndex - 1;
@@ -691,7 +685,6 @@ export function RankingGamePanelShell({
     releaseScrollLockRef.current = null;
     pointerIdRef.current = null;
     directionLockRef.current = null;
-    setDragOffset(0);
     setIsTrackAnimating(true);
   };
 
@@ -721,7 +714,7 @@ export function RankingGamePanelShell({
   const isViewportReady = viewportWidth > 1;
   const slideWidth = Math.max(viewportWidth, 1);
   const slideSpan = slideWidth + GAME_PANEL_CAROUSEL_GAP;
-  const trackTranslateX = -trackIndex * slideSpan + dragOffset;
+  const trackTranslateX = -trackIndex * slideSpan;
 
   return (
     <div className="app-shell__game-panel" data-current-tier={tierProgress?.currentTier.tierCode}>
