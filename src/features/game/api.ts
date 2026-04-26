@@ -38,6 +38,11 @@ type ApiGameCurrentSeason = Omit<GameCurrentSeason, 'wallet'> & {
   wallet: GameCurrentSeason['wallet'];
 };
 
+type ApiGameScheduledSellOrder = Omit<GameScheduledSellOrder, 'failureReason'> & {
+  failedReason?: string | null;
+  failureReason?: string | null;
+};
+
 function createAuthorizationHeader(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
 }
@@ -74,6 +79,13 @@ function normalizeAchievementTitleCollection(collection: AchievementTitleCollect
   return {
     selectedTitle: collection.selectedTitle ?? null,
     titles: Array.isArray(collection.titles) ? collection.titles : [],
+  };
+}
+
+function normalizeGameScheduledSellOrder(order: ApiGameScheduledSellOrder): GameScheduledSellOrder {
+  return {
+    ...order,
+    failureReason: order.failureReason ?? order.failedReason ?? null,
   };
 }
 
@@ -229,9 +241,11 @@ export async function fetchMyGamePositions(accessToken: string, regionCode: stri
 export async function fetchScheduledSellOrders(accessToken: string, regionCode: string) {
   const params = new URLSearchParams({ regionCode });
 
-  return fetchApi<GameScheduledSellOrder[]>(`/api/game/scheduled-sell-orders?${params.toString()}`, {
+  const orders = await fetchApi<ApiGameScheduledSellOrder[]>(`/api/game/scheduled-sell-orders?${params.toString()}`, {
     headers: createAuthorizationHeader(accessToken),
   });
+
+  return orders.map(normalizeGameScheduledSellOrder);
 }
 
 export async function fetchGamePositionRankHistory(accessToken: string, positionId: number) {
@@ -297,7 +311,7 @@ export async function fetchSellGamePreview(accessToken: string, input: SellGameP
 }
 
 export async function createScheduledSellOrder(accessToken: string, input: CreateScheduledSellOrderInput) {
-  return fetchApi<GameScheduledSellOrder>('/api/game/scheduled-sell-orders', {
+  const order = await fetchApi<ApiGameScheduledSellOrder>('/api/game/scheduled-sell-orders', {
     method: 'POST',
     headers: {
       ...createAuthorizationHeader(accessToken),
@@ -305,11 +319,15 @@ export async function createScheduledSellOrder(accessToken: string, input: Creat
     },
     body: JSON.stringify(input),
   });
+
+  return normalizeGameScheduledSellOrder(order);
 }
 
 export async function cancelScheduledSellOrder(accessToken: string, orderId: number) {
-  return fetchApi<GameScheduledSellOrder>(`/api/game/scheduled-sell-orders/${orderId}`, {
+  const order = await fetchApi<ApiGameScheduledSellOrder>(`/api/game/scheduled-sell-orders/${orderId}`, {
     method: 'DELETE',
     headers: createAuthorizationHeader(accessToken),
   });
+
+  return normalizeGameScheduledSellOrder(order);
 }

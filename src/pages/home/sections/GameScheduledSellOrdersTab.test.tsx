@@ -226,4 +226,47 @@ describe('GameScheduledSellOrdersTab', () => {
       }),
     );
   });
+
+  it('shows a failed order reason when one is provided', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GameScheduledSellOrdersTab
+        isLoading={false}
+        orders={[
+          {
+            id: 3,
+            userId: 1,
+            seasonId: 1,
+            positionId: 12,
+            videoId: 'video-3',
+            videoTitle: '실패 주문',
+            channelTitle: '채널 C',
+            thumbnailUrl: 'https://example.com/c.jpg',
+            regionCode: 'KR',
+            targetRank: 30,
+            triggerDirection: 'RANK_IMPROVES_TO',
+            status: 'FAILED',
+            currentRank: 40,
+            buyRank: 33,
+            quantity: 100,
+            stakePoints: 5000,
+            sellPricePoints: null,
+            settledPoints: null,
+            pnlPoints: null,
+            failureReason: '최소 보유 시간이 지나야 매도할 수 있습니다.',
+            triggeredAt: null,
+            executedAt: null,
+            canceledAt: null,
+            createdAt: '2026-04-24T00:00:00.000Z',
+            updatedAt: '2026-04-24T00:00:00.000Z',
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('tab', { name: '전체' }));
+
+    expect(screen.getByText('최소 보유 시간이 지나야 매도할 수 있습니다.')).toBeInTheDocument();
+  });
 });
