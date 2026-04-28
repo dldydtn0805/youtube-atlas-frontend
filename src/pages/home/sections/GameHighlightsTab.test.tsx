@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { GameHighlight } from '../../../features/game/types';
 import GameHighlightsTab from './GameHighlightsTab';
@@ -57,5 +57,25 @@ describe('GameHighlightsTab', () => {
       expect.stringContaining('중간 점수'),
       expect.stringContaining('낮은 점수'),
     ]);
+  });
+
+  it('selects the highlight video from the thumbnail without opening the chart', () => {
+    const highlight = createHighlight();
+    const onSelectHighlight = vi.fn();
+    const onSelectHighlightVideo = vi.fn();
+
+    render(
+      <GameHighlightsTab
+        highlights={[highlight]}
+        isLoading={false}
+        onSelectHighlight={onSelectHighlight}
+        onSelectHighlightVideo={onSelectHighlightVideo}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '하이라이트 1 재생' }));
+
+    expect(onSelectHighlightVideo).toHaveBeenCalledWith(highlight);
+    expect(onSelectHighlight).not.toHaveBeenCalled();
   });
 });

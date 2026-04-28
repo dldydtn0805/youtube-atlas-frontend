@@ -49,7 +49,42 @@ describe('VideoList', () => {
 
     expect(screen.getByText('현재 12위')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /테스트 영상/i }));
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생' }));
+
+    expect(onSelectVideo).toHaveBeenCalledWith(
+      'video-1',
+      'favorite-streamers',
+      expect.any(HTMLButtonElement),
+    );
+  });
+
+  it('opens the rank chart from the title while the thumbnail selects the video', () => {
+    const onOpenChart = vi.fn();
+    const onSelectVideo = vi.fn();
+
+    render(
+      <VideoList
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onOpenChart={onOpenChart}
+        onSelectVideo={onSelectVideo}
+        section={baseSection}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 차트 보기' }));
+
+    expect(onOpenChart).toHaveBeenCalledWith(
+      'video-1',
+      'favorite-streamers',
+      expect.any(HTMLButtonElement),
+    );
+    expect(onSelectVideo).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생' }));
 
     expect(onSelectVideo).toHaveBeenCalledWith(
       'video-1',
@@ -210,7 +245,7 @@ describe('VideoList', () => {
   });
 
   it('re-renders the main section with the updated item order after the section changes', () => {
-    const { rerender } = render(
+    const { container, rerender } = render(
       <VideoList
         hasNextPage={false}
         isError={false}
@@ -242,7 +277,7 @@ describe('VideoList', () => {
       />,
     );
 
-    expect(screen.getAllByRole('button', { name: /영상/i }).map((element) => element.textContent)).toEqual([
+    expect(Array.from(container.querySelectorAll('.video-card__title')).map((element) => element.textContent)).toEqual([
       expect.stringContaining('첫 번째 영상'),
       expect.stringContaining('두 번째 영상'),
     ]);
@@ -287,7 +322,7 @@ describe('VideoList', () => {
       />,
     );
 
-    expect(screen.getAllByRole('button', { name: /영상/i }).map((element) => element.textContent)).toEqual([
+    expect(Array.from(container.querySelectorAll('.video-card__title')).map((element) => element.textContent)).toEqual([
       expect.stringContaining('세 번째 영상'),
       expect.stringContaining('첫 번째 영상'),
       expect.stringContaining('두 번째 영상'),

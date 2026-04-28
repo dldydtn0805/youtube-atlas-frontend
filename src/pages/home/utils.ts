@@ -1,6 +1,6 @@
 import countryCodes from '../../constants/countryCodes';
 import { ALL_VIDEO_CATEGORY_ID, TREND_SNAPSHOT_REGION_CODES } from '../../constants/videoCategories';
-import type { GameMarketVideo, GamePosition, GameScheduledSellOrder } from '../../features/game/types';
+import type { GameHighlight, GameMarketVideo, GamePosition, GameScheduledSellOrder } from '../../features/game/types';
 import type { PlaybackProgress } from '../../features/playback/types';
 import { formatCompactCount } from '../../features/trending/presentation';
 import type {
@@ -15,6 +15,8 @@ import type { ChartSortMode } from './types';
 export const DEFAULT_REGION_CODE = 'US';
 export const DEFAULT_CATEGORY_ID = ALL_VIDEO_CATEGORY_ID;
 export const GAME_PORTFOLIO_QUEUE_ID = 'game-portfolio';
+export const GAME_HIGHLIGHTS_QUEUE_ID = 'game-highlights';
+export const GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID = 'game-leaderboard-highlights';
 export const SCHEDULED_SELL_ORDERS_QUEUE_ID = 'scheduled-sell-orders';
 export const MOBILE_BREAKPOINT = 768;
 export const MOBILE_MIN_HEIGHT = 500;
@@ -445,6 +447,25 @@ export function mapGameScheduledSellOrderToVideoItem(order: GameScheduledSellOrd
       channelId: '',
       categoryId: SCHEDULED_SELL_ORDERS_QUEUE_ID,
       thumbnails: createFallbackThumbnails(order.thumbnailUrl ?? ''),
+    },
+  };
+}
+
+export function mapGameHighlightToVideoItem(
+  highlight: GameHighlight,
+  categoryId: string,
+): YouTubeVideoItem {
+  return {
+    id: highlight.videoId,
+    contentDetails: {
+      duration: '',
+    },
+    snippet: {
+      title: highlight.videoTitle,
+      channelTitle: highlight.channelTitle,
+      channelId: '',
+      categoryId,
+      thumbnails: createFallbackThumbnails(highlight.thumbnailUrl ?? ''),
     },
   };
 }

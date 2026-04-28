@@ -105,6 +105,7 @@ interface RankingGameLeaderboardTabProps {
   highlightsError: unknown;
   highlightsTitle: string;
   onSelectHighlight: (highlight: GameHighlight) => void;
+  onSelectHighlightVideo?: (highlight: GameHighlight) => void;
   selectedUserId: number | null;
   isHighlightsError: boolean;
   isHighlightsLoading: boolean;
@@ -257,9 +258,11 @@ function getLeaderboardHighlightTypeLabel(type: string) {
 function LeaderboardHighlightList({
   highlights,
   onSelectHighlight,
+  onSelectHighlightVideo,
 }: {
   highlights: GameHighlight[];
   onSelectHighlight: (highlight: GameHighlight) => void;
+  onSelectHighlightVideo?: (highlight: GameHighlight) => void;
 }) {
   return (
     <ul className="app-shell__game-leaderboard-position-list">
@@ -268,19 +271,38 @@ function LeaderboardHighlightList({
 
         return (
           <li key={highlight.id} className="app-shell__game-leaderboard-position-item">
-            <button
+            <article
               className="app-shell__game-leaderboard-position-select"
-              onClick={() => onSelectHighlight(highlight)}
-              title="이 하이라이트의 순위 추이 차트를 봅니다."
-              type="button"
             >
-              <img
-                alt=""
-                className="app-shell__game-leaderboard-position-thumb"
-                loading="lazy"
-                src={highlight.thumbnailUrl}
-              />
-              <div className="app-shell__game-leaderboard-position-copy">
+              {onSelectHighlightVideo ? (
+                <button
+                  aria-label={`${highlight.videoTitle} 재생`}
+                  className="app-shell__game-leaderboard-position-thumb-button"
+                  onClick={() => onSelectHighlightVideo(highlight)}
+                  type="button"
+                >
+                  <img
+                    alt=""
+                    className="app-shell__game-leaderboard-position-thumb"
+                    loading="lazy"
+                    src={highlight.thumbnailUrl}
+                  />
+                </button>
+              ) : (
+                <img
+                  alt=""
+                  className="app-shell__game-leaderboard-position-thumb"
+                  loading="lazy"
+                  src={highlight.thumbnailUrl}
+                />
+              )}
+              <button
+                className="app-shell__game-leaderboard-position-copy-button"
+                onClick={() => onSelectHighlight(highlight)}
+                title="이 하이라이트의 순위 추이 차트를 봅니다."
+                type="button"
+              >
+                <div className="app-shell__game-leaderboard-position-copy">
                 <p className="app-shell__game-leaderboard-position-title">{highlight.videoTitle}</p>
                 <p className="app-shell__game-leaderboard-position-meta">
                   <span className="app-shell__game-leaderboard-position-meta-label">티어 점수</span>{' '}
@@ -324,7 +346,8 @@ function LeaderboardHighlightList({
                   <p className="app-shell__game-leaderboard-position-description">{highlight.description}</p>
                 </div>
               </div>
-            </button>
+              </button>
+            </article>
           </li>
         );
       })}
@@ -340,6 +363,7 @@ function LeaderboardHighlightsPanel({
   isExpanded,
   isLoading,
   onSelectHighlight,
+  onSelectHighlightVideo,
 }: {
   highlights: GameHighlight[];
   highlightsError: unknown;
@@ -348,6 +372,7 @@ function LeaderboardHighlightsPanel({
   isExpanded: boolean;
   isLoading: boolean;
   onSelectHighlight: (highlight: GameHighlight) => void;
+  onSelectHighlightVideo?: (highlight: GameHighlight) => void;
 }) {
   if (!isExpanded) {
     return null;
@@ -363,7 +388,11 @@ function LeaderboardHighlightsPanel({
           {highlightsError instanceof Error ? highlightsError.message : '하이라이트를 불러오지 못했습니다.'}
         </p>
       ) : highlights.length > 0 ? (
-        <LeaderboardHighlightList highlights={highlights} onSelectHighlight={onSelectHighlight} />
+        <LeaderboardHighlightList
+          highlights={highlights}
+          onSelectHighlight={onSelectHighlight}
+          onSelectHighlightVideo={onSelectHighlightVideo}
+        />
       ) : (
         <p className="app-shell__game-leaderboard-positions-status">아직 하이라이트가 없습니다.</p>
       )}
@@ -380,6 +409,7 @@ function LeaderboardRow({
   isHighlightsError,
   isHighlightsLoading,
   onSelectHighlight,
+  onSelectHighlightVideo,
   onToggleUser,
 }: {
   entry: GameLeaderboardEntry;
@@ -390,6 +420,7 @@ function LeaderboardRow({
   isHighlightsError: boolean;
   isHighlightsLoading: boolean;
   onSelectHighlight: (highlight: GameHighlight) => void;
+  onSelectHighlightVideo?: (highlight: GameHighlight) => void;
   onToggleUser: (userId: number) => void;
 }) {
   return (
@@ -443,6 +474,7 @@ function LeaderboardRow({
         isExpanded={isExpanded}
         isLoading={isHighlightsLoading}
         onSelectHighlight={onSelectHighlight}
+        onSelectHighlightVideo={onSelectHighlightVideo}
       />
     </div>
   );
@@ -938,6 +970,7 @@ export function RankingGameLeaderboardTab({
   isHighlightsLoading,
   isLoading,
   onSelectHighlight,
+  onSelectHighlightVideo,
   selectedUserId,
   onToggleUser,
   season,
@@ -984,6 +1017,7 @@ export function RankingGameLeaderboardTab({
                 isHighlightsError={isHighlightsError}
                 isHighlightsLoading={isHighlightsLoading}
                 onSelectHighlight={onSelectHighlight}
+                onSelectHighlightVideo={onSelectHighlightVideo}
                 onToggleUser={onToggleUser}
               />
             </li>
@@ -1001,6 +1035,7 @@ export function RankingGameLeaderboardTab({
               isHighlightsError={isHighlightsError}
               isHighlightsLoading={isHighlightsLoading}
               onSelectHighlight={onSelectHighlight}
+              onSelectHighlightVideo={onSelectHighlightVideo}
               onToggleUser={onToggleUser}
             />
           </section>

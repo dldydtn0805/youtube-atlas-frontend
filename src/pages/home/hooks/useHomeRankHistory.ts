@@ -251,6 +251,13 @@ export default function useHomeRankHistory({
     selectedVideoId,
   ]);
 
+  const handleOpenVideoRankHistory = useCallback(
+    (videoId: string) => {
+      openFullRankHistory(videoId, null);
+    },
+    [openFullRankHistory],
+  );
+
   const handleCloseRankHistory = useCallback(() => {
     setRankHistoryFocusMode('full');
     setSelectedRankHistoryOwnerUserId(null);
@@ -264,6 +271,7 @@ export default function useHomeRankHistory({
     handleOpenGamePositionChart,
     handleOpenScheduledSellOrderChart,
     handleOpenSelectedVideoRankHistory,
+    handleOpenVideoRankHistory,
     handleSelectGameHighlight,
     handleSelectGameNotification,
     handleSelectLeaderboardHighlight,

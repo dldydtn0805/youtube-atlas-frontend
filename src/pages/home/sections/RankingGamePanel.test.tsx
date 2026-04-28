@@ -777,6 +777,7 @@ describe('RankingGameLeaderboardTab', () => {
 
   it('renders expanded leaderboard highlights with the richer card metadata', () => {
     const onSelectHighlight = vi.fn();
+    const onSelectHighlightVideo = vi.fn();
     const highlight = createGameHighlight();
 
     render(
@@ -791,6 +792,7 @@ describe('RankingGameLeaderboardTab', () => {
         isHighlightsLoading={false}
         isLoading={false}
         onSelectHighlight={onSelectHighlight}
+        onSelectHighlightVideo={onSelectHighlightVideo}
         onToggleUser={vi.fn()}
         selectedUserId={7}
       />,
@@ -804,5 +806,9 @@ describe('RankingGameLeaderboardTab', () => {
     fireEvent.click(screen.getByTitle('이 하이라이트의 순위 추이 차트를 봅니다.'));
 
     expect(onSelectHighlight).toHaveBeenCalledWith(highlight);
+
+    fireEvent.click(screen.getByRole('button', { name: '하이라이트 영상 제목 재생' }));
+
+    expect(onSelectHighlightVideo).toHaveBeenCalledWith(highlight);
   });
 });

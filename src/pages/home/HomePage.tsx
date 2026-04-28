@@ -44,6 +44,8 @@ import useSelectedVideoGameState from './hooks/useSelectedVideoGameState';
 import { openGameModal as openGameModalAction } from './homeGameModalActions';
 import {
   DEFAULT_CATEGORY_ID,
+  GAME_HIGHLIGHTS_QUEUE_ID,
+  GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID,
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
   RESTORED_PLAYBACK_QUEUE_ID,
@@ -52,6 +54,7 @@ import {
   getFullscreenElement,
   getAdjacentGamePosition,
   getVideoThumbnailUrl,
+  mapGameHighlightToVideoItem,
   mapGameScheduledSellOrderToVideoItem,
   mapGamePositionToVideoItem,
   resolvePlaybackCategoryLabel,
@@ -85,7 +88,7 @@ import {
   useUpdateSelectedAchievementTitle,
 } from '../../features/game/queries';
 import { useGameRealtimeInvalidation } from '../../features/game/realtime';
-import type { GamePosition, GameScheduledSellOrder } from '../../features/game/types';
+import type { GameHighlight, GamePosition, GameScheduledSellOrder } from '../../features/game/types';
 import {
   useFavoriteStreamerVideos,
   useFavoriteStreamers,
@@ -605,6 +608,34 @@ function HomePage() {
     selectedSectionPages: data?.pages,
     shouldLoadFavorites,
   });
+  const gameHighlightsPlaybackSection = useMemo(
+    () =>
+      gameHighlights.length > 0
+        ? {
+            categoryId: GAME_HIGHLIGHTS_QUEUE_ID,
+            description: '내 하이라이트에서 다시 연 영상을 이어서 볼 수 있습니다.',
+            items: gameHighlights.map((highlight) =>
+              mapGameHighlightToVideoItem(highlight, GAME_HIGHLIGHTS_QUEUE_ID),
+            ),
+            label: '하이라이트',
+          }
+        : undefined,
+    [gameHighlights],
+  );
+  const leaderboardHighlightsPlaybackSection = useMemo(
+    () =>
+      selectedLeaderboardHighlights.length > 0
+        ? {
+            categoryId: GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID,
+            description: '리더보드 하이라이트에서 다시 연 영상을 이어서 볼 수 있습니다.',
+            items: selectedLeaderboardHighlights.map((highlight) =>
+              mapGameHighlightToVideoItem(highlight, GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID),
+            ),
+            label: '랭킹 하이라이트',
+          }
+        : undefined,
+    [selectedLeaderboardHighlights],
+  );
   const scheduledSellOrdersPlaybackSection = useMemo(
     () =>
       scheduledSellOrders.length > 0
@@ -618,11 +649,18 @@ function HomePage() {
     [scheduledSellOrders],
   );
   const playbackExtraSections = useMemo(
-    () =>
-      scheduledSellOrdersPlaybackSection
-        ? [...(extraPlaybackSections ?? []), scheduledSellOrdersPlaybackSection]
-        : extraPlaybackSections,
-    [extraPlaybackSections, scheduledSellOrdersPlaybackSection],
+    () => [
+      ...(extraPlaybackSections ?? []),
+      ...(gameHighlightsPlaybackSection ? [gameHighlightsPlaybackSection] : []),
+      ...(leaderboardHighlightsPlaybackSection ? [leaderboardHighlightsPlaybackSection] : []),
+      ...(scheduledSellOrdersPlaybackSection ? [scheduledSellOrdersPlaybackSection] : []),
+    ],
+    [
+      extraPlaybackSections,
+      gameHighlightsPlaybackSection,
+      leaderboardHighlightsPlaybackSection,
+      scheduledSellOrdersPlaybackSection,
+    ],
   );
   const {
     activeChartEmptyMessage,
@@ -1288,6 +1326,20 @@ function HomePage() {
       sortedRealtimeSurgingSection,
     ],
   );
+  const handleSelectGameHighlightVideo = useCallback(
+    (highlight: GameHighlight) => {
+      closeTierModal();
+      handleSelectVideoWithPreview(highlight.videoId, GAME_HIGHLIGHTS_QUEUE_ID);
+    },
+    [closeTierModal, handleSelectVideoWithPreview],
+  );
+  const handleSelectLeaderboardHighlightVideo = useCallback(
+    (highlight: GameHighlight) => {
+      closeTierModal();
+      handleSelectVideoWithPreview(highlight.videoId, GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID);
+    },
+    [closeTierModal, handleSelectVideoWithPreview],
+  );
   const headerTrendTicker = useMemo(
     () => {
       if (!isAllCategorySelected || topRankRisersSignals.length === 0 || !topRankRisersSection?.categoryId) {
@@ -1648,6 +1700,7 @@ function HomePage() {
     handleOpenGamePositionChart,
     handleOpenScheduledSellOrderChart,
     handleOpenSelectedVideoRankHistory,
+    handleOpenVideoRankHistory,
     handleSelectGameHighlight,
     handleSelectGameNotification,
     handleSelectLeaderboardHighlight,
@@ -1732,6 +1785,7 @@ function HomePage() {
       isHighlightsLoading={isSelectedLeaderboardHighlightsLoading}
       isLoading={isGameLeaderboardLoading}
       onSelectHighlight={(highlight) => handleSelectLeaderboardHighlight(highlight, selectedLeaderboardUserId)}
+      onSelectHighlightVideo={handleSelectLeaderboardHighlightVideo}
       onToggleUser={(userId) =>
         setSelectedLeaderboardUserId((currentUserId) => (currentUserId === userId ? null : userId))
       }
@@ -1744,6 +1798,7 @@ function HomePage() {
       highlights={gameHighlights}
       isLoading={isGameHighlightsLoading}
       onSelectHighlight={handleSelectGameHighlight}
+      onSelectHighlightVideo={handleSelectGameHighlightVideo}
     />
   );
   const renderPortfolioContent = (isModal = false) => (
@@ -1951,6 +2006,7 @@ function HomePage() {
             mainSectionCollapseKey: activeChartMainSectionCollapseKey,
             onChangeChartSortMode: handleChangeChartSortMode,
             onLoadMore: activeChartOnLoadMore,
+            onOpenChart: handleOpenVideoRankHistory,
             onSelectVideo: handleSelectVideoWithPreview,
             onToggleFeaturedSectionCollapse: toggleCollapsedSection,
             primarySectionEyebrow: activeChartSectionEyebrow,

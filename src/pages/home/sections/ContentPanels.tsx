@@ -34,6 +34,11 @@ interface ChartPanelProps {
   mainSectionCollapseKey?: string;
   onChangeChartSortMode: (sortMode: ChartSortMode) => void;
   onLoadMore: () => void;
+  onOpenChart?: (
+    videoId: string,
+    playbackQueueId: string,
+    triggerElement?: HTMLButtonElement,
+  ) => void;
   onOpenRegionModal: () => void;
   onSelectView: (viewId: string, triggerElement?: HTMLButtonElement) => void;
   onToggleFeaturedSectionCollapse?: (sectionId: string) => void;
@@ -106,6 +111,7 @@ export const ChartPanel = memo(function ChartPanel({
   mainSectionCollapseKey,
   onChangeChartSortMode,
   onLoadMore,
+  onOpenChart,
   onOpenRegionModal,
   onSelectView,
   onToggleFeaturedSectionCollapse,
@@ -188,6 +194,7 @@ export const ChartPanel = memo(function ChartPanel({
         primarySectionEyebrow={primarySectionEyebrow}
         primarySectionCollapseKey={mainSectionCollapseKey}
         onLoadMore={onLoadMore}
+        onOpenChart={onOpenChart}
         onSelectVideo={onSelectVideo}
         onToggleSectionCollapse={onToggleFeaturedSectionCollapse}
         section={section}

@@ -31,6 +31,11 @@ interface VideoListProps {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
+  onOpenChart?: (
+    videoId: string,
+    sectionCategoryId: string,
+    triggerElement?: HTMLButtonElement,
+  ) => void;
   onSelectVideo: (
     videoId: string,
     sectionCategoryId: string,
@@ -126,6 +131,7 @@ function VideoList({
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
+  onOpenChart,
   onSelectVideo,
   onToggleSectionCollapse,
   primarySectionCollapseKey,
@@ -226,14 +232,22 @@ function VideoList({
               const priceLabel = formatPrice(marketPriceByVideoId?.[item.id]);
               const viewCountLabel = formatViewCount(item.statistics?.viewCount);
               const metaLabel = [priceLabel, viewCountLabel].filter(Boolean).join(' · ');
+              const handleSelectVideo = (triggerElement: HTMLButtonElement) =>
+                onSelectVideo(item.id, currentSection.categoryId, triggerElement);
+              const handleOpenChart = (triggerElement: HTMLButtonElement) => {
+                if (onOpenChart) {
+                  onOpenChart(item.id, currentSection.categoryId, triggerElement);
+                  return;
+                }
+
+                handleSelectVideo(triggerElement);
+              };
 
               return (
-                <button
+                <article
                   key={`${currentSection.categoryId}-${item.id}`}
                   className="video-card"
                   data-active={isSelected}
-                  onClick={(event) => onSelectVideo(item.id, currentSection.categoryId, event.currentTarget)}
-                  type="button"
                 >
                   <div className="video-card__meta-row">
                     <div className="video-card__meta-main">
@@ -253,18 +267,32 @@ function VideoList({
                       </span>
                     ) : null}
                   </div>
-                  <img
-                    loading="lazy"
-                    className="video-card__thumbnail"
-                    src={item.snippet.thumbnails.high.url}
-                    alt={item.snippet.title}
-                  />
-                  <strong className="video-card__title">{item.snippet.title}</strong>
+                  <button
+                    aria-label={`${item.snippet.title} 재생`}
+                    className="video-card__thumbnail-button"
+                    onClick={(event) => handleSelectVideo(event.currentTarget)}
+                    type="button"
+                  >
+                    <img
+                      loading="lazy"
+                      className="video-card__thumbnail"
+                      src={item.snippet.thumbnails.high.url}
+                      alt=""
+                    />
+                  </button>
+                  <button
+                    aria-label={onOpenChart ? `${item.snippet.title} 차트 보기` : undefined}
+                    className="video-card__title-button"
+                    onClick={(event) => handleOpenChart(event.currentTarget)}
+                    type="button"
+                  >
+                    <strong className="video-card__title">{item.snippet.title}</strong>
+                  </button>
                   <div className="video-card__footer">
                     <span className="video-card__channel">{item.snippet.channelTitle}</span>
                     {metaLabel ? <span className="video-card__views">{metaLabel}</span> : null}
                   </div>
-                </button>
+                </article>
               );
             })}
           </div>

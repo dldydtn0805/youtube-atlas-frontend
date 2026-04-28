@@ -8,6 +8,7 @@ interface GameHighlightsTabProps {
   highlights: GameHighlight[];
   isLoading: boolean;
   onSelectHighlight: (highlight: GameHighlight) => void;
+  onSelectHighlightVideo?: (highlight: GameHighlight) => void;
 }
 
 function formatSignedPoints(points?: number | null) {
@@ -53,7 +54,12 @@ function formatHighlightScore(score?: number | null) {
   return `+${score.toLocaleString('ko-KR')}점`;
 }
 
-export default function GameHighlightsTab({ highlights, isLoading, onSelectHighlight }: GameHighlightsTabProps) {
+export default function GameHighlightsTab({
+  highlights,
+  isLoading,
+  onSelectHighlight,
+  onSelectHighlightVideo,
+}: GameHighlightsTabProps) {
   const sortedHighlights = useMemo(
     () =>
       highlights.slice().sort((left, right) => {
@@ -90,14 +96,26 @@ export default function GameHighlightsTab({ highlights, isLoading, onSelectHighl
 
           return (
             <li key={highlight.id} className="app-shell__game-highlight">
-              <button
-                className="app-shell__game-highlight-select"
-                onClick={() => onSelectHighlight(highlight)}
-                title="순위 추이 차트를 봅니다."
-                type="button"
-              >
-                <img alt="" className="app-shell__game-highlight-thumb" loading="lazy" src={highlight.thumbnailUrl} />
-                <div className="app-shell__game-highlight-copy">
+              <article className="app-shell__game-highlight-select">
+                {onSelectHighlightVideo ? (
+                  <button
+                    aria-label={`${highlight.videoTitle} 재생`}
+                    className="app-shell__game-highlight-thumb-button"
+                    onClick={() => onSelectHighlightVideo(highlight)}
+                    type="button"
+                  >
+                    <img alt="" className="app-shell__game-highlight-thumb" loading="lazy" src={highlight.thumbnailUrl} />
+                  </button>
+                ) : (
+                  <img alt="" className="app-shell__game-highlight-thumb" loading="lazy" src={highlight.thumbnailUrl} />
+                )}
+                <button
+                  className="app-shell__game-highlight-copy-button"
+                  onClick={() => onSelectHighlight(highlight)}
+                  title="순위 추이 차트를 봅니다."
+                  type="button"
+                >
+                  <div className="app-shell__game-highlight-copy">
                   <div className="app-shell__game-highlight-heading">
                     <p className="app-shell__game-highlight-title">{highlight.videoTitle}</p>
                   </div>
@@ -137,7 +155,8 @@ export default function GameHighlightsTab({ highlights, isLoading, onSelectHighl
                     <p className="app-shell__game-highlight-detail-copy">{highlight.description}</p>
                   </div>
                 </div>
-              </button>
+                </button>
+              </article>
             </li>
           );
         })}

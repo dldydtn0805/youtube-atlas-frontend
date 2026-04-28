@@ -2101,7 +2101,6 @@
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 18px;
   color: inherit;
-  cursor: pointer;
   display: grid;
   gap: 12px;
   grid-template-columns: 148px minmax(0, 1fr);
@@ -2116,22 +2115,37 @@
 }
 
 .app-shell__game-leaderboard-position-select:hover,
-.app-shell__game-leaderboard-position-select:focus-visible {
+.app-shell__game-leaderboard-position-select:focus-within {
   border-color: rgba(217, 119, 6, 0.38);
   box-shadow: 0 12px 24px rgba(148, 163, 184, 0.14);
   transform: translateY(-1px);
 }
 
-.app-shell__game-leaderboard-position-select:focus-visible {
-  outline: none;
+.app-shell__game-leaderboard-position-thumb-button,
+.app-shell__game-leaderboard-position-copy-button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
 }
 
-.app-shell__game-leaderboard-position-select:disabled {
-  cursor: default;
+.app-shell__game-leaderboard-position-thumb-button {
+  align-self: stretch;
+  border-radius: 12px;
+  line-height: 0;
 }
 
-.app-shell__game-leaderboard-position-select:disabled .app-shell__game-leaderboard-position-title {
-  text-decoration: none;
+.app-shell__game-leaderboard-position-copy-button {
+  min-width: 0;
+}
+
+.app-shell__game-leaderboard-position-thumb-button:focus-visible,
+.app-shell__game-leaderboard-position-copy-button:focus-visible {
+  outline: 2px solid rgba(217, 119, 6, 0.48);
+  outline-offset: 3px;
 }
 
 .app-shell__game-leaderboard-position-thumb {
