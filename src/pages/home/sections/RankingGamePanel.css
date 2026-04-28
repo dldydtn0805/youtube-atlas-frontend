@@ -1271,13 +1271,6 @@
   max-width: 100%;
 }
 
-.app-shell__game-position-title-button:hover .app-shell__game-position-title,
-.app-shell__game-position-title-button:focus-visible .app-shell__game-position-title,
-.app-shell__game-history-title-button:hover .app-shell__game-history-title,
-.app-shell__game-history-title-button:focus-visible .app-shell__game-history-title {
-  text-decoration: underline;
-}
-
 .app-shell__game-position-copy {
   display: grid;
   gap: 8px;
@@ -1322,6 +1315,18 @@
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+.app-shell__game-position-body-button[data-clickable='true'],
+.app-shell__game-history-body-button[data-clickable='true'] {
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.app-shell__game-position-body-button[data-clickable='true']:focus-visible,
+.app-shell__game-history-body-button[data-clickable='true']:focus-visible {
+  outline: 2px solid rgba(var(--game-panel-tier-accent-rgb), 0.42);
+  outline-offset: 3px;
 }
 
 .app-shell__coin-boost-badge,

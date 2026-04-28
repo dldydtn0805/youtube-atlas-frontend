@@ -112,6 +112,7 @@ function RankingGamePositionRowComponent({
   const position = mapHoldingToGamePosition(holding);
   const canOpenBuyTrade = canShowGameActions && Boolean(onOpenBuyTradeModal);
   const canOpenSellTrade = canShowGameActions && holding.sellableQuantity > 0 && Boolean(onOpenSellTradeModal);
+  const handleOpenPositionChart = () => onOpenPositionChart?.(position);
 
   return (
     <li className="app-shell__game-position" data-selected={isSelected}>
@@ -133,13 +134,30 @@ function RankingGamePositionRowComponent({
             <button
               aria-label={`${holding.title} 순위 추이 차트`}
               className="app-shell__game-position-title-button"
-              onClick={() => onOpenPositionChart?.(position)}
+              onClick={handleOpenPositionChart}
               type="button"
             >
               <p className="app-shell__game-position-title">{holding.title}</p>
             </button>
           </div>
-          <div className="app-shell__game-position-body-button">
+          <div
+            aria-label={`${holding.title} 본문 차트 보기`}
+            className="app-shell__game-position-body-button"
+            data-clickable={onOpenPositionChart ? 'true' : undefined}
+            onClick={onOpenPositionChart ? handleOpenPositionChart : undefined}
+            onKeyDown={
+              onOpenPositionChart
+                ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleOpenPositionChart();
+                    }
+                  }
+                : undefined
+            }
+            role={onOpenPositionChart ? 'button' : undefined}
+            tabIndex={onOpenPositionChart ? 0 : undefined}
+          >
             <p className="app-shell__game-position-channel">{holding.channelTitle}</p>
             <div className="app-shell__game-position-body">
               <p className="app-shell__game-position-meta">

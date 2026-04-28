@@ -227,6 +227,108 @@ describe('GameScheduledSellOrdersTab', () => {
     );
   });
 
+  it('opens the chart when the order body is clicked', async () => {
+    const user = userEvent.setup();
+    const onOpenChart = vi.fn();
+
+    render(
+      <GameScheduledSellOrdersTab
+        isLoading={false}
+        onOpenChart={onOpenChart}
+        orders={[
+          {
+            id: 1,
+            userId: 1,
+            seasonId: 1,
+            positionId: 10,
+            videoId: 'video-1',
+            videoTitle: '대기 주문',
+            channelTitle: '채널 A',
+            thumbnailUrl: 'https://example.com/a.jpg',
+            regionCode: 'KR',
+            targetRank: 10,
+            triggerDirection: 'RANK_IMPROVES_TO',
+            status: 'PENDING',
+            currentRank: 12,
+            buyRank: 15,
+            quantity: 100,
+            stakePoints: 5000,
+            sellPricePoints: null,
+            settledPoints: null,
+            pnlPoints: null,
+            failureReason: null,
+            triggeredAt: null,
+            executedAt: null,
+            canceledAt: null,
+            createdAt: '2026-04-24T00:00:00.000Z',
+            updatedAt: '2026-04-24T00:00:00.000Z',
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '대기 주문 본문 차트 보기' }));
+
+    expect(onOpenChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 1,
+        videoId: 'video-1',
+        videoTitle: '대기 주문',
+      }),
+    );
+  });
+
+  it('selects the order video when the thumbnail is clicked', async () => {
+    const user = userEvent.setup();
+    const onSelectOrderVideo = vi.fn();
+
+    render(
+      <GameScheduledSellOrdersTab
+        isLoading={false}
+        onSelectOrderVideo={onSelectOrderVideo}
+        orders={[
+          {
+            id: 1,
+            userId: 1,
+            seasonId: 1,
+            positionId: 10,
+            videoId: 'video-1',
+            videoTitle: '대기 주문',
+            channelTitle: '채널 A',
+            thumbnailUrl: 'https://example.com/a.jpg',
+            regionCode: 'KR',
+            targetRank: 10,
+            triggerDirection: 'RANK_IMPROVES_TO',
+            status: 'PENDING',
+            currentRank: 12,
+            buyRank: 15,
+            quantity: 100,
+            stakePoints: 5000,
+            sellPricePoints: null,
+            settledPoints: null,
+            pnlPoints: null,
+            failureReason: null,
+            triggeredAt: null,
+            executedAt: null,
+            canceledAt: null,
+            createdAt: '2026-04-24T00:00:00.000Z',
+            updatedAt: '2026-04-24T00:00:00.000Z',
+          },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '대기 주문 재생' }));
+
+    expect(onSelectOrderVideo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 1,
+        videoId: 'video-1',
+        videoTitle: '대기 주문',
+      }),
+    );
+  });
+
   it('shows a failed order reason when one is provided', async () => {
     const user = userEvent.setup();
 

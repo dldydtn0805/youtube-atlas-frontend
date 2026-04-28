@@ -15,6 +15,7 @@ interface GameScheduledSellOrdersTabProps {
   isLoading: boolean;
   onCancelOrder?: (orderId: number) => void;
   onOpenChart?: (order: GameScheduledSellOrder) => void;
+  onSelectOrderVideo?: (order: GameScheduledSellOrder) => void;
   orders: GameScheduledSellOrder[];
 }
 
@@ -98,6 +99,7 @@ export default function GameScheduledSellOrdersTab({
   isLoading,
   onCancelOrder,
   onOpenChart,
+  onSelectOrderVideo,
   orders,
 }: GameScheduledSellOrdersTabProps) {
   const [activeFilter, setActiveFilter] = useState<ScheduledSellOrderFilter>('PENDING');
@@ -137,6 +139,8 @@ export default function GameScheduledSellOrdersTab({
               const canCancel = order.status === 'PENDING' && Boolean(onCancelOrder);
               const isCanceling = isCancelingOrderId === order.id;
               const chartButtonLabel = `${order.videoTitle} 차트 보기`;
+              const handleOpenChart = () => onOpenChart?.(order);
+              const handleSelectOrderVideo = () => onSelectOrderVideo?.(order);
 
               return (
                 <li
@@ -152,19 +156,36 @@ export default function GameScheduledSellOrdersTab({
                     </div>
                   ) : null}
                   <div className="app-shell__game-position-select">
-                  <img
-                    alt=""
-                    className="app-shell__game-position-thumb"
-                    loading="lazy"
-                    src={order.thumbnailUrl}
-                  />
+                  {onSelectOrderVideo ? (
+                    <button
+                      aria-label={`${order.videoTitle} 재생`}
+                      className="app-shell__game-position-thumb-button"
+                      onClick={handleSelectOrderVideo}
+                      title="이 영상을 플레이어에서 엽니다."
+                      type="button"
+                    >
+                      <img
+                        alt=""
+                        className="app-shell__game-position-thumb"
+                        loading="lazy"
+                        src={order.thumbnailUrl}
+                      />
+                    </button>
+                  ) : (
+                    <img
+                      alt=""
+                      className="app-shell__game-position-thumb"
+                      loading="lazy"
+                      src={order.thumbnailUrl}
+                    />
+                  )}
                   <div className="app-shell__game-position-copy">
                     <div className="app-shell__game-position-heading">
                       {onOpenChart ? (
                         <button
                           aria-label={chartButtonLabel}
                           className="app-shell__game-position-title-button"
-                          onClick={() => onOpenChart(order)}
+                          onClick={handleOpenChart}
                           type="button"
                         >
                           <span className="app-shell__game-position-title">{order.videoTitle}</span>
@@ -173,42 +194,61 @@ export default function GameScheduledSellOrdersTab({
                         <p className="app-shell__game-position-title">{order.videoTitle}</p>
                       )}
                     </div>
-                    <p className="app-shell__game-position-channel">{order.channelTitle}</p>
-                    <p className="app-shell__game-position-meta">
-                      <span className="app-shell__game-position-meta-label">조건</span>{' '}
-                      <span>{getScheduledSellConditionLabel(order)}</span>
-                      {' · '}
-                      <span className="app-shell__game-position-meta-label">현재</span>{' '}
-                      <span>{formatRank(order.currentRank)}</span>
-                      {' · '}
-                      <span className="app-shell__game-position-meta-label">수량</span>{' '}
-                      <span>{formatGameOrderQuantity(order.quantity)}</span>
-                      {' · '}
-                      <span className="app-shell__game-position-meta-label">생성</span>{' '}
-                      <span>{formatGameTimestamp(order.createdAt)}</span>
-                    </p>
-                    <div className="app-shell__game-position-detail">
-                      <span className="app-shell__game-position-detail-badges">
-                        <span
-                          className="app-shell__game-position-trend"
-                          data-tone={getScheduledSellStatusTone(order.status)}
-                        >
-                          {getScheduledSellStatusLabel(order.status)}
+                    <div
+                      aria-label={`${order.videoTitle} 본문 차트 보기`}
+                      className="app-shell__game-position-body-button"
+                      data-clickable={onOpenChart ? 'true' : undefined}
+                      onClick={onOpenChart ? handleOpenChart : undefined}
+                      onKeyDown={
+                        onOpenChart
+                          ? (event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                handleOpenChart();
+                              }
+                            }
+                          : undefined
+                      }
+                      role={onOpenChart ? 'button' : undefined}
+                      tabIndex={onOpenChart ? 0 : undefined}
+                    >
+                      <p className="app-shell__game-position-channel">{order.channelTitle}</p>
+                      <p className="app-shell__game-position-meta">
+                        <span className="app-shell__game-position-meta-label">조건</span>{' '}
+                        <span>{getScheduledSellConditionLabel(order)}</span>
+                        {' · '}
+                        <span className="app-shell__game-position-meta-label">현재</span>{' '}
+                        <span>{formatRank(order.currentRank)}</span>
+                        {' · '}
+                        <span className="app-shell__game-position-meta-label">수량</span>{' '}
+                        <span>{formatGameOrderQuantity(order.quantity)}</span>
+                        {' · '}
+                        <span className="app-shell__game-position-meta-label">생성</span>{' '}
+                        <span>{formatGameTimestamp(order.createdAt)}</span>
+                      </p>
+                      <div className="app-shell__game-position-detail">
+                        <span className="app-shell__game-position-detail-badges">
+                          <span
+                            className="app-shell__game-position-trend"
+                            data-tone={getScheduledSellStatusTone(order.status)}
+                          >
+                            {getScheduledSellStatusLabel(order.status)}
+                          </span>
+                          {typeof order.settledPoints === 'number' ? (
+                            <span className="app-shell__game-position-trend" data-tone="steady">
+                              정산 {formatMaybePoints(order.settledPoints)}
+                            </span>
+                          ) : null}
+                          {typeof order.pnlPoints === 'number' ? (
+                            <span className="app-shell__game-position-trend" data-tone={getPointTone(order.pnlPoints)}>
+                              손익 {formatPoints(order.pnlPoints)}
+                            </span>
+                          ) : null}
                         </span>
-                        {typeof order.settledPoints === 'number' ? (
-                          <span className="app-shell__game-position-trend" data-tone="steady">
-                            정산 {formatMaybePoints(order.settledPoints)}
-                          </span>
+                        {order.failureReason ? (
+                          <p className="app-shell__game-position-detail-copy">{order.failureReason}</p>
                         ) : null}
-                        {typeof order.pnlPoints === 'number' ? (
-                          <span className="app-shell__game-position-trend" data-tone={getPointTone(order.pnlPoints)}>
-                            손익 {formatPoints(order.pnlPoints)}
-                          </span>
-                        ) : null}
-                      </span>
-                      {order.failureReason ? (
-                        <p className="app-shell__game-position-detail-copy">{order.failureReason}</p>
-                      ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>

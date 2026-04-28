@@ -47,10 +47,12 @@ import {
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
   RESTORED_PLAYBACK_QUEUE_ID,
+  SCHEDULED_SELL_ORDERS_QUEUE_ID,
   findPlaybackQueueIdForVideo,
   getFullscreenElement,
   getAdjacentGamePosition,
   getVideoThumbnailUrl,
+  mapGameScheduledSellOrderToVideoItem,
   mapGamePositionToVideoItem,
   resolvePlaybackCategoryLabel,
   sortedCountryCodes,
@@ -83,7 +85,7 @@ import {
   useUpdateSelectedAchievementTitle,
 } from '../../features/game/queries';
 import { useGameRealtimeInvalidation } from '../../features/game/realtime';
-import type { GamePosition } from '../../features/game/types';
+import type { GamePosition, GameScheduledSellOrder } from '../../features/game/types';
 import {
   useFavoriteStreamerVideos,
   useFavoriteStreamers,
@@ -603,6 +605,25 @@ function HomePage() {
     selectedSectionPages: data?.pages,
     shouldLoadFavorites,
   });
+  const scheduledSellOrdersPlaybackSection = useMemo(
+    () =>
+      scheduledSellOrders.length > 0
+        ? {
+            categoryId: SCHEDULED_SELL_ORDERS_QUEUE_ID,
+            description: '예약 매도 대기열에서 다시 연 영상을 이어서 볼 수 있습니다.',
+            items: scheduledSellOrders.map(mapGameScheduledSellOrderToVideoItem),
+            label: '대기열',
+          }
+        : undefined,
+    [scheduledSellOrders],
+  );
+  const playbackExtraSections = useMemo(
+    () =>
+      scheduledSellOrdersPlaybackSection
+        ? [...(extraPlaybackSections ?? []), scheduledSellOrdersPlaybackSection]
+        : extraPlaybackSections,
+    [extraPlaybackSections, scheduledSellOrdersPlaybackSection],
+  );
   const {
     activeChartEmptyMessage,
     activeChartErrorMessage,
@@ -748,7 +769,7 @@ function HomePage() {
   } = useHomePlaybackState({
     accessToken,
     authStatus,
-    extraPlaybackSections,
+    extraPlaybackSections: playbackExtraSections,
     favoriteStreamerVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -778,7 +799,7 @@ function HomePage() {
     () =>
       resolvePlaybackCategoryLabel({
         activePlaybackQueueId,
-        extraPlaybackSections,
+        extraPlaybackSections: playbackExtraSections,
         fallbackLabel: selectedChartViewOption.label,
         favoriteStreamerVideoSection,
         newChartEntriesSection: sortedNewChartEntriesSection,
@@ -788,7 +809,7 @@ function HomePage() {
       }),
     [
       activePlaybackQueueId,
-      extraPlaybackSections,
+      playbackExtraSections,
       favoriteStreamerVideoSection,
       labeledSelectedPlaybackSection,
       sortedNewChartEntriesSection,
@@ -1245,6 +1266,7 @@ function HomePage() {
 
       const playbackQueueId =
         findPlaybackQueueIdForVideo(videoId, {
+          extraSections: playbackExtraSections,
           favoriteStreamerVideoSection,
           gamePortfolioSection,
           historyPlaybackSection,
@@ -1260,6 +1282,7 @@ function HomePage() {
       gamePortfolioSection,
       handleSelectVideoWithPreview,
       historyPlaybackSection,
+      playbackExtraSections,
       selectedPlaybackSection,
       sortedNewChartEntriesSection,
       sortedRealtimeSurgingSection,
@@ -1527,6 +1550,15 @@ function HomePage() {
     },
     [handleSelectVideoWithPreview, scrollToPlayerStage, setGameActionStatus],
   );
+  const handleSelectScheduledSellOrderVideo = useCallback(
+    (order: GameScheduledSellOrder) => {
+      setGameActionStatus(null);
+      setSelectedOpenPositionId(order.positionId);
+      scrollToPlayerStage();
+      handleSelectVideoWithPreview(order.videoId, SCHEDULED_SELL_ORDERS_QUEUE_ID);
+    },
+    [handleSelectVideoWithPreview, scrollToPlayerStage, setGameActionStatus],
+  );
   const handleSelectGameTab = useCallback((tab: 'positions' | 'scheduledOrders' | 'history' | 'guide') => {
     startTransition(() => {
       setActiveGameTab(tab);
@@ -1749,6 +1781,7 @@ function HomePage() {
       onOpenPositionSellTradeModal={handleOpenPositionSellTradeModal}
       onSelectGameHistoryVideo={handleSelectGameHistoryVideo}
       onSelectGamePositionVideo={handleSelectGamePositionVideo}
+      onSelectScheduledSellOrderVideo={handleSelectScheduledSellOrderVideo}
       onSelectTab={handleSelectGameTab}
       onToggleCollapse={() => toggleCollapsedSection(RANKING_GAME_SECTION_ID)}
       openDistinctVideoCount={openDistinctVideoCount}

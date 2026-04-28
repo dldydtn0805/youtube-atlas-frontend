@@ -356,6 +356,28 @@ describe('RankingGamePositionsTab', () => {
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
+  it('opens the chart from the holding body without selecting playback', () => {
+    const onOpenPositionChart = vi.fn();
+    const onSelectPosition = vi.fn();
+
+    render(
+      <RankingGamePositionsTab
+        canShowGameActions
+        favoriteTrendSignalsByVideoId={{}}
+        gameMarketSignalsByVideoId={{}}
+        holdings={[createOpenGameHolding()]}
+        onOpenPositionChart={onOpenPositionChart}
+        onSelectPosition={onSelectPosition}
+        trendSignalsByVideoId={{}}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 본문 차트 보기' }));
+
+    expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(onSelectPosition).not.toHaveBeenCalled();
+  });
+
   it('disables sell action until a holding has sellable quantity', () => {
     render(
       <RankingGamePositionsTab
@@ -533,6 +555,31 @@ describe('RankingGameHistoryTab', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'History position 순위 추이 차트' }));
+
+    expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(onSelectPosition).not.toHaveBeenCalled();
+  });
+
+  it('opens the chart from the history body without selecting playback', () => {
+    const onOpenPositionChart = vi.fn();
+    const onSelectPosition = vi.fn();
+
+    render(
+      <RankingGameHistoryTab
+        activePlaybackQueueId={HISTORY_PLAYBACK_QUEUE_ID}
+        emptyMessage={null}
+        historyPlaybackLoadingVideoId={null}
+        isLoading={false}
+        onOpenPositionChart={onOpenPositionChart}
+        onSelectPosition={onSelectPosition}
+        positions={[createGamePosition({ title: 'History position' })]}
+        resolvePlaybackQueueId={() => HISTORY_PLAYBACK_QUEUE_ID}
+        selectedPositionId={1}
+        selectedVideoId="video-1"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'History position 본문 차트 보기' }));
 
     expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
     expect(onSelectPosition).not.toHaveBeenCalled();

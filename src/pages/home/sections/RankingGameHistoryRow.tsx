@@ -56,6 +56,7 @@ function RankingGameHistoryRowComponent({
     position.status === 'OPEN' ? '보유중' : position.status === 'AUTO_CLOSED' ? '자동 청산' : '매도 완료';
   const grossSellPoints = isClosedPosition ? inferGrossSellPointsFromSettled(position.currentPricePoints) : null;
   const sellFeePoints = grossSellPoints !== null ? calculateSellFeePoints(grossSellPoints) : null;
+  const handleOpenPositionChart = () => onOpenPositionChart?.(position);
 
   return (
     <li
@@ -89,14 +90,29 @@ function RankingGameHistoryRowComponent({
             <button
               aria-label={`${position.title} 순위 추이 차트`}
               className="app-shell__game-history-title-button"
-              onClick={() => onOpenPositionChart?.(position)}
+              onClick={handleOpenPositionChart}
               type="button"
             >
               <p className="app-shell__game-history-title">{position.title}</p>
             </button>
           </div>
           <div
+            aria-label={`${position.title} 본문 차트 보기`}
             className="app-shell__game-history-body-button"
+            data-clickable={onOpenPositionChart ? 'true' : undefined}
+            onClick={onOpenPositionChart ? handleOpenPositionChart : undefined}
+            onKeyDown={
+              onOpenPositionChart
+                ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleOpenPositionChart();
+                    }
+                  }
+                : undefined
+            }
+            role={onOpenPositionChart ? 'button' : undefined}
+            tabIndex={onOpenPositionChart ? 0 : undefined}
             title={
               isLoadingHistoryPlayback
                 ? '영상 정보를 다시 불러오는 중입니다.'

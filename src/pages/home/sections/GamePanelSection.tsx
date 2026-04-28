@@ -54,6 +54,7 @@ interface GamePanelSectionProps {
   onCancelScheduledSellOrder?: (orderId: number) => void;
   onSelectGameHistoryVideo: (position: GamePosition, playbackQueueId?: string) => void | Promise<void>;
   onSelectGamePositionVideo: (position: GamePosition) => void;
+  onSelectScheduledSellOrderVideo?: (order: GameScheduledSellOrder) => void | Promise<void>;
   onSelectTab: (tab: GameTab) => void;
   onToggleCollapse: () => void;
   openDistinctVideoCount: number;
@@ -104,6 +105,7 @@ export default function GamePanelSection({
   onCancelScheduledSellOrder,
   onSelectGameHistoryVideo,
   onSelectGamePositionVideo,
+  onSelectScheduledSellOrderVideo,
   onSelectTab,
   onToggleCollapse,
   openDistinctVideoCount,
@@ -188,6 +190,13 @@ export default function GamePanelSection({
       isLoading={isScheduledSellOrdersLoading}
       onCancelOrder={onCancelScheduledSellOrder}
       onOpenChart={onOpenScheduledSellOrderChart}
+      onSelectOrderVideo={
+        onSelectScheduledSellOrderVideo
+          ? (order) => {
+              void onSelectScheduledSellOrderVideo(order);
+            }
+          : undefined
+      }
       orders={scheduledSellOrders}
     />
   );
