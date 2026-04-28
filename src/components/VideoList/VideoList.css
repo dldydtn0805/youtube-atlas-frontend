@@ -228,8 +228,9 @@
     background 0.24s ease;
 }
 
-.video-card:hover:not([data-active='true']),
-.video-card[data-active='false'] {
+.video-card[data-active='false']:hover,
+.video-card[data-active='false']:focus-visible,
+.video-card[data-active='false']:active {
   background: var(--surface-card-hover);
   border-color: rgba(148, 163, 184, 0.32);
   box-shadow: var(--shadow-card-hover);

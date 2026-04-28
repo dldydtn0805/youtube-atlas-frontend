@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import CommentSection from '../../../components/CommentSection/CommentSection';
 import VideoList, { type FeaturedVideoSection } from '../../../components/VideoList/VideoList';
 import type { AuthStatus } from '../../../features/auth/types';
@@ -87,7 +87,7 @@ interface CommunityPanelProps {
   selectedVideoTitle?: string;
 }
 
-export function ChartPanel({
+export const ChartPanel = memo(function ChartPanel({
   activePlaybackQueueId,
   chartErrorMessage,
   marketPriceByVideoId,
@@ -197,9 +197,9 @@ export function ChartPanel({
       />
     </section>
   );
-}
+});
 
-export function FavoriteVideosPanel({
+export const FavoriteVideosPanel = memo(function FavoriteVideosPanel({
   activePlaybackQueueId,
   authStatus,
   favoriteStreamerCount,
@@ -292,9 +292,9 @@ export function FavoriteVideosPanel({
       )}
     </section>
   );
-}
+});
 
-export function CommunityPanel({ selectedVideoId, selectedVideoTitle }: CommunityPanelProps) {
+export const CommunityPanel = memo(function CommunityPanel({ selectedVideoId, selectedVideoTitle }: CommunityPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -322,4 +322,4 @@ export function CommunityPanel({ selectedVideoId, selectedVideoTitle }: Communit
       {isCollapsed ? null : <CommentSection videoId={selectedVideoId} videoTitle={selectedVideoTitle} />}
     </section>
   );
-}
+});

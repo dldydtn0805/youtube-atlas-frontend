@@ -206,7 +206,7 @@ export default function useHomePlaybackState({
     };
   }, [isManualPlaybackSavePending, manualPlaybackSaveStatus]);
 
-  const handlePlaybackRestoreApplied = useCallback((_restoreId: number) => {}, []);
+  const handlePlaybackRestoreApplied = useCallback(() => {}, []);
 
   const persistPlaybackProgress = useCallback(
     async (

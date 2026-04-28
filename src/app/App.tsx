@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import HomePage from '../pages/home/HomePage';
-import AdminPage from '../pages/admin/AdminPage';
+import { lazy, Suspense, useEffect, useState } from 'react';
+
+const HomePage = lazy(() => import('../pages/home/HomePage'));
+const AdminPage = lazy(() => import('../pages/admin/AdminPage'));
 
 function getCurrentPathname() {
   if (typeof window === 'undefined') {
@@ -26,10 +27,18 @@ function App() {
   }, []);
 
   if (pathname.startsWith('/admin')) {
-    return <AdminPage />;
+    return (
+      <Suspense fallback={null}>
+        <AdminPage />
+      </Suspense>
+    );
   }
 
-  return <HomePage />;
+  return (
+    <Suspense fallback={null}>
+      <HomePage />
+    </Suspense>
+  );
 }
 
 export default App;

@@ -1,4 +1,4 @@
-import { FormEvent, FocusEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, FocusEvent, KeyboardEvent, memo, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../features/auth/useAuth';
 import { isApiConfigured } from '../../lib/api';
 import { useComments, useCreateComment } from '../../features/comments/queries';
@@ -540,4 +540,4 @@ function getCurrentCooldownDeadline(
   return currentCooldownDeadline;
 }
 
-export default CommentSection;
+export default memo(CommentSection);

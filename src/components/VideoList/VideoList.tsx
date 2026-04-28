@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
 import { formatCompactCount, getFallbackNewBadge, getVideoTrendBadges } from '../../features/trending/presentation';
 import type { VideoTrendSignal } from '../../features/trending/types';
@@ -318,4 +319,4 @@ function VideoList({
   );
 }
 
-export default VideoList;
+export default memo(VideoList);
