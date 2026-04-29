@@ -228,8 +228,10 @@ describe('GameTradeModal', () => {
       );
 
       const body = document.querySelector('.app-shell__modal-body');
+      const modal = document.querySelector('.app-shell__modal');
 
       expect(body).not.toBeNull();
+      expect(modal).not.toBeNull();
 
       fireEvent.touchStart(body as Element, { touches: [{ clientX: 40, clientY: 20, identifier: 1 }] });
       fireEvent.touchMove(body as Element, { touches: [{ clientX: 42, clientY: 90, identifier: 1 }] });
@@ -237,8 +239,10 @@ describe('GameTradeModal', () => {
       fireEvent.touchEnd(body as Element, { changedTouches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
 
       expect(onClose).not.toHaveBeenCalled();
+      expect((modal as HTMLElement).style.transform).toContain('translate3d');
+      expect((modal as HTMLElement).style.transition).toContain('330ms');
 
-      vi.advanceTimersByTime(220);
+      vi.advanceTimersByTime(330);
 
       expect(onClose).toHaveBeenCalledTimes(1);
     } finally {

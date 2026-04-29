@@ -23,7 +23,7 @@ describe('GamePanelModal', () => {
 
       expect(onClose).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(220);
+      vi.advanceTimersByTime(330);
 
       expect(onClose).toHaveBeenCalledTimes(1);
     } finally {
@@ -56,7 +56,8 @@ describe('GamePanelModal', () => {
       fireEvent.touchMove(inventoryItem, { touches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
       fireEvent.touchEnd(inventoryItem, { changedTouches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
 
-      vi.advanceTimersByTime(220);
+      expect(onClose).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(330);
 
       expect(onClose).toHaveBeenCalledTimes(1);
       expect(onItemClick).not.toHaveBeenCalled();
@@ -119,7 +120,9 @@ describe('GamePanelModal', () => {
       expect(onClose).not.toHaveBeenCalled();
 
       fireEvent.touchEnd(inventoryItem, { changedTouches: [{ clientX: 42, clientY: 220, identifier: 1 }] });
-      vi.advanceTimersByTime(220);
+
+      expect(onClose).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(330);
 
       expect(onClose).toHaveBeenCalledTimes(1);
     } finally {

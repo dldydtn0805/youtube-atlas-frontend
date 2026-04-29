@@ -20,6 +20,7 @@ const BACKDROP_FADE_START_PROGRESS = 0.08;
 const MIN_BACKDROP_OPACITY = 0.18;
 const TOUCH_VISIBLE_DRAG_CLOSE_THRESHOLD = 188;
 const CLOSE_ANIMATION_DURATION_MS = 220;
+const BODY_CLOSE_ANIMATION_DURATION_MS = 330;
 const MIN_CLOSE_ANIMATION_OFFSET = 360;
 const SCROLL_TOP_CLOSE_TOLERANCE = 1;
 const BODY_SWIPE_CLOSE_DISTANCE = 132;
@@ -105,6 +106,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
   const closeTimerRef = useRef<number | null>(null);
   const dragFrameRef = useRef<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
+  const [closeAnimationDuration, setCloseAnimationDuration] = useState(CLOSE_ANIMATION_DURATION_MS);
   const [motionState, setMotionState] = useState<'idle' | 'dragging' | 'closing'>('idle');
 
   const clearCloseTimer = useCallback(() => {
@@ -155,6 +157,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
     dragOffsetRef.current = 0;
     pendingDragOffsetRef.current = 0;
     isSwipeCandidateRef.current = false;
+    setCloseAnimationDuration(CLOSE_ANIMATION_DURATION_MS);
     setMotionState('idle');
     setDragOffset(0);
   }, [cancelDragFrame, clearCloseTimer]);
@@ -199,13 +202,14 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
     pointerIdRef.current = null;
     touchIdentifierRef.current = null;
     isSwipeCandidateRef.current = false;
+    setCloseAnimationDuration(CLOSE_ANIMATION_DURATION_MS);
     setMotionState('idle');
     setDragOffset(0);
     dragOffsetRef.current = 0;
     pendingDragOffsetRef.current = 0;
   }, []);
 
-  const closeWithSwipe = useCallback((resolvedDragOffset: number) => {
+  const closeWithSwipe = useCallback((resolvedDragOffset: number, durationMs = CLOSE_ANIMATION_DURATION_MS) => {
     clearCloseTimer();
     pointerIdRef.current = null;
     touchIdentifierRef.current = null;
@@ -216,13 +220,14 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
       Math.round(viewportHeight * 0.9),
       resolvedDragOffset + 180,
     );
+    setCloseAnimationDuration(durationMs);
     setMotionState('closing');
     flushDragOffset(closeOffset);
     if (typeof window !== 'undefined') {
       closeTimerRef.current = window.setTimeout(() => {
         closeTimerRef.current = null;
         onClose();
-      }, CLOSE_ANIMATION_DURATION_MS);
+      }, durationMs);
     } else {
       onClose();
     }
@@ -345,13 +350,13 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         const deltaX = Math.abs(touch.clientX - startXRef.current);
         const deltaY = touch.clientY - startYRef.current;
         if (!isSwipeCandidateRef.current && deltaY >= BODY_SWIPE_CLOSE_DISTANCE && deltaX <= deltaY * 0.7) {
-          closeWithSwipe(BODY_SWIPE_CLOSE_DISTANCE);
+          closeWithSwipe(BODY_SWIPE_CLOSE_DISTANCE, BODY_CLOSE_ANIMATION_DURATION_MS);
           return;
         }
 
         const resolvedDragOffset = dragOffsetRef.current;
         if (shouldCloseSwipe(touch.clientX, touch.clientY)) {
-          closeWithSwipe(resolvedDragOffset);
+          closeWithSwipe(resolvedDragOffset, BODY_CLOSE_ANIMATION_DURATION_MS);
           return;
         }
 
@@ -414,11 +419,11 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
 
       return {
         transform: dragOffset > 0 ? `translate3d(0, ${dragOffset}px, 0)` : undefined,
-        transition: isDragging ? 'none' : `transform ${CLOSE_ANIMATION_DURATION_MS}ms ease-out`,
+        transition: isDragging ? 'none' : `transform ${closeAnimationDuration}ms ease-out`,
         willChange: isDragging || isClosing ? 'transform' : undefined,
       };
     },
-    [dragOffset, motionState],
+    [closeAnimationDuration, dragOffset, motionState],
   );
 
   const backdropStyle = useMemo<CSSProperties>(
@@ -432,11 +437,11 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
 
       return {
         opacity: dragOffset > 0 ? Math.max(MIN_BACKDROP_OPACITY, 1 - easedFadeProgress * 0.82) : undefined,
-        transition: isDragging ? 'none' : `opacity ${CLOSE_ANIMATION_DURATION_MS}ms ease-out`,
+        transition: isDragging ? 'none' : `opacity ${closeAnimationDuration}ms ease-out`,
         willChange: isDragging || isClosing ? 'opacity' : undefined,
       };
     },
-    [dragOffset, motionState],
+    [closeAnimationDuration, dragOffset, motionState],
   );
 
   return {
