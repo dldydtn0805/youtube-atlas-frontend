@@ -65,6 +65,13 @@ describe('HomePlaybackSection', () => {
     callbacks.forEach((callback) => callback(0));
   };
 
+  const setWindowScrollY = (scrollY: number) => {
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      value: scrollY,
+    });
+  };
+
   const expandCollapsedStickyPanel = async () => {
     if (screen.queryByText('Selected video actions')) {
       return;
@@ -757,6 +764,50 @@ describe('HomePlaybackSection', () => {
       expect(screen.getByText('상단 스티키 꺼짐')).toBeInTheDocument();
     });
     expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('false');
+  });
+
+  it('hides the mobile selected video panel while scrolling down and restores it when scrolling up', async () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: false,
+            isMobileLayout: true,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+        stickySelectedVideoContent={<div>Selected video actions</div>}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Selected video actions')).toBeInTheDocument();
+    });
+
+    const stickySlot = document.querySelector('.app-shell__sticky-selected-video-slot');
+
+    expect(stickySlot).toHaveAttribute('data-scroll-hidden', 'false');
+
+    setWindowScrollY(96);
+    window.dispatchEvent(new Event('scroll'));
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(stickySlot).toHaveAttribute('data-scroll-hidden', 'true');
+    });
+
+    setWindowScrollY(32);
+    window.dispatchEvent(new Event('scroll'));
+    flushAnimationFrames();
+
+    await waitFor(() => {
+      expect(stickySlot).toHaveAttribute('data-scroll-hidden', 'false');
+    });
   });
 
   it('scrolls to the player stage when the top button is pressed', async () => {

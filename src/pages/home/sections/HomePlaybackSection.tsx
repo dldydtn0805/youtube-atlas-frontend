@@ -7,6 +7,7 @@ import PlayerStage, { PlayerStageHeader, PlayerViewportContent } from './PlayerS
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
 import StickySelectedVideoControls from './StickySelectedVideoControls';
 import { getFullscreenElement } from '../utils';
+import useMobileStickyAutoHide from './useMobileStickyAutoHide';
 import './HomePlaybackSection.css';
 
 const STICKY_SELECTED_VIDEO_TOP_OFFSET = 12;
@@ -105,6 +106,12 @@ export default function HomePlaybackSection({
     width: number;
   } | null>(null);
   const [mobileStickyBottomOffset, setMobileStickyBottomOffset] = useState(0);
+  const isMobileStickySelectedVideoScrollHidden = useMobileStickyAutoHide(
+    playerStageProps.isMobileLayout &&
+      !playerStageProps.isCinematicModeActive &&
+      Boolean(stickySelectedVideoContent) &&
+      isStickySelectedVideoVisible,
+  );
 
   useEffect(() => {
     if (!playerStageProps.isCinematicModeActive) {
@@ -544,6 +551,7 @@ export default function HomePlaybackSection({
       <div
         className="app-shell__sticky-selected-video-slot"
         data-cinematic={playerStageProps.isCinematicModeActive}
+        data-scroll-hidden={isMobileStickySelectedVideoScrollHidden ? 'true' : 'false'}
         style={
           playerStageProps.isMobileLayout
             ? ({

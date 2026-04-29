@@ -136,8 +136,15 @@
   :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-slot {
     bottom: max(8px, calc(env(safe-area-inset-bottom) + var(--app-mobile-visual-viewport-bottom-offset)));
     contain: layout paint;
-    will-change: bottom;
+    transition: bottom 160ms ease, opacity 160ms ease, transform 180ms ease;
+    will-change: bottom, opacity, transform;
     width: min(calc(100% - (var(--app-shell-inline-padding, 12px) * 2)), var(--app-content-max-width));
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-slot[data-cinematic='false'][data-scroll-hidden='true'] {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(calc(100% + 20px + var(--app-mobile-visual-viewport-bottom-offset)));
   }
 
   :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-frame {
@@ -157,5 +164,11 @@
   :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-frame .app-shell__game-panel-action-utility:hover,
   :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-frame .app-shell__game-panel-action-utility:focus-visible {
     transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-slot {
+    transition: none;
   }
 }
