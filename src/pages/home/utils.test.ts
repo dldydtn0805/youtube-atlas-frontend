@@ -340,32 +340,6 @@ describe('home utils', () => {
     });
   });
 
-  it('sorts a video section by market price descending while keeping videos without prices last', () => {
-    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
-
-    expect(
-      sortVideoSection(section, 'price-desc', {
-        marketVideos: [
-          { videoId: 'video-1', currentPricePoints: 500 },
-          { videoId: 'video-3', currentPricePoints: 100 },
-        ],
-      })?.items.map((item) => item.id),
-    ).toEqual(['video-1', 'video-3', 'video-2']);
-  });
-
-  it('sorts a video section by market price ascending while keeping videos without prices last', () => {
-    const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
-
-    expect(
-      sortVideoSection(section, 'price-asc', {
-        marketVideos: [
-          { videoId: 'video-1', currentPricePoints: 500 },
-          { videoId: 'video-3', currentPricePoints: 100 },
-        ],
-      })?.items.map((item) => item.id),
-    ).toEqual(['video-3', 'video-1', 'video-2']);
-  });
-
   it('keeps the original order for popularity descending', () => {
     const section = createVideoSection('0', '전체', ['video-1', 'video-2', 'video-3']);
 

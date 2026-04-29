@@ -189,12 +189,12 @@ export default function useHomeChartCollections({
     [buyableVideoIdSet, isBuyableOnlyFilterActive, musicPlaybackSection],
   );
   const sortedFilteredMusicChartSection = useMemo(
-    () => sortVideoSection(filteredMusicChartSection, chartSortMode, { marketVideos: gameMarket }),
-    [chartSortMode, filteredMusicChartSection, gameMarket],
+    () => sortVideoSection(filteredMusicChartSection, chartSortMode),
+    [chartSortMode, filteredMusicChartSection],
   );
   const sortedBuyableMarketChartSection = useMemo(
-    () => sortVideoSection(buyableMarketChartSection, chartSortMode, { marketVideos: gameMarket }),
-    [buyableMarketChartSection, chartSortMode, gameMarket],
+    () => sortVideoSection(buyableMarketChartSection, chartSortMode),
+    [buyableMarketChartSection, chartSortMode],
   );
   const musicTrendSignalsByVideoId = useMemo(
     () => mapMusicTrendSignalsByVideoId(musicPlaybackSection, selectedRegionCode),
@@ -333,19 +333,19 @@ export default function useHomeChartCollections({
       ? relabelVideoSection(filteredSelectedPlaybackSection, 'TOP 200')
       : filteredSelectedPlaybackSection;
 
-    return sortVideoSection(labeledSection, chartSortMode, { marketVideos: gameMarket });
-  }, [chartSortMode, filteredSelectedPlaybackSection, gameMarket, shouldShowTop200Label]);
+    return sortVideoSection(labeledSection, chartSortMode);
+  }, [chartSortMode, filteredSelectedPlaybackSection, shouldShowTop200Label]);
   const sortedBuyableFavoriteChartSection = useMemo(
-    () => sortVideoSection(buyableFavoriteChartSection, chartSortMode, { marketVideos: gameMarket }),
-    [buyableFavoriteChartSection, chartSortMode, gameMarket],
+    () => sortVideoSection(buyableFavoriteChartSection, chartSortMode),
+    [buyableFavoriteChartSection, chartSortMode],
   );
   const sortedRealtimeSurgingSection = useMemo(
-    () => sortVideoSection(realtimeSurgingSection, chartSortMode, { marketVideos: gameMarket }),
-    [chartSortMode, gameMarket, realtimeSurgingSection],
+    () => sortVideoSection(realtimeSurgingSection, chartSortMode),
+    [chartSortMode, realtimeSurgingSection],
   );
   const sortedNewChartEntriesSection = useMemo(
-    () => sortVideoSection(newChartEntriesSection, chartSortMode, { marketVideos: gameMarket }),
-    [chartSortMode, gameMarket, newChartEntriesSection],
+    () => sortVideoSection(newChartEntriesSection, chartSortMode),
+    [chartSortMode, newChartEntriesSection],
   );
   const sortedFeaturedChartSections = useMemo(
     () =>
@@ -355,7 +355,7 @@ export default function useHomeChartCollections({
             ? sortedRealtimeSurgingSection
             : featuredSection.section.categoryId === sortedNewChartEntriesSection?.categoryId
               ? sortedNewChartEntriesSection
-              : sortVideoSection(featuredSection.section, chartSortMode, { marketVideos: gameMarket });
+              : sortVideoSection(featuredSection.section, chartSortMode);
 
         return {
           ...featuredSection,
@@ -365,7 +365,6 @@ export default function useHomeChartCollections({
     [
       chartSortMode,
       featuredChartSections,
-      gameMarket,
       sortedNewChartEntriesSection,
       sortedRealtimeSurgingSection,
     ],

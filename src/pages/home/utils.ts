@@ -1,6 +1,6 @@
 import countryCodes from '../../constants/countryCodes';
 import { ALL_VIDEO_CATEGORY_ID, TREND_SNAPSHOT_REGION_CODES } from '../../constants/videoCategories';
-import type { GameHighlight, GameMarketVideo, GamePosition, GameScheduledSellOrder } from '../../features/game/types';
+import type { GameHighlight, GamePosition, GameScheduledSellOrder } from '../../features/game/types';
 import type { PlaybackProgress } from '../../features/playback/types';
 import { formatCompactCount } from '../../features/trending/presentation';
 import type {
@@ -231,15 +231,10 @@ function getVideoViewCount(item: YouTubeVideoItem) {
 function getChartSortValue(
   item: YouTubeVideoItem,
   sortMode: ChartSortMode,
-  priceByVideoId: Map<string, number>,
   options: {
     shouldFallbackToRankRiseMagnitude?: boolean;
   } = {},
 ) {
-  if (sortMode === 'price-desc' || sortMode === 'price-asc') {
-    return priceByVideoId.get(item.id);
-  }
-
   if (sortMode === 'views-desc' || sortMode === 'views-asc') {
     return getVideoViewCount(item);
   }
@@ -270,9 +265,6 @@ function getChartSortValue(
 export function sortVideoSection(
   section: YouTubeCategorySection | undefined,
   sortMode: ChartSortMode,
-  options: {
-    marketVideos?: Pick<GameMarketVideo, 'videoId' | 'currentPricePoints'>[];
-  } = {},
 ) {
   if (!section) {
     return section;
@@ -289,9 +281,6 @@ export function sortVideoSection(
     };
   }
 
-  const priceByVideoId = new Map(
-    (options.marketVideos ?? []).map((marketVideo) => [marketVideo.videoId, marketVideo.currentPricePoints]),
-  );
   const hasRankDrop = sortMode === 'rank-down' && section.items.some((item) => (item.trend?.rankChange ?? 0) < 0);
   const shouldFallbackToRankRiseMagnitude =
     sortMode === 'rank-down' &&
@@ -300,10 +289,10 @@ export function sortVideoSection(
   const sortedItems = section.items
     .map((item, index) => ({ item, index }))
     .sort((left, right) => {
-      const leftValue = getChartSortValue(left.item, sortMode, priceByVideoId, {
+      const leftValue = getChartSortValue(left.item, sortMode, {
         shouldFallbackToRankRiseMagnitude,
       });
-      const rightValue = getChartSortValue(right.item, sortMode, priceByVideoId, {
+      const rightValue = getChartSortValue(right.item, sortMode, {
         shouldFallbackToRankRiseMagnitude,
       });
 
@@ -319,8 +308,7 @@ export function sortVideoSection(
         return -1;
       }
 
-      const shouldSortAscending =
-        sortMode === 'price-asc' || sortMode === 'views-asc' || shouldFallbackToRankRiseMagnitude;
+      const shouldSortAscending = sortMode === 'views-asc' || shouldFallbackToRankRiseMagnitude;
       const valueOrder = shouldSortAscending ? leftValue - rightValue : rightValue - leftValue;
 
       return valueOrder || left.index - right.index;

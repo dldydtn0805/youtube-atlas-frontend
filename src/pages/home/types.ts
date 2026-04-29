@@ -10,8 +10,6 @@ export type ChartViewMode =
 export type ChartSortMode =
   | 'popular-desc'
   | 'popular-asc'
-  | 'price-desc'
-  | 'price-asc'
   | 'views-desc'
   | 'views-asc'
   | 'rank-up'

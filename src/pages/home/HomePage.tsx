@@ -109,7 +109,6 @@ const GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY = 'youtube-atlas-game-intro-dismiss
 const RANKING_GAME_SECTION_ID = 'ranking-game';
 const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'popular-asc',
-  'price-asc',
   'views-desc',
   'views-asc',
   'rank-up',
@@ -122,14 +121,12 @@ function formatHighlightScore(score: number) {
 const MAX_CHART_ITEM_COUNT = 200;
 const MAX_SORT_PREFETCH_PAGE_COUNT = 10;
 const CHART_SORT_OPTIONS: Array<{ id: ChartSortMode; label: string }> = [
-  { id: 'popular-desc', label: '순위 높은 순' },
-  { id: 'popular-asc', label: '순위 낮은 순' },
-  { id: 'price-desc', label: '가격 높은 순' },
-  { id: 'price-asc', label: '가격 낮은 순' },
-  { id: 'views-desc', label: '조회 높은 순' },
-  { id: 'views-asc', label: '조회 낮은 순' },
+  { id: 'popular-desc', label: '높은 순위 순' },
   { id: 'rank-up', label: '랭킹 상승 순' },
+  { id: 'views-desc', label: '조회수 높은 순' },
+  { id: 'popular-asc', label: '낮은 순위 순' },
   { id: 'rank-down', label: '랭킹 하락 순' },
+  { id: 'views-asc', label: '조회수 낮은 순' },
 ];
 
 function hasNextPageFromFetchResult(result: unknown) {
@@ -276,13 +273,7 @@ function HomePage() {
   const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(null);
   const openChartViewModal = useCallback(() => setIsChartViewModalOpen(true), []);
   const closeChartViewModal = useCallback(() => setIsChartViewModalOpen(false), []);
-  const chartSortOptions = useMemo(
-    () =>
-      authStatus === 'authenticated'
-        ? CHART_SORT_OPTIONS
-        : CHART_SORT_OPTIONS.filter((option) => option.id !== 'price-desc' && option.id !== 'price-asc'),
-    [authStatus],
-  );
+  const chartSortOptions = CHART_SORT_OPTIONS;
   const playerStageRef = useRef<HTMLDivElement | null>(null);
   const videoPlayerRef = useRef<VideoPlayerHandle | null>(null);
   const playerSectionRef = useRef<HTMLElement | null>(null);
@@ -305,12 +296,6 @@ function HomePage() {
   useEffect(() => {
     persistCollapsedHomeSectionIds(collapsedHomeSectionIds);
   }, [collapsedHomeSectionIds]);
-
-  useEffect(() => {
-    if (authStatus !== 'authenticated' && (chartSortMode === 'price-desc' || chartSortMode === 'price-asc')) {
-      setChartSortMode('popular-desc');
-    }
-  }, [authStatus, chartSortMode]);
 
   const [achievementTitleToastMessage, setAchievementTitleToastMessage] = useState<string | null>(null);
 
