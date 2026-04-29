@@ -56,6 +56,7 @@ import {
   SCHEDULED_SELL_ORDERS_QUEUE_ID,
   findPlaybackQueueIdForVideo,
   getFullscreenElement,
+  getAdjacentGameScheduledSellOrder,
   getAdjacentGamePosition,
   getVideoThumbnailUrl,
   mapGameHighlightToVideoItem,
@@ -253,6 +254,7 @@ function HomePage() {
   const queryClient = useQueryClient();
   const { accessToken, applyCurrentUser, isLoggingOut, logout, refreshCurrentUser, status: authStatus, user } = useAuth();
   const [selectedOpenPositionId, setSelectedOpenPositionId] = useState<number | null>(null);
+  const [selectedScheduledSellOrderId, setSelectedScheduledSellOrderId] = useState<number | null>(null);
   const [activeGameTab, setActiveGameTab] = useState<'positions' | 'scheduledOrders' | 'history' | 'guide'>('positions');
   const [isBuyableOnlyFilterActive, setIsBuyableOnlyFilterActive] = useState(false);
   const [collapsedHomeSectionIds, setCollapsedHomeSectionIds] = useState(getInitialCollapsedHomeSectionIds);
@@ -925,6 +927,7 @@ function HomePage() {
     }
 
     setSelectedOpenPositionId(null);
+    setSelectedScheduledSellOrderId(null);
     setActiveGameTab('positions');
     setHistoryPlaybackLoadingVideoId(null);
     setHistoryPlaybackVideo(null);
@@ -938,6 +941,8 @@ function HomePage() {
     const hasSelectedPosition =
       activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID
         ? openGamePositions.some((position) => position.id === selectedOpenPositionId)
+        : activePlaybackQueueId === SCHEDULED_SELL_ORDERS_QUEUE_ID
+          ? scheduledSellOrders.some((order) => order.positionId === selectedOpenPositionId)
         : activePlaybackQueueId === HISTORY_PLAYBACK_QUEUE_ID
           ? gameHistoryPositions.some((position) => position.id === selectedOpenPositionId)
           : openGamePositions.some((position) => position.id === selectedOpenPositionId) ||
@@ -946,7 +951,26 @@ function HomePage() {
     if (!hasSelectedPosition) {
       setSelectedOpenPositionId(null);
     }
-  }, [activePlaybackQueueId, gameHistoryPositions, openGamePositions, selectedOpenPositionId]);
+  }, [activePlaybackQueueId, gameHistoryPositions, openGamePositions, scheduledSellOrders, selectedOpenPositionId]);
+
+  useEffect(() => {
+    if (activePlaybackQueueId !== SCHEDULED_SELL_ORDERS_QUEUE_ID) {
+      if (selectedScheduledSellOrderId != null) {
+        setSelectedScheduledSellOrderId(null);
+      }
+      return;
+    }
+
+    if (selectedScheduledSellOrderId == null) {
+      return;
+    }
+
+    const selectedOrder = scheduledSellOrders.find((order) => order.id === selectedScheduledSellOrderId);
+
+    if (!selectedOrder || selectedOrder.videoId !== selectedVideoId) {
+      setSelectedScheduledSellOrderId(null);
+    }
+  }, [activePlaybackQueueId, scheduledSellOrders, selectedScheduledSellOrderId, selectedVideoId]);
 
   useEffect(() => {
     if (!selectedVideoId) {
@@ -964,6 +988,31 @@ function HomePage() {
 
       if ((nextOpenPosition?.id ?? null) !== selectedOpenPositionId) {
         setSelectedOpenPositionId(nextOpenPosition?.id ?? null);
+      }
+
+      return;
+    }
+
+    if (activePlaybackQueueId === SCHEDULED_SELL_ORDERS_QUEUE_ID) {
+      const currentScheduledOrder = scheduledSellOrders.find(
+        (order) => order.id === selectedScheduledSellOrderId,
+      );
+
+      if (currentScheduledOrder?.videoId === selectedVideoId) {
+        if (currentScheduledOrder.positionId !== selectedOpenPositionId) {
+          setSelectedOpenPositionId(currentScheduledOrder.positionId);
+        }
+        return;
+      }
+
+      const nextScheduledOrder = scheduledSellOrders.find((order) => order.videoId === selectedVideoId);
+
+      if ((nextScheduledOrder?.id ?? null) !== selectedScheduledSellOrderId) {
+        setSelectedScheduledSellOrderId(nextScheduledOrder?.id ?? null);
+      }
+
+      if ((nextScheduledOrder?.positionId ?? null) !== selectedOpenPositionId) {
+        setSelectedOpenPositionId(nextScheduledOrder?.positionId ?? null);
       }
 
       return;
@@ -987,7 +1036,9 @@ function HomePage() {
     gameHistoryPositions,
     openGamePositions,
     selectedOpenPositionId,
+    selectedScheduledSellOrderId,
     selectedVideoId,
+    scheduledSellOrders,
   ]);
 
   useEffect(() => {
@@ -1619,7 +1670,23 @@ function HomePage() {
 
       if (topChartVideoId && topChartQueueId) {
         setSelectedOpenPositionId(null);
+        setSelectedScheduledSellOrderId(null);
         handleSelectVideo(topChartVideoId, topChartQueueId);
+        return;
+      }
+    }
+
+    if (activePlaybackQueueId === SCHEDULED_SELL_ORDERS_QUEUE_ID) {
+      const nextScheduledOrder = getAdjacentGameScheduledSellOrder(scheduledSellOrders, {
+        currentOrderId: selectedScheduledSellOrderId,
+        currentVideoId: selectedVideoId,
+        step: 1,
+      });
+
+      if (nextScheduledOrder) {
+        setSelectedScheduledSellOrderId(nextScheduledOrder.id);
+        setSelectedOpenPositionId(nextScheduledOrder.positionId);
+        syncPlaybackSelection(nextScheduledOrder.videoId, SCHEDULED_SELL_ORDERS_QUEUE_ID);
         return;
       }
     }
@@ -1658,6 +1725,7 @@ function HomePage() {
   }, [
     activePlaybackQueueId,
     gameHistoryPositions,
+    scheduledSellOrders,
     handlePlayNextVideo,
     handleSelectVideo,
     syncPlaybackSelection,
@@ -1665,10 +1733,26 @@ function HomePage() {
     openGamePositions,
     selectedOpenPositionId,
     selectedPlaybackSection,
+    selectedScheduledSellOrderId,
     selectedVideoId,
   ]);
 
   const handlePlayPreviousVideoWithPreview = useCallback(() => {
+    if (activePlaybackQueueId === SCHEDULED_SELL_ORDERS_QUEUE_ID) {
+      const previousScheduledOrder = getAdjacentGameScheduledSellOrder(scheduledSellOrders, {
+        currentOrderId: selectedScheduledSellOrderId,
+        currentVideoId: selectedVideoId,
+        step: -1,
+      });
+
+      if (previousScheduledOrder) {
+        setSelectedScheduledSellOrderId(previousScheduledOrder.id);
+        setSelectedOpenPositionId(previousScheduledOrder.positionId);
+        syncPlaybackSelection(previousScheduledOrder.videoId, SCHEDULED_SELL_ORDERS_QUEUE_ID);
+        return;
+      }
+    }
+
     if (activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID) {
       const previousOpenPosition = getAdjacentGamePosition(openGamePositions, {
         currentPositionId: selectedOpenPositionId,
@@ -1706,7 +1790,9 @@ function HomePage() {
     handlePlayPreviousVideo,
     syncPlaybackSelection,
     openGamePositions,
+    scheduledSellOrders,
     selectedOpenPositionId,
+    selectedScheduledSellOrderId,
     selectedVideoId,
   ]);
 
@@ -1819,6 +1905,7 @@ function HomePage() {
   const handleSelectScheduledSellOrderVideo = useCallback(
     (order: GameScheduledSellOrder) => {
       setGameActionStatus(null);
+      setSelectedScheduledSellOrderId(order.id);
       setSelectedOpenPositionId(order.positionId);
       scrollToPlayerStage();
       handleSelectVideoWithPreview(order.videoId, SCHEDULED_SELL_ORDERS_QUEUE_ID);
@@ -2063,6 +2150,7 @@ function HomePage() {
       selectedPlaybackSection={selectedPlaybackSection}
       selectedVideoActions={null}
       selectedPositionId={selectedOpenPositionId}
+      selectedScheduledSellOrderId={selectedScheduledSellOrderId}
       selectedVideoId={selectedVideoId}
       scheduledSellOrders={scheduledSellOrders}
       scheduledSellOrderCancelingId={

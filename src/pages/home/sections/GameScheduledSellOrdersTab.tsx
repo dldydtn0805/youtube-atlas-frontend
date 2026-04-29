@@ -20,7 +20,7 @@ interface GameScheduledSellOrdersTabProps {
   onOpenChart?: (order: GameScheduledSellOrder) => void;
   onSelectOrderVideo?: (order: GameScheduledSellOrder) => void;
   orders: GameScheduledSellOrder[];
-  selectedPositionId?: number | null;
+  selectedOrderId?: number | null;
   selectedVideoId?: string;
 }
 
@@ -107,7 +107,7 @@ export default function GameScheduledSellOrdersTab({
   onOpenChart,
   onSelectOrderVideo,
   orders,
-  selectedPositionId,
+  selectedOrderId,
   selectedVideoId,
 }: GameScheduledSellOrdersTabProps) {
   const [activeFilter, setActiveFilter] = useState<ScheduledSellOrderFilter>('PENDING');
@@ -151,7 +151,7 @@ export default function GameScheduledSellOrdersTab({
               const handleSelectOrderVideo = () => onSelectOrderVideo?.(order);
               const isSelected =
                 activePlaybackQueueId === SCHEDULED_SELL_ORDERS_QUEUE_ID &&
-                order.positionId === selectedPositionId &&
+                order.id === selectedOrderId &&
                 order.videoId === selectedVideoId;
 
               return (

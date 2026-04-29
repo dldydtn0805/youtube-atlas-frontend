@@ -68,6 +68,7 @@ interface GamePanelSectionProps {
   selectedPlaybackSection?: YouTubeCategorySection;
   selectedVideoActions?: ReactNode;
   selectedVideoId?: string;
+  selectedScheduledSellOrderId?: number | null;
   scheduledSellOrders: GameScheduledSellOrder[];
   scheduledSellOrderCancelingId?: number | null;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
@@ -119,6 +120,7 @@ export default function GamePanelSection({
   selectedPlaybackSection,
   selectedVideoActions,
   selectedVideoId,
+  selectedScheduledSellOrderId,
   scheduledSellOrders,
   scheduledSellOrderCancelingId,
   trendSignalsByVideoId,
@@ -199,7 +201,7 @@ export default function GamePanelSection({
           : undefined
       }
       orders={scheduledSellOrders}
-      selectedPositionId={selectedPositionId}
+      selectedOrderId={selectedScheduledSellOrderId}
       selectedVideoId={selectedVideoId}
     />
   );

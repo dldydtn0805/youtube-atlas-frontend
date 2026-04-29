@@ -499,6 +499,32 @@ export function getAdjacentGamePosition(
   return undefined;
 }
 
+export function getAdjacentGameScheduledSellOrder(
+  orders: GameScheduledSellOrder[],
+  options: {
+    currentOrderId?: number | null;
+    currentVideoId?: string;
+    step: 1 | -1;
+  },
+) {
+  if (orders.length === 0) {
+    return undefined;
+  }
+
+  const { currentOrderId, currentVideoId, step } = options;
+  const currentIndex =
+    currentOrderId != null
+      ? orders.findIndex((order) => order.id === currentOrderId)
+      : currentVideoId
+        ? orders.findIndex((order) => order.videoId === currentVideoId)
+        : -1;
+  const fallbackIndex = step >= 0 ? 0 : orders.length - 1;
+  const startIndex = currentIndex >= 0 ? currentIndex : fallbackIndex - step;
+  const nextIndex = (startIndex + step + orders.length) % orders.length;
+
+  return orders[nextIndex];
+}
+
 export function getVideoThumbnailUrl(video: YouTubeVideoItem) {
   return (
     video.snippet.thumbnails.maxres?.url ??

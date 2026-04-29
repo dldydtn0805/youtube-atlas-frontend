@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { SCHEDULED_SELL_ORDERS_QUEUE_ID } from '../utils';
 import GameScheduledSellOrdersTab from './GameScheduledSellOrdersTab';
 
 describe('GameScheduledSellOrdersTab', () => {
@@ -327,6 +328,76 @@ describe('GameScheduledSellOrdersTab', () => {
         videoTitle: '대기 주문',
       }),
     );
+  });
+
+  it('marks only the matching selected order when duplicate video positions exist', () => {
+    render(
+      <GameScheduledSellOrdersTab
+        activePlaybackQueueId={SCHEDULED_SELL_ORDERS_QUEUE_ID}
+        isLoading={false}
+        orders={[
+          {
+            id: 1,
+            userId: 1,
+            seasonId: 1,
+            positionId: 10,
+            videoId: 'video-1',
+            videoTitle: '첫 예약',
+            channelTitle: '채널 A',
+            thumbnailUrl: 'https://example.com/a.jpg',
+            regionCode: 'KR',
+            targetRank: 10,
+            triggerDirection: 'RANK_IMPROVES_TO',
+            status: 'PENDING',
+            currentRank: 12,
+            buyRank: 15,
+            quantity: 100,
+            stakePoints: 5000,
+            sellPricePoints: null,
+            settledPoints: null,
+            pnlPoints: null,
+            failureReason: null,
+            triggeredAt: null,
+            executedAt: null,
+            canceledAt: null,
+            createdAt: '2026-04-24T00:00:00.000Z',
+            updatedAt: '2026-04-24T00:00:00.000Z',
+          },
+          {
+            id: 2,
+            userId: 1,
+            seasonId: 1,
+            positionId: 10,
+            videoId: 'video-1',
+            videoTitle: '두 번째 예약',
+            channelTitle: '채널 A',
+            thumbnailUrl: 'https://example.com/a.jpg',
+            regionCode: 'KR',
+            targetRank: 8,
+            triggerDirection: 'RANK_IMPROVES_TO',
+            status: 'PENDING',
+            currentRank: 12,
+            buyRank: 15,
+            quantity: 50,
+            stakePoints: 2500,
+            sellPricePoints: null,
+            settledPoints: null,
+            pnlPoints: null,
+            failureReason: null,
+            triggeredAt: null,
+            executedAt: null,
+            canceledAt: null,
+            createdAt: '2026-04-24T00:10:00.000Z',
+            updatedAt: '2026-04-24T00:10:00.000Z',
+          },
+        ]}
+        selectedOrderId={2}
+        selectedVideoId="video-1"
+      />,
+    );
+
+    expect(screen.getByText('첫 예약').closest('li')).toHaveAttribute('data-selected', 'false');
+    expect(screen.getByText('두 번째 예약').closest('li')).toHaveAttribute('data-selected', 'true');
   });
 
   it('shows a failed order reason when one is provided', async () => {
