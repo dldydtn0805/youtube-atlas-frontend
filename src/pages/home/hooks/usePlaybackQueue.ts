@@ -4,6 +4,8 @@ import { getCategoryPlaybackQueueId, getPlaybackQueueItems } from '../utils';
 import type { VideoCategory } from '../../../constants/videoCategories';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
 
+const INITIAL_RANDOM_PLAYBACK_LIMIT = 50;
+
 interface UsePlaybackQueueOptions {
   autoSelectFirstVideoWhenEmpty?: boolean;
   extraPlaybackSections?: YouTubeCategorySection[];
@@ -25,6 +27,18 @@ interface UsePlaybackQueueOptions {
   selectedSection?: YouTubeCategorySection;
   setSelectedCategoryId: (categoryId: string) => void;
   sortedVideoCategories: VideoCategory[];
+}
+
+function pickRandomInitialVideoId(items: YouTubeVideoItem[]) {
+  const candidateCount = Math.min(items.length, INITIAL_RANDOM_PLAYBACK_LIMIT);
+
+  if (candidateCount === 0) {
+    return undefined;
+  }
+
+  const selectedIndex = Math.min(Math.floor(Math.random() * candidateCount), candidateCount - 1);
+
+  return items[selectedIndex]?.id;
 }
 
 function usePlaybackQueue({
@@ -199,20 +213,20 @@ function usePlaybackQueue({
       !selectedVideoId &&
       !shouldAutoSelectNextAvailableRef.current &&
       activePlaybackQueueId === selectedCategoryQueueId;
-    const preferredInitialVideoId = preferredInitialPlaybackSection?.items[0]?.id;
+    const hasPreferredInitialVideo = (preferredInitialPlaybackSection?.items.length ?? 0) > 0;
     const preferredInitialFallbackVideoId = preferredInitialPlaybackFallbackSection?.items[0]?.id;
     const shouldApplyPreferredInitialSelection =
       Boolean(preferredInitialPlaybackSectionSelectionKey) &&
       handledPreferredInitialSelectionKeyRef.current !== preferredInitialPlaybackSectionSelectionKey;
     const preferredInitialTargetSection =
-      preferredInitialVideoId && preferredInitialPlaybackSection?.categoryId
+      hasPreferredInitialVideo && preferredInitialPlaybackSection?.categoryId
         ? preferredInitialPlaybackSection
         : preferredInitialFallbackVideoId && preferredInitialPlaybackFallbackSection?.categoryId
           ? preferredInitialPlaybackFallbackSection
           : undefined;
     const preferredInitialTargetVideoId =
-      preferredInitialTargetSection === preferredInitialPlaybackSection
-        ? preferredInitialVideoId
+      preferredInitialTargetSection === preferredInitialPlaybackSection && preferredInitialPlaybackSection
+        ? pickRandomInitialVideoId(preferredInitialPlaybackSection.items)
         : preferredInitialFallbackVideoId;
 
     if (!preferredInitialPlaybackSectionSelectionKey) {
@@ -222,7 +236,7 @@ function usePlaybackQueue({
     if (
       shouldApplyPreferredInitialSelection &&
       (preferredInitialPlaybackSectionLoading ||
-        (!preferredInitialVideoId && preferredInitialPlaybackFallbackSectionLoading))
+        (!hasPreferredInitialVideo && preferredInitialPlaybackFallbackSectionLoading))
     ) {
       return;
     }
@@ -238,13 +252,18 @@ function usePlaybackQueue({
       return;
     }
 
-    if (shouldPreferInitialPlaybackSection && preferredInitialVideoId && preferredInitialPlaybackSection?.categoryId) {
-      setActivePlaybackQueueId(preferredInitialPlaybackSection.categoryId);
-      setSelectedVideoId(preferredInitialVideoId);
+    if (shouldPreferInitialPlaybackSection && preferredInitialPlaybackSectionLoading) {
       return;
     }
 
-    if (shouldPreferInitialPlaybackSection && preferredInitialPlaybackSectionLoading) {
+    if (
+      shouldPreferInitialPlaybackSection &&
+      preferredInitialTargetVideoId &&
+      preferredInitialTargetSection === preferredInitialPlaybackSection &&
+      preferredInitialPlaybackSection?.categoryId
+    ) {
+      setActivePlaybackQueueId(preferredInitialPlaybackSection.categoryId);
+      setSelectedVideoId(preferredInitialTargetVideoId);
       return;
     }
 
@@ -303,8 +322,15 @@ function usePlaybackQueue({
       }
 
       if (shouldAutoSelectFallback) {
+        const nextVideoId =
+          !selectedVideoId &&
+          autoSelectFirstVideoWhenEmpty &&
+          !shouldAutoSelectNextAvailableRef.current
+            ? pickRandomInitialVideoId(fallbackItems)
+            : fallbackItems[0]?.id;
+
         shouldAutoSelectNextAvailableRef.current = false;
-        setSelectedVideoId(fallbackItems[0]?.id);
+        setSelectedVideoId(nextVideoId);
       }
     }
   }, [

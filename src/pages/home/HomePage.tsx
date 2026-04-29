@@ -811,16 +811,8 @@ function HomePage() {
     isMobileLayout,
     logout,
     realtimeSurgingSection: sortedRealtimeSurgingSection,
-    preferredInitialPlaybackSection:
-      authStatus === 'authenticated' ? sortedBuyableMarketChartSection : undefined,
-    preferredInitialPlaybackSectionLoading:
-      authStatus === 'authenticated' && isBuyableMarketChartLoading,
-    preferredInitialPlaybackFallbackSection:
-      authStatus === 'authenticated' ? gamePortfolioSection : undefined,
-    preferredInitialPlaybackFallbackSectionLoading:
-      authStatus === 'authenticated' && isOpenGamePositionsLoading,
-    preferredInitialPlaybackSectionSelectionKey:
-      authStatus === 'authenticated' ? `login:${user?.id ?? accessToken ?? 'session'}` : null,
+    preferredInitialPlaybackSection: selectedPlaybackSection,
+    preferredInitialPlaybackSectionLoading: isChartLoading,
     scrollToPlayerTop: scrollToPlayerStage,
     selectedCategoryId,
     selectedPlaybackSection,

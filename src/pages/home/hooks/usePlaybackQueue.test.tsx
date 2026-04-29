@@ -34,6 +34,10 @@ function createSection(categoryId: string, videoIds: string[]): YouTubeCategoryS
   };
 }
 
+function createVideoIds(count: number, prefix = 'video') {
+  return Array.from({ length: count }, (_, index) => `${prefix}-${index + 1}`);
+}
+
 describe('usePlaybackQueue', () => {
   const sortedVideoCategories: VideoCategory[] = [
     { id: '0', label: 'All', description: 'All videos', sourceIds: [] },
@@ -81,31 +85,64 @@ describe('usePlaybackQueue', () => {
     });
   });
 
-  it('prefers the configured initial playback section when auto-selecting', async () => {
+  it('auto-selects a random chart video from the top 50 on initial load', async () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.999);
     const setSelectedCategoryId = vi.fn();
-    const buyableSection = createSection('buyable-market', ['video-buyable']);
 
-    const { result } = renderHook(() =>
-      usePlaybackQueue({
-        autoSelectFirstVideoWhenEmpty: true,
-        extraPlaybackSections: [buyableSection],
-        favoriteStreamerVideoSection: undefined,
-        isMobileLayout: false,
-        preferredInitialPlaybackSection: buyableSection,
-        realtimeSurgingSection: undefined,
-        restoredPlaybackVideo: undefined,
-        scrollToPlayerTop: vi.fn(),
-        selectedCategoryId: '0',
-        selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
-        setSelectedCategoryId,
-        sortedVideoCategories,
-      }),
-    );
+    try {
+      const { result } = renderHook(() =>
+        usePlaybackQueue({
+          autoSelectFirstVideoWhenEmpty: true,
+          favoriteStreamerVideoSection: undefined,
+          isMobileLayout: false,
+          realtimeSurgingSection: undefined,
+          restoredPlaybackVideo: undefined,
+          scrollToPlayerTop: vi.fn(),
+          selectedCategoryId: '0',
+          selectedSection: createSection(getCategoryPlaybackQueueId('0'), createVideoIds(60)),
+          setSelectedCategoryId,
+          sortedVideoCategories,
+        }),
+      );
 
-    await waitFor(() => {
-      expect(result.current.activePlaybackQueueId).toBe('buyable-market');
-      expect(result.current.selectedVideoId).toBe('video-buyable');
-    });
+      await waitFor(() => {
+        expect(result.current.selectedVideoId).toBe('video-50');
+      });
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('prefers the configured initial playback section when auto-selecting', async () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.999);
+    const setSelectedCategoryId = vi.fn();
+    const buyableSection = createSection('buyable-market', createVideoIds(60, 'video-buyable'));
+
+    try {
+      const { result } = renderHook(() =>
+        usePlaybackQueue({
+          autoSelectFirstVideoWhenEmpty: true,
+          extraPlaybackSections: [buyableSection],
+          favoriteStreamerVideoSection: undefined,
+          isMobileLayout: false,
+          preferredInitialPlaybackSection: buyableSection,
+          realtimeSurgingSection: undefined,
+          restoredPlaybackVideo: undefined,
+          scrollToPlayerTop: vi.fn(),
+          selectedCategoryId: '0',
+          selectedSection: createSection(getCategoryPlaybackQueueId('0'), ['video-top']),
+          setSelectedCategoryId,
+          sortedVideoCategories,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.activePlaybackQueueId).toBe('buyable-market');
+        expect(result.current.selectedVideoId).toBe('video-buyable-50');
+      });
+    } finally {
+      randomSpy.mockRestore();
+    }
   });
 
   it('applies the preferred initial section once when a selection key is provided', async () => {
