@@ -22,8 +22,7 @@ const TOUCH_VISIBLE_DRAG_CLOSE_THRESHOLD = 188;
 const CLOSE_ANIMATION_DURATION_MS = 220;
 const MIN_CLOSE_ANIMATION_OFFSET = 360;
 const SCROLL_TOP_CLOSE_TOLERANCE = 1;
-const BODY_SWIPE_PULL_SLOP = 56;
-const BODY_SWIPE_SLOP_RESISTANCE = 0.22;
+const BODY_SWIPE_ACTIVATION_DISTANCE = 56;
 
 interface HeaderSwipeToCloseOptions {
   disabled?: boolean;
@@ -98,7 +97,6 @@ function getFadeProgress(progress: number, fadeStartProgress: number) {
 export default function useHeaderSwipeToClose({ disabled = false, onClose }: HeaderSwipeToCloseOptions) {
   const pointerIdRef = useRef<number | null>(null);
   const touchIdentifierRef = useRef<number | null>(null);
-  const pullSlopRef = useRef(0);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const dragOffsetRef = useRef(0);
@@ -156,7 +154,6 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
     cancelDragFrame();
     pointerIdRef.current = null;
     touchIdentifierRef.current = null;
-    pullSlopRef.current = 0;
     dragOffsetRef.current = 0;
     pendingDragOffsetRef.current = 0;
     isSwipeCandidateRef.current = false;
@@ -178,10 +175,9 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
     }
   }, [disabled, resetSwipeState]);
 
-  const beginSwipe = useCallback((clientX: number, clientY: number, pullSlop = 0) => {
+  const beginSwipe = useCallback((clientX: number, clientY: number) => {
     startXRef.current = clientX;
     startYRef.current = clientY;
-    pullSlopRef.current = pullSlop;
     dragOffsetRef.current = 0;
     pendingDragOffsetRef.current = 0;
     isSwipeCandidateRef.current = true;
@@ -204,7 +200,6 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
   const cancelSwipe = useCallback(() => {
     pointerIdRef.current = null;
     touchIdentifierRef.current = null;
-    pullSlopRef.current = 0;
     isSwipeCandidateRef.current = false;
     setMotionState('idle');
     setDragOffset(0);
@@ -216,7 +211,6 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
     clearCloseTimer();
     pointerIdRef.current = null;
     touchIdentifierRef.current = null;
-    pullSlopRef.current = 0;
     isSwipeCandidateRef.current = false;
     const viewportHeight = typeof window === 'undefined' ? MIN_CLOSE_ANIMATION_OFFSET : window.innerHeight;
     const closeOffset = Math.max(
@@ -255,10 +249,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
       return;
     }
 
-    const pullSlop = pullSlopRef.current;
-    const resistedPull = Math.min(deltaY, pullSlop) * BODY_SWIPE_SLOP_RESISTANCE;
-    const releasedPull = Math.max(0, deltaY - pullSlop) * 0.92;
-    const nextDragOffset = Math.min(clampDragOffset(resistedPull + releasedPull), maxDragOffsetRef.current);
+    const nextDragOffset = Math.min(clampDragOffset(deltaY * 0.92), maxDragOffsetRef.current);
     scheduleDragOffset(nextDragOffset);
 
     preventCancelableDefault(event);
@@ -272,7 +263,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
       isSwipeCandidateRef.current &&
       deltaX <= deltaY * 0.7 &&
       (
-        deltaY >= swipeCloseThresholdRef.current + pullSlopRef.current ||
+        deltaY >= swipeCloseThresholdRef.current ||
         dragOffsetRef.current >= TOUCH_VISIBLE_DRAG_CLOSE_THRESHOLD
       )
     );
@@ -353,6 +344,11 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
           return;
         }
 
+        if (!isSwipeCandidateRef.current) {
+          resetSwipeState();
+          return;
+        }
+
         const resolvedDragOffset = dragOffsetRef.current;
         if (shouldCloseSwipe(touch.clientX, touch.clientY)) {
           closeWithSwipe(resolvedDragOffset);
@@ -362,7 +358,7 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         resetSwipeState();
       },
       onTouchMove(event: ReactTouchEvent<HTMLElement>) {
-        if (disabled || touchIdentifierRef.current === null || !isSwipeCandidateRef.current) {
+        if (disabled || touchIdentifierRef.current === null) {
           return;
         }
 
@@ -370,6 +366,24 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         if (!touch) {
           resetSwipeState();
           return;
+        }
+
+        if (!isSwipeCandidateRef.current) {
+          const deltaX = Math.abs(touch.clientX - startXRef.current);
+          const deltaY = touch.clientY - startYRef.current;
+
+          if (deltaY <= 0 || (deltaY >= 10 && deltaX > deltaY * 0.7)) {
+            cancelSwipe();
+            return;
+          }
+
+          preventCancelableDefault(event);
+
+          if (deltaY < BODY_SWIPE_ACTIVATION_DISTANCE) {
+            return;
+          }
+
+          beginSwipe(touch.clientX, startYRef.current + BODY_SWIPE_ACTIVATION_DISTANCE);
         }
 
         moveSwipe(touch.clientX, touch.clientY, event);
@@ -391,10 +405,14 @@ export default function useHeaderSwipeToClose({ disabled = false, onClose }: Hea
         }
 
         touchIdentifierRef.current = touch.identifier;
-        beginSwipe(touch.clientX, touch.clientY, BODY_SWIPE_PULL_SLOP);
+        startXRef.current = touch.clientX;
+        startYRef.current = touch.clientY;
+        dragOffsetRef.current = 0;
+        pendingDragOffsetRef.current = 0;
+        isSwipeCandidateRef.current = false;
       },
     }),
-    [beginSwipe, closeWithSwipe, disabled, motionState, moveSwipe, resetSwipeState, shouldCloseSwipe],
+    [beginSwipe, cancelSwipe, closeWithSwipe, disabled, motionState, moveSwipe, resetSwipeState, shouldCloseSwipe],
   );
 
   const modalStyle = useMemo<CSSProperties>(

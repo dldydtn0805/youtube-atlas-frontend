@@ -63,7 +63,7 @@ describe('GamePanelModal', () => {
     }
   });
 
-  it('keeps the modal open through the body pull slack distance', () => {
+  it('does not move the modal before the body pull activation distance', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
 
@@ -77,12 +77,15 @@ describe('GamePanelModal', () => {
       );
 
       const inventoryItem = screen.getByTestId('inventory-item');
+      const modal = document.querySelector('.app-shell__modal') as HTMLElement | null;
 
       fireEvent.touchStart(inventoryItem, { touches: [{ clientX: 40, clientY: 20, identifier: 1 }] });
-      fireEvent.touchMove(inventoryItem, { touches: [{ clientX: 48, clientY: 220, identifier: 1 }] });
-      fireEvent.touchEnd(inventoryItem, { changedTouches: [{ clientX: 48, clientY: 220, identifier: 1 }] });
+      fireEvent.touchMove(inventoryItem, { touches: [{ clientX: 42, clientY: 70, identifier: 1 }] });
+      fireEvent.touchEnd(inventoryItem, { changedTouches: [{ clientX: 42, clientY: 70, identifier: 1 }] });
       vi.advanceTimersByTime(220);
 
+      expect(modal).not.toBeNull();
+      expect(modal?.style.transform).toBe('');
       expect(onClose).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
