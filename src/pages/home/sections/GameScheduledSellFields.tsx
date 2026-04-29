@@ -18,7 +18,7 @@ export default function GameScheduledSellFields({
   triggerDirection,
 }: GameScheduledSellFieldsProps) {
   const isDropTrigger = triggerDirection === 'RANK_DROPS_TO';
-  const quickRanks = [1, 20, 50, 100];
+  const quickRanks = [1, 5, 20, 50, 100];
 
   return (
     <div className="app-shell__game-scheduled-sell-fields">

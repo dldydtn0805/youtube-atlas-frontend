@@ -124,6 +124,38 @@ describe('GameTradeModal', () => {
     expect(onChangeSellOrderMode).toHaveBeenCalledWith('instant');
   });
 
+  it('includes 5th place in scheduled sell quick rank actions', () => {
+    const onChangeScheduledSellTargetRank = vi.fn();
+
+    render(
+      <GameTradeModal
+        confirmLabel="매도"
+        currentRankLabel="3위"
+        helperText="테스트"
+        isOpen
+        isSubmitting={false}
+        maxQuantity={200}
+        mode="sell"
+        onChangeQuantity={vi.fn()}
+        onChangeScheduledSellTargetRank={onChangeScheduledSellTargetRank}
+        onChangeScheduledSellTriggerDirection={vi.fn()}
+        onChangeSellOrderMode={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        quantity={100}
+        sellOrderMode="scheduled"
+        summaryItems={[{ label: '처리 방식', value: '조건 도달 시 자동 매도' }]}
+        thumbnailUrl={null}
+        title="테스트 영상"
+        unitPointsLabel="1,000P"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '5위' }));
+
+    expect(onChangeScheduledSellTargetRank).toHaveBeenCalledWith(5);
+  });
+
   it('closes when the modal header is swiped down on touch', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
