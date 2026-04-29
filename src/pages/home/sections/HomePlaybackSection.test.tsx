@@ -695,7 +695,7 @@ describe('HomePlaybackSection', () => {
     });
   });
 
-  it('can toggle the mobile player stage sticky shell and remember the preference', async () => {
+  it('starts with the mobile player stage sticky shell disabled and remembers the preference', async () => {
     const playerStageProps = {
       isCinematicModeActive: false,
       isMobileLayout: true,
@@ -730,16 +730,16 @@ describe('HomePlaybackSection', () => {
     flushAnimationFrames();
 
     await waitFor(() => {
-      expect(screen.getByText('상단 스티키 끄기')).toBeInTheDocument();
+      expect(screen.getByText('상단 스티키 켜기')).toBeInTheDocument();
     });
-    expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('true');
+    expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('false');
 
-    fireEvent.click(screen.getByRole('button', { name: '상단 스티키 끄기' }));
+    fireEvent.click(screen.getByRole('button', { name: '상단 스티키 켜기' }));
 
     await waitFor(() => {
-      expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('false');
+      expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('true');
     });
-    expect(window.localStorage.getItem(MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY)).toBe('false');
+    expect(window.localStorage.getItem(MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY)).toBe('true');
 
     unmount();
 
@@ -761,9 +761,9 @@ describe('HomePlaybackSection', () => {
     flushAnimationFrames();
 
     await waitFor(() => {
-      expect(screen.getByText('상단 스티키 꺼짐')).toBeInTheDocument();
+      expect(screen.getByText('상단 스티키 켜짐')).toBeInTheDocument();
     });
-    expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('false');
+    expect(document.querySelector('.app-shell__mobile-player-stage-sticky-shell')?.getAttribute('data-sticky-enabled')).toBe('true');
   });
 
   it('hides the mobile selected video panel while scrolling down and restores it when scrolling up', async () => {

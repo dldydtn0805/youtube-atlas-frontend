@@ -68,7 +68,7 @@ function getInitialMobilePlayerStageStickyEnabled() {
 
   const storedValue = window.localStorage.getItem(MOBILE_PLAYER_STAGE_STICKY_ENABLED_STORAGE_KEY);
 
-  return storedValue !== 'false';
+  return storedValue === 'true';
 }
 
 export default function HomePlaybackSection({
