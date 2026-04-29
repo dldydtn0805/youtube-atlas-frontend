@@ -113,7 +113,7 @@ export default function GameTradeModal({
   unitPointsLabel,
 }: GameTradeModalProps) {
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose,
   });
@@ -159,7 +159,7 @@ export default function GameTradeModal({
           </div>
         </div>
 
-        <div className="app-shell__modal-body">
+        <div className="app-shell__modal-body" {...bodySwipeHandlers}>
           <div className="app-shell__game-trade-modal-head">
             {thumbnailUrl ? <img alt="" className="app-shell__game-trade-modal-thumb" src={thumbnailUrl} /> : null}
             <div className="app-shell__game-trade-modal-copy">

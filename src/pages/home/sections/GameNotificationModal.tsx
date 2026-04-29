@@ -23,7 +23,7 @@ function isHighlightAchievementNotification(notification: GameNotification) {
 
 function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotificationModalProps) {
   useBodyScrollLock(Boolean(notification));
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !notification,
     onClose,
   });
@@ -66,7 +66,7 @@ function GameNotificationModal({ notification, onClose, onOpenChart }: GameNotif
         ) : (
           <img alt="" className="game-notification-modal__thumb" src={notification.thumbnailUrl ?? undefined} />
         )}
-        <div className="game-notification-modal__body">
+        <div className="game-notification-modal__body" {...bodySwipeHandlers}>
           <span data-tone={getGameNotificationTone(notification)}>{getGameNotificationLabel(notification)}</span>
           <h2 id="game-notification-modal-title">{notification.videoTitle ?? notification.title}</h2>
           <p>{notification.message}</p>

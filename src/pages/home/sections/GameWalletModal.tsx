@@ -30,7 +30,7 @@ export default function GameWalletModal({
   walletUpdatedAt,
 }: GameWalletModalProps) {
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose,
   });
@@ -63,7 +63,7 @@ export default function GameWalletModal({
             닫기
           </button>
         </div>
-        <div className="app-shell__modal-body app-shell__modal-body--wallet">
+        <div className="app-shell__modal-body app-shell__modal-body--wallet" {...bodySwipeHandlers}>
           <GameWalletSummary
             computedWalletTotalAssetPoints={computedWalletTotalAssetPoints}
             currentTierCode={currentTierCode}

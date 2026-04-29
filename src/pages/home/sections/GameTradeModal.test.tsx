@@ -170,6 +170,89 @@ describe('GameTradeModal', () => {
     }
   });
 
+  it('closes when the modal body is pulled down from the top on touch', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    try {
+      render(
+        <GameTradeModal
+          confirmLabel="매도"
+          currentRankLabel="3위"
+          helperText="테스트"
+          isOpen
+          isSubmitting={false}
+          maxQuantity={200}
+          mode="sell"
+          onChangeQuantity={vi.fn()}
+          onClose={onClose}
+          onConfirm={vi.fn()}
+          quantity={100}
+          summaryItems={[{ label: '정산 금액', value: '900P' }]}
+          thumbnailUrl={null}
+          title="테스트 영상"
+          unitPointsLabel="1,000P"
+        />,
+      );
+
+      const body = document.querySelector('.app-shell__modal-body');
+
+      expect(body).not.toBeNull();
+
+      fireEvent.touchStart(body as Element, { touches: [{ clientX: 40, clientY: 20, identifier: 1 }] });
+      fireEvent.touchMove(body as Element, { touches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
+      fireEvent.touchEnd(body as Element, { changedTouches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
+
+      expect(onClose).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(220);
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps scrolling when the modal body is not at the top', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    try {
+      render(
+        <GameTradeModal
+          confirmLabel="매도"
+          currentRankLabel="3위"
+          helperText="테스트"
+          isOpen
+          isSubmitting={false}
+          maxQuantity={200}
+          mode="sell"
+          onChangeQuantity={vi.fn()}
+          onClose={onClose}
+          onConfirm={vi.fn()}
+          quantity={100}
+          summaryItems={[{ label: '정산 금액', value: '900P' }]}
+          thumbnailUrl={null}
+          title="테스트 영상"
+          unitPointsLabel="1,000P"
+        />,
+      );
+
+      const body = document.querySelector('.app-shell__modal-body') as HTMLElement | null;
+
+      expect(body).not.toBeNull();
+
+      Object.defineProperty(body, 'scrollTop', { configurable: true, value: 24 });
+
+      fireEvent.touchStart(body as Element, { touches: [{ clientX: 40, clientY: 20, identifier: 1 }] });
+      fireEvent.touchMove(body as Element, { touches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
+      fireEvent.touchEnd(body as Element, { changedTouches: [{ clientX: 48, clientY: 450, identifier: 1 }] });
+      vi.advanceTimersByTime(220);
+
+      expect(onClose).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('does not close when the modal header is only dragged a short distance on touch', () => {
     const onClose = vi.fn();
     render(

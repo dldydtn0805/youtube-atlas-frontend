@@ -25,7 +25,7 @@ export default function AchievementTitleModal({
   const [optimisticTitleCode, setOptimisticTitleCode] = useState<string | null>(null);
 
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose,
   });
@@ -80,7 +80,7 @@ export default function AchievementTitleModal({
             닫기
           </button>
         </div>
-        <div className="app-shell__modal-body app-shell__modal-body--achievement-title">
+        <div className="app-shell__modal-body app-shell__modal-body--achievement-title" {...bodySwipeHandlers}>
           {isSaving ? (
             <div className="app-shell__achievement-title-saving" role="status">
               <span className="app-shell__achievement-title-saving-spinner" aria-hidden="true" />

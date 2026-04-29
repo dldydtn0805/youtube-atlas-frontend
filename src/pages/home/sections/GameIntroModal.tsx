@@ -16,7 +16,7 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
   const [dismissForever, setDismissForever] = useState(false);
 
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose: () => onClose(dismissForever),
   });
@@ -66,7 +66,7 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
           </button>
         </div>
 
-        <div className="app-shell__modal-body app-shell__modal-body--game-intro">
+        <div className="app-shell__modal-body app-shell__modal-body--game-intro" {...bodySwipeHandlers}>
           <div className="app-shell__modal-fields">
             <section className="app-shell__modal-field app-shell__modal-field--game-intro">
               <ol className="app-shell__game-intro-list">

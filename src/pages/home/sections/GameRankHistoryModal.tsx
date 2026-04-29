@@ -249,7 +249,7 @@ export default function GameRankHistoryModal({
   position,
 }: GameRankHistoryModalProps) {
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose,
   });
@@ -329,7 +329,7 @@ export default function GameRankHistoryModal({
           </button>
         </div>
 
-        <div ref={modalBodyRef} className="app-shell__modal-body">
+        <div ref={modalBodyRef} className="app-shell__modal-body" {...bodySwipeHandlers}>
           <div className="app-shell__modal-field">
             <div className="app-shell__section-heading">
               <p className="app-shell__section-eyebrow">Timeline</p>

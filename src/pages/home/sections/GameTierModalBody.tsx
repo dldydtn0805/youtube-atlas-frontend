@@ -1,4 +1,4 @@
-import { memo, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { memo, type CSSProperties, type HTMLAttributes, type ReactNode, type RefObject } from 'react';
 import {
   TIER_MODAL_CAROUSEL_GAP,
   TIER_MODAL_CAROUSEL_SIDE_PADDING,
@@ -9,6 +9,7 @@ import {
 
 interface GameTierModalBodyProps {
   activeTab: TierModalTab;
+  bodySwipeHandlers?: HTMLAttributes<HTMLDivElement>;
   carouselTabs: ReadonlyArray<TierModalTabItem>;
   isTrackAnimating: boolean;
   onSelectTab: (tab: TierModalTab) => void;
@@ -22,6 +23,7 @@ interface GameTierModalBodyProps {
 
 const GameTierModalBody = memo(function GameTierModalBody({
   activeTab,
+  bodySwipeHandlers,
   carouselTabs,
   isTrackAnimating,
   onSelectTab,
@@ -33,7 +35,7 @@ const GameTierModalBody = memo(function GameTierModalBody({
   viewportRef,
 }: GameTierModalBodyProps) {
   return (
-    <div className="app-shell__modal-body">
+    <div className="app-shell__modal-body" {...bodySwipeHandlers}>
       <div aria-label="티어 모달 탭" className="app-shell__tier-modal-tabs" role="tablist">
         {TIER_MODAL_TABS.map((tab) => (
           <button

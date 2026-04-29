@@ -46,7 +46,7 @@ export default function GameTierModal({
   tierProgress,
 }: GameTierModalProps) {
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose,
   });
@@ -183,6 +183,7 @@ export default function GameTierModal({
 
         <GameTierModalBody
           activeTab={activeTab}
+          bodySwipeHandlers={bodySwipeHandlers}
           carouselTabs={TIER_MODAL_TABS}
           isTrackAnimating={isTrackAnimating}
           onSelectTab={handleSelectTab}

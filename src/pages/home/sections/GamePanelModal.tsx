@@ -13,7 +13,7 @@ interface GamePanelModalProps {
 
 export default function GamePanelModal({ children, isOpen, onClose }: GamePanelModalProps) {
   useBodyScrollLock(isOpen);
-  const { backdropStyle, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
+  const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
     disabled: !isOpen,
     onClose,
   });
@@ -51,7 +51,7 @@ export default function GamePanelModal({ children, isOpen, onClose }: GamePanelM
             닫기
           </button>
         </div>
-        <div className="app-shell__modal-body app-shell__modal-body--game-panel">{children}</div>
+        <div className="app-shell__modal-body app-shell__modal-body--game-panel" {...bodySwipeHandlers}>{children}</div>
       </section>
     </div>,
     container,
