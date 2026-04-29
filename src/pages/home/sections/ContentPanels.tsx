@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import CommentSection from '../../../components/CommentSection/CommentSection';
-import VideoList, { type FeaturedVideoSection } from '../../../components/VideoList/VideoList';
+import VideoList, { type FeaturedVideoSection, type VideoCardTradeActionState } from '../../../components/VideoList/VideoList';
 import type { AuthStatus } from '../../../features/auth/types';
 import type { FavoriteStreamer } from '../../../features/favorites/types';
 import type { GameMarketVideo } from '../../../features/game/types';
@@ -27,6 +27,7 @@ interface ChartPanelProps {
   currentTierCode?: string;
   featuredSections?: FeaturedVideoSection[];
   getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+  getTradeActionState?: (item: YouTubeVideoItem) => VideoCardTradeActionState | undefined;
   hasNextPage: boolean;
   hasResolvedTrendSignals: boolean;
   isChartError: boolean;
@@ -35,12 +36,22 @@ interface ChartPanelProps {
   mainSectionCollapseKey?: string;
   onChangeChartSortMode: (sortMode: ChartSortMode) => void;
   onLoadMore: () => void;
+  onOpenBuyTradeModal?: (
+    videoId: string,
+    playbackQueueId: string,
+    triggerElement?: HTMLButtonElement,
+  ) => void;
   onOpenChart?: (
     videoId: string,
     playbackQueueId: string,
     triggerElement?: HTMLButtonElement,
   ) => void;
   onOpenRegionModal: () => void;
+  onOpenSellTradeModal?: (
+    videoId: string,
+    playbackQueueId: string,
+    triggerElement?: HTMLButtonElement,
+  ) => void;
   onSelectView: (viewId: string, triggerElement?: HTMLButtonElement) => void;
   onToggleFeaturedSectionCollapse?: (sectionId: string) => void;
   onSelectVideo: (
@@ -104,6 +115,7 @@ export const ChartPanel = memo(function ChartPanel({
   currentTierCode,
   featuredSections,
   getRankLabel,
+  getTradeActionState,
   hasNextPage,
   hasResolvedTrendSignals,
   isChartError,
@@ -112,8 +124,10 @@ export const ChartPanel = memo(function ChartPanel({
   mainSectionCollapseKey,
   onChangeChartSortMode,
   onLoadMore,
+  onOpenBuyTradeModal,
   onOpenChart,
   onOpenRegionModal,
+  onOpenSellTradeModal,
   onSelectView,
   onToggleFeaturedSectionCollapse,
   onSelectVideo,
@@ -185,6 +199,7 @@ export const ChartPanel = memo(function ChartPanel({
         errorMessage={chartErrorMessage}
         featuredSections={featuredSections}
         getRankLabel={getRankLabel}
+        getTradeActionState={getTradeActionState}
         hasNextPage={hasNextPage}
         hasResolvedTrendSignals={hasResolvedTrendSignals}
         isError={isChartError}
@@ -195,7 +210,9 @@ export const ChartPanel = memo(function ChartPanel({
         primarySectionEyebrow={primarySectionEyebrow}
         primarySectionCollapseKey={mainSectionCollapseKey}
         onLoadMore={onLoadMore}
+        onOpenBuyTradeModal={onOpenBuyTradeModal}
         onOpenChart={onOpenChart}
+        onOpenSellTradeModal={onOpenSellTradeModal}
         onSelectVideo={onSelectVideo}
         onToggleSectionCollapse={onToggleFeaturedSectionCollapse}
         section={section}

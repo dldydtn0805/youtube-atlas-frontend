@@ -2,7 +2,10 @@ import { memo } from 'react';
 import { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
 import { formatCompactCount, getFallbackNewBadge, getVideoTrendBadges } from '../../features/trending/presentation';
 import type { VideoTrendSignal } from '../../features/trending/types';
+import VideoCardTradeActions, { type VideoCardTradeActionState } from './VideoCardTradeActions';
 import './VideoList.css';
+
+export type { VideoCardTradeActionState };
 
 export interface FeaturedVideoSection {
   section: YouTubeCategorySection;
@@ -21,6 +24,7 @@ interface VideoListProps {
   section?: YouTubeCategorySection;
   sectionEmptyMessage?: string;
   getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
+  getTradeActionState?: (item: YouTubeVideoItem) => VideoCardTradeActionState | undefined;
   primarySectionEyebrow?: string;
   collapsedSectionIds?: string[];
   featuredSections?: FeaturedVideoSection[];
@@ -31,7 +35,17 @@ interface VideoListProps {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
+  onOpenBuyTradeModal?: (
+    videoId: string,
+    sectionCategoryId: string,
+    triggerElement?: HTMLButtonElement,
+  ) => void;
   onOpenChart?: (
+    videoId: string,
+    sectionCategoryId: string,
+    triggerElement?: HTMLButtonElement,
+  ) => void;
+  onOpenSellTradeModal?: (
     videoId: string,
     sectionCategoryId: string,
     triggerElement?: HTMLButtonElement,
@@ -124,6 +138,7 @@ function VideoList({
   primarySectionEyebrow = 'Category Ranking',
   collapsedSectionIds = [],
   featuredSections = [],
+  getTradeActionState,
   hasResolvedTrendSignals = false,
   isPrimarySectionCollapsible = false,
   selectedVideoId,
@@ -131,7 +146,9 @@ function VideoList({
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
+  onOpenBuyTradeModal,
   onOpenChart,
+  onOpenSellTradeModal,
   onSelectVideo,
   onToggleSectionCollapse,
   primarySectionCollapseKey,
@@ -232,8 +249,12 @@ function VideoList({
               const priceLabel = formatPrice(marketPriceByVideoId?.[item.id]);
               const viewCountLabel = formatViewCount(item.statistics?.viewCount);
               const metaLabel = [priceLabel, viewCountLabel].filter(Boolean).join(' · ');
+              const tradeActionState = getTradeActionState?.(item);
               const handleSelectVideo = (triggerElement: HTMLButtonElement) =>
                 onSelectVideo(item.id, currentSection.categoryId, triggerElement);
+              const handleOpenBuyTradeModal = (triggerElement: HTMLButtonElement) => {
+                onOpenBuyTradeModal?.(item.id, currentSection.categoryId, triggerElement);
+              };
               const handleOpenChart = (triggerElement: HTMLButtonElement) => {
                 if (onOpenChart) {
                   onOpenChart(item.id, currentSection.categoryId, triggerElement);
@@ -241,6 +262,9 @@ function VideoList({
                 }
 
                 handleSelectVideo(triggerElement);
+              };
+              const handleOpenSellTradeModal = (triggerElement: HTMLButtonElement) => {
+                onOpenSellTradeModal?.(item.id, currentSection.categoryId, triggerElement);
               };
 
               return (
@@ -292,6 +316,13 @@ function VideoList({
                     <span className="video-card__channel">{item.snippet.channelTitle}</span>
                     {metaLabel ? <span className="video-card__views">{metaLabel}</span> : null}
                   </div>
+                  <VideoCardTradeActions
+                    buyAriaLabel={`${item.snippet.title} 매수`}
+                    onBuy={handleOpenBuyTradeModal}
+                    onSell={handleOpenSellTradeModal}
+                    sellAriaLabel={`${item.snippet.title} 매도`}
+                    state={tradeActionState}
+                  />
                 </article>
               );
             })}

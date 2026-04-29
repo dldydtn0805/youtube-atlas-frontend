@@ -140,7 +140,12 @@ export default function GameTradeModal({
   const disableQuantityControls = isSubmitting || normalizedMaxQuantity <= 0;
 
   return createPortal(
-    <div className="app-shell__modal-backdrop" onClick={onClose} role="presentation" style={backdropStyle}>
+    <div
+      className="app-shell__modal-backdrop app-shell__modal-backdrop--trade"
+      onClick={onClose}
+      role="presentation"
+      style={backdropStyle}
+    >
       <section
         aria-labelledby={modalTitleId}
         aria-modal="true"

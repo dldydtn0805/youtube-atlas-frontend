@@ -24,11 +24,14 @@ import { RankingGameLeaderboardTab } from './sections/RankingGamePanel';
 import StickySelectedVideoControls from './sections/StickySelectedVideoControls';
 import TrendTicker from './sections/TrendTicker';
 import {
+  DEFAULT_GAME_QUANTITY,
   buildOpenGameHoldings,
   formatGameOrderQuantity,
   formatPoints,
   formatRank,
+  getGamePositionQuantity,
   getPointTone,
+  normalizeGameOrderCapacity,
   SELL_FEE_RATE_LABEL,
   summarizeGamePositions,
 } from './gameHelpers';
@@ -258,6 +261,7 @@ function HomePage() {
   const [selectedLeaderboardUserId, setSelectedLeaderboardUserId] = useState<number | null>(null);
   const [historyPlaybackVideo, setHistoryPlaybackVideo] = useState<YouTubeVideoItem | null>(null);
   const [historyPlaybackLoadingVideoId, setHistoryPlaybackLoadingVideoId] = useState<string | null>(null);
+  const [tradeTargetVideoId, setTradeTargetVideoId] = useState<string | null>(null);
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const [tierModalDefaultTab, setTierModalDefaultTab] = useState<TierModalTab>('tier');
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -885,6 +889,14 @@ function HomePage() {
   });
 
   useEffect(() => {
+    if (activeTradeModal !== null) {
+      return;
+    }
+
+    setTradeTargetVideoId(null);
+  }, [activeTradeModal]);
+
+  useEffect(() => {
     if (!gameActionStatus) {
       return undefined;
     }
@@ -1026,6 +1038,110 @@ function HomePage() {
     () => buildOpenGameHoldings(openGamePositions, getRemainingHoldSeconds),
     [getRemainingHoldSeconds, openGamePositions],
   );
+  const gameMarketByVideoId = useMemo(
+    () => new Map(gameMarket.map((marketVideo) => [marketVideo.videoId, marketVideo])),
+    [gameMarket],
+  );
+  const tradeTargetVideo = useMemo(() => {
+    if (!tradeTargetVideoId) {
+      return undefined;
+    }
+
+    const sections = [
+      activeChartSection,
+      ...activeChartFeaturedSections.map(({ section }) => section),
+      selectedPlaybackSection,
+      favoriteStreamerVideoSection,
+      sortedNewChartEntriesSection,
+      sortedRealtimeSurgingSection,
+      sortedBuyableMarketChartSection,
+      sortedFilteredMusicChartSection,
+    ];
+
+    for (const section of sections) {
+      const video = section?.items.find((item) => item.id === tradeTargetVideoId);
+
+      if (video) {
+        return video;
+      }
+    }
+
+    return undefined;
+  }, [
+    activeChartFeaturedSections,
+    activeChartSection,
+    favoriteStreamerVideoSection,
+    selectedPlaybackSection,
+    sortedBuyableMarketChartSection,
+    sortedFilteredMusicChartSection,
+    sortedNewChartEntriesSection,
+    sortedRealtimeSurgingSection,
+    tradeTargetVideoId,
+  ]);
+  const openGamePositionQuantityByVideoId = useMemo(() => {
+    const quantityByVideoId = new Map<string, number>();
+
+    for (const position of openGamePositions) {
+      quantityByVideoId.set(
+        position.videoId,
+        (quantityByVideoId.get(position.videoId) ?? 0) + getGamePositionQuantity(position),
+      );
+    }
+
+    return quantityByVideoId;
+  }, [openGamePositions]);
+  const remainingOpenPositionSlotsForCards = currentGameSeason
+    ? Math.max(0, currentGameSeason.maxOpenPositions - openGamePositionQuantityByVideoId.size)
+    : 0;
+  const getVideoCardTradeActionState = useCallback(
+    (item: YouTubeVideoItem) => {
+      const marketVideo = gameMarketByVideoId.get(item.id);
+      const ownedQuantity = openGamePositionQuantityByVideoId.get(item.id) ?? 0;
+      const isAlreadyOwned = ownedQuantity > 0;
+      const maxBuyQuantity =
+        currentGameSeason && marketVideo?.currentPricePoints
+          ? Math.floor((currentGameSeason.wallet.balancePoints * DEFAULT_GAME_QUANTITY) / marketVideo.currentPricePoints)
+          : 0;
+      const maxOrderBuyQuantity = normalizeGameOrderCapacity(
+        isAlreadyOwned || remainingOpenPositionSlotsForCards > 0 ? maxBuyQuantity : 0,
+      );
+      const canBuy = Boolean(
+        canShowGameActions &&
+          authStatus === 'authenticated' &&
+          currentGameSeason &&
+          marketVideo?.canBuy &&
+          maxOrderBuyQuantity > 0,
+      );
+      const canSell = canShowGameActions && authStatus === 'authenticated' && ownedQuantity > 0;
+      const buyTitle = !canShowGameActions
+        ? '전체 카테고리에서만 매수할 수 있습니다.'
+        : authStatus !== 'authenticated'
+          ? '로그인 후 매수할 수 있습니다.'
+          : marketVideo?.canBuy && maxOrderBuyQuantity > 0
+            ? `${formatGameOrderQuantity(Math.min(DEFAULT_GAME_QUANTITY, maxOrderBuyQuantity))}부터 매수할 수 있습니다.`
+            : marketVideo?.buyBlockedReason ?? (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
+      const sellTitle = !canShowGameActions
+        ? '전체 카테고리에서만 매도할 수 있습니다.'
+        : ownedQuantity > 0
+          ? `${formatGameOrderQuantity(ownedQuantity)} 보유 중입니다.`
+          : '보유 수량이 있을 때만 매도할 수 있습니다.';
+
+      return {
+        buyTitle,
+        canBuy,
+        canSell,
+        sellTitle,
+      };
+    },
+    [
+      authStatus,
+      canShowGameActions,
+      currentGameSeason,
+      gameMarketByVideoId,
+      openGamePositionQuantityByVideoId,
+      remainingOpenPositionSlotsForCards,
+    ],
+  );
   const {
     buyActionTitle,
     buyModalHelperText,
@@ -1084,6 +1200,71 @@ function HomePage() {
     selectedVideoRankSignalById: selectedVideoRankSignalsById,
     sellQuantity,
   });
+  const tradeTargetGameState = useSelectedVideoGameState({
+    authStatus,
+    buyQuantity,
+    canShowGameActions,
+    currentGameSeason,
+    currentGameSeasonError,
+    favoriteStreamers,
+    favoriteTrendSignalsByVideoId,
+    gameHistoryPositions,
+    gameMarket,
+    getRemainingHoldSeconds,
+    isBuySubmitting: buyGamePositionMutation.isPending,
+    isCurrentGameSeasonLoading,
+    isFavoriteTogglePending: toggleFavoriteStreamerMutation.isPending,
+    openGameHoldings,
+    openGamePositions,
+    resolvedSelectedVideo: tradeTargetVideo,
+    selectedOpenPositionId: null,
+    selectedCategoryId,
+    selectedCategoryLabel: selectedChartViewOption.label,
+    selectedCountryName,
+    selectedRegionCode,
+    selectedVideoId: tradeTargetVideoId ?? undefined,
+    selectedVideoRankSignalById: selectedVideoRankSignalsById,
+    sellQuantity,
+  });
+  const isTradeTargetActive = Boolean(activeTradeModal && tradeTargetVideoId);
+  const tradeBuyModalHelperText = isTradeTargetActive ? tradeTargetGameState.buyModalHelperText : buyModalHelperText;
+  const tradeGameSeasonRegionMismatch = isTradeTargetActive
+    ? tradeTargetGameState.gameSeasonRegionMismatch
+    : gameSeasonRegionMismatch;
+  const tradeMaxBuyQuantity = isTradeTargetActive ? tradeTargetGameState.maxBuyQuantity : maxBuyQuantity;
+  const tradeMaxSellQuantity = isTradeTargetActive ? tradeTargetGameState.maxSellQuantity : maxSellQuantity;
+  const tradeNormalizedBuyQuantity = isTradeTargetActive
+    ? tradeTargetGameState.normalizedBuyQuantity
+    : normalizedBuyQuantity;
+  const tradeNormalizedSellQuantity = isTradeTargetActive
+    ? tradeTargetGameState.normalizedSellQuantity
+    : normalizedSellQuantity;
+  const tradeSelectedGameActionTitle = isTradeTargetActive
+    ? tradeTargetGameState.selectedGameActionTitle
+    : selectedGameActionTitle;
+  const tradeSelectedVideoCurrentChartRank = isTradeTargetActive
+    ? tradeTargetGameState.selectedVideoCurrentChartRank
+    : selectedVideoCurrentChartRank;
+  const tradeSelectedVideoId = isTradeTargetActive ? tradeTargetVideoId ?? undefined : selectedVideoId;
+  const tradeSelectedVideoIsChartOut = isTradeTargetActive
+    ? tradeTargetGameState.selectedVideoIsChartOut
+    : selectedVideoIsChartOut;
+  const tradeSelectedVideoMarketEntry = isTradeTargetActive
+    ? tradeTargetGameState.selectedVideoMarketEntry
+    : selectedVideoMarketEntry;
+  const tradeSelectedVideoSellSummary = isTradeTargetActive
+    ? tradeTargetGameState.selectedVideoSellSummary
+    : selectedVideoSellSummary;
+  const tradeSelectedVideoTradeThumbnailUrl = isTradeTargetActive
+    ? tradeTargetGameState.selectedVideoTradeThumbnailUrl
+    : selectedVideoTradeThumbnailUrl;
+  const tradeSelectedVideoUnitPricePoints = isTradeTargetActive
+    ? tradeTargetGameState.selectedVideoUnitPricePoints
+    : selectedVideoUnitPricePoints;
+  const tradeSellModalHelperText = isTradeTargetActive ? tradeTargetGameState.sellModalHelperText : sellModalHelperText;
+  const tradeTotalSelectedVideoBuyPoints = isTradeTargetActive
+    ? tradeTargetGameState.totalSelectedVideoBuyPoints
+    : totalSelectedVideoBuyPoints;
   const selectedSellPositionId = useMemo(
     () =>
       selectedOpenPositionId != null &&
@@ -1092,7 +1273,8 @@ function HomePage() {
         : null,
     [openGamePositions, selectedOpenPositionId],
   );
-  const canScheduleSellCurrentSelection = selectedSellPositionId != null;
+  const tradeSelectedSellPositionId = isTradeTargetActive ? null : selectedSellPositionId;
+  const canScheduleSellCurrentSelection = tradeSelectedSellPositionId != null;
   const refetchCurrentChartAfterBuy = useCallback(async () => {
     const invalidations: Array<Promise<unknown>> = [];
 
@@ -1207,32 +1389,32 @@ function HomePage() {
     createScheduledSellOrder: createScheduledSellOrderMutation.mutateAsync,
     currentGameSeason,
     currentGameSeasonError,
-    gameSeasonRegionMismatch,
+    gameSeasonRegionMismatch: tradeGameSeasonRegionMismatch,
     logout,
-    maxBuyQuantity,
-    maxSellQuantity,
+    maxBuyQuantity: tradeMaxBuyQuantity,
+    maxSellQuantity: tradeMaxSellQuantity,
     mutateBuyGamePosition: buyGamePositionMutation.mutateAsync,
     mutateSellGamePositions: sellGamePositionsMutation.mutateAsync,
-    normalizedSellQuantity,
+    normalizedSellQuantity: tradeNormalizedSellQuantity,
     onBuySuccess: refetchGameDataAfterBuy,
     onSellSuccess: refetchGameTradePanels,
     onScheduledSellSuccess: refetchGameTradePanels,
-    selectedOpenPositionId,
-    selectedSellPositionId,
-    selectedGameActionTitle,
+    selectedOpenPositionId: tradeSelectedSellPositionId,
+    selectedSellPositionId: tradeSelectedSellPositionId,
+    selectedGameActionTitle: tradeSelectedGameActionTitle,
     selectedRegionCode,
-    selectedVideoCurrentChartRank,
-    selectedVideoId,
-    selectedVideoMarketEntry,
-    selectedVideoSellSummary,
-    selectedVideoUnitPricePoints,
+    selectedVideoCurrentChartRank: tradeSelectedVideoCurrentChartRank,
+    selectedVideoId: tradeSelectedVideoId,
+    selectedVideoMarketEntry: tradeSelectedVideoMarketEntry,
+    selectedVideoSellSummary: tradeSelectedVideoSellSummary,
+    selectedVideoUnitPricePoints: tradeSelectedVideoUnitPricePoints,
     sellQuantity,
     setActiveGameTab,
     setActiveTradeModal,
     setBuyQuantity,
     setGameActionStatus,
     setSellQuantity,
-    totalSelectedVideoBuyPoints,
+    totalSelectedVideoBuyPoints: tradeTotalSelectedVideoBuyPoints,
   });
   const handleCancelScheduledSellOrder = useCallback(
     async (orderId: number) => {
@@ -1292,6 +1474,20 @@ function HomePage() {
       handleSelectVideo(nextPreviewVideoId, playbackQueueId);
     },
     [handleSelectVideo],
+  );
+  const handleOpenVideoCardBuyTradeModal = useCallback(
+    (videoId: string) => {
+      setTradeTargetVideoId(videoId);
+      setActiveTradeModal('buy');
+    },
+    [setActiveTradeModal],
+  );
+  const handleOpenVideoCardSellTradeModal = useCallback(
+    (videoId: string) => {
+      setTradeTargetVideoId(videoId);
+      setActiveTradeModal('sell');
+    },
+    [setActiveTradeModal],
   );
   const handleOpenRecentPlayback = useCallback(
     (videoId: string) => {
@@ -2002,6 +2198,7 @@ function HomePage() {
             currentTierCode: gameTierProgress?.currentTier.tierCode,
             featuredSections: activeChartFeaturedSections,
             getRankLabel: activeChartRankLabel,
+            getTradeActionState: getVideoCardTradeActionState,
             hasNextPage: activeChartHasNextPage,
             hasResolvedTrendSignals: activeChartHasResolvedTrendSignals,
             isChartError: activeChartIsError,
@@ -2010,7 +2207,9 @@ function HomePage() {
             mainSectionCollapseKey: activeChartMainSectionCollapseKey,
             onChangeChartSortMode: handleChangeChartSortMode,
             onLoadMore: activeChartOnLoadMore,
+            onOpenBuyTradeModal: handleOpenVideoCardBuyTradeModal,
             onOpenChart: handleOpenVideoRankHistory,
+            onOpenSellTradeModal: handleOpenVideoCardSellTradeModal,
             onSelectVideo: handleSelectVideoWithPreview,
             onToggleFeaturedSectionCollapse: toggleCollapsedSection,
             primarySectionEyebrow: activeChartSectionEyebrow,
@@ -2208,47 +2407,47 @@ function HomePage() {
         tierProgress={gameTierProgress}
       />
       <GameTradeModal
-        confirmLabel={`${formatGameOrderQuantity(normalizedBuyQuantity)} 매수`}
-        currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
-        helperText={buyModalHelperText}
+        confirmLabel={`${formatGameOrderQuantity(tradeNormalizedBuyQuantity)} 매수`}
+        currentRankLabel={formatRank(tradeSelectedVideoCurrentChartRank, { chartOut: tradeSelectedVideoIsChartOut })}
+        helperText={tradeBuyModalHelperText}
         isOpen={isBuyTradeModalOpen}
         isSubmitting={isBuySubmitting}
-        maxQuantity={maxBuyQuantity}
+        maxQuantity={tradeMaxBuyQuantity}
         mode="buy"
         onChangeQuantity={handleBuyQuantityChange}
         onClose={closeTradeModalFromFlow}
         onConfirm={() => void handleBuyCurrentVideo()}
-        quantity={normalizedBuyQuantity}
+        quantity={tradeNormalizedBuyQuantity}
         summaryItems={[
-          { label: '수량', value: formatGameOrderQuantity(normalizedBuyQuantity) },
-          { label: '1개당 가격', value: formatPoints(selectedVideoUnitPricePoints ?? 0) },
-          { label: '총 매수', value: formatPoints(totalSelectedVideoBuyPoints ?? (selectedVideoUnitPricePoints ?? 0)) },
+          { label: '수량', value: formatGameOrderQuantity(tradeNormalizedBuyQuantity) },
+          { label: '1개당 가격', value: formatPoints(tradeSelectedVideoUnitPricePoints ?? 0) },
+          { label: '총 매수', value: formatPoints(tradeTotalSelectedVideoBuyPoints ?? (tradeSelectedVideoUnitPricePoints ?? 0)) },
           ...(typeof projectedWalletBalanceAfterBuy === 'number'
             ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterBuy) }]
             : []),
         ]}
         summaryNote={undefined}
-        thumbnailUrl={selectedVideoTradeThumbnailUrl}
-        title={selectedGameActionTitle}
-        unitPointsLabel={formatPoints(selectedVideoUnitPricePoints ?? 0)}
+        thumbnailUrl={tradeSelectedVideoTradeThumbnailUrl}
+        title={tradeSelectedGameActionTitle}
+        unitPointsLabel={formatPoints(tradeSelectedVideoUnitPricePoints ?? 0)}
       />
       <GameTradeModal
         confirmLabel={
           sellOrderMode === 'scheduled'
-            ? `${formatGameOrderQuantity(normalizedSellQuantity)} 예약 매도`
-            : `${formatGameOrderQuantity(normalizedSellQuantity)} 즉시 매도`
+            ? `${formatGameOrderQuantity(tradeNormalizedSellQuantity)} 예약 매도`
+            : `${formatGameOrderQuantity(tradeNormalizedSellQuantity)} 즉시 매도`
         }
-        currentRankLabel={formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut })}
+        currentRankLabel={formatRank(tradeSelectedVideoCurrentChartRank, { chartOut: tradeSelectedVideoIsChartOut })}
         detailContent={sellOrderMode === 'instant' ? (
           <GameSellPreviewDetail
             isLoading={isSellPreviewPending}
             preview={displaySellPreview}
           />
         ) : null}
-        helperText={sellModalHelperText}
+        helperText={tradeSellModalHelperText}
         isOpen={isSellTradeModalOpen}
         isSubmitting={isSellSubmitting || isScheduledSellSubmitting}
-        maxQuantity={maxSellQuantity}
+        maxQuantity={tradeMaxSellQuantity}
         mode="sell"
         onChangeQuantity={handleSellQuantityChange}
         onClose={closeTradeModalFromFlow}
@@ -2258,7 +2457,7 @@ function HomePage() {
         onConfirm={() => {
           void (sellOrderMode === 'scheduled' ? handleCreateScheduledSellOrder() : handleSellCurrentVideo());
         }}
-        quantity={normalizedSellQuantity}
+        quantity={tradeNormalizedSellQuantity}
         scheduledSellConditionError={scheduledSellConditionError}
         scheduledSellTargetRank={scheduledSellTargetRank}
         scheduledSellTriggerDirection={scheduledSellTriggerDirection}
@@ -2275,8 +2474,8 @@ function HomePage() {
                         ? `${formatRank(scheduledSellTargetRank)} 이하 이탈`
                         : `${formatRank(scheduledSellTargetRank)} 이내 진입`,
                 },
-                { label: '대상 수량', value: formatGameOrderQuantity(normalizedSellQuantity) },
-                { label: '현재 순위', value: formatRank(selectedVideoCurrentChartRank, { chartOut: selectedVideoIsChartOut }) },
+                { label: '대상 수량', value: formatGameOrderQuantity(tradeNormalizedSellQuantity) },
+                { label: '현재 순위', value: formatRank(tradeSelectedVideoCurrentChartRank, { chartOut: tradeSelectedVideoIsChartOut }) },
                 { label: '처리 방식', value: '조건 도달 시 자동 매도' },
               ]
             : [
@@ -2321,8 +2520,8 @@ function HomePage() {
             ? '예약 매도는 현재 가격을 확정하지 않고, 조건이 충족되는 시점의 매도 로직으로 정산됩니다.'
             : `정산 금액은 매도 금액 기준 ${SELL_FEE_RATE_LABEL} 수수료를 반영한 값입니다.`
         }
-        thumbnailUrl={selectedVideoTradeThumbnailUrl}
-        title={selectedGameActionTitle}
+        thumbnailUrl={tradeSelectedVideoTradeThumbnailUrl}
+        title={tradeSelectedGameActionTitle}
         unitPointsLabel={sellTradeUnitPointsLabel}
       />
       {buyableVideoSearchOverlay && fullscreenOverlayContainer

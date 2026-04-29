@@ -128,6 +128,45 @@ describe('VideoList', () => {
     expect(screen.getByText('가격 12,345P · 조회수 1.5천')).toBeInTheDocument();
   });
 
+  it('renders item trade actions and opens the selected trade flow', () => {
+    const onOpenBuyTradeModal = vi.fn();
+    const onOpenSellTradeModal = vi.fn();
+
+    render(
+      <VideoList
+        getTradeActionState={() => ({
+          buyTitle: '매수 가능',
+          canBuy: true,
+          canSell: true,
+          sellTitle: '매도 가능',
+        })}
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onOpenBuyTradeModal={onOpenBuyTradeModal}
+        onOpenSellTradeModal={onOpenSellTradeModal}
+        onSelectVideo={vi.fn()}
+        section={baseSection}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 매수' }));
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 매도' }));
+
+    expect(onOpenBuyTradeModal).toHaveBeenCalledWith(
+      'video-1',
+      'favorite-streamers',
+      expect.any(HTMLButtonElement),
+    );
+    expect(onOpenSellTradeModal).toHaveBeenCalledWith(
+      'video-1',
+      'favorite-streamers',
+      expect.any(HTMLButtonElement),
+    );
+  });
+
   it('uses item trend data when no separate trend signal map is provided', () => {
     render(
       <VideoList

@@ -6,6 +6,10 @@
   width: min(560px, 100%);
 }
 
+.app-shell__modal-backdrop--trade {
+  background: rgba(15, 23, 42, 0.62);
+}
+
 .app-shell__modal--trade[data-trade-mode='buy'] {
   --game-trade-accent-rgb: 239, 68, 68;
   --game-trade-accent: #ef4444;
@@ -19,6 +23,10 @@
 
 .app-shell__modal--trade .app-shell__modal-footer {
   justify-content: flex-start;
+}
+
+.app-shell__modal--trade .app-shell__modal-body {
+  flex: 1 1 auto;
 }
 
 .app-shell__modal--trade .app-shell__modal-action {
@@ -465,6 +473,10 @@
     ),
     rgba(10, 14, 20, 0.9);
   border-color: rgba(var(--game-trade-accent-rgb), 0.24);
+}
+
+:root[data-theme='dark'] .app-shell__modal-backdrop--trade {
+  background: rgba(2, 6, 23, 0.78);
 }
 
 :root[data-theme='dark'] .app-shell__game-scheduled-sell-input-wrap {
