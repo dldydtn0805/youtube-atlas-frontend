@@ -736,6 +736,11 @@
   stroke-width: 1.9;
 }
 
+.app-shell__mode-toggle-icon svg[data-icon='cinematic'] path {
+  fill: currentColor;
+  stroke: none;
+}
+
 .app-shell__mode-toggle:hover {
   box-shadow: var(--surface-emphasis-shadow);
   transform: translateY(-1px);

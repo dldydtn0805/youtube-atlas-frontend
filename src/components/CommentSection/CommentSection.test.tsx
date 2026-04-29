@@ -124,7 +124,7 @@ describe('CommentSection', () => {
     randomSpy.mockRestore();
   });
 
-  it('restores sticky visibility markers after a successful send', async () => {
+  it('keeps the message input focused after a successful send', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({
       id: 1,
     });
@@ -143,12 +143,20 @@ describe('CommentSection', () => {
 
     expect(document.documentElement.getAttribute('data-chat-composer-focus')).toBe('true');
 
+    const sendButton = screen.getByRole('button', { name: '보내기' });
+
+    fireEvent.blur(textarea, { relatedTarget: sendButton });
+    sendButton.focus();
+
+    expect(sendButton).toHaveFocus();
+
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: '보내기' }));
+      fireEvent.click(sendButton);
       await flushPromises();
     });
 
-    expect(document.documentElement.hasAttribute('data-chat-composer-focus')).toBe(false);
+    expect(textarea).toHaveFocus();
+    expect(document.documentElement.getAttribute('data-chat-composer-focus')).toBe('true');
   });
 
   it('disables send and shows a countdown during the local cooldown', async () => {

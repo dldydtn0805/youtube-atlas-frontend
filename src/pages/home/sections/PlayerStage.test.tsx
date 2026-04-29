@@ -5,7 +5,7 @@ import PlayerStage from './PlayerStage';
 
 vi.mock('../../../components/VideoPlayer/VideoPlayer', () => ({
   default: ({ isCinematic }: { isCinematic?: boolean }) => (
-    <div data-cinematic={isCinematic ? 'true' : 'false'} data-testid="video-player" />
+    <div className="video-player" data-cinematic={isCinematic ? 'true' : 'false'} data-testid="video-player" />
   ),
 }));
 
@@ -79,6 +79,88 @@ describe('PlayerStage', () => {
     expect(container.querySelector('.app-shell__stage')?.getAttribute('data-cinematic')).toBe('false');
     expect(container.querySelector('.app-shell__stage-stack')?.getAttribute('data-cinematic')).toBe('false');
     expect(container.querySelector('.app-shell__panel--player')?.getAttribute('data-cinematic')).toBe('false');
+    expect(screen.getByTestId('video-player')).toHaveAttribute('data-cinematic', 'true');
+  });
+
+  it('places chat beside the video in desktop cinematic mode', () => {
+    const { container } = render(
+      <PlayerStage
+        {...createProps({
+          communityContent: <div data-testid="cinematic-chat">chat</div>,
+          isCinematicModeActive: true,
+          isMobileLayout: false,
+          selectedVideoChannelTitle: 'Channel',
+          selectedVideoId: 'video-1',
+          selectedVideoTitle: 'Video Title',
+        })}
+      />,
+    );
+
+    const layout = container.querySelector('.app-shell__watch-layout');
+    const primary = container.querySelector('.app-shell__watch-primary');
+    const chat = container.querySelector('.app-shell__watch-chat');
+
+    expect(layout).toBeInTheDocument();
+    expect(layout).toHaveAttribute('data-active', 'true');
+    expect(primary?.contains(screen.getByTestId('video-player'))).toBe(true);
+    expect(chat?.contains(screen.getByTestId('cinematic-chat'))).toBe(true);
+  });
+
+  it('keeps the watch layout inactive outside desktop cinematic mode', () => {
+    const { container, rerender } = render(
+      <PlayerStage
+        {...createProps({
+          communityContent: <div data-testid="desktop-chat">chat</div>,
+          isCinematicModeActive: false,
+          isMobileLayout: false,
+        })}
+      />,
+    );
+
+    expect(container.querySelector('.app-shell__watch-layout')).toHaveAttribute('data-active', 'false');
+
+    rerender(
+      <PlayerStage
+        {...createProps({
+          communityContent: <div data-testid="mobile-chat">chat</div>,
+          isCinematicModeActive: true,
+          isMobileLayout: true,
+        })}
+      />,
+    );
+
+    expect(container.querySelector('.app-shell__watch-layout')).toHaveAttribute('data-active', 'false');
+  });
+
+  it('keeps the video player mounted when cinematic mode toggles', () => {
+    const { rerender } = render(
+      <PlayerStage
+        {...createProps({
+          communityContent: <div data-testid="desktop-chat">chat</div>,
+          isCinematicModeActive: false,
+          isMobileLayout: false,
+          selectedVideoChannelTitle: 'Channel',
+          selectedVideoId: 'video-1',
+          selectedVideoTitle: 'Video Title',
+        })}
+      />,
+    );
+    const videoPlayer = screen.getByTestId('video-player');
+
+    rerender(
+      <PlayerStage
+        {...createProps({
+          communityContent: <div data-testid="desktop-chat">chat</div>,
+          isCinematicModeActive: true,
+          isMobileLayout: false,
+          selectedVideoChannelTitle: 'Channel',
+          selectedVideoId: 'video-1',
+          selectedVideoTitle: 'Video Title',
+        })}
+      />,
+    );
+
+    expect(screen.getByTestId('video-player')).toBe(videoPlayer);
     expect(screen.getByTestId('video-player')).toHaveAttribute('data-cinematic', 'true');
   });
 

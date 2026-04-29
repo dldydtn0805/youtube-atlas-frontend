@@ -141,6 +141,7 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
   const [participantId] = useState(getChatParticipantId);
   const composerRef = useRef<HTMLFormElement | null>(null);
   const commentListRef = useRef<HTMLDivElement | null>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const cooldownDeadlineByVideoRef = useRef<Record<string, number>>({});
   const recentMessagesByVideoRef = useRef<Record<string, RecentCommentSnapshot[]>>({});
   const commentsQuery = useComments(videoId, isApiConfigured);
@@ -207,6 +208,15 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
     }
   }
 
+  function restoreComposerInputFocus() {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.setAttribute(CHAT_COMPOSER_FOCUSED_ATTRIBUTE, 'true');
+    messageInputRef.current?.focus({ preventScroll: true });
+  }
+
   function beginCooldown(seconds = COMMENT_COOLDOWN_SECONDS) {
     const nextCooldownEndsAt = Date.now() + seconds * 1000;
 
@@ -269,7 +279,7 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
       ];
       setSubmissionError(null);
       setContent('');
-      clearComposerFocusState();
+      restoreComposerInputFocus();
       beginCooldown();
     } catch (error) {
       const nextError = toCommentSubmissionError(error);
@@ -402,6 +412,7 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
       </div>
       <div className="comment-composer__bottom">
         <textarea
+          ref={messageInputRef}
           className="comment-composer__textarea"
           maxLength={500}
           onChange={(event) => handleContentChange(event.target.value)}
