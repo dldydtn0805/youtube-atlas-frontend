@@ -1090,6 +1090,18 @@ function HomePage() {
 
     return quantityByVideoId;
   }, [openGamePositions]);
+  const openGameSellableQuantityByVideoId = useMemo(() => {
+    const quantityByVideoId = new Map<string, number>();
+
+    for (const holding of openGameHoldings) {
+      quantityByVideoId.set(
+        holding.videoId,
+        (quantityByVideoId.get(holding.videoId) ?? 0) + holding.sellableQuantity,
+      );
+    }
+
+    return quantityByVideoId;
+  }, [openGameHoldings]);
   const remainingOpenPositionSlotsForCards = currentGameSeason
     ? Math.max(0, currentGameSeason.maxOpenPositions - openGamePositionQuantityByVideoId.size)
     : 0;
@@ -1097,6 +1109,7 @@ function HomePage() {
     (item: YouTubeVideoItem) => {
       const marketVideo = gameMarketByVideoId.get(item.id);
       const ownedQuantity = openGamePositionQuantityByVideoId.get(item.id) ?? 0;
+      const sellableQuantity = openGameSellableQuantityByVideoId.get(item.id) ?? 0;
       const isAlreadyOwned = ownedQuantity > 0;
       const maxBuyQuantity =
         currentGameSeason && marketVideo?.currentPricePoints
@@ -1112,7 +1125,7 @@ function HomePage() {
           marketVideo?.canBuy &&
           maxOrderBuyQuantity > 0,
       );
-      const canSell = canShowGameActions && authStatus === 'authenticated' && ownedQuantity > 0;
+      const canSell = canShowGameActions && authStatus === 'authenticated' && sellableQuantity > 0;
       const buyTitle = !canShowGameActions
         ? '전체 카테고리에서만 매수할 수 있습니다.'
         : authStatus !== 'authenticated'
@@ -1122,8 +1135,12 @@ function HomePage() {
             : marketVideo?.buyBlockedReason ?? (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
       const sellTitle = !canShowGameActions
         ? '전체 카테고리에서만 매도할 수 있습니다.'
-        : ownedQuantity > 0
-          ? `${formatGameOrderQuantity(ownedQuantity)} 보유 중입니다.`
+        : authStatus !== 'authenticated'
+          ? '로그인 후 매도할 수 있습니다.'
+          : sellableQuantity > 0
+            ? `${formatGameOrderQuantity(sellableQuantity)} 즉시 매도할 수 있습니다.`
+            : ownedQuantity > 0
+              ? '매도 대기 시간이 끝난 수량만 매도할 수 있습니다.'
           : '보유 수량이 있을 때만 매도할 수 있습니다.';
 
       return {
@@ -1139,6 +1156,7 @@ function HomePage() {
       currentGameSeason,
       gameMarketByVideoId,
       openGamePositionQuantityByVideoId,
+      openGameSellableQuantityByVideoId,
       remainingOpenPositionSlotsForCards,
     ],
   );
