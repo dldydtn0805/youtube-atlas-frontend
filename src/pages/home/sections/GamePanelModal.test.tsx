@@ -63,6 +63,32 @@ describe('GamePanelModal', () => {
     }
   });
 
+  it('keeps the modal open through the body pull slack distance', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+
+    try {
+      render(
+        <GamePanelModal isOpen onClose={onClose}>
+          <button data-testid="inventory-item" type="button">
+            인벤토리 항목
+          </button>
+        </GamePanelModal>,
+      );
+
+      const inventoryItem = screen.getByTestId('inventory-item');
+
+      fireEvent.touchStart(inventoryItem, { touches: [{ clientX: 40, clientY: 20, identifier: 1 }] });
+      fireEvent.touchMove(inventoryItem, { touches: [{ clientX: 48, clientY: 220, identifier: 1 }] });
+      fireEvent.touchEnd(inventoryItem, { changedTouches: [{ clientX: 48, clientY: 220, identifier: 1 }] });
+      vi.advanceTimersByTime(220);
+
+      expect(onClose).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps the modal open when an inner scroll area is not at the top', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
