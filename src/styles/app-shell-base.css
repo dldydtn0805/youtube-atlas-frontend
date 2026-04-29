@@ -158,11 +158,20 @@
   padding: 20px clamp(14px, 3.6vw, 36px) 28px;
 }
 
+:root[data-app-body-scroll-locked='true'] .app-shell__stage[data-cinematic='true'] {
+  overflow-y: hidden;
+}
+
 .app-shell__stage:fullscreen,
 .app-shell__stage:-webkit-full-screen {
   height: 100%;
   overflow-y: auto;
   width: 100%;
+}
+
+:root[data-app-body-scroll-locked='true'] .app-shell__stage:fullscreen,
+:root[data-app-body-scroll-locked='true'] .app-shell__stage:-webkit-full-screen {
+  overflow-y: hidden;
 }
 
 .app-shell__section-heading {

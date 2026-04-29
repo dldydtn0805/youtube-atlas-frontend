@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import QuickViewButtons from './QuickViewButtons';
 import type { ViewOption } from './filterPanelTypes';
@@ -20,6 +21,8 @@ const ChartViewModal = memo(function ChartViewModal({
   selectedViewId,
   viewOptions,
 }: ChartViewModalProps) {
+  useBodyScrollLock(isOpen);
+
   const handleSelectView = useCallback(
     (viewId: string, triggerElement?: HTMLButtonElement) => {
       onSelectView(viewId, triggerElement);

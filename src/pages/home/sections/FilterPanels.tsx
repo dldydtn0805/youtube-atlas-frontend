@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import SearchBar, { type SearchBarOption } from '../../../components/SearchBar/SearchBar';
+import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
 import QuickViewButtons from './QuickViewButtons';
 import type { ViewOption } from './filterPanelTypes';
@@ -28,6 +29,8 @@ export function RegionFilterModal({
   regionOptions,
   selectedRegionCode,
 }: RegionFilterModalProps) {
+  useBodyScrollLock(isOpen);
+
   if (!isOpen || typeof document === 'undefined') {
     return null;
   }

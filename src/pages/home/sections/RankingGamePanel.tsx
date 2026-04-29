@@ -28,6 +28,7 @@ import {
   getPointTone,
   type OpenGameHolding,
 } from '../gameHelpers';
+import { sortHoldingsByProfitRateDesc } from '../gameInventorySorting';
 import { buildGameStrategyBadges } from '../gameStrategyTags';
 import { GAME_PORTFOLIO_QUEUE_ID, HISTORY_PLAYBACK_QUEUE_ID } from '../utils';
 import AchievementTitleBadge from './AchievementTitleBadge';
@@ -1073,6 +1074,7 @@ function RankingGamePositionsTabComponent({
   const inventoryOpenCount =
     openDistinctVideoCount ?? new Set(holdings.map((holding) => holding.videoId)).size;
   const maxOpenPositions = currentGameSeason ? getGameInventorySlotLimit(currentGameSeason) : null;
+  const sortedHoldings = useMemo(() => sortHoldingsByProfitRateDesc(holdings), [holdings]);
   const inventorySummary = (
     <GameInventoryCapacity
       currentGameSeason={currentGameSeason}
@@ -1108,7 +1110,7 @@ function RankingGamePositionsTabComponent({
     <>
       {inventorySummary}
       <ul className="app-shell__game-positions">
-        {holdings.map((holding) => (
+        {sortedHoldings.map((holding) => (
           <RankingGamePositionRow
             key={holding.positionId}
             canShowGameActions={canShowGameActions}

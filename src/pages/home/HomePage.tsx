@@ -2078,6 +2078,7 @@ function HomePage() {
     Boolean(modalGameNotification) ||
     isRankHistoryModalOpen ||
     isRegionModalOpen ||
+    isChartViewModalOpen ||
     isGameModalOpen ||
     isWalletModalOpen ||
     isTierModalOpen ||
