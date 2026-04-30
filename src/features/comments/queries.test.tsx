@@ -43,11 +43,21 @@ vi.mock('../../lib/api', () => ({
 vi.mock('./api', async () => {
   const actual = await vi.importActual<typeof import('./api')>('./api');
   const fetchCommentPresence = vi.fn().mockResolvedValue({ active_count: 0 });
+  const updateCommentPresenceIdentity = vi.fn().mockResolvedValue({
+    active_count: 1,
+    participants: [
+      {
+        display_name: 'Atlas User',
+        participant_id: 'participant-1',
+      },
+    ],
+  });
 
   return {
     ...actual,
     fetchComments: vi.fn().mockResolvedValue([]),
     fetchCommentPresence,
+    updateCommentPresenceIdentity,
   };
 });
 
@@ -60,6 +70,7 @@ function createWrapper(queryClient: QueryClient) {
 describe('comments queries', () => {
   afterEach(async () => {
     clientInstances.length = 0;
+    vi.clearAllMocks();
     const { resetCommentsRealtimeForTests } = await import('./queries');
     resetCommentsRealtimeForTests();
     const { resetSharedRealtimeClientForTests } = await import('../realtime/stompClient');
@@ -211,6 +222,41 @@ describe('comments queries', () => {
 
     await waitFor(() => {
       expect(fetchCommentPresence).toHaveBeenCalledTimes(initialCallCount + 1);
+    });
+  });
+
+  it('syncs the logged-in user name with the active chat participant', async () => {
+    const { useComments } = await import('./queries');
+    const { updateCommentPresenceIdentity } = await import('./api');
+
+    function HookHarness() {
+      useComments(undefined, true, {
+        accessToken: 'access-token-1',
+        participantId: 'participant-1',
+      });
+      return null;
+    }
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(<HookHarness />, {
+      wrapper: createWrapper(queryClient),
+    });
+    const client = clientInstances.at(-1);
+
+    client?.onConnect?.();
+
+    await waitFor(() => {
+      expect(updateCommentPresenceIdentity).toHaveBeenCalledWith({
+        accessToken: 'access-token-1',
+        clientId: 'participant-1',
+      });
     });
   });
 });

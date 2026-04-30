@@ -48,7 +48,10 @@
   background: var(--surface-overlay-chip);
   border: 1px solid var(--surface-stat-border);
   border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.66rem;
   justify-self: end;
+  line-height: 1.4;
   padding: 2px 8px;
   position: sticky;
   top: 0;
@@ -450,6 +453,7 @@
   }
 
   :root[data-mobile-layout='true'] .comment-section__presence,
+  :root[data-mobile-layout='true'] .comment-section__presence--overlay,
   :root[data-mobile-layout='true'] .comment-section__status,
   :root[data-mobile-layout='true'] .comment-section__hint,
   :root[data-mobile-layout='true'] .comment-message__system-text,

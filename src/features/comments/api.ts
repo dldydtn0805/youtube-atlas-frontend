@@ -18,6 +18,20 @@ export async function fetchCommentPresence(): Promise<ChatPresence> {
   return fetchApi<ChatPresence>('/api/comments/presence');
 }
 
+export async function updateCommentPresenceIdentity(input: {
+  accessToken: string;
+  clientId: string;
+}): Promise<ChatPresence> {
+  return fetchApi<ChatPresence>('/api/comments/presence/me', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ clientId: input.clientId }),
+  });
+}
+
 export async function createComment(input: SendMessageInput): Promise<ChatMessage> {
   const author = input.author.trim() || '익명';
   const content = normalizeMessageContent(input.content);

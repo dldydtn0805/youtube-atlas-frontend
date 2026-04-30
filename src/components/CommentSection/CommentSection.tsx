@@ -14,6 +14,7 @@ import {
 } from '../../features/comments/spam';
 import { getChatParticipantId } from '../../features/comments/participant';
 import type { ChatMessage } from '../../features/comments/types';
+import CommentPresenceBadge from './CommentPresenceBadge';
 import './CommentSection.css';
 
 interface CommentSectionProps {
@@ -133,7 +134,7 @@ function getFallbackMessageContent(videoTitle?: string) {
 }
 
 function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSectionProps) {
-  const { logout, status, user } = useAuth();
+  const { accessToken, logout, status, user } = useAuth();
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
@@ -144,8 +145,9 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const cooldownDeadlineByVideoRef = useRef<Record<string, number>>({});
   const recentMessagesByVideoRef = useRef<Record<string, RecentCommentSnapshot[]>>({});
-  const commentsQuery = useComments(videoId, isApiConfigured);
-  const activeParticipantCount = commentsQuery.presenceQuery?.data?.active_count;
+  const commentsQuery = useComments(videoId, isApiConfigured, { accessToken, participantId });
+  const chatPresence = commentsQuery.presenceQuery?.data;
+  const activeParticipantCount = chatPresence?.active_count;
   const createCommentMutation = useCreateComment();
   const remainingCooldownMs = getRemainingDurationMs(cooldownEndsAt);
   const remainingCooldownSeconds = Math.ceil(remainingCooldownMs / 1000);
@@ -469,9 +471,10 @@ function CommentSection({ hideHeader = false, videoId, videoTitle }: CommentSect
 
       <div ref={commentListRef} className="comment-list" aria-live="polite">
         {typeof activeParticipantCount === 'number' ? (
-          <p className="comment-section__presence comment-section__presence--overlay">
-            실시간 {activeParticipantCount}명
-          </p>
+          <CommentPresenceBadge
+            activeCount={activeParticipantCount}
+            participants={chatPresence?.participants}
+          />
         ) : null}
         {commentsQuery.isLoading ? (
           <p className="comment-section__status">채팅을 불러오는 중입니다.</p>

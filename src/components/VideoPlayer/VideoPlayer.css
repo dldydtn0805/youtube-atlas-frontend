@@ -61,7 +61,7 @@
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
   display: block;
   height: 100%;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease;
   width: 100%;
 }
 
@@ -70,7 +70,7 @@
 .video-player__embed iframe:hover,
 .video-player__embed-shell iframe:hover {
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
-  transform: scale(1.003);
+  transform: none;
 }
 
 .video-player__embed-shell[data-visible='false'],

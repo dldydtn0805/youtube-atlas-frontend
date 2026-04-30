@@ -278,6 +278,40 @@ describe('CommentSection', () => {
     expect(screen.getByText('실시간 7명')).toBeInTheDocument();
   });
 
+  it('shows participant names in the presence hover panel', () => {
+    useCommentsMock.mockReturnValue({
+      data: [],
+      error: null,
+      isError: false,
+      isLoading: false,
+      presenceQuery: {
+        data: {
+          active_count: 2,
+          participants: [
+            {
+              display_name: 'Atlas User',
+              participant_id: 'participant-1',
+            },
+            {
+              display_name: '익명 #nt-2',
+              participant_id: 'participant-2',
+            },
+          ],
+        },
+      },
+    });
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    render(<CommentSection />);
+
+    expect(screen.getByLabelText('참여 2명')).toBeInTheDocument();
+    expect(screen.getByText('Atlas User')).toBeInTheDocument();
+    expect(screen.getByText('익명 #nt-2')).toBeInTheDocument();
+  });
+
   it('marks messages from the authenticated user as own even when the client id differs', () => {
     useAuthMock.mockReturnValue({
       logout: vi.fn(),

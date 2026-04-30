@@ -115,4 +115,41 @@ describe('createComment', () => {
       message: '같은 메시지는 30초 후에 다시 보낼 수 있어요.',
     });
   });
+
+  it('posts the current chat participant id when syncing presence identity', async () => {
+    const { updateCommentPresenceIdentity } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createMockResponse({
+        active_count: 1,
+        participants: [
+          {
+            display_name: 'Atlas User',
+            participant_id: 'client-1',
+          },
+        ],
+      }),
+    );
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await updateCommentPresenceIdentity({
+      accessToken: 'access-token-1',
+      clientId: 'client-1',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/comments/presence/me',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer access-token-1',
+        }),
+        method: 'POST',
+      }),
+    );
+    expect(
+      JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string),
+    ).toEqual({
+      clientId: 'client-1',
+    });
+  });
 });

@@ -1,6 +1,13 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { COMMENTS_PRESENCE_TOPIC, COMMENTS_TOPIC, createComment, fetchCommentPresence, fetchComments } from './api';
+import {
+  COMMENTS_PRESENCE_TOPIC,
+  COMMENTS_TOPIC,
+  createComment,
+  fetchCommentPresence,
+  fetchComments,
+  updateCommentPresenceIdentity,
+} from './api';
 import {
   subscribeToRealtimeConnection,
   subscribeToRealtimeTopic,
@@ -12,6 +19,11 @@ const SAME_COMMENT_TIME_WINDOW_MS = 10_000;
 
 const commentsQueryKey = ['comments', 'global'] as const;
 const commentsPresenceQueryKey = ['comments', 'presence'] as const;
+
+interface UseCommentsOptions {
+  accessToken?: string | null;
+  participantId?: string | null;
+}
 
 function isSameCommentEvent(current: ChatMessage, next: ChatMessage) {
   if (current.id === next.id) {
@@ -52,8 +64,9 @@ export function mergeComment(existing: ChatMessage[] = [], nextComment: ChatMess
   );
 }
 
-export function useComments(_videoId?: string, enabled = true) {
+export function useComments(_videoId?: string, enabled = true, options: UseCommentsOptions = {}) {
   const queryClient = useQueryClient();
+  const { accessToken, participantId } = options;
   const commentsQuery = useQuery({
     enabled,
     queryKey: commentsQueryKey,
@@ -68,6 +81,20 @@ export function useComments(_videoId?: string, enabled = true) {
   useEffect(() => {
     if (!enabled) {
       return;
+    }
+
+    function syncPresenceIdentity() {
+      if (!accessToken || !participantId) {
+        return;
+      }
+
+      void updateCommentPresenceIdentity({ accessToken, clientId: participantId })
+        .then((nextPresence) => {
+          queryClient.setQueryData<ChatPresence>(commentsPresenceQueryKey, nextPresence);
+        })
+        .catch(() => {
+          // Presence identity is a convenience; chat should keep working if it fails.
+        });
     }
 
     const unsubscribeComments = subscribeToRealtimeTopic(COMMENTS_TOPIC, (messageBody) => {
@@ -96,6 +123,7 @@ export function useComments(_videoId?: string, enabled = true) {
         exact: true,
         type: 'active',
       });
+      syncPresenceIdentity();
     });
 
     return () => {
@@ -103,7 +131,7 @@ export function useComments(_videoId?: string, enabled = true) {
       unsubscribePresence();
       unsubscribeConnection();
     };
-  }, [enabled, queryClient]);
+  }, [accessToken, enabled, participantId, queryClient]);
 
   return {
     ...commentsQuery,

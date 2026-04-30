@@ -12,6 +12,12 @@ export interface ChatMessage {
 
 export interface ChatPresence {
   active_count: number;
+  participants?: ChatPresenceParticipant[];
+}
+
+export interface ChatPresenceParticipant {
+  participant_id: string;
+  display_name: string;
 }
 
 export interface SendMessageInput {
