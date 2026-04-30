@@ -251,42 +251,64 @@
 }
 
 .comment-message__title-star {
-  color: #64748b;
+  color: #888780;
   display: inline-block;
-  font-size: 0.72em;
+  flex: 0 0 auto;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.04em;
+  font-weight: 900;
   line-height: 1;
-  margin-left: 0.28em;
-  transform: translateY(-0.04em);
+  margin-left: 0.24em;
+  transform: translateY(-0.04em) scale(1.08);
+  -webkit-text-stroke: 0.35px currentColor;
 }
 
 .comment-message__title-star[data-grade='RARE'] {
-  color: #2563eb;
+  color: #378add;
+  text-shadow: 0 0 5px rgba(55, 138, 221, 0.8), 0 0 10px rgba(55, 138, 221, 0.32);
 }
 
 .comment-message__title-star[data-grade='SUPER'] {
-  color: #e11d48;
+  animation: comment-title-star-pulse 1.8s ease-in-out infinite;
+  color: #e24b4a;
 }
 
 .comment-message__title-star[data-grade='ULTIMATE'] {
-  color: #d97706;
-  text-shadow: 0 0 6px rgba(217, 119, 6, 0.28);
+  animation: comment-title-star-shimmer 2s linear infinite;
+  background: linear-gradient(90deg, #ffd700, #ffeeaa, #ffd700, #cc8800, #ffd700);
+  background-clip: text;
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-stroke: 0;
 }
 
-:root[data-theme='dark'] .comment-message__title-star {
-  color: #cbd5e1;
+@keyframes comment-title-star-pulse {
+  0%,
+  100% {
+    text-shadow: 0 0 6px rgba(226, 75, 74, 0.6), 0 0 12px rgba(226, 75, 74, 0.3);
+  }
+
+  50% {
+    text-shadow: 0 0 10px rgba(226, 75, 74, 0.9), 0 0 20px rgba(226, 75, 74, 0.5);
+  }
 }
 
-:root[data-theme='dark'] .comment-message__title-star[data-grade='RARE'] {
-  color: #93c5fd;
+@keyframes comment-title-star-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
 }
 
-:root[data-theme='dark'] .comment-message__title-star[data-grade='SUPER'] {
-  color: #fda4af;
-}
-
-:root[data-theme='dark'] .comment-message__title-star[data-grade='ULTIMATE'] {
-  color: #fcd34d;
-  text-shadow: 0 0 7px rgba(252, 211, 77, 0.32);
+@media (prefers-reduced-motion: reduce) {
+  .comment-message__title-star[data-grade='SUPER'],
+  .comment-message__title-star[data-grade='ULTIMATE'] {
+    animation: none;
+  }
 }
 
 .comment-message__date {
