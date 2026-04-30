@@ -1366,6 +1366,7 @@
 
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__section-heading--player,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__stage-meta,
+  :root[data-mobile-layout='true'] .app-shell__panel--player .app-shell__watch-primary > .app-shell__stage-meta,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__panel,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__game-panel,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__game-panel-section,
@@ -1796,6 +1797,7 @@
 
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__section-heading--player,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__stage-meta,
+  :root[data-mobile-layout='true'] .app-shell__panel--player .app-shell__watch-primary > .app-shell__stage-meta,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__panel,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__game-panel,
   :root[data-mobile-layout='true'] .app-shell__panel--player > .app-shell__game-panel-section,
