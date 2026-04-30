@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import './StickySelectedVideoControls.css';
 
 interface StickySelectedVideoControlsProps {
   isMobileLayout: boolean;
@@ -19,19 +20,31 @@ function ControlButton({
   ariaLabel,
   children,
   isActive = false,
+  isPlaybackToggle = false,
+  playbackIcon,
   onClick,
   title,
 }: {
   ariaLabel: string;
   children: ReactNode;
   isActive?: boolean;
+  isPlaybackToggle?: boolean;
+  playbackIcon?: 'pause' | 'play';
   onClick: () => void;
   title: string;
 }) {
+  const buttonClassName = [
+    'app-shell__game-panel-action-utility',
+    isPlaybackToggle ? 'app-shell__game-panel-action-utility--playback-toggle' : '',
+    playbackIcon ? `app-shell__game-panel-action-utility--${playbackIcon}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <button
       aria-label={ariaLabel}
-      className="app-shell__game-panel-action-utility"
+      className={buttonClassName}
       data-active={isActive ? 'true' : undefined}
       onClick={onClick}
       title={title}
@@ -56,7 +69,11 @@ export default function StickySelectedVideoControls({
   onScrollToTop,
   onToggleMobilePlayerStageStickyEnabled,
 }: StickySelectedVideoControlsProps) {
-  const hasPlaybackControls = Boolean(onPreviousVideo && onNextVideo && ((isPlaybackPaused && onResumeVideo) || (!isPlaybackPaused && onPauseVideo)));
+  const hasPlaybackControls = Boolean(
+    onPreviousVideo &&
+      onNextVideo &&
+      ((isPlaybackPaused && onResumeVideo) || (!isPlaybackPaused && onPauseVideo)),
+  );
 
   return (
     <>
@@ -74,28 +91,40 @@ export default function StickySelectedVideoControls({
             </svg>
           </ControlButton>
           {isPlaybackPaused ? (
-            <ControlButton ariaLabel="재생" onClick={onResumeVideo!} title="재생">
+            <ControlButton
+              ariaLabel="재생"
+              isPlaybackToggle
+              onClick={onResumeVideo!}
+              playbackIcon="play"
+              title="재생"
+            >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
-                  d="M10 8.25v7.5l5.75-3.75L10 8.25Z"
+                  d="M8.5 6.5v11l8.75-5.5L8.5 6.5Z"
                   fill="currentColor"
                 />
               </svg>
             </ControlButton>
           ) : (
-            <ControlButton ariaLabel="일시 정지" onClick={onPauseVideo!} title="일시 정지">
+            <ControlButton
+              ariaLabel="일시 정지"
+              isPlaybackToggle
+              onClick={onPauseVideo!}
+              playbackIcon="pause"
+              title="일시 정지"
+            >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
-                  d="M9.25 7.5v9"
+                  d="M8.75 6.75v10.5"
                   stroke="currentColor"
                   strokeLinecap="round"
-                  strokeWidth="1.8"
+                  strokeWidth="2.2"
                 />
                 <path
-                  d="M14.75 7.5v9"
+                  d="M15.25 6.75v10.5"
                   stroke="currentColor"
                   strokeLinecap="round"
-                  strokeWidth="1.8"
+                  strokeWidth="2.2"
                 />
               </svg>
             </ControlButton>

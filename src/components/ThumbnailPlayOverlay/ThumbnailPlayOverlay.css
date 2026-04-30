@@ -46,7 +46,7 @@
 
 .thumbnail-play-overlay__icon::before {
   border-bottom: 10px solid transparent;
-  border-left: 15px solid color-mix(in srgb, var(--text) 76%, var(--thumbnail-play-accent) 24%);
+  border-left: 15px solid color-mix(in srgb, #1d1d1f 76%, var(--thumbnail-play-accent) 24%);
   border-top: 10px solid transparent;
   content: '';
   margin-left: 4px;

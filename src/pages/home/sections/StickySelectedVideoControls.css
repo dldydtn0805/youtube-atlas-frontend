@@ -1,0 +1,20 @@
+.app-shell__sticky-selected-video-frame .app-shell__game-panel-action-utility--playback-toggle {
+  color: var(--text);
+}
+
+.app-shell__sticky-selected-video-frame .app-shell__game-panel-action-utility--playback-toggle svg {
+  height: 20px;
+  width: 20px;
+}
+
+.app-shell__sticky-selected-video-frame .app-shell__game-panel-action-utility--play svg {
+  transform: translateX(0.8px);
+}
+
+@media (max-width: 768px),
+  (max-width: 1024px) and (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+  :root[data-mobile-layout='true'] .app-shell__sticky-selected-video-frame .app-shell__game-panel-action-utility--playback-toggle svg {
+    height: 18px;
+    width: 18px;
+  }
+}
