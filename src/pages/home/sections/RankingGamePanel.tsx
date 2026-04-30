@@ -1,4 +1,5 @@
 import './RankingGamePanel.css';
+import './RankingGamePositionBadges.css';
 import {
   memo,
   useEffect,

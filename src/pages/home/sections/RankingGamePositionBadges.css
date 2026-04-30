@@ -1,0 +1,43 @@
+.app-shell__game-position-trend[data-state='achieved'] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-shell__game-position-trend[data-state='achieved']::after {
+  animation: game-position-achieved-shimmer 2.8s ease-in-out infinite;
+  background: linear-gradient(
+    105deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.72) 45%,
+    rgba(255, 255, 255, 0.22) 56%,
+    transparent 72%
+  );
+  content: '';
+  inset: -2px -60%;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-65%);
+}
+
+@keyframes game-position-achieved-shimmer {
+  0%,
+  46% {
+    transform: translateX(-65%);
+  }
+
+  100% {
+    transform: translateX(65%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell__game-position-trend[data-state='achieved']::after {
+    animation: none;
+    opacity: 0.22;
+    transform: translateX(25%);
+  }
+}
