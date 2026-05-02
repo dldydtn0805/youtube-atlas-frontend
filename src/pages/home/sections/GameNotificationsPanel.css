@@ -61,30 +61,42 @@
   background: color-mix(in srgb, var(--surface-stat) 44%, transparent);
 }
 
-.game-notifications__select {
+.game-notifications__body {
   align-items: stretch;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  padding: 0;
-  text-align: left;
 }
 
+.game-notifications__select,
+.game-notifications__thumb-button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
 
 .game-notifications__select:hover .game-notifications__score,
 .game-notifications__select:focus-visible .game-notifications__score {
   color: var(--text);
 }
 
-.game-notifications__select:focus-visible {
+.game-notifications__select:focus-visible,
+.game-notifications__thumb-button:focus-visible {
   border-radius: 8px;
   outline: 2px solid color-mix(in srgb, var(--accent-primary) 45%, transparent);
   outline-offset: 2px;
+}
+
+.game-notifications__thumb-button:hover .game-notifications__thumb,
+.game-notifications__thumb-button:focus-visible .game-notifications__thumb {
+  border-color: color-mix(in srgb, var(--accent-primary) 58%, var(--surface-thumbnail-border));
 }
 
 .game-notifications__thumb {

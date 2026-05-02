@@ -104,4 +104,55 @@ describe('useHomeGameTradeActions', () => {
       expect(onSellSuccess).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('selects the full sellable quantity when opening the sell modal', () => {
+    const setActiveTradeModal = vi.fn();
+    const setSellQuantity = vi.fn();
+
+    const { result } = renderHook(() =>
+      useHomeGameTradeActions({
+        authStatus: 'authenticated',
+        buyQuantity: 100,
+        currentGameSeason: {
+          regionCode: 'KR',
+          wallet: {
+            balancePoints: 100000,
+          },
+        } as GameCurrentSeason,
+        currentGameSeasonError: null,
+        gameSeasonRegionMismatch: false,
+        logout: vi.fn().mockResolvedValue(undefined),
+        maxBuyQuantity: 100,
+        maxSellQuantity: 500,
+        mutateBuyGamePosition: vi.fn().mockResolvedValue({}),
+        mutateSellGamePositions: vi.fn<(_: unknown) => Promise<SellGamePositionResponse[]>>().mockResolvedValue([]),
+        selectedGameActionTitle: '테스트 영상',
+        selectedOpenPositionId: 1,
+        selectedVideoId: 'video-1',
+        selectedVideoMarketEntry: {
+          buyBlockedReason: null,
+          canBuy: true,
+          currentPricePoints: 1000,
+          currentRank: 1,
+        } as GameMarketVideo,
+        selectedRegionCode: 'KR',
+        sellQuantity: 100,
+        setActiveTradeModal,
+        setBuyQuantity: vi.fn(),
+        setGameActionStatus: vi.fn(),
+        setSellQuantity,
+        totalSelectedVideoBuyPoints: 1000,
+      }),
+    );
+
+    setActiveTradeModal.mockClear();
+    setSellQuantity.mockClear();
+
+    act(() => {
+      result.current.openSellTradeModal();
+    });
+
+    expect(setSellQuantity).toHaveBeenCalledWith(500);
+    expect(setActiveTradeModal).toHaveBeenCalledWith('sell');
+  });
 });

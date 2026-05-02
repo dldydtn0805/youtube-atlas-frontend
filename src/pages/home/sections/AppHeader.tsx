@@ -28,6 +28,7 @@ interface AppHeaderProps {
   onOpenRecentPlayback?: (videoId: string) => void;
   onClearGameNotifications?: () => void;
   onDeleteGameNotification?: (notificationId: string) => void;
+  onOpenGameNotificationSellTradeModal?: (notification: GameNotification) => void;
   onSelectGameNotification?: (notification: GameNotification) => void;
   onRefreshGameNotifications?: () => Promise<void>;
   onRefreshProfile?: () => Promise<void>;
@@ -168,6 +169,7 @@ function AppHeader({
   onOpenRecentPlayback,
   onClearGameNotifications,
   onDeleteGameNotification,
+  onOpenGameNotificationSellTradeModal,
   onSelectGameNotification,
   onRefreshGameNotifications,
   onRefreshProfile,
@@ -473,6 +475,22 @@ function AppHeader({
                       notifications={gameNotifications}
                       onClear={onClearGameNotifications}
                       onDelete={onDeleteGameNotification}
+                      onOpenHighlights={
+                        onOpenHighlightsModal
+                          ? () => {
+                              setIsProfileCardOpen(false);
+                              onOpenHighlightsModal();
+                            }
+                          : undefined
+                      }
+                      onOpenSell={
+                        onOpenGameNotificationSellTradeModal
+                          ? (notification) => {
+                              setIsProfileCardOpen(false);
+                              onOpenGameNotificationSellTradeModal(notification);
+                            }
+                          : undefined
+                      }
                       onSelect={(notification) => {
                         if (isTitleUnlockNotification(notification)) {
                           openAchievementTitleModal();

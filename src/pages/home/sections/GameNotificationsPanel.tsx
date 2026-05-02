@@ -5,7 +5,11 @@ import {
   getGameNotificationMessage,
   getGameNotificationStatus,
 } from './gameNotificationContent';
-import { isTitleUnlockNotification } from './gameNotificationEventType';
+import {
+  isProjectedHighlightNotification,
+  isTierScoreGainNotification,
+  isTitleUnlockNotification,
+} from './gameNotificationEventType';
 import GameNotificationMedia from './GameNotificationMedia';
 import { hasProjectedGameNotificationScore, hasResolvedGameNotificationScore } from './gameNotificationModalUtils';
 import './GameNotificationsPanel.css';
@@ -15,6 +19,8 @@ interface GameNotificationsPanelProps {
   notifications: GameNotification[];
   onClear?: () => void;
   onDelete?: (notificationId: string) => void;
+  onOpenHighlights?: () => void;
+  onOpenSell?: (notification: GameNotification) => void;
   onSelect?: (notification: GameNotification) => void;
 }
 
@@ -38,6 +44,8 @@ function GameNotificationsPanel({
   notifications,
   onClear,
   onDelete,
+  onOpenHighlights,
+  onOpenSell,
   onSelect,
 }: GameNotificationsPanelProps) {
   const visibleNotifications = notifications;
@@ -62,6 +70,15 @@ function GameNotificationsPanel({
               const heading = getGameNotificationHeading(notification);
               const message = getGameNotificationMessage(notification);
               const hideMedia = isTitleUnlockNotification(notification);
+              const canOpenSell =
+                !hideMedia &&
+                isProjectedHighlightNotification(notification) &&
+                Boolean(onOpenSell) &&
+                (notification.positionId != null || Boolean(notification.videoId));
+              const canOpenHighlights =
+                !hideMedia &&
+                isTierScoreGainNotification(notification) &&
+                Boolean(onOpenHighlights);
 
               return (
             <article
@@ -70,31 +87,53 @@ function GameNotificationsPanel({
               data-title-unlock={hideMedia ? 'true' : 'false'}
               key={notification.id}
             >
-              <button
-                aria-label={`${heading} 알림 보기`}
-                className="game-notifications__select"
-                onClick={() => onSelect?.(notification)}
-                type="button"
-              >
-                {hideMedia ? null : <GameNotificationMedia className="game-notifications__thumb" notification={notification} />}
-                <div className="game-notifications__copy">
-                  <span className="game-notifications__type" data-tone={getGameNotificationTone(notification)}>
-                    {getGameNotificationLabel(notification)}
-                  </span>
-                  <strong data-title-grade={hideMedia ? (notification.titleGrade ?? 'NORMAL').toLowerCase() : undefined}>
-                    {heading}
-                  </strong>
-                  {message ? <p className="game-notifications__message">{message}</p> : null}
-                  <span
-                    className="game-notifications__score"
-                    data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
+              <div className="game-notifications__body">
+                {hideMedia ? null : canOpenSell ? (
+                  <button
+                    aria-label={`${heading} 즉시 매도 열기`}
+                    className="game-notifications__thumb-button"
+                    onClick={() => onOpenSell?.(notification)}
+                    type="button"
                   >
-                    {hasProjectedGameNotificationScore(notification)
-                      ? `${getGameNotificationStatus(notification)} 예상`
-                      : getGameNotificationStatus(notification)}
-                  </span>
-                </div>
-              </button>
+                    <GameNotificationMedia className="game-notifications__thumb" notification={notification} />
+                  </button>
+                ) : canOpenHighlights ? (
+                  <button
+                    aria-label={`${heading} 하이라이트 탭 열기`}
+                    className="game-notifications__thumb-button"
+                    onClick={onOpenHighlights}
+                    type="button"
+                  >
+                    <GameNotificationMedia className="game-notifications__thumb" notification={notification} />
+                  </button>
+                ) : (
+                  <GameNotificationMedia className="game-notifications__thumb" notification={notification} />
+                )}
+                <button
+                  aria-label={`${heading} 알림 보기`}
+                  className="game-notifications__select"
+                  onClick={() => onSelect?.(notification)}
+                  type="button"
+                >
+                  <div className="game-notifications__copy">
+                    <span className="game-notifications__type" data-tone={getGameNotificationTone(notification)}>
+                      {getGameNotificationLabel(notification)}
+                    </span>
+                    <strong data-title-grade={hideMedia ? (notification.titleGrade ?? 'NORMAL').toLowerCase() : undefined}>
+                      {heading}
+                    </strong>
+                    {message ? <p className="game-notifications__message">{message}</p> : null}
+                    <span
+                      className="game-notifications__score"
+                      data-projected={hasResolvedGameNotificationScore(notification) ? 'false' : 'true'}
+                    >
+                      {hasProjectedGameNotificationScore(notification)
+                        ? `${getGameNotificationStatus(notification)} 예상`
+                        : getGameNotificationStatus(notification)}
+                    </span>
+                  </div>
+                </button>
+              </div>
               <div className="game-notifications__footer">
                 <time dateTime={notification.createdAt}>{formatNotificationDate(notification.createdAt)}</time>
                 <button

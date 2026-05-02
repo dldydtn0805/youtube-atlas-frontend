@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { AuthStatus } from '../../../features/auth/types';
 import type {
@@ -107,6 +107,7 @@ export default function useHomeTradeFlow({
   totalSelectedVideoBuyPoints,
 }: UseHomeTradeFlowOptions) {
   const [isScheduledSellSubmitting, setIsScheduledSellSubmitting] = useState(false);
+  const lastInstantSellDefaultKeyRef = useRef<string | null>(null);
   const [sellOrderMode, setSellOrderMode] = useState<'instant' | 'scheduled'>('instant');
   const [scheduledSellTargetRank, setScheduledSellTargetRank] = useState<number | null>(100);
   const [scheduledSellTriggerDirection, setScheduledSellTriggerDirection] =
@@ -170,6 +171,33 @@ export default function useHomeTradeFlow({
       setSellOrderMode('instant');
     }
   }, [canScheduleSellCurrentSelection, sellOrderMode]);
+
+  useEffect(() => {
+    if (activeTradeModal !== 'sell' || sellOrderMode !== 'instant') {
+      lastInstantSellDefaultKeyRef.current = null;
+      return;
+    }
+
+    const normalizedMaxSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
+    const defaultKey = `${selectedSellPositionId ?? 'video'}:${selectedVideoId ?? ''}:${normalizedMaxSellQuantity}`;
+
+    if (lastInstantSellDefaultKeyRef.current === defaultKey) {
+      return;
+    }
+
+    lastInstantSellDefaultKeyRef.current = defaultKey;
+
+    if (normalizedMaxSellQuantity > 0) {
+      setSellQuantity(normalizedMaxSellQuantity);
+    }
+  }, [
+    activeTradeModal,
+    maxSellQuantity,
+    selectedSellPositionId,
+    selectedVideoId,
+    sellOrderMode,
+    setSellQuantity,
+  ]);
 
   const displaySellPreview = activeSellPreview ?? lastSuccessfulSellPreview;
   const isSellPreviewPending =

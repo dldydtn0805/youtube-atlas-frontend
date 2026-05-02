@@ -276,13 +276,8 @@ export default function useHomeGameTradeActions({
   }, [maxBuyQuantity, setActiveTradeModal, setBuyQuantity]);
 
   const openSellTradeModal = useCallback(() => {
-    setSellQuantity((currentQuantity) => {
-      if (maxSellQuantity <= 0) {
-        return DEFAULT_GAME_QUANTITY;
-      }
-
-      return Math.min(normalizeGameOrderQuantity(currentQuantity), normalizeGameOrderCapacity(maxSellQuantity));
-    });
+    const normalizedMaxSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
+    setSellQuantity(normalizedMaxSellQuantity > 0 ? normalizedMaxSellQuantity : DEFAULT_GAME_QUANTITY);
     setActiveTradeModal('sell');
   }, [maxSellQuantity, setActiveTradeModal, setSellQuantity]);
 

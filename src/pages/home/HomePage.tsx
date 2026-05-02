@@ -23,6 +23,7 @@ import HomePlaybackSection from './sections/HomePlaybackSection';
 import { RankingGameLeaderboardTab } from './sections/RankingGamePanel';
 import StickySelectedVideoControls from './sections/StickySelectedVideoControls';
 import TrendTicker from './sections/TrendTicker';
+import { isProjectedHighlightNotification } from './sections/gameNotificationEventType';
 import {
   DEFAULT_GAME_QUANTITY,
   buildOpenGameHoldings,
@@ -49,6 +50,7 @@ import useHomeRankHistory from './hooks/useHomeRankHistory';
 import useHomeTradeFlow from './hooks/useHomeTradeFlow';
 import useLogoutOnUnauthorized from './hooks/useLogoutOnUnauthorized';
 import useSelectedVideoGameState from './hooks/useSelectedVideoGameState';
+import { getGameNotificationSellTargetHolding } from './homeGameNotificationSell';
 import { openGameModal as openGameModalAction } from './homeGameModalActions';
 import {
   DEFAULT_CATEGORY_ID,
@@ -98,7 +100,7 @@ import {
 } from '../../features/game/queries';
 import { getGameInventorySlotLimit } from '../../features/game/inventory';
 import { useGameRealtimeInvalidation } from '../../features/game/realtime';
-import type { GameHighlight, GamePosition, GameScheduledSellOrder, GameStrategyType } from '../../features/game/types';
+import type { GameHighlight, GameNotification, GamePosition, GameScheduledSellOrder, GameStrategyType } from '../../features/game/types';
 import {
   useFavoriteStreamerVideos,
   useFavoriteStreamers,
@@ -1478,6 +1480,32 @@ function HomePage() {
     setSellQuantity,
     totalSelectedVideoBuyPoints: tradeTotalSelectedVideoBuyPoints,
   });
+  const handleOpenGameNotificationSellTradeModal = useCallback(
+    (notification: GameNotification) => {
+      if (!isProjectedHighlightNotification(notification)) {
+        return;
+      }
+
+      const target = getGameNotificationSellTargetHolding(notification, openGameHoldings);
+
+      if (target.status === 'notFound') {
+        setGameActionStatus('매도할 수 있는 보유 포지션을 찾을 수 없습니다.');
+        return;
+      }
+
+      if (target.status === 'noSellableQuantity') {
+        setGameActionStatus('지금 바로 매도 가능한 수량이 없습니다.');
+        return;
+      }
+
+      setGameActionStatus(null);
+      setTradeTargetVideoId(target.holding.videoId);
+      setTradeTargetPositionId(target.holding.positionId);
+      setSellOrderMode('instant');
+      setActiveTradeModal('sell');
+    },
+    [openGameHoldings, setActiveTradeModal, setGameActionStatus, setSellOrderMode],
+  );
   useEffect(() => {
     if (!pendingScheduledSellPreset) {
       return;
@@ -2287,6 +2315,7 @@ function HomePage() {
         onOpenGameHistoryModal={handleOpenGameHistoryModal}
         onOpenGamePositionsModal={handleOpenGamePositionsModal}
         onOpenHighlightsModal={handleOpenTierHighlightsModal}
+        onOpenGameNotificationSellTradeModal={handleOpenGameNotificationSellTradeModal}
         onOpenRecentPlayback={handleOpenRecentPlayback}
         onClearGameNotifications={clearGameNotifications}
         onDeleteGameNotification={deleteGameNotification}
