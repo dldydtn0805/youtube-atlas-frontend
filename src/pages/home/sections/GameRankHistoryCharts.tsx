@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BarChart, LineChart } from 'echarts/charts';
 import { DataZoomComponent, GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
 import * as echarts from 'echarts/core';
@@ -13,6 +13,7 @@ type RankHistoryPoint = GamePositionRankHistoryPoint | VideoRankHistory['points'
 echarts.use([BarChart, DataZoomComponent, GridComponent, LineChart, MarkLineComponent, SVGRenderer, TooltipComponent]);
 
 interface GameRankHistoryChartsProps {
+  focusMode?: 'full' | 'trade';
   points: RankHistoryPoint[];
 }
 
@@ -105,6 +106,35 @@ function useIsMobileLayout() {
 function useEChart(option: EChartsOption) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<EChartsType | null>(null);
+  const paintTimerRef = useRef<number | null>(null);
+  const paintFrameRef = useRef<number | null>(null);
+
+  const refreshChartPaint = useCallback(() => {
+    const chart = chartRef.current;
+
+    if (!chart || typeof window === 'undefined') {
+      return;
+    }
+
+    if (paintFrameRef.current !== null) {
+      window.cancelAnimationFrame(paintFrameRef.current);
+    }
+
+    if (paintTimerRef.current !== null) {
+      window.clearTimeout(paintTimerRef.current);
+    }
+
+    paintFrameRef.current = window.requestAnimationFrame(() => {
+      paintFrameRef.current = window.requestAnimationFrame(() => {
+        paintFrameRef.current = null;
+        chart.resize();
+      });
+    });
+    paintTimerRef.current = window.setTimeout(() => {
+      paintTimerRef.current = null;
+      chart.resize();
+    }, 160);
+  }, []);
 
   useEffect(() => {
     if (!elementRef.current) {
@@ -118,6 +148,14 @@ function useEChart(option: EChartsOption) {
     resizeObserver.observe(elementRef.current);
 
     return () => {
+      if (paintFrameRef.current !== null) {
+        window.cancelAnimationFrame(paintFrameRef.current);
+      }
+
+      if (paintTimerRef.current !== null) {
+        window.clearTimeout(paintTimerRef.current);
+      }
+
       resizeObserver.disconnect();
       chart.dispose();
       chartRef.current = null;
@@ -126,7 +164,8 @@ function useEChart(option: EChartsOption) {
 
   useEffect(() => {
     chartRef.current?.setOption(option, true);
-  }, [option]);
+    refreshChartPaint();
+  }, [option, refreshChartPaint]);
 
   return elementRef;
 }
@@ -341,11 +380,11 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
         connectNulls: false,
         data: createRankLineData(points, outRank, 'faded'),
         name: '순위',
-        lineStyle: { color: 'rgba(217, 119, 6, 0.36)', type: 'dashed', width: 3 },
+        lineStyle: { color: 'rgba(217, 119, 6, 0.36)', type: 'solid', width: 3 },
         markLine: {
           data: createEventMarkLines(points),
           label: { color: '#64748b', formatter: '{b}' },
-          lineStyle: { color: 'rgba(217, 119, 6, 0.28)', type: 'dashed' },
+          lineStyle: { color: 'rgba(217, 119, 6, 0.28)', type: 'solid' },
           symbol: 'none',
         },
         showSymbol: true,
@@ -375,7 +414,7 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
         markLine: {
           data: createEventMarkLines(points),
           label: { color: '#64748b', formatter: '{b}' },
-          lineStyle: { color: 'rgba(217, 119, 6, 0.2)', type: 'dashed' },
+          lineStyle: { color: 'rgba(217, 119, 6, 0.2)', type: 'solid' },
           symbol: 'none',
         },
         type: 'bar',

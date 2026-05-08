@@ -90,7 +90,15 @@ function mergeRankHistories(
     return positionHistory;
   }
 
+  const firstPositionCapturedAt = positionHistory.points[0]?.capturedAt ?? positionHistory.buyCapturedAt;
   const latestPositionCapturedAt = positionHistory.points.at(-1)?.capturedAt ?? positionHistory.latestCapturedAt;
+  const leadingVideoPoints = videoHistory.points
+    .filter((point) => new Date(point.capturedAt).getTime() < new Date(firstPositionCapturedAt).getTime())
+    .map((point) => ({
+      ...point,
+      buyPoint: false,
+      sellPoint: false,
+    }));
   const trailingVideoPoints = videoHistory.points
     .filter((point) => !latestPositionCapturedAt || new Date(point.capturedAt).getTime() > new Date(latestPositionCapturedAt).getTime())
     .map((point) => ({
@@ -99,7 +107,7 @@ function mergeRankHistories(
       sellPoint: false,
     }));
 
-  if (trailingVideoPoints.length === 0) {
+  if (leadingVideoPoints.length === 0 && trailingVideoPoints.length === 0) {
     return positionHistory;
   }
 
@@ -108,7 +116,7 @@ function mergeRankHistories(
     latestCapturedAt: videoHistory.latestCapturedAt,
     latestChartOut: videoHistory.latestChartOut,
     latestRank: videoHistory.latestRank,
-    points: [...positionHistory.points, ...trailingVideoPoints],
+    points: [...leadingVideoPoints, ...positionHistory.points, ...trailingVideoPoints],
   };
 }
 

@@ -78,6 +78,38 @@ function createVideoHistory(overrides: Partial<VideoRankHistory> = {}): VideoRan
 }
 
 describe('mergeMultiplePositionHistories', () => {
+  it('prepends video history points before the first trade point', () => {
+    const merged = mergeMultiplePositionHistories(
+      [createPositionHistory()],
+      createVideoHistory({
+        points: [
+          {
+            capturedAt: '2026-04-28T09:00:00.000Z',
+            chartOut: false,
+            rank: 20,
+            runId: 0,
+            viewCount: 50,
+          },
+          {
+            capturedAt: '2026-04-28T10:20:00.000Z',
+            chartOut: false,
+            rank: 3,
+            runId: 3,
+            viewCount: 300,
+          },
+        ],
+      }),
+    );
+
+    expect(merged?.points).toHaveLength(4);
+    expect(merged?.points[0]).toMatchObject({
+      buyPoint: false,
+      capturedAt: '2026-04-28T09:00:00.000Z',
+      rank: 20,
+      sellPoint: false,
+    });
+  });
+
   it('appends trailing video history points after the last trade point', () => {
     const merged = mergeMultiplePositionHistories(
       [createPositionHistory()],

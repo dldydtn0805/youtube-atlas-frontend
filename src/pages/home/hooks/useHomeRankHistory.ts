@@ -159,8 +159,16 @@ export default function useHomeRankHistory({
       ),
     [relatedPositionRankHistories, selectedPositionRankHistory, selectedVideoRankHistory],
   );
+  const tradeRankHistory = useMemo(
+    () =>
+      mergeMultiplePositionHistories(
+        selectedPositionRankHistory ? [selectedPositionRankHistory] : [],
+        selectedVideoRankHistory,
+      ),
+    [selectedPositionRankHistory, selectedVideoRankHistory],
+  );
   const visibleRankHistory = rankHistoryFocusMode === 'trade'
-    ? selectedPositionRankHistory
+    ? tradeRankHistory
     : mergedRankHistory;
   const visibleRankHistoryError =
     rankHistoryFocusMode === 'trade'
@@ -172,7 +180,7 @@ export default function useHomeRankHistory({
           : selectedVideoRankHistoryError;
   const isVisibleRankHistoryLoading =
     rankHistoryFocusMode === 'trade'
-      ? isPositionRankHistoryLoading
+      ? isPositionRankHistoryLoading || isVideoRankHistoryLoading
       : isPositionRankHistoryLoading || isRelatedPositionRankHistoryLoading || isVideoRankHistoryLoading;
   const isRankHistoryModalOpen = Boolean(selectedRankHistoryPosition || selectedVideoRankHistoryVideoId);
 

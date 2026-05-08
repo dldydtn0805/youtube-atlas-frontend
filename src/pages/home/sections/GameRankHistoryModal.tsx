@@ -36,7 +36,7 @@ const chartDateFormatter = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit',
   month: 'short',
 });
-const TRADE_FOCUS_PADDING_POINTS = 2;
+const TRADE_FOCUS_PADDING_POINTS = 3;
 
 function formatTimestamp(timestamp?: string | null) {
   if (!timestamp) {
@@ -162,7 +162,7 @@ export default function GameRankHistoryModal({
             </div>
             <p className="app-shell__modal-field-copy">
               {focusMode === 'trade'
-                ? '하이라이트가 발생한 매수-매도 구간 근처만 표시합니다.'
+                ? '플레이어가 해당 종목을 소유한 구간을 표시합니다.'
                 : hasBuyRank
                   ? '매수 이전 흐름은 연한 색으로, 매수 시점은 세로 가이드로 표시됩니다.'
                 : '차트 아웃 구간은 별도 마커로 표시됩니다.'}
@@ -176,7 +176,7 @@ export default function GameRankHistoryModal({
             ) : (
               <div className="app-shell__game-rank-history-chart">
                 <Suspense fallback={<p className="app-shell__game-rank-history-empty">차트를 준비하는 중입니다.</p>}>
-                  <GameRankHistoryCharts points={points} />
+                  <GameRankHistoryCharts focusMode={focusMode} points={points} />
                 </Suspense>
                 <div className="app-shell__game-rank-history-stats">
                   {buyCapturedAtLabel ? (
