@@ -34,8 +34,8 @@ export function createChartOption(points: ChartPoint[], isMobile: boolean): ECha
   const viewGridTop = rankGridHeight + (isMobile ? 66 : 56);
 
   return {
-    animationDuration: 380,
-    axisPointer: { link: [{ xAxisIndex: [0, 1] }] },
+    animationDuration: points.length > 80 ? 0 : 220,
+    axisPointer: { animation: false, link: [{ xAxisIndex: [0, 1] }] },
     dataZoom: createDataZoom(points, isMobile),
     grid: [
       { containLabel: false, height: rankGridHeight, left: chartGridLeft, right: chartGridRight, top: 8 },
@@ -43,7 +43,8 @@ export function createChartOption(points: ChartPoint[], isMobile: boolean): ECha
     ],
     textStyle: { fontFamily: chartFontFamily },
     tooltip: {
-      axisPointer: { type: 'line' },
+      axisPointer: { animation: false, type: 'line' },
+      transitionDuration: 0,
       formatter: formatTooltip,
       textStyle: { fontFamily: chartFontFamily },
       trigger: 'axis',
@@ -125,6 +126,7 @@ export function createChartOption(points: ChartPoint[], isMobile: boolean): ECha
         connectNulls: false,
         data: createRankLineData(points, metrics.outRank, 'faded'),
         lineStyle: { color: 'rgba(217, 119, 6, 0.36)', type: 'solid', width: 3 },
+        emphasis: { disabled: true },
         markLine: {
           data: markLines,
           label: { color: '#64748b', formatter: '{b}' },
@@ -142,6 +144,7 @@ export function createChartOption(points: ChartPoint[], isMobile: boolean): ECha
         connectNulls: false,
         data: createRankLineData(points, metrics.outRank, 'active'),
         lineStyle: { color: '#e9b38f', type: 'solid', width: 3 },
+        emphasis: { disabled: true },
         name: '순위',
         showSymbol: true,
         symbolSize: 8,
@@ -152,6 +155,7 @@ export function createChartOption(points: ChartPoint[], isMobile: boolean): ECha
       {
         barMaxWidth: 18,
         data: createViewBars(points),
+        emphasis: { disabled: true },
         markLine: {
           data: markLines,
           label: { color: '#64748b', formatter: '{b}' },
