@@ -23,6 +23,7 @@ export const GAME_QUANTITY_SCALE = 100;
 export const MIN_GAME_QUANTITY = 1;
 export const DEFAULT_GAME_QUANTITY = GAME_QUANTITY_SCALE;
 export const GAME_ORDER_QUANTITY_STEP = GAME_QUANTITY_SCALE;
+const CHART_OUT_SENTINEL_RANK = 201;
 const KOREAN_LARGE_NUMBER_UNITS = ['', '만', '억', '조', '경', '해'];
 
 export interface OpenGameHolding {
@@ -366,7 +367,10 @@ export function getPointTone(points?: number | null) {
 }
 
 export function formatRank(rank?: number | null, options?: { chartOut?: boolean; unavailableAsChartOut?: boolean }) {
-  if (options?.chartOut || (options?.unavailableAsChartOut && typeof rank !== 'number')) {
+  const isUnavailableRank =
+    typeof rank !== 'number' || !Number.isFinite(rank) || rank >= CHART_OUT_SENTINEL_RANK;
+
+  if (options?.chartOut || (options?.unavailableAsChartOut && isUnavailableRank)) {
     return '차트 아웃';
   }
 

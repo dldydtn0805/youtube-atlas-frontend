@@ -8,7 +8,8 @@ export default function SeasonResultHighlightMeta({ item }: { item: Item }) {
     <p className="game-season-result-highlight-card__meta">
       <span>티어 점수</span> {formatHighlightScore(item.highlightScore)}
       {' · '}
-      <span>순위</span> {formatRank(item.buyRank)}{' -> '}{formatRank(item.sellRank)}
+      <span>순위</span> {formatRank(item.buyRank)}{' -> '}
+      {formatRank(item.sellRank, { unavailableAsChartOut: true })}
       {' · '}
       <span>상승</span> {formatHighlightMove(item)}
       {' · '}

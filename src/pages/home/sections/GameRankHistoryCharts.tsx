@@ -36,6 +36,7 @@ const viewCountFormatter = new Intl.NumberFormat('ko-KR', {
   maximumFractionDigits: 1,
   notation: 'compact',
 });
+const chartFontFamily = 'Mona12, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
 
 function formatTimestamp(timestamp?: string | null) {
   return timestamp ? rankDateFormatter.format(new Date(timestamp)) : '집계 중';
@@ -269,12 +270,11 @@ function createRankLineData(points: ChartPoint[], outRank: number, rankLineType:
     return {
       chartOut: point.chartOut,
       itemStyle: {
-        borderColor: point.chartOut ? '#92400e' : undefined,
-        borderWidth: point.chartOut ? 2 : 0,
-        color: point.chartOut ? '#f59e0b' : point.isFaded ? 'rgba(217, 119, 6, 0.38)' : '#f2b47b',
+        borderWidth: 0,
+        color: point.isFaded ? 'rgba(217, 119, 6, 0.38)' : '#f2b47b',
       },
       rankLineType,
-      symbol: point.chartOut ? 'emptyCircle' : 'none',
+      symbol: 'none',
       value,
     };
   });
@@ -300,9 +300,11 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
       { containLabel: false, height: rankGridHeight, left: chartGridLeft, right: chartGridRight, top: 8 },
       { containLabel: false, height: isMobile ? 68 : 76, left: chartGridLeft, right: chartGridRight, top: viewGridTop },
     ],
+    textStyle: { fontFamily: chartFontFamily },
     tooltip: {
       axisPointer: { type: 'line' },
       formatter: (params: unknown) => formatTooltip(params),
+      textStyle: { fontFamily: chartFontFamily },
       trigger: 'axis',
     },
     xAxis: [

@@ -8,6 +8,7 @@ import {
   formatFullPoints,
   formatGameQuantity,
   formatGameOrderQuantity,
+  formatRank,
   formatHeaderPoints,
   formatPointBalance,
   formatPoints,
@@ -63,5 +64,10 @@ describe('gameHelpers', () => {
     expect(normalizeGameOrderCapacity(250)).toBe(200);
     expect(parseGameOrderQuantityInput(3)).toBe(300);
     expect(formatGameOrderQuantity(300)).toBe('3개');
+  });
+
+  it('renders the chart-out sentinel rank as chart out when unavailable ranks are enabled', () => {
+    expect(formatRank(201, { unavailableAsChartOut: true })).toBe('차트 아웃');
+    expect(formatRank(200, { unavailableAsChartOut: true })).toBe('200위');
   });
 });
