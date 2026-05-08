@@ -25,8 +25,8 @@ const tiers: GameTierProgress['tiers'] = [
   {
     badgeCode: 'GOLD',
     displayName: '골드',
-    inventorySlots: 9,
-    minScore: 15000,
+    inventorySlots: 10,
+    minScore: 10000,
     profileThemeCode: 'GOLD',
     tierCode: 'GOLD',
     titleCode: 'GOLD',

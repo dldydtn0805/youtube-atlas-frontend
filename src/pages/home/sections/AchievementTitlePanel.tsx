@@ -1,4 +1,5 @@
 import type { AchievementTitleCollection } from '../../../features/game/types';
+import { sortAchievementTitlesByGrade } from './achievementTitleSort';
 import AchievementTitleBadge from './AchievementTitleBadge';
 import './AchievementTitlePanel.css';
 
@@ -9,7 +10,7 @@ interface AchievementTitlePanelProps {
 }
 
 export default function AchievementTitlePanel({ collection, isSaving = false, onSelectTitle }: AchievementTitlePanelProps) {
-  const titles = collection?.titles ?? [];
+  const titles = sortAchievementTitlesByGrade(collection?.titles ?? []);
   const earnedTitles = titles.filter((title) => title.earned);
 
   return (
