@@ -34,7 +34,7 @@ export function createChartOption(points: ChartPoint[], isMobile: boolean): ECha
   const viewGridTop = rankGridHeight + (isMobile ? 66 : 56);
 
   return {
-    animationDuration: points.length > 80 ? 0 : 260,
+    animationDuration: 380,
     axisPointer: { link: [{ xAxisIndex: [0, 1] }] },
     dataZoom: createDataZoom(points, isMobile),
     grid: [

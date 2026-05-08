@@ -6,26 +6,34 @@ import echarts from './setup';
 export default function useEChart(option: EChartsOption) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<EChartsType | null>(null);
-  const resizeFrameRef = useRef<number | null>(null);
-  const resizeTimerRef = useRef<number | null>(null);
+  const paintFrameRef = useRef<number | null>(null);
+  const paintTimerRef = useRef<number | null>(null);
 
-  const requestResize = useCallback((delay = 0) => {
+  const refreshChartPaint = useCallback(() => {
     const chart = chartRef.current;
 
     if (!chart || typeof window === 'undefined') {
       return;
     }
 
-    if (resizeFrameRef.current !== null) {
-      window.cancelAnimationFrame(resizeFrameRef.current);
+    if (paintFrameRef.current !== null) {
+      window.cancelAnimationFrame(paintFrameRef.current);
     }
 
-    const resize = () => {
-      resizeFrameRef.current = null;
-      chart.resize();
-    };
+    if (paintTimerRef.current !== null) {
+      window.clearTimeout(paintTimerRef.current);
+    }
 
-    resizeFrameRef.current = delay > 0 ? window.setTimeout(resize, delay) : window.requestAnimationFrame(resize);
+    paintFrameRef.current = window.requestAnimationFrame(() => {
+      paintFrameRef.current = window.requestAnimationFrame(() => {
+        paintFrameRef.current = null;
+        chart.resize();
+      });
+    });
+    paintTimerRef.current = window.setTimeout(() => {
+      paintTimerRef.current = null;
+      chart.resize();
+    }, 160);
   }, []);
 
   useEffect(() => {
@@ -33,39 +41,31 @@ export default function useEChart(option: EChartsOption) {
       return;
     }
 
-    const chart = echarts.init(elementRef.current, null, { renderer: 'canvas', useDirtyRect: true });
+    const chart = echarts.init(elementRef.current, null, { renderer: 'svg' });
     chartRef.current = chart;
-    const resizeObserver = new ResizeObserver(() => requestResize());
+    const resizeObserver = new ResizeObserver(() => chart.resize());
 
     resizeObserver.observe(elementRef.current);
 
     return () => {
-      if (resizeFrameRef.current !== null) {
-        window.cancelAnimationFrame(resizeFrameRef.current);
+      if (paintFrameRef.current !== null) {
+        window.cancelAnimationFrame(paintFrameRef.current);
       }
 
-      if (resizeTimerRef.current !== null) {
-        window.clearTimeout(resizeTimerRef.current);
+      if (paintTimerRef.current !== null) {
+        window.clearTimeout(paintTimerRef.current);
       }
 
       resizeObserver.disconnect();
       chart.dispose();
       chartRef.current = null;
     };
-  }, [requestResize]);
+  }, []);
 
   useEffect(() => {
-    chartRef.current?.setOption(option, {
-      lazyUpdate: true,
-      replaceMerge: ['dataZoom', 'grid', 'series', 'xAxis', 'yAxis'],
-    });
-    requestResize();
-    if (resizeTimerRef.current !== null) {
-      window.clearTimeout(resizeTimerRef.current);
-    }
-
-    resizeTimerRef.current = window.setTimeout(() => requestResize(), 160);
-  }, [option, requestResize]);
+    chartRef.current?.setOption(option, true);
+    refreshChartPaint();
+  }, [option, refreshChartPaint]);
 
   return elementRef;
 }
