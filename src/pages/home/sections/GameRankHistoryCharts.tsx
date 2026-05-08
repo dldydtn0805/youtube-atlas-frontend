@@ -150,11 +150,11 @@ function buildChartPoints(points: RankHistoryPoint[]) {
 
 function createDataZoom(points: ChartPoint[], isMobile: boolean) {
   const visiblePointCount = isMobile ? 18 : points.length;
-  const startValue = Math.max(0, points.length - visiblePointCount);
+  const startValue = Math.max(-0.5, points.length - visiblePointCount - 0.5);
 
   return [
     {
-      endValue: points.length - 1,
+      endValue: points.length - 0.5,
       filterMode: 'none' as const,
       minSpan: Math.min(8, points.length),
       startValue,
@@ -174,15 +174,27 @@ function createEventMarkLines(points: ChartPoint[]) {
 }
 
 interface TooltipParam {
+  axisValue?: number | string;
   axisValueLabel?: string;
-  data?: { chartOut?: boolean; rankLineType?: 'active' | 'faded'; value?: number | null };
+  data?: { chartOut?: boolean; rankLineType?: 'active' | 'faded'; value?: ChartValue };
   marker?: string;
   seriesName?: string;
-  value?: number | null;
+  value?: ChartValue;
 }
 
+type ChartValue = [number, number | null] | number | null;
+
 function getTooltipValue(item: TooltipParam) {
-  return item.data?.value ?? item.value;
+  const value = item.data?.value ?? item.value;
+
+  return Array.isArray(value) ? value[1] : value;
+}
+
+function getTooltipTitle(items: TooltipParam[], points: ChartPoint[]) {
+  const axisValue = items[0]?.axisValue;
+  const pointIndex = typeof axisValue === 'number' ? Math.round(axisValue) : Number(axisValue);
+
+  return Number.isFinite(pointIndex) ? formatTimestamp(points[pointIndex]?.timestamp) : items[0]?.axisValueLabel ?? '';
 }
 
 function formatRankTooltip(item: TooltipParam) {
@@ -192,9 +204,9 @@ function formatRankTooltip(item: TooltipParam) {
   return `${item.marker ?? ''}순위 ${label}`;
 }
 
-function formatTooltip(params: unknown) {
+function formatTooltip(params: unknown, points: ChartPoint[]) {
   const items = Array.isArray(params) ? (params as TooltipParam[]) : [params as TooltipParam];
-  const title = items[0]?.axisValueLabel ?? '';
+  const title = getTooltipTitle(items, points);
   const rankItems = items.filter((item) => item.seriesName === '순위' && typeof getTooltipValue(item) === 'number');
   const rankItem = rankItems.find((item) => item.data?.rankLineType === 'active') ?? rankItems[0];
   const viewItem = items.find((item) => item.seriesName === '조회수 증가량');
@@ -216,7 +228,7 @@ function valuesAreClose(left: number, right: number) {
 }
 
 function createRankLineData(points: ChartPoint[], outRank: number, rankLineType: 'active' | 'faded') {
-  return points.map((point) => {
+  return points.map((point, index) => {
     const belongsToLine = rankLineType === 'active' ? !point.isFaded : point.isFaded || Boolean(point.eventLabel);
     const value = belongsToLine ? (point.chartOut ? outRank : point.rank) : null;
 
@@ -229,9 +241,15 @@ function createRankLineData(points: ChartPoint[], outRank: number, rankLineType:
       },
       rankLineType,
       symbol: point.chartOut ? 'emptyCircle' : 'circle',
-      value,
+      value: [index, value],
     };
   });
+}
+
+function formatXAxisLabel(value: number, points: ChartPoint[]) {
+  const pointIndex = Math.round(value);
+
+  return valuesAreClose(value, pointIndex) && points[pointIndex] ? formatTimestamp(points[pointIndex].timestamp) : '';
 }
 
 function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOption {
@@ -245,6 +263,8 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
   const chartGridRight = isMobile ? 10 : 12;
   const rankGridHeight = isMobile ? 205 : 220;
   const viewGridTop = rankGridHeight + (isMobile ? 52 : 56);
+  const xAxisMin = -0.5;
+  const xAxisMax = Math.max(points.length - 0.5, 0.5);
 
   return {
     animationDuration: 380,
@@ -255,8 +275,8 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
       { containLabel: false, height: isMobile ? 68 : 76, left: chartGridLeft, right: chartGridRight, top: viewGridTop },
     ],
     tooltip: {
-      axisPointer: { type: 'line' },
-      formatter: (params: unknown) => formatTooltip(params),
+      axisPointer: { snap: true, type: 'line' },
+      formatter: (params: unknown) => formatTooltip(params, points),
       trigger: 'axis',
     },
     xAxis: [
@@ -264,19 +284,25 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
         axisLabel: { show: false },
         axisLine: { lineStyle: { color: 'rgba(100, 116, 139, 0.24)' } },
         axisTick: { show: false },
-        boundaryGap: false,
-        data: points.map((point) => formatTimestamp(point.timestamp)),
         gridIndex: 0,
-        type: 'category',
+        max: xAxisMax,
+        min: xAxisMin,
+        minInterval: 1,
+        type: 'value',
       },
       {
-        axisLabel: { color: '#64748b', fontSize: isMobile ? 12 : 11 },
+        axisLabel: {
+          color: '#64748b',
+          fontSize: isMobile ? 12 : 11,
+          formatter: (value: number) => formatXAxisLabel(value, points),
+        },
         axisLine: { lineStyle: { color: 'rgba(100, 116, 139, 0.2)' } },
         axisTick: { show: false },
-        boundaryGap: false,
-        data: points.map((point) => formatTimestamp(point.timestamp)),
         gridIndex: 1,
-        type: 'category',
+        max: xAxisMax,
+        min: xAxisMin,
+        minInterval: 1,
+        type: 'value',
       },
     ],
     yAxis: [
@@ -362,9 +388,9 @@ function createChartOption(points: ChartPoint[], isMobile: boolean): EChartsOpti
       },
       {
         barMaxWidth: 18,
-        data: points.map((point) => ({
+        data: points.map((point, index) => ({
           itemStyle: { color: point.isFaded ? 'rgba(148, 163, 184, 0.16)' : 'rgba(148, 163, 184, 0.22)' },
-          value: point.viewDelta,
+          value: [index, point.viewDelta],
         })),
         name: '조회수 증가량',
         markLine: {
