@@ -36,6 +36,7 @@ function formatScore(score: number) {
 
 function getTierThresholdCopy(tiers: GameTier[]) {
   return [...tiers]
+    .filter((tier) => tier.tierCode !== 'LEGEND')
     .sort((left, right) => left.minScore - right.minScore)
     .map((tier) => `${tier.displayName} ${formatScore(tier.minScore)} 이상`)
     .join(', ');
@@ -51,7 +52,7 @@ export default function GameTierGuide({ tiers = [] }: GameTierGuideProps) {
       ...tierGuideItems,
       {
         title: '티어별 점수 기준은 이렇습니다',
-        copy: `기준은 ${getTierThresholdCopy(tiers)}입니다.`,
+        copy: `기준은 ${getTierThresholdCopy(tiers)}입니다. 레전드는 500,000점 이상 유저 중 상위 10% 기준이라 시즌 점수 분포에 따라 기준 점수가 달라질 수 있습니다. 단, 마스터 달성자가 10명 미만일 경우 최고 점수 달성자가 레전드로 선정됩니다.`,
       },
     ]
     : tierGuideItems;
