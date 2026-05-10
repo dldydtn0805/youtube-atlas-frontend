@@ -179,6 +179,20 @@ describe('createComment', () => {
     expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/api/comments?regionCode=KR', undefined);
   });
 
+  it('requests public comment highlights for the selected video', async () => {
+    const { fetchCommentHighlights } = await import('./api');
+    const fetchMock = vi.fn().mockResolvedValue(createMockResponse([]));
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchCommentHighlights('video/1');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.example.com/api/videos/video%2F1/comment-highlights',
+      undefined,
+    );
+  });
+
   it('posts the current chat participant id when syncing presence identity', async () => {
     const { updateCommentPresenceIdentity } = await import('./api');
     const fetchMock = vi.fn().mockResolvedValue(

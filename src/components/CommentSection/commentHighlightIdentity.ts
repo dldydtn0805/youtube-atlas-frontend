@@ -1,15 +1,7 @@
 import type { CommentHighlightMessage } from '../../features/comments/highlightTypes';
 import type { SelectedAchievementTitle } from '../../features/game/types';
 
-const COMMENT_HIGHLIGHT_TIER_CODES = [
-  'BRONZE',
-  'SILVER',
-  'GOLD',
-  'PLATINUM',
-  'DIAMOND',
-  'MASTER',
-  'LEGEND',
-] as const;
+const TIER_CODES = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND', 'MASTER', 'LEGEND'] as const;
 
 function hashText(value: string) {
   return [...value].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
@@ -24,9 +16,10 @@ export function getCommentHighlightIdentity(
   titles: readonly SelectedAchievementTitle[] = [],
 ) {
   const seed = hashText(`${highlight.id}:${highlight.content}:${highlight.created_at}`);
+  const payloadTitle = highlight.selectedAchievementTitle ?? highlight.selected_achievement_title;
 
   return {
-    tierCode: pick(COMMENT_HIGHLIGHT_TIER_CODES, seed),
-    title: titles.length > 0 ? pick(titles, seed, 5) : null,
+    tierCode: pick(TIER_CODES, seed),
+    title: payloadTitle ?? (titles.length > 0 ? pick(titles, seed, 5) : null),
   };
 }

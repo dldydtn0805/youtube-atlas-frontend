@@ -10,11 +10,8 @@ import {
 } from 'react';
 import { useAuth } from '../../features/auth/useAuth';
 import { isApiConfigured } from '../../lib/api';
-import {
-  useCommentHighlights,
-  useComments,
-  useCreateComment,
-} from '../../features/comments/queries';
+import { useComments, useCreateComment } from '../../features/comments/queries';
+import { useVideoCommentHighlights } from '../../features/comments/highlightQueries';
 import {
   COMMENT_COOLDOWN_SECONDS,
   CommentSubmissionError,
@@ -34,6 +31,7 @@ import CommentAuthorTitleText from './CommentAuthorTitleText';
 import CommentHighlightMessage from './CommentHighlightMessage';
 import { getChatAuthorTitle } from './chatAchievementTitle';
 import { getChatAuthorTierCode } from './chatTier';
+import { useCommentHighlightPlayback } from './useCommentHighlightPlayback';
 import './CommentSection.css';
 
 interface CommentSectionProps {
@@ -47,6 +45,7 @@ interface CommentSectionProps {
 
 const CHAT_COMPOSER_FOCUSED_ATTRIBUTE = 'data-chat-composer-focus';
 const GLOBAL_CHAT_ROOM_ID = 'global';
+const EMPTY_COMMENT_HIGHLIGHTS: readonly HighlightMessage[] = [];
 const FALLBACK_MESSAGE_SUFFIXES = [
   '좋네요.',
   '감사합니다.',
@@ -205,7 +204,12 @@ function CommentSection({
     : isCooldownActive
       ? `${remainingCooldownSeconds}초 대기`
       : '보내기';
-  const commentHighlights = useCommentHighlights(videoId, accessToken, isApiConfigured && isAuthenticated);
+  const commentHighlightsQuery = useVideoCommentHighlights(videoId, isApiConfigured);
+  const commentHighlights = useCommentHighlightPlayback(
+    videoId,
+    commentHighlightsQuery.data ?? EMPTY_COMMENT_HIGHLIGHTS,
+    isApiConfigured,
+  );
   const visibleMessages = useMemo(
     () =>
       (commentsQuery.data ?? []).filter((message) => {

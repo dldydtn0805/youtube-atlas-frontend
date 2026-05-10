@@ -5,8 +5,8 @@ import { CommentSubmissionError } from '../../features/comments/spam';
 import CommentSection from './CommentSection';
 
 const useCommentsMock = vi.fn();
-const useCommentHighlightsMock = vi.fn();
 const useCreateCommentMock = vi.fn();
+const useVideoCommentHighlightsMock = vi.fn();
 const useAuthMock = vi.fn();
 const authenticatedUser = {
   displayName: 'Atlas User',
@@ -15,6 +15,23 @@ const authenticatedUser = {
   pictureUrl: null,
   selectedTitle: null,
 };
+
+function commentHighlight(videoId: string, content: string, title = selectedTitle) {
+  return {
+    author: '@YouTube Viewer',
+    client_id: `yt-comment:${videoId}`,
+    content,
+    created_at: '2026-03-22T00:00:02.000Z',
+    ephemeral: true,
+    id: `yt-comment:${videoId}`,
+    label: '인기 댓글',
+    like_count: 42,
+    message_type: 'COMMENT_HIGHLIGHT',
+    selected_achievement_title: title,
+    source: 'YOUTUBE_COMMENT',
+    video_id: videoId,
+  };
+}
 
 const selectedTitle = {
   code: 'atlas_sniper',
@@ -29,9 +46,12 @@ vi.mock('../../lib/api', () => ({
 }));
 
 vi.mock('../../features/comments/queries', () => ({
-  useCommentHighlights: (...args: unknown[]) => useCommentHighlightsMock(...args),
   useComments: (...args: unknown[]) => useCommentsMock(...args),
   useCreateComment: () => useCreateCommentMock(),
+}));
+
+vi.mock('../../features/comments/highlightQueries', () => ({
+  useVideoCommentHighlights: (...args: unknown[]) => useVideoCommentHighlightsMock(...args),
 }));
 
 vi.mock('../../features/auth/useAuth', () => ({
@@ -73,7 +93,9 @@ describe('CommentSection', () => {
         data: null,
       },
     });
-    useCommentHighlightsMock.mockReturnValue([]);
+    useVideoCommentHighlightsMock.mockReturnValue({
+      data: [],
+    });
     useAuthMock.mockReturnValue({
       accessToken: 'access-token-1',
       logout: vi.fn(),
@@ -320,22 +342,10 @@ describe('CommentSection', () => {
     expect(screen.getByText('실시간 7명')).toBeInTheDocument();
   });
 
-  it('renders personal YouTube comment highlights as regular chat messages', () => {
-    useCommentHighlightsMock.mockReturnValue([
-      {
-        author: '@YouTube Viewer',
-        client_id: 'yt-comment:comment-1',
-        content: '이 부분 설명 진짜 좋네요',
-        created_at: '2026-03-22T00:00:02.000Z',
-        ephemeral: true,
-        id: 'yt-comment:comment-1',
-        label: '인기 댓글',
-        like_count: 42,
-        message_type: 'COMMENT_HIGHLIGHT',
-        source: 'YOUTUBE_COMMENT',
-        video_id: 'video-1',
-      },
-    ]);
+  it('renders public YouTube comment highlights as regular chat messages', () => {
+    useVideoCommentHighlightsMock.mockReturnValue({
+      data: [commentHighlight('video-1', '이 부분 설명 진짜 좋네요')],
+    });
     useCreateCommentMock.mockReturnValue({
       isPending: false,
       mutateAsync: vi.fn(),
@@ -349,7 +359,7 @@ describe('CommentSection', () => {
       />,
     );
 
-    expect(useCommentHighlightsMock).toHaveBeenCalledWith('video-1', 'access-token-1', true);
+    expect(useVideoCommentHighlightsMock).toHaveBeenCalledWith('video-1', true);
     expect(screen.getByText('YouTube Viewer')).toBeInTheDocument();
     expect(screen.queryByText('@YouTube Viewer')).not.toBeInTheDocument();
     expect(screen.queryByText('인기 댓글')).not.toBeInTheDocument();
@@ -362,6 +372,53 @@ describe('CommentSection', () => {
     expect(screen.getByText('YouTube Viewer').closest('.comment-message__identity')).toHaveAttribute(
       'data-tier-code',
     );
+  });
+
+  it('shows the backend title on public highlights for anonymous users', () => {
+    useAuthMock.mockReturnValue({
+      accessToken: null,
+      logout: vi.fn(),
+      status: 'anonymous',
+      user: null,
+    });
+    useVideoCommentHighlightsMock.mockReturnValue({
+      data: [commentHighlight('video-1', '비로그인도 보는 댓글')],
+    });
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    render(<CommentSection videoId="video-1" videoTitle="Test video" />);
+
+    const author = screen.getByText('YouTube Viewer');
+
+    expect(author.closest('.comment-message__identity')).toHaveAttribute('data-title-grade');
+    expect(author.parentElement?.querySelector('.comment-message__title-badge')).toHaveTextContent(
+      'Atlas Sniper',
+    );
+  });
+
+  it('resets public comment highlights when the selected video changes', () => {
+    const firstHighlights = [commentHighlight('video-1', '첫 번째 영상 댓글')];
+    const secondHighlights = [commentHighlight('video-2', '두 번째 영상 댓글')];
+
+    useVideoCommentHighlightsMock.mockImplementation((videoId: string) => ({
+      data: videoId === 'video-1' ? firstHighlights : secondHighlights,
+    }));
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    const { rerender } = render(<CommentSection videoId="video-1" videoTitle="First" />);
+
+    expect(screen.getByText('첫 번째 영상 댓글')).toBeInTheDocument();
+
+    rerender(<CommentSection videoId="video-2" videoTitle="Second" />);
+
+    expect(screen.queryByText('첫 번째 영상 댓글')).not.toBeInTheDocument();
+    expect(screen.getByText('두 번째 영상 댓글')).toBeInTheDocument();
   });
 
   it('shows participant names in the presence hover panel', () => {

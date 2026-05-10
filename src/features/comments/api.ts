@@ -1,5 +1,6 @@
 import { getStoredAccessToken } from '../auth/storage';
 import { fetchApi } from '../../lib/api';
+import type { CommentHighlightMessage } from './highlightTypes';
 import type { ChatMessage, ChatPresence, SendMessageInput } from './types';
 import {
   CommentSubmissionError,
@@ -30,6 +31,12 @@ export async function fetchComments(
 
 export async function fetchCommentPresence(): Promise<ChatPresence> {
   return fetchApi<ChatPresence>('/api/comments/presence');
+}
+
+export async function fetchCommentHighlights(videoId: string): Promise<CommentHighlightMessage[]> {
+  return fetchApi<CommentHighlightMessage[]>(
+    `/api/videos/${encodeURIComponent(videoId)}/comment-highlights`,
+  );
 }
 
 export async function updateCommentPresenceIdentity(input: {
