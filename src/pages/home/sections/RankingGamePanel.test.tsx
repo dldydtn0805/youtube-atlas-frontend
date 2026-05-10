@@ -403,6 +403,28 @@ describe('RankingGamePositionsTab', () => {
     expect(screen.getAllByText('47위').length).toBeGreaterThan(0);
   });
 
+  it('shows portfolio segment video details below the bar after clicking a segment', () => {
+    render(
+      <RankingGamePositionsTab
+        canShowGameActions
+        favoriteTrendSignalsByVideoId={{}}
+        gameMarketSignalsByVideoId={{}}
+        holdings={[createOpenGameHolding({ title: 'Tooltip Video', channelTitle: 'Tooltip Channel' })]}
+        onSelectPosition={vi.fn()}
+        trendSignalsByVideoId={{}}
+      />,
+    );
+
+    const segmentButton = screen.getByRole('button', { name: 'Tooltip Video · Tooltip Channel' });
+
+    expect(segmentButton).not.toHaveAttribute('title');
+    expect(screen.queryByText('Tooltip Video · Tooltip Channel')).not.toBeInTheDocument();
+
+    fireEvent.click(segmentButton);
+
+    expect(screen.getByText('Tooltip Video · Tooltip Channel')).toBeInTheDocument();
+  });
+
   it('opens position trade actions from the holding card', () => {
     const onOpenBuyTradeModal = vi.fn();
     const onOpenSellTradeModal = vi.fn();

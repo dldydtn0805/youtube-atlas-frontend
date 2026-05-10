@@ -8,7 +8,9 @@ function createHolding(
   currentPricePoints: number,
 ): OpenGameHolding {
   return {
+    channelTitle: `Channel ${positionId}`,
     positionId,
+    title: `Video ${positionId}`,
     profitPoints,
     currentPricePoints,
     stakePoints: 100,
@@ -24,5 +26,11 @@ describe('buildGameInventorySummary', () => {
     ]);
 
     expect(summary.segments.map((segment) => segment.id)).toEqual([2, 1, 3]);
+  });
+
+  it('includes video labels for clicked bar segments', () => {
+    const summary = buildGameInventorySummary([createHolding(1, 10, 100)]);
+
+    expect(summary.segments[0].tooltipLabel).toBe('Video 1 · Channel 1');
   });
 });

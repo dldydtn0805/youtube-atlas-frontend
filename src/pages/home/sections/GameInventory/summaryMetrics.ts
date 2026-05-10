@@ -5,7 +5,9 @@ import { getHoldingEvaluationPoints } from '../../gameInventorySorting';
 export interface GameInventorySegment {
   contributionPoints: number;
   id: number;
+  title: string;
   tone: ReturnType<typeof getPointTone>;
+  tooltipLabel: string;
   widthPercent: number;
 }
 
@@ -27,7 +29,9 @@ export function buildGameInventorySummary(holdings: OpenGameHolding[]) {
       return {
         contributionPoints: getFinitePoints(holding.profitPoints),
         id: holding.positionId,
+        title: holding.title,
         tone: getPointTone(holding.profitPoints),
+        tooltipLabel: holding.channelTitle ? `${holding.title} · ${holding.channelTitle}` : holding.title,
         widthPercent: totalEvaluationPoints > 0 ? (value / totalEvaluationPoints) * 100 : 0,
       };
     })

@@ -1,5 +1,6 @@
 .app-shell__game-inventory {
-  --game-inventory-gain: #dc2626;
+  --game-inventory-gain: #b33a42;
+  --game-inventory-gain-rgb: 179, 58, 66;
   --game-inventory-loss: #2563eb;
   display: grid;
   gap: 12px;
@@ -62,6 +63,7 @@
 .app-shell__game-inventory-mix {
   display: grid;
   gap: 7px;
+  position: relative;
 }
 
 .app-shell__game-inventory-mix-label,
@@ -83,17 +85,56 @@
   overflow: hidden;
 }
 
+.app-shell__game-inventory-bar button,
 .app-shell__game-inventory-bar span {
   background: rgba(148, 163, 184, 0.35);
   min-width: 3px;
 }
 
+.app-shell__game-inventory-bar button {
+  appearance: none;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.app-shell__game-inventory-bar button:focus-visible {
+  outline: 2px solid rgba(var(--game-panel-tier-accent-rgb), 0.56);
+  outline-offset: 2px;
+}
+
+.app-shell__game-inventory-bar button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.74);
+}
+
+.app-shell__game-inventory-bar button[data-tone='gain'],
 .app-shell__game-inventory-bar span[data-tone='gain'] {
   background: var(--game-inventory-gain);
 }
 
+.app-shell__game-inventory-bar button[data-tone='loss'],
 .app-shell__game-inventory-bar span[data-tone='loss'] {
   background: var(--game-inventory-loss);
+}
+
+.app-shell__game-inventory-bar-tooltip {
+  background: rgba(15, 23, 42, 0.86);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 800;
+  left: 0;
+  line-height: 1.35;
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 6px 9px;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: calc(100% + 6px);
+  white-space: nowrap;
+  z-index: 2;
 }
 
 .app-shell__game-inventory-sort-buttons {
@@ -122,6 +163,7 @@
 
 :root[data-theme='dark'] .app-shell__game-inventory {
   --game-inventory-gain: #fca5a5;
+  --game-inventory-gain-rgb: 252, 165, 165;
   --game-inventory-loss: #93c5fd;
 }
 

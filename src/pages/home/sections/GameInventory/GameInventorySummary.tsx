@@ -1,4 +1,5 @@
 import './GameInventorySummary.css';
+import { useState } from 'react';
 import type { OpenGameHolding } from '../../gameHelpers';
 import { formatPercent, formatPoints, getPointTone } from '../../gameHelpers';
 import type { GameInventorySortKey } from '../../gameInventorySorting';
@@ -35,9 +36,11 @@ export default function GameInventorySummary({
   openDistinctVideoCount,
   sortKey,
 }: GameInventorySummaryProps) {
+  const [activeSegmentId, setActiveSegmentId] = useState<number | null>(null);
   const summary = buildGameInventorySummary(holdings);
   const profitTone = getPointTone(summary.totalProfitPoints);
   const gainShare = holdings.length > 0 ? Math.round((summary.gainCount / holdings.length) * 100) : 0;
+  const activeSegment = summary.segments.find((segment) => segment.id === activeSegmentId);
 
   return (
     <section className="app-shell__game-inventory-summary" aria-label="보유 포지션 요약">
@@ -68,19 +71,28 @@ export default function GameInventorySummary({
           <span>포트폴리오 구성</span>
           <span data-tone="gain">{`수익 ${gainShare}%`}</span>
         </div>
-        <div className="app-shell__game-inventory-bar" aria-hidden="true">
+        <div className="app-shell__game-inventory-bar" aria-label="포트폴리오 구성 상세">
           {summary.segments.length > 0 ? (
             summary.segments.map((segment) => (
-              <span
+              <button
                 key={segment.id}
+                aria-label={segment.tooltipLabel}
+                aria-pressed={activeSegmentId === segment.id}
                 data-tone={segment.tone}
+                onClick={() => setActiveSegmentId((currentId) => (currentId === segment.id ? null : segment.id))}
                 style={{ width: `${segment.widthPercent}%` }}
+                type="button"
               />
             ))
           ) : (
             <span data-tone="flat" style={{ width: '100%' }} />
           )}
         </div>
+        {activeSegment ? (
+          <p className="app-shell__game-inventory-bar-tooltip" role="status">
+            {activeSegment.tooltipLabel}
+          </p>
+        ) : null}
       </div>
       {holdings.length > 0 ? (
         <div className="app-shell__game-inventory-sort">

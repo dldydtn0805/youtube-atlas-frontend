@@ -98,7 +98,7 @@
 }
 
 .app-shell__game-position-profit-track span {
-  background: var(--game-inventory-gain, #dc2626);
+  background: var(--game-inventory-gain, #b33a42);
   border-radius: inherit;
   display: block;
   height: 100%;
@@ -113,9 +113,9 @@
 }
 
 .app-shell__game-inventory .app-shell__game-position-trend[data-tone='up'] {
-  background: rgba(220, 38, 38, 0.1);
-  border-color: rgba(220, 38, 38, 0.16);
-  color: var(--game-inventory-gain, #dc2626);
+  background: rgba(var(--game-inventory-gain-rgb, 179, 58, 66), 0.1);
+  border-color: rgba(var(--game-inventory-gain-rgb, 179, 58, 66), 0.16);
+  color: var(--game-inventory-gain, #b33a42);
 }
 
 .app-shell__game-inventory .app-shell__game-position-trend[data-tone='down'] {
