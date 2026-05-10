@@ -46,7 +46,27 @@ describe('GameHighlightsTab', () => {
     expect(screen.queryByText('하이라이트가 없습니다.')).not.toBeInTheDocument();
   });
 
-  it('sorts highlights by tier score descending', () => {
+  it('sorts highlights by latest first by default', () => {
+    render(
+      <GameHighlightsTab
+        highlights={[
+          createHighlight({ id: 'old', videoTitle: '오래된 하이라이트', createdAt: '2026-01-01T00:00:00.000Z' }),
+          createHighlight({ id: 'new', videoTitle: '최신 하이라이트', createdAt: '2026-01-03T00:00:00.000Z' }),
+          createHighlight({ id: 'mid', videoTitle: '중간 하이라이트', createdAt: '2026-01-02T00:00:00.000Z' }),
+        ]}
+        isLoading={false}
+        onSelectHighlight={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      expect.stringContaining('최신 하이라이트'),
+      expect.stringContaining('중간 하이라이트'),
+      expect.stringContaining('오래된 하이라이트'),
+    ]);
+  });
+
+  it('sorts highlights by tier score when selected', () => {
     render(
       <GameHighlightsTab
         highlights={[
@@ -58,6 +78,8 @@ describe('GameHighlightsTab', () => {
         onSelectHighlight={vi.fn()}
       />,
     );
+
+    fireEvent.click(screen.getByRole('button', { name: '티어 점수순' }));
 
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       expect.stringContaining('높은 점수'),

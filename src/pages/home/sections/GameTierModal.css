@@ -393,6 +393,30 @@
 }
 
 @media (min-width: 769px) {
+  :root:not([data-mobile-layout='true']) .app-shell__tier-modal-panel[data-tier-modal-panel='tier'] {
+    align-items: center;
+  }
+
+  :root:not([data-mobile-layout='true']) .app-shell__modal--dividend .app-shell__modal-field--tier {
+    display: grid;
+    justify-items: center;
+  }
+
+  :root:not([data-mobile-layout='true'])
+    .app-shell__modal--dividend
+    .app-shell__modal-field--tier
+    .app-shell__game-tier {
+    justify-items: center;
+  }
+
+  :root:not([data-mobile-layout='true'])
+    .app-shell__modal--dividend
+    .app-shell__modal-field--tier
+    .app-shell__game-tier-card {
+    --game-tier-card-max-width: 100%;
+    justify-self: center;
+  }
+
   :root:not([data-mobile-layout='true']) .app-shell__modal--dividend .app-shell__game-dividend-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

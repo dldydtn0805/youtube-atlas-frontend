@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { GameHighlight } from '../../../features/game/types';
 import { formatPoints, formatRank, getPointTone } from '../gameHelpers';
@@ -7,6 +7,8 @@ import {
   matchesGameHighlightScrollTarget,
   type GameHighlightScrollTarget,
 } from './gameHighlightScrollTarget';
+import GameHighlightSortControl from './GameHighlightSortControl';
+import { sortGameHighlights, type GameHighlightSortMode } from './gameHighlightSorting';
 import GameHighlightScoreBreakdown from './highlightScoreBreakdown/GameHighlightScoreBreakdown';
 import './GameHighlightsTab.css';
 
@@ -71,16 +73,10 @@ export default function GameHighlightsTab({
   scrollTarget = null,
 }: GameHighlightsTabProps) {
   const targetItemRef = useRef<HTMLLIElement | null>(null);
+  const [sortMode, setSortMode] = useState<GameHighlightSortMode>('latest');
   const sortedHighlights = useMemo(
-    () =>
-      highlights.slice().sort((left, right) => {
-        if (left.highlightScore !== right.highlightScore) {
-          return right.highlightScore - left.highlightScore;
-        }
-
-        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-      }),
-    [highlights],
+    () => sortGameHighlights(highlights, sortMode),
+    [highlights, sortMode],
   );
 
   useEffect(() => {
@@ -113,6 +109,7 @@ export default function GameHighlightsTab({
 
   return (
     <div className="app-shell__game-highlights-shell" data-loading={isLoading}>
+      <GameHighlightSortControl sortMode={sortMode} onChange={setSortMode} />
       <ul className="app-shell__game-highlights">
         {sortedHighlights.map((highlight) => {
           const strategyBadges = buildGameStrategyBadges(highlight.strategyTags, highlight.highlightType);

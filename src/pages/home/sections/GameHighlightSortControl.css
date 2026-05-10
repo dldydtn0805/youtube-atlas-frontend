@@ -1,0 +1,37 @@
+.game-highlight-sort {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: end;
+  margin-bottom: 10px;
+}
+
+.game-highlight-sort__button {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  min-height: 30px;
+  padding: 0 11px;
+}
+
+.game-highlight-sort__button[aria-pressed='true'] {
+  background: rgba(217, 119, 6, 0.12);
+  border-color: rgba(217, 119, 6, 0.34);
+  color: #92400e;
+}
+
+:root[data-theme='dark'] .game-highlight-sort__button {
+  background: rgba(14, 14, 14, 0.64);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .game-highlight-sort__button[aria-pressed='true'] {
+  background: rgba(250, 204, 21, 0.14);
+  border-color: rgba(250, 204, 21, 0.28);
+  color: #fde68a;
+}
