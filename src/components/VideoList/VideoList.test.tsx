@@ -414,7 +414,7 @@ describe('VideoList', () => {
     expect(container.querySelectorAll('.video-card')).toHaveLength(20);
     const pagination = screen.getByRole('navigation', { name: '즐겨찾기 채널 페이지 이동' });
 
-    expect(within(pagination).getByRole('combobox', { name: '현재 페이지' })).toHaveValue('1');
+    expect(within(pagination).getByRole('button', { name: '현재 페이지 1' })).toBeInTheDocument();
     expect(pagination).toHaveTextContent('/3');
     expect(screen.queryByText('테스트 영상 21')).not.toBeInTheDocument();
   });
@@ -445,7 +445,7 @@ describe('VideoList', () => {
 
       fireEvent.click(screen.getByRole('button', { name: '다음' }));
 
-      expect(screen.getByRole('combobox', { name: '현재 페이지' })).toHaveValue('2');
+      expect(screen.getByRole('button', { name: '현재 페이지 2' })).toBeInTheDocument();
       expect(screen.getByText('테스트 영상 21')).toBeInTheDocument();
       expect(onLoadMore).toHaveBeenCalledTimes(1);
       expect(scrollIntoView).toHaveBeenCalledWith({
@@ -472,9 +472,10 @@ describe('VideoList', () => {
       />,
     );
 
-    fireEvent.focus(screen.getByRole('combobox', { name: '현재 페이지' }));
+    fireEvent.click(screen.getByRole('button', { name: '현재 페이지 1' }));
 
     expect(screen.getByRole('status')).toHaveTextContent('페이지를 준비하는 중입니다.');
+    expect(screen.queryByRole('listbox', { name: '페이지 선택' })).not.toBeInTheDocument();
     await waitFor(() => expect(onLoadMore).toHaveBeenCalledTimes(1));
   });
 
@@ -496,7 +497,7 @@ describe('VideoList', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
 
-    expect(screen.getByRole('combobox', { name: '현재 페이지' })).toHaveValue('3');
+    expect(screen.getByRole('button', { name: '현재 페이지 3' })).toBeInTheDocument();
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
@@ -513,18 +514,16 @@ describe('VideoList', () => {
       />,
     );
 
-    fireEvent.change(screen.getByRole('combobox', { name: '현재 페이지' }), {
-      target: { value: '3' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: '현재 페이지 1' }));
+    fireEvent.click(screen.getByRole('option', { name: '3' }));
 
-    expect(screen.getByRole('combobox', { name: '현재 페이지' })).toHaveValue('3');
+    expect(screen.getByRole('button', { name: '현재 페이지 3' })).toBeInTheDocument();
     expect(screen.getByText('테스트 영상 41')).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('combobox', { name: '현재 페이지' }), {
-      target: { value: '1' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: '현재 페이지 3' }));
+    fireEvent.click(screen.getByRole('option', { name: '1' }));
 
-    expect(screen.getByRole('combobox', { name: '현재 페이지' })).toHaveValue('1');
+    expect(screen.getByRole('button', { name: '현재 페이지 1' })).toBeInTheDocument();
     expect(screen.getByText('테스트 영상 1')).toBeInTheDocument();
     expect(screen.queryByText('테스트 영상 41')).not.toBeInTheDocument();
   });
@@ -569,7 +568,7 @@ describe('VideoList', () => {
 
       fireEvent.click(screen.getByRole('button', { name: '다음' }));
 
-      expect(screen.getByRole('combobox', { name: '현재 페이지' })).toHaveValue('3');
+      expect(screen.getByRole('button', { name: '현재 페이지 3' })).toBeInTheDocument();
       expect(onLoadMore).toHaveBeenCalledTimes(1);
       expect(scrollIntoView).toHaveBeenCalledWith({
         behavior: 'auto',

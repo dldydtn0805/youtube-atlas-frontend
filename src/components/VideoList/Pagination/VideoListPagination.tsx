@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import './VideoListPagination.css';
 
 interface VideoListPaginationProps {
@@ -9,6 +10,7 @@ interface VideoListPaginationProps {
   onOpenPageSelect?: () => void;
   onPageChange: (pageIndex: number) => void;
   onPrevious: () => void;
+  shouldPreparePages?: boolean;
   totalPages: number;
 }
 
@@ -21,8 +23,45 @@ export default function VideoListPagination({
   onOpenPageSelect,
   onPageChange,
   onPrevious,
+  shouldPreparePages = false,
   totalPages,
 }: VideoListPaginationProps) {
+  const [isPageMenuOpen, setIsPageMenuOpen] = useState(false);
+  const pagePickerRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    if (!isPageMenuOpen || typeof document === 'undefined') {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (pagePickerRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setIsPageMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [isPageMenuOpen]);
+
+  const handleTogglePageMenu = () => {
+    if (shouldPreparePages) {
+      setIsPageMenuOpen(false);
+      onOpenPageSelect?.();
+      return;
+    }
+
+    setIsPageMenuOpen((currentValue) => !currentValue);
+  };
+
+  const handlePageChange = (page: number) => {
+    onPageChange(page - 1);
+    setIsPageMenuOpen(false);
+  };
+
   return (
     <div className="video-list__pagination" aria-label={label} role="navigation">
       <button
@@ -35,21 +74,38 @@ export default function VideoListPagination({
       >
         <span className="video-list__page-icon" aria-hidden="true">‹</span>
       </button>
-      <span className="video-list__page-status">
-        <select
-          aria-label="현재 페이지"
+      <span className="video-list__page-status" ref={pagePickerRef}>
+        <button
+          aria-expanded={isPageMenuOpen}
+          aria-haspopup="listbox"
+          aria-label={`현재 페이지 ${currentPage}`}
           className="video-list__page-select"
-          onFocus={onOpenPageSelect}
-          onChange={(event) => onPageChange(Number(event.target.value) - 1)}
-          onPointerDown={onOpenPageSelect}
-          value={currentPage}
+          onClick={handleTogglePageMenu}
+          type="button"
         >
-          {Array.from({ length: totalPages }, (_, index) => (
-            <option key={index + 1} value={index + 1}>
-              {index + 1}
-            </option>
-          ))}
-        </select>
+          <span>{currentPage}</span>
+          <span className="video-list__page-select-chevron" aria-hidden="true">▾</span>
+        </button>
+        {isPageMenuOpen ? (
+          <div className="video-list__page-menu" role="listbox" aria-label="페이지 선택">
+            {Array.from({ length: totalPages }, (_, index) => {
+              const page = index + 1;
+
+              return (
+                <button
+                  aria-selected={page === currentPage}
+                  className="video-list__page-option"
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  role="option"
+                  type="button"
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
         <span className="video-list__page-divider" aria-hidden="true">/</span>
         <span className="video-list__page-total">{totalPages}</span>
       </span>

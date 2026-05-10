@@ -493,6 +493,7 @@ function VideoList({
             onOpenPageSelect={handleOpenPageSelect}
             onPageChange={handlePageChange}
             onPrevious={handlePreviousPage}
+            shouldPreparePages={hasNextPage}
             totalPages={pageCount}
           />
         ) : null}
