@@ -1107,9 +1107,7 @@ function RankingGamePositionsTabComponent({
   const inventoryDashboard = (
     <GameInventorySummary
       holdings={holdings}
-      maxOpenPositions={maxOpenPositions}
       onSortKeyChange={setInventorySortKey}
-      openDistinctVideoCount={inventoryOpenCount}
       sortKey={inventorySortKey}
     />
   );

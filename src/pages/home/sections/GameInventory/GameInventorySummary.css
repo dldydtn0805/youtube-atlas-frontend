@@ -55,6 +55,10 @@
   color: var(--text-muted);
 }
 
+.app-shell__game-inventory [data-tone='tier'] {
+  color: color-mix(in srgb, rgb(var(--game-panel-tier-accent-rgb, 234, 179, 8)) 78%, var(--text) 22%);
+}
+
 .app-shell__game-inventory-stat-separator {
   color: var(--text-muted);
   font-size: 0.82rem;

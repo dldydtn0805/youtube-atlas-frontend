@@ -1,8 +1,9 @@
 import './GameInventorySummary.css';
 import { useState } from 'react';
 import type { OpenGameHolding } from '../../gameHelpers';
-import { formatPercent, formatPoints, getPointTone } from '../../gameHelpers';
+import { formatPoints, getPointTone } from '../../gameHelpers';
 import type { GameInventorySortKey } from '../../gameInventorySorting';
+import { formatSignedPercent, formatSignedScore } from './summaryFormatters';
 import { buildGameInventorySummary } from './summaryMetrics';
 
 const SORT_OPTIONS: ReadonlyArray<{ id: GameInventorySortKey; label: string }> = [
@@ -13,27 +14,13 @@ const SORT_OPTIONS: ReadonlyArray<{ id: GameInventorySortKey; label: string }> =
 
 interface GameInventorySummaryProps {
   holdings: OpenGameHolding[];
-  maxOpenPositions: number | null;
   onSortKeyChange: (sortKey: GameInventorySortKey) => void;
-  openDistinctVideoCount: number;
   sortKey: GameInventorySortKey;
-}
-
-function formatSignedPercent(value: number | null) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '집계 중';
-  }
-
-  if (value > 0) return `+${formatPercent(value)}`;
-  if (value < 0) return `-${formatPercent(Math.abs(value))}`;
-  return '0%';
 }
 
 export default function GameInventorySummary({
   holdings,
-  maxOpenPositions,
   onSortKeyChange,
-  openDistinctVideoCount,
   sortKey,
 }: GameInventorySummaryProps) {
   const [activeSegmentId, setActiveSegmentId] = useState<number | null>(null);
@@ -54,8 +41,10 @@ export default function GameInventorySummary({
           <strong data-tone={profitTone}>{formatSignedPercent(summary.profitRatePercent)}</strong>
         </span>
         <span className="app-shell__game-inventory-stat">
-          <span>보유 영상</span>
-          <strong>{`${openDistinctVideoCount} / ${maxOpenPositions ?? '-'}`}</strong>
+          <span>획득 티어점수</span>
+          <strong data-tone={summary.totalProjectedHighlightScore > 0 ? 'tier' : 'flat'}>
+            {formatSignedScore(summary.totalProjectedHighlightScore)}
+          </strong>
         </span>
         <span className="app-shell__game-inventory-stat">
           <span>수익 / 손실</span>
