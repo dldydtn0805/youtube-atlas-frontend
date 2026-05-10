@@ -1,0 +1,346 @@
+.app-shell__game-sell-receipt-head {
+  background: var(--surface-modal-field);
+  border-bottom: 1px solid var(--border);
+  display: block;
+  padding: 20px 24px 16px;
+}
+
+.app-shell__game-sell-receipt-eyebrow,
+.app-shell__game-sell-receipt-label,
+.app-shell__game-sell-receipt-meta,
+.app-shell__game-sell-receipt-foot {
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.18em;
+  margin: 0;
+}
+
+.app-shell__game-sell-receipt-eyebrow,
+.app-shell__game-sell-receipt-label {
+  font-size: 0.64rem;
+}
+
+.app-shell__game-sell-receipt-title {
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 4px 0 0;
+}
+
+.app-shell__game-sell-receipt-meta {
+  font-size: 0.62rem;
+  margin-top: 6px;
+}
+
+.app-shell__game-sell-receipt-body {
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.app-shell__game-sell-receipt-item {
+  border: 1px dashed var(--border-strong);
+  border-radius: 4px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 14px;
+}
+
+.app-shell__game-sell-receipt-thumb {
+  border-radius: 4px;
+  display: block;
+  grid-row: span 2;
+  overflow: hidden;
+  width: 92px;
+}
+
+.app-shell__game-sell-receipt-thumb img {
+  aspect-ratio: 16 / 9;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.app-shell__game-sell-receipt-item-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.app-shell__game-sell-receipt-item-copy strong {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.app-shell__game-sell-receipt-item-copy span,
+.app-shell__game-sell-receipt-help,
+.app-shell__game-sell-receipt-hint {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.app-shell__game-sell-receipt-price {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.app-shell__game-sell-receipt-price span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.app-shell__game-sell-receipt-price strong {
+  background: var(--surface-chip-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: #b08a20;
+  font-size: 0.78rem;
+  padding: 5px 10px;
+}
+
+.app-shell__game-sell-receipt-quantity button,
+.app-shell__game-sell-receipt-quantity input,
+.app-shell__game-sell-receipt-pcts button,
+.app-shell__game-sell-receipt-actions button {
+  font-family: 'Courier New', monospace;
+}
+
+.app-shell__game-sell-receipt-section {
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__game-sell-receipt-help,
+.app-shell__game-sell-receipt-hint {
+  margin: 0;
+}
+
+.app-shell__game-sell-receipt-hint {
+  font-style: italic;
+}
+
+.app-shell__game-sell-receipt-quantity {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  overflow: hidden;
+}
+
+.app-shell__game-sell-receipt-quantity button {
+  background: var(--surface-chip-muted);
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.15rem;
+}
+
+.app-shell__game-sell-receipt-quantity input {
+  appearance: textfield;
+  background: transparent;
+  border: 0;
+  border-inline: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 800;
+  height: 44px;
+  min-width: 0;
+  text-align: center;
+}
+
+.app-shell__game-sell-receipt-quantity input::-webkit-outer-spin-button,
+.app-shell__game-sell-receipt-quantity input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.app-shell__game-sell-receipt-pcts {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.app-shell__game-sell-receipt-pcts button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  min-height: 28px;
+}
+
+.app-shell__game-sell-receipt-pcts button[data-active='true'] {
+  border-color: #b08a20;
+  color: #b08a20;
+}
+
+.app-shell__game-sell-receipt-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.app-shell__game-sell-receipt-stats div {
+  background: var(--surface-modal-field);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.app-shell__game-sell-receipt-stats dt {
+  color: var(--text-muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.app-shell__game-sell-receipt-stats dd {
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.app-shell__game-sell-receipt-ledger {
+  display: grid;
+  margin: 4px 0 0;
+}
+
+.app-shell__game-sell-receipt-ledger div {
+  align-items: baseline;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.app-shell__game-sell-receipt-ledger div:last-child {
+  border-bottom: 0;
+}
+
+.app-shell__game-sell-receipt-ledger dt,
+.app-shell__game-sell-receipt-ledger dd {
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.app-shell__game-sell-receipt-ledger dt {
+  color: var(--text-muted);
+}
+
+.app-shell__game-sell-receipt-value {
+  color: var(--text);
+}
+
+.app-shell__game-sell-receipt-value--gain {
+  color: #dc2626;
+}
+
+.app-shell__game-sell-receipt-value--loss {
+  color: #2563eb;
+}
+
+.app-shell__game-sell-receipt-total {
+  align-items: center;
+  background: var(--surface-modal-field);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+}
+
+.app-shell__game-sell-receipt-total span {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+}
+
+.app-shell__game-sell-receipt-total strong {
+  color: #b08a20;
+  font-size: 1.25rem;
+}
+
+.app-shell__game-sell-receipt-notice {
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-muted);
+  display: grid;
+  font-size: 0.72rem;
+  font-style: italic;
+  gap: 8px;
+  line-height: 1.55;
+  padding-left: 10px;
+}
+
+.app-shell__game-sell-receipt-notice p {
+  margin: 0;
+}
+
+.app-shell__game-sell-receipt-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.app-shell__game-sell-receipt-actions button {
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  min-height: 46px;
+}
+
+.app-shell__game-sell-receipt-sell {
+  background: var(--text);
+  border: 0;
+  color: var(--bg);
+}
+
+.app-shell__game-sell-receipt-close {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.app-shell__game-sell-receipt-foot {
+  background: var(--surface-modal-field);
+  border-top: 1px dashed var(--border);
+  font-size: 0.58rem;
+  padding: 12px 24px;
+  text-align: center;
+}
+
+.app-shell__game-sell-receipt-schedule .app-shell__game-trade-mode-switch {
+  border-radius: 4px;
+}
+
+.app-shell__game-sell-receipt-schedule .app-shell__game-trade-mode-option {
+  border-radius: 3px;
+}
+
+@media (max-width: 520px) {
+  .app-shell__game-sell-receipt-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell__game-sell-receipt-thumb {
+    grid-row: auto;
+    width: 100%;
+  }
+
+  .app-shell__game-sell-receipt-stats {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1249,6 +1249,7 @@ function HomePage() {
     selectedVideoHistoryTargetPosition,
     selectedVideoIsChartOut,
     selectedVideoMarketEntry,
+    selectedVideoOpenPosition,
     selectedVideoOpenPositionCount,
     selectedVideoOpenPositionSummary,
     selectedVideoRankLabel,
@@ -1356,16 +1357,15 @@ function HomePage() {
       selectedOpenPositionId != null &&
         openGamePositions.some((position) => position.id === selectedOpenPositionId)
         ? selectedOpenPositionId
-        : null,
-    [openGamePositions, selectedOpenPositionId],
+        : selectedVideoOpenPosition?.id ?? null,
+    [openGamePositions, selectedOpenPositionId, selectedVideoOpenPosition?.id],
   );
   const tradeTargetSellPositionId =
     tradeTargetPositionId != null &&
       openGamePositions.some((position) => position.id === tradeTargetPositionId && position.videoId === tradeTargetVideoId)
       ? tradeTargetPositionId
-      : null;
+      : tradeTargetGameState.selectedVideoOpenPosition?.id ?? null;
   const tradeSelectedSellPositionId = isTradeTargetActive ? tradeTargetSellPositionId : selectedSellPositionId;
-  const canScheduleSellCurrentSelection = tradeSelectedSellPositionId != null;
   const refetchCurrentChartAfterBuy = useCallback(async () => {
     const invalidations: Array<Promise<unknown>> = [];
 
@@ -2713,7 +2713,7 @@ function HomePage() {
         mode="sell"
         onChangeQuantity={handleSellQuantityChange}
         onClose={closeTradeModalFromFlow}
-        onChangeSellOrderMode={canScheduleSellCurrentSelection ? setSellOrderMode : undefined}
+        onChangeSellOrderMode={setSellOrderMode}
         onChangeScheduledSellTriggerType={setScheduledSellTriggerType}
         onChangeScheduledSellTriggerDirection={setScheduledSellTriggerDirection}
         onChangeScheduledSellTargetRank={setScheduledSellTargetRank}

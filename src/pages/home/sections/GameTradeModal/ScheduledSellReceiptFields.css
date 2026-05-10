@@ -1,0 +1,117 @@
+.app-shell__scheduled-sell-receipt {
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__scheduled-sell-receipt-segment {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.app-shell__scheduled-sell-receipt-segment button,
+.app-shell__scheduled-sell-receipt-presets button,
+.app-shell__scheduled-sell-receipt-display button {
+  font-family: 'Courier New', monospace;
+}
+
+.app-shell__scheduled-sell-receipt-segment button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  min-height: 38px;
+}
+
+.app-shell__scheduled-sell-receipt-segment button[data-active='true'] {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 800;
+}
+
+.app-shell__scheduled-sell-receipt-presets {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.app-shell__scheduled-sell-receipt-presets span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  margin-right: 2px;
+}
+
+.app-shell__scheduled-sell-receipt-presets button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  min-height: 28px;
+  padding: 0 10px;
+}
+
+.app-shell__scheduled-sell-receipt-presets button[data-active='true'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+  font-weight: 800;
+}
+
+.app-shell__scheduled-sell-receipt-display {
+  align-items: center;
+  background: var(--surface-modal-field);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 36px auto minmax(0, 1fr) 36px;
+  padding: 10px 12px;
+}
+
+.app-shell__scheduled-sell-receipt-display button {
+  background: var(--surface-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  height: 36px;
+}
+
+.app-shell__scheduled-sell-receipt-display strong {
+  color: var(--text);
+  font-size: 1.22rem;
+  min-width: 44px;
+  text-align: right;
+}
+
+.app-shell__scheduled-sell-receipt-display span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.app-shell__scheduled-sell-receipt-note {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.app-shell__scheduled-sell-receipt-alert {
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid #c0392b;
+  border-radius: 4px;
+  color: #c0392b;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 10px 12px;
+}

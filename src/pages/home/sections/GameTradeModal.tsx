@@ -1,32 +1,18 @@
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import {
-  DEFAULT_GAME_QUANTITY,
   GAME_ORDER_QUANTITY_STEP,
-  formatGameOrderQuantity,
-  parseGameOrderQuantityInput,
-  toDisplayGameOrderQuantity,
   normalizeGameOrderCapacity,
   normalizeGameOrderQuantity,
 } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
-import GameScheduledSellFields from './GameScheduledSellFields';
+import BuyTradeReceipt from './GameTradeModal/BuyTradeReceipt';
+import SellTradeReceipt from './GameTradeModal/SellTradeReceipt';
+import type { GameTradeModalSummaryItem, GameTradeQuickAction } from './GameTradeModal/types';
 import './GameTradeModal.css';
-
-interface GameTradeModalSummaryItem {
-  label: string;
-  tone?: 'flat' | 'gain' | 'loss';
-  value: string;
-}
-
-interface GameTradeQuickAction {
-  label: string;
-  quantity: number;
-}
 
 interface GameTradeModalProps {
   confirmLabel: string;
@@ -146,14 +132,52 @@ export default function GameTradeModal({
     normalizedMaxQuantity > 0
       ? Math.min(normalizeGameOrderQuantity(quantity), normalizedMaxQuantity)
       : normalizeGameOrderQuantity(quantity);
-  const previousQuantity =
-    normalizedQuantity <= GAME_ORDER_QUANTITY_STEP ? normalizedMaxQuantity : normalizedQuantity - GAME_ORDER_QUANTITY_STEP;
-  const nextQuantity =
-    normalizedQuantity >= normalizedMaxQuantity ? GAME_ORDER_QUANTITY_STEP : normalizedQuantity + GAME_ORDER_QUANTITY_STEP;
-  const displayQuantity = toDisplayGameOrderQuantity(normalizedQuantity);
   const quickActions = getGameTradeQuickActions(normalizedMaxQuantity);
   const isScheduledSellMode = mode === 'sell' && sellOrderMode === 'scheduled';
   const disableQuantityControls = isSubmitting || normalizedMaxQuantity <= 0;
+
+  if (mode === 'buy') {
+    return createPortal(
+      <div
+        className="app-shell__modal-backdrop app-shell__modal-backdrop--trade"
+        onClick={onClose}
+        role="presentation"
+        style={backdropStyle}
+      >
+        <section
+          aria-labelledby={modalTitleId}
+          aria-modal="true"
+          className="app-shell__modal app-shell__modal--trade app-shell__modal--trade-receipt"
+          data-trade-mode={mode}
+          onClick={(event) => event.stopPropagation()}
+          role="dialog"
+          style={modalStyle}
+        >
+          <BuyTradeReceipt
+            bodySwipeHandlers={bodySwipeHandlers}
+            confirmLabel={confirmLabel}
+            currentRankLabel={currentRankLabel}
+            disableQuantityControls={disableQuantityControls}
+            headerSwipeHandlers={headerSwipeHandlers}
+            helperText={helperText}
+            isSubmitting={isSubmitting}
+            modalTitleId={modalTitleId}
+            normalizedMaxQuantity={normalizedMaxQuantity}
+            normalizedQuantity={normalizedQuantity}
+            onChangeQuantity={onChangeQuantity}
+            onClose={onClose}
+            onConfirm={onConfirm}
+            quickActions={quickActions}
+            summaryItems={summaryItems}
+            thumbnailUrl={thumbnailUrl}
+            title={title}
+            unitPointsLabel={unitPointsLabel}
+          />
+        </section>
+      </div>,
+      container,
+    );
+  }
 
   return createPortal(
     <div
@@ -165,194 +189,45 @@ export default function GameTradeModal({
       <section
         aria-labelledby={modalTitleId}
         aria-modal="true"
-        className="app-shell__modal app-shell__modal--trade"
+        className="app-shell__modal app-shell__modal--trade app-shell__modal--trade-receipt"
         data-trade-mode={mode}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         style={modalStyle}
       >
-        <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
-          <div className="app-shell__section-heading">
-            <p className="app-shell__section-eyebrow">{mode === 'buy' ? 'Buy Position' : 'Sell Position'}</p>
-            <h2 className="app-shell__section-title" id={modalTitleId}>
-              {mode === 'buy' ? '몇 개 매수할까요?' : '몇 개 매도할까요?'}
-            </h2>
-          </div>
-        </div>
-
-        <div className="app-shell__modal-body" {...bodySwipeHandlers}>
-          <div className="app-shell__game-trade-modal-head">
-            {thumbnailUrl ? (
-              <span className="thumbnail-play-overlay-host thumbnail-play-overlay-host--block thumbnail-play-overlay-host--xl">
-                <img alt="" className="app-shell__game-trade-modal-thumb" src={thumbnailUrl} />
-                <ThumbnailPlayOverlay />
-              </span>
-            ) : null}
-            <div className="app-shell__game-trade-modal-copy">
-              <p className="app-shell__game-trade-modal-title">{title}</p>
-              <p className="app-shell__game-trade-modal-meta">
-                현재 {currentRankLabel} · 1개당 {unitPointsLabel}
-              </p>
-            </div>
-          </div>
-
-          <div className="app-shell__modal-fields">
-            {mode === 'sell' && onChangeSellOrderMode ? (
-              <div className="app-shell__game-trade-mode-switch" aria-label="매도 방식">
-                <button
-                  className="app-shell__game-trade-mode-option"
-                  data-active={!isScheduledSellMode}
-                  disabled={isSubmitting}
-                  onClick={() => onChangeSellOrderMode('instant')}
-                  type="button"
-                >
-                  즉시 매도
-                </button>
-                <button
-                  className="app-shell__game-trade-mode-option"
-                  data-active={isScheduledSellMode}
-                  disabled={isSubmitting}
-                  onClick={() => onChangeSellOrderMode('scheduled')}
-                  type="button"
-                >
-                  예약 매도
-                </button>
-              </div>
-            ) : null}
-
-            <div className="app-shell__modal-field">
-              <div className="app-shell__section-heading">
-                <p className="app-shell__section-eyebrow">Quantity</p>
-                <h3 className="app-shell__modal-field-title">수량</h3>
-              </div>
-              <p className="app-shell__modal-field-copy">{helperText}</p>
-              <div className="app-shell__game-trade-modal-controls">
-                {quickActions.length > 0 ? (
-                  <div className="app-shell__game-trade-modal-quick-actions">
-                    {quickActions.map((action) => (
-                      <button
-                        key={action.label}
-                        className="app-shell__game-trade-modal-quick-action"
-                        data-active={action.quantity === normalizedQuantity}
-                        disabled={disableQuantityControls}
-                        onClick={() => onChangeQuantity(action.quantity)}
-                        type="button"
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="app-shell__game-panel-quantity">
-                  <button
-                    className="app-shell__game-panel-quantity-button"
-                    disabled={disableQuantityControls}
-                    onClick={() => onChangeQuantity(previousQuantity)}
-                    type="button"
-                  >
-                    -
-                  </button>
-                  <input
-                    className="app-shell__game-panel-quantity-input"
-                    disabled={disableQuantityControls}
-                    inputMode="numeric"
-                    max={normalizedMaxQuantity > 0 ? toDisplayGameOrderQuantity(normalizedMaxQuantity) : undefined}
-                    min={mode === 'buy' ? 0 : toDisplayGameOrderQuantity(GAME_ORDER_QUANTITY_STEP)}
-                    onChange={(event) => {
-                      const nextValue = Number.parseInt(event.target.value, 10);
-                      onChangeQuantity(
-                        Number.isFinite(nextValue)
-                          ? parseGameOrderQuantityInput(nextValue)
-                          : mode === 'buy'
-                            ? 0
-                            : DEFAULT_GAME_QUANTITY,
-                      );
-                    }}
-                    step="1"
-                    type="number"
-                    value={displayQuantity}
-                  />
-                  <button
-                    className="app-shell__game-panel-quantity-button"
-                    disabled={disableQuantityControls}
-                    onClick={() => onChangeQuantity(nextQuantity)}
-                    type="button"
-                  >
-                    +
-                  </button>
-                </div>
-                <p className="app-shell__modal-field-copy">
-                  1개 단위로만 주문할 수 있습니다. 현재 선택: {formatGameOrderQuantity(normalizedQuantity)}
-                </p>
-              </div>
-            </div>
-
-            {isScheduledSellMode &&
-            onChangeScheduledSellTriggerType &&
-            onChangeScheduledSellTargetRank &&
-            onChangeScheduledSellTargetProfitRatePercent &&
-            onChangeScheduledSellTriggerDirection ? (
-              <div className="app-shell__modal-field">
-                <div className="app-shell__section-heading">
-                  <p className="app-shell__section-eyebrow">Trigger</p>
-                  <h3 className="app-shell__modal-field-title">예약 조건</h3>
-                </div>
-                <GameScheduledSellFields
-                  conditionError={scheduledSellConditionError}
-                  disabled={isSubmitting}
-                  onChangeTriggerType={onChangeScheduledSellTriggerType}
-                  onChangeTriggerDirection={onChangeScheduledSellTriggerDirection}
-                  onChangeTargetRank={onChangeScheduledSellTargetRank}
-                  onChangeTargetProfitRatePercent={onChangeScheduledSellTargetProfitRatePercent}
-                  targetRank={scheduledSellTargetRank}
-                  targetProfitRatePercent={scheduledSellTargetProfitRatePercent}
-                  triggerDirection={scheduledSellTriggerDirection}
-                  triggerType={scheduledSellTriggerType}
-                />
-              </div>
-            ) : null}
-
-            <div className="app-shell__modal-field">
-              <div className="app-shell__section-heading">
-                <p className="app-shell__section-eyebrow">Summary</p>
-                <h3 className="app-shell__modal-field-title">
-                  {mode === 'buy' ? '주문 요약' : isScheduledSellMode ? '예약 요약' : '정리 요약'}
-                </h3>
-              </div>
-              <dl className="app-shell__game-trade-modal-summary">
-                {summaryItems.map((item) => (
-                  <div key={`${item.label}-${item.value}`} className="app-shell__game-trade-modal-summary-item">
-                    <dt className="app-shell__game-trade-modal-summary-label">{item.label}</dt>
-                    <dd className="app-shell__game-trade-modal-summary-value" data-tone={item.tone}>
-                      {item.value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-              {summaryNote ? <p className="app-shell__game-trade-modal-quantity-note">{summaryNote}</p> : null}
-              {detailContent ? <div className="app-shell__game-trade-modal-detail">{detailContent}</div> : null}
-            </div>
-          </div>
-        </div>
-
-        <div className="app-shell__modal-footer app-shell__modal-footer--trade-actions">
-          <button
-            className="app-shell__modal-action"
-            disabled={isSubmitting || normalizedMaxQuantity <= 0 || Boolean(scheduledSellConditionError)}
-            onClick={onConfirm}
-            type="button"
-          >
-            {isSubmitting ? '처리 중...' : confirmLabel}
-          </button>
-          <button
-            aria-label="거래 모달 닫기"
-            className="app-shell__modal-close"
-            onClick={onClose}
-            type="button"
-          >
-            닫기
-          </button>
-        </div>
+        <SellTradeReceipt
+          bodySwipeHandlers={bodySwipeHandlers}
+          confirmLabel={confirmLabel}
+          currentRankLabel={currentRankLabel}
+          detailContent={detailContent}
+          disableQuantityControls={disableQuantityControls}
+          headerSwipeHandlers={headerSwipeHandlers}
+          helperText={helperText}
+          isScheduledSellMode={isScheduledSellMode}
+          isSubmitting={isSubmitting}
+          modalTitleId={modalTitleId}
+          normalizedMaxQuantity={normalizedMaxQuantity}
+          normalizedQuantity={normalizedQuantity}
+          onChangeQuantity={onChangeQuantity}
+          onChangeSellOrderMode={onChangeSellOrderMode}
+          onChangeScheduledSellTargetProfitRatePercent={onChangeScheduledSellTargetProfitRatePercent}
+          onChangeScheduledSellTargetRank={onChangeScheduledSellTargetRank}
+          onChangeScheduledSellTriggerDirection={onChangeScheduledSellTriggerDirection}
+          onChangeScheduledSellTriggerType={onChangeScheduledSellTriggerType}
+          onClose={onClose}
+          onConfirm={onConfirm}
+          quickActions={quickActions}
+          scheduledSellConditionError={scheduledSellConditionError}
+          scheduledSellTargetProfitRatePercent={scheduledSellTargetProfitRatePercent}
+          scheduledSellTargetRank={scheduledSellTargetRank}
+          scheduledSellTriggerDirection={scheduledSellTriggerDirection}
+          scheduledSellTriggerType={scheduledSellTriggerType}
+          summaryItems={summaryItems}
+          summaryNote={summaryNote}
+          thumbnailUrl={thumbnailUrl}
+          title={title}
+          unitPointsLabel={unitPointsLabel}
+        />
       </section>
     </div>,
     container,

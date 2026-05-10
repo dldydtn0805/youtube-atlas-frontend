@@ -38,6 +38,39 @@ describe('GameTradeModal', () => {
     expect(screen.getByText(/1개 단위로만 주문할 수 있습니다/)).toBeInTheDocument();
   });
 
+  it('renders buy orders with the receipt layout', () => {
+    render(
+      <GameTradeModal
+        confirmLabel="2개 매수"
+        currentRankLabel="1위"
+        helperText="구매 후 포인트가 남습니다."
+        isOpen
+        isSubmitting={false}
+        maxQuantity={400}
+        mode="buy"
+        onChangeQuantity={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        quantity={200}
+        summaryItems={[
+          { label: '수량', value: '2개' },
+          { label: '1개당 가격', value: '100P' },
+          { label: '총 매수', value: '200P' },
+          { label: '거래 후 잔액', value: '800P' },
+        ]}
+        thumbnailUrl={null}
+        title="테스트 영상"
+        unitPointsLabel="100P"
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '매수 주문서' })).toBeInTheDocument();
+    expect(screen.getByText('BUY ORDER')).toBeInTheDocument();
+    expect(screen.getByText('테스트 영상')).toBeInTheDocument();
+    expect(screen.getByText('TOTAL')).toBeInTheDocument();
+    expect(screen.getAllByText('200P')).toHaveLength(2);
+  });
+
   it('renders the shared play overlay on the modal thumbnail', () => {
     render(
       <GameTradeModal
@@ -88,6 +121,42 @@ describe('GameTradeModal', () => {
 
     expect(screen.getByText('거래 후 잔액')).toBeInTheDocument();
     expect(screen.getByText('10,900P')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '즉시 매도' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '예약 매도' })).toBeInTheDocument();
+  });
+
+  it('renders sell orders with the receipt layout', () => {
+    render(
+      <GameTradeModal
+        confirmLabel="2개 즉시 매도"
+        currentRankLabel="3위"
+        helperText="지금 매도 가능한 수량은 2개입니다."
+        isOpen
+        isSubmitting={false}
+        maxQuantity={200}
+        mode="sell"
+        onChangeQuantity={vi.fn()}
+        onChangeSellOrderMode={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        quantity={200}
+        summaryItems={[
+          { label: '수량', value: '2개' },
+          { label: '정산 금액', value: '900P' },
+          { label: '하이라이트 점수 증가량', tone: 'gain', value: '+20점' },
+          { label: '수수료', tone: 'loss', value: '3P' },
+        ]}
+        thumbnailUrl={null}
+        title="테스트 영상"
+        unitPointsLabel="1,000P"
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '매도 주문서' })).toBeInTheDocument();
+    expect(screen.getByText('SELL ORDER')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '즉시 매도' })).toBeInTheDocument();
+    expect(screen.getByText('TOTAL')).toBeInTheDocument();
+    expect(screen.getAllByText('900P')).toHaveLength(2);
   });
 
   it('switches to scheduled sell mode from the mode buttons', () => {

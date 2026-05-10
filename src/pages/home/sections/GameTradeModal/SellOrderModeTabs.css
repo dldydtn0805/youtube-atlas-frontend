@@ -1,0 +1,30 @@
+.app-shell__sell-order-tabs {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.app-shell__sell-order-tabs button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  min-height: 40px;
+}
+
+.app-shell__sell-order-tabs button[data-active='true'] {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 800;
+}
+
+.app-shell__sell-order-tabs button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}

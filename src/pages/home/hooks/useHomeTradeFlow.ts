@@ -176,12 +176,6 @@ export default function useHomeTradeFlow({
   }, [activeSellPreview, activeTradeModal, sellOrderMode]);
 
   useEffect(() => {
-    if (sellOrderMode === 'scheduled' && !canScheduleSellCurrentSelection) {
-      setSellOrderMode('instant');
-    }
-  }, [canScheduleSellCurrentSelection, sellOrderMode]);
-
-  useEffect(() => {
     if (activeTradeModal !== 'sell' || sellOrderMode !== 'instant') {
       lastInstantSellDefaultKeyRef.current = null;
       return;
