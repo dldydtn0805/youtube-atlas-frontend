@@ -3,12 +3,13 @@ import { getPointTone } from '../../gameHelpers';
 import { getHoldingEvaluationPoints } from '../../gameInventorySorting';
 
 export interface GameInventorySegment {
+  contributionPoints: number;
   id: number;
   tone: ReturnType<typeof getPointTone>;
   widthPercent: number;
 }
 
-function getFinitePoints(points: number | null) {
+function getFinitePoints(points?: number | null) {
   return typeof points === 'number' && Number.isFinite(points) ? points : 0;
 }
 
@@ -24,12 +25,20 @@ export function buildGameInventorySummary(holdings: OpenGameHolding[]) {
       const value = getHoldingEvaluationPoints(holding);
 
       return {
+        contributionPoints: getFinitePoints(holding.profitPoints),
         id: holding.positionId,
         tone: getPointTone(holding.profitPoints),
         widthPercent: totalEvaluationPoints > 0 ? (value / totalEvaluationPoints) * 100 : 0,
       };
     })
-    .filter((segment) => segment.widthPercent > 0);
+    .filter((segment) => segment.widthPercent > 0)
+    .sort((left, right) => {
+      if (left.contributionPoints !== right.contributionPoints) {
+        return right.contributionPoints - left.contributionPoints;
+      }
+
+      return right.widthPercent - left.widthPercent;
+    });
 
   return {
     gainCount,
