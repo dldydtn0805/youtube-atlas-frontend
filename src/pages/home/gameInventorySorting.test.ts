@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OpenGameHolding } from './gameHelpers';
-import { sortHoldingsByProfitRateDesc } from './gameInventorySorting';
+import { sortGameInventoryHoldings, sortHoldingsByProfitRateDesc } from './gameInventorySorting';
 
 function createHolding(overrides: Partial<OpenGameHolding>): OpenGameHolding {
   return {
@@ -45,5 +45,27 @@ describe('sortHoldingsByProfitRateDesc', () => {
     ];
 
     expect(sortHoldingsByProfitRateDesc(holdings).map((holding) => holding.positionId)).toEqual([2, 1, 4, 3]);
+  });
+});
+
+describe('sortGameInventoryHoldings', () => {
+  it('sorts by current rank with chart-out holdings last', () => {
+    const holdings = [
+      createHolding({ positionId: 1, currentRank: 50 }),
+      createHolding({ positionId: 2, currentRank: 10 }),
+      createHolding({ positionId: 3, chartOut: true, currentRank: null }),
+    ];
+
+    expect(sortGameInventoryHoldings(holdings, 'rank').map((holding) => holding.positionId)).toEqual([2, 1, 3]);
+  });
+
+  it('sorts by evaluation points descending', () => {
+    const holdings = [
+      createHolding({ positionId: 1, currentPricePoints: 100 }),
+      createHolding({ positionId: 2, currentPricePoints: 300 }),
+      createHolding({ positionId: 3, currentPricePoints: null, profitPoints: 50, stakePoints: 100 }),
+    ];
+
+    expect(sortGameInventoryHoldings(holdings, 'value').map((holding) => holding.positionId)).toEqual([2, 3, 1]);
   });
 });

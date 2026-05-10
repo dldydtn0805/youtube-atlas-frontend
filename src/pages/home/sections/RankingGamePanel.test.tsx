@@ -400,7 +400,7 @@ describe('RankingGamePositionsTab', () => {
 
     expect(screen.getByText('순위')).toBeInTheDocument();
     expect(screen.getByText('96위')).toBeInTheDocument();
-    expect(screen.getByText('47위')).toBeInTheDocument();
+    expect(screen.getAllByText('47위').length).toBeGreaterThan(0);
   });
 
   it('opens position trade actions from the holding card', () => {

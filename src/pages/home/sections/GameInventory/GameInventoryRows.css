@@ -1,0 +1,202 @@
+.app-shell__game-inventory .app-shell__game-positions {
+  gap: 8px;
+}
+
+.app-shell__game-inventory .app-shell__game-position {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  gap: 10px;
+  padding: 10px 12px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.app-shell__game-inventory .app-shell__game-position:hover {
+  border-color: rgba(100, 116, 139, 0.32);
+  transform: translateY(-1px);
+}
+
+.app-shell__game-inventory .app-shell__game-position-select {
+  align-items: stretch;
+  grid-template-columns: 42px minmax(112px, 15vw) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.app-shell__game-position-rank-box {
+  align-items: center;
+  align-self: stretch;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 10px;
+  display: grid;
+  justify-items: center;
+  min-height: 48px;
+  padding: 6px 4px;
+}
+
+.app-shell__game-position-rank-now {
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell__game-position-rank-delta {
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.app-shell__game-inventory .app-shell__game-position-thumb-button,
+.app-shell__game-inventory .app-shell__game-position-thumb {
+  width: 100%;
+}
+
+.app-shell__game-inventory .app-shell__game-position-thumb-button {
+  align-self: stretch;
+  min-height: 72px;
+}
+
+.app-shell__game-inventory .app-shell__game-position-thumb {
+  border-radius: 10px;
+  height: 100%;
+  min-height: 72px;
+  object-fit: cover;
+}
+
+.app-shell__game-inventory .app-shell__game-position-copy,
+.app-shell__game-inventory .app-shell__game-position-body,
+.app-shell__game-inventory .app-shell__game-position-body-button {
+  gap: 5px;
+}
+
+.app-shell__game-inventory .app-shell__game-position-title {
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.app-shell__game-inventory .app-shell__game-position-channel,
+.app-shell__game-inventory .app-shell__game-position-meta,
+.app-shell__game-inventory .app-shell__game-position-detail-copy {
+  font-size: 0.7rem;
+}
+
+.app-shell__game-position-profit-track {
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  display: block;
+  height: 5px;
+  overflow: hidden;
+}
+
+.app-shell__game-position-profit-track span {
+  background: var(--game-inventory-gain, #dc2626);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.app-shell__game-position-profit-track span[data-tone='loss'] {
+  background: var(--game-inventory-loss, #2563eb);
+}
+
+.app-shell__game-position-profit-track span[data-tone='flat'] {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.app-shell__game-inventory .app-shell__game-position-trend[data-tone='up'] {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.16);
+  color: var(--game-inventory-gain, #dc2626);
+}
+
+.app-shell__game-inventory .app-shell__game-position-trend[data-tone='down'] {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.16);
+  color: var(--game-inventory-loss, #2563eb);
+}
+
+.app-shell__game-inventory .app-shell__game-position-action-icon {
+  height: 38px;
+  width: 38px;
+}
+
+:root[data-theme='dark'] .app-shell__game-position-rank-box {
+  background: rgba(30, 41, 59, 0.42);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .app-shell__game-inventory .app-shell__game-position {
+  background: rgba(14, 14, 14, 0.76);
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-select {
+  align-items: stretch;
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-thumb-button {
+  aspect-ratio: 16 / 9;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-thumb {
+  aspect-ratio: 16 / 9;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  width: 100%;
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-rank-box {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+:root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-copy {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+@media (max-width: 720px) {
+  .app-shell__game-inventory .app-shell__game-position-select {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .app-shell__game-inventory .app-shell__game-position-thumb-button {
+    aspect-ratio: 16 / 9;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .app-shell__game-inventory .app-shell__game-position-thumb {
+    aspect-ratio: 16 / 9;
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .app-shell__game-inventory .app-shell__game-position-rank-box {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .app-shell__game-inventory .app-shell__game-position-copy {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}

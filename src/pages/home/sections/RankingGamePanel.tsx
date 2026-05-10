@@ -32,7 +32,7 @@ import {
   getPointTone,
   type OpenGameHolding,
 } from '../gameHelpers';
-import { sortHoldingsByProfitRateDesc } from '../gameInventorySorting';
+import { sortGameInventoryHoldings, type GameInventorySortKey } from '../gameInventorySorting';
 import { buildGameStrategyBadges } from '../gameStrategyTags';
 import { GAME_PORTFOLIO_QUEUE_ID, HISTORY_PLAYBACK_QUEUE_ID } from '../utils';
 import AchievementTitleBadge from './AchievementTitleBadge';
@@ -42,6 +42,7 @@ import GamePanelNyanRefreshIcon from './GamePanelNyanRefreshIcon';
 import { RankingGamePositionRow } from './RankingGamePositionRow';
 import GameTierSummary from './GameTierSummary';
 import GameWalletSummary from './GameWalletSummary';
+import GameInventorySummary from './GameInventory/GameInventorySummary';
 import MiniVideoPreview from './MiniVideoPreview';
 import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
 import useGamePanelPullToRefresh from './useGamePanelPullToRefresh';
@@ -1088,10 +1089,14 @@ function RankingGamePositionsTabComponent({
   scheduledSellOrders = [],
   selectedPositionId,
 }: RankingGamePositionsTabProps) {
+  const [inventorySortKey, setInventorySortKey] = useState<GameInventorySortKey>('profit');
   const inventoryOpenCount =
     openDistinctVideoCount ?? new Set(holdings.map((holding) => holding.videoId)).size;
   const maxOpenPositions = currentGameSeason ? getGameInventorySlotLimit(currentGameSeason) : null;
-  const sortedHoldings = useMemo(() => sortHoldingsByProfitRateDesc(holdings), [holdings]);
+  const sortedHoldings = useMemo(
+    () => sortGameInventoryHoldings(holdings, inventorySortKey),
+    [holdings, inventorySortKey],
+  );
   const inventorySummary = (
     <GameInventoryCapacity
       currentGameSeason={currentGameSeason}
@@ -1099,10 +1104,19 @@ function RankingGamePositionsTabComponent({
       openDistinctVideoCount={inventoryOpenCount}
     />
   );
+  const inventoryDashboard = (
+    <GameInventorySummary
+      holdings={holdings}
+      maxOpenPositions={maxOpenPositions}
+      onSortKeyChange={setInventorySortKey}
+      openDistinctVideoCount={inventoryOpenCount}
+      sortKey={inventorySortKey}
+    />
+  );
 
   if (isLoading) {
     return (
-      <>
+      <div className="app-shell__game-inventory">
         {inventorySummary}
         <div className="app-shell__game-tab-loading-shell" data-loading>
           <div className="app-shell__game-tab-loading-overlay" role="status" aria-live="polite">
@@ -1110,22 +1124,24 @@ function RankingGamePositionsTabComponent({
             <span className="sr-only">인벤토리 불러오는 중</span>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   if (holdings.length === 0) {
     return (
-      <>
+      <div className="app-shell__game-inventory">
         {inventorySummary}
+        {inventoryDashboard}
         {emptyMessage ? <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{emptyMessage}</p> : null}
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="app-shell__game-inventory">
       {inventorySummary}
+      {inventoryDashboard}
       <ul className="app-shell__game-positions">
         {sortedHoldings.map((holding) => (
           <RankingGamePositionRow
@@ -1144,7 +1160,7 @@ function RankingGamePositionsTabComponent({
           />
         ))}
       </ul>
-    </>
+    </div>
   );
 }
 

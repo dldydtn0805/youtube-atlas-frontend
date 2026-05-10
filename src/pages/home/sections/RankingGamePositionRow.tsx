@@ -1,3 +1,4 @@
+import './GameInventory/GameInventoryRows.css';
 import { memo } from 'react';
 import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { GamePosition, GameScheduledSellOrder, GameStrategyType } from '../../../features/game/types';
@@ -10,6 +11,7 @@ import {
   getPointTone,
   type OpenGameHolding,
 } from '../gameHelpers';
+import { getHoldingProfitRate } from '../gameInventorySorting';
 import { buildPositionStrategyBadges } from '../gameStrategyTags';
 import { getScheduledSellPresetForStrategy } from '../scheduledSellStrategyPreset';
 import { formatSignedProfitRate } from '../utils';
@@ -53,6 +55,26 @@ function getHoldingRankDiffBadge(holding: Pick<OpenGameHolding, 'buyRank' | 'cur
   }
 
   return { label: '유지', tone: 'steady' as const };
+}
+
+function getHoldingRankDelta(holding: Pick<OpenGameHolding, 'buyRank' | 'currentRank' | 'chartOut'>) {
+  if (holding.chartOut || typeof holding.currentRank !== 'number') {
+    return null;
+  }
+
+  return holding.buyRank - holding.currentRank;
+}
+
+function formatRankDelta(delta: number | null) {
+  if (delta === null || delta === 0) {
+    return '0';
+  }
+
+  return delta > 0 ? `+${delta}` : `${delta}`;
+}
+
+function formatRankBoxLabel(holding: Pick<OpenGameHolding, 'currentRank' | 'chartOut'>) {
+  return formatRank(holding.currentRank, { chartOut: holding.chartOut });
 }
 
 function mapHoldingToGamePosition(holding: OpenGameHolding): GamePosition {
@@ -101,8 +123,13 @@ function RankingGamePositionRowComponent({
   scheduledSellOrderCancelingId,
   scheduledSellOrders,
 }: RankingGamePositionRowProps) {
+  const rankDelta = getHoldingRankDelta(holding);
+  const rankDeltaTone = rankDelta === null || rankDelta === 0 ? 'flat' : rankDelta > 0 ? 'gain' : 'loss';
   const holdingRankTrendBadge = getHoldingRankDiffBadge(holding);
   const strategyBadges = buildPositionStrategyBadges(holding.achievedStrategyTags, holding.targetStrategyTags);
+  const profitRate = getHoldingProfitRate(holding);
+  const profitTone = getPointTone(holding.profitPoints);
+  const profitMeterWidth = Number.isFinite(profitRate) ? Math.min(Math.abs(profitRate) * 100, 100) : 0;
   const currentUnitPricePoints =
     typeof holding.currentPricePoints === 'number'
       ? calculateGameUnitPricePoints(holding.currentPricePoints, holding.quantity)
@@ -129,6 +156,14 @@ function RankingGamePositionRowComponent({
   return (
     <li className="app-shell__game-position" data-selected={isSelected}>
       <div className="app-shell__game-position-select">
+        <div className="app-shell__game-position-rank-box" data-tone={rankDeltaTone}>
+          <span className="app-shell__game-position-rank-now">
+            {formatRankBoxLabel(holding)}
+          </span>
+          <span className="app-shell__game-position-rank-delta" data-tone={rankDeltaTone}>
+            {formatRankDelta(rankDelta)}
+          </span>
+        </div>
         <button
           className="app-shell__game-position-thumb-button thumbnail-play-overlay-host thumbnail-play-overlay-host--sm"
           onClick={() => onSelectPosition(position)}
@@ -194,6 +229,9 @@ function RankingGamePositionRowComponent({
                   {formatSignedProfitRate(holding.profitPoints, holding.stakePoints)}
                 </span>
               </p>
+              <span className="app-shell__game-position-profit-track" aria-hidden="true">
+                <span data-tone={profitTone} style={{ width: `${profitMeterWidth}%` }} />
+              </span>
               {hasDetailBadges ? (
                 <div className="app-shell__game-position-detail">
                   <span className="app-shell__game-position-detail-badges">
