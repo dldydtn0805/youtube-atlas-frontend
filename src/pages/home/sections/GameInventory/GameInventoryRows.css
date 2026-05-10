@@ -21,7 +21,7 @@
 
 .app-shell__game-inventory .app-shell__game-position-select {
   align-items: stretch;
-  grid-template-columns: 42px minmax(112px, 15vw) minmax(0, 1fr);
+  grid-template-columns: 42px clamp(128px, 14vw, 220px) minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -57,18 +57,21 @@
 
 .app-shell__game-inventory .app-shell__game-position-thumb-button,
 .app-shell__game-inventory .app-shell__game-position-thumb {
+  aspect-ratio: 16 / 9;
+  max-width: 220px;
   width: 100%;
 }
 
 .app-shell__game-inventory .app-shell__game-position-thumb-button {
-  align-self: stretch;
-  min-height: 72px;
+  align-self: start;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .app-shell__game-inventory .app-shell__game-position-thumb {
   border-radius: 10px;
   height: 100%;
-  min-height: 72px;
+  min-height: 0;
   object-fit: cover;
 }
 
@@ -145,8 +148,10 @@
 
 :root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-thumb-button {
   aspect-ratio: 16 / 9;
+  align-self: stretch;
   grid-column: 1 / -1;
   grid-row: 1;
+  max-width: none;
   min-height: 0;
   width: 100%;
 }
@@ -154,6 +159,7 @@
 :root[data-mobile-layout='true'] .app-shell__game-inventory .app-shell__game-position-thumb {
   aspect-ratio: 16 / 9;
   height: 100%;
+  max-width: none;
   min-height: 0;
   object-fit: cover;
   width: 100%;
@@ -176,8 +182,10 @@
 
   .app-shell__game-inventory .app-shell__game-position-thumb-button {
     aspect-ratio: 16 / 9;
+    align-self: stretch;
     grid-column: 1 / -1;
     grid-row: 1;
+    max-width: none;
     min-height: 0;
     width: 100%;
   }
@@ -185,6 +193,7 @@
   .app-shell__game-inventory .app-shell__game-position-thumb {
     aspect-ratio: 16 / 9;
     height: 100%;
+    max-width: none;
     min-height: 0;
     object-fit: cover;
     width: 100%;
