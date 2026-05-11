@@ -1,0 +1,19 @@
+@media (max-width: 768px),
+  (max-width: 1024px) and (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+  :root[data-mobile-layout='true'] .chart-ranking-board__section {
+    border-left: 1px solid var(--chart-board-border);
+    border-radius: 8px;
+    border-right: 1px solid var(--chart-board-border);
+    margin-inline: 8px;
+    padding: 12px 8px;
+    width: calc(100% - 16px);
+  }
+}
+
+@media (max-width: 480px) {
+  :root[data-mobile-layout='true'] .chart-ranking-board__section {
+    margin-inline: 6px;
+    padding-inline: 6px;
+    width: calc(100% - 12px);
+  }
+}

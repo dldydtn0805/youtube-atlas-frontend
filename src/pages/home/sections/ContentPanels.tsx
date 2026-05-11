@@ -11,6 +11,7 @@ import ChartRankingBoard from './ChartRankingBoard';
 import QuickViewButtons from './QuickViewButtons';
 import type { ViewOption } from './filterPanelTypes';
 import './ContentPanels.css';
+import './ContentPanelsMobileChart.css';
 
 interface ChartSortOption {
   id: ChartSortMode;
@@ -148,8 +149,8 @@ export const ChartPanel = memo(function ChartPanel({
   viewOptions,
 }: ChartPanelProps) {
   const panelClassName = className
-    ? `app-shell__panel app-shell__panel--chart ${className}`
-    : 'app-shell__panel app-shell__panel--chart';
+    ? `app-shell__panel app-shell__panel--chart app-shell__panel--ranking-chart ${className}`
+    : 'app-shell__panel app-shell__panel--chart app-shell__panel--ranking-chart';
 
   return (
     <section className={panelClassName}>

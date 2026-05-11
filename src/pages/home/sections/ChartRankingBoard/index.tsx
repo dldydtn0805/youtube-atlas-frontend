@@ -6,6 +6,7 @@ import type { ChartRankingBoardProps } from './types';
 import './ChartRankingBoard.css';
 import './ChartRankingTable.css';
 import './ChartRankingResponsive.css';
+import './ChartRankingMobileFrame.css';
 
 function ChartRankingBoard({
   activePlaybackQueueId,
