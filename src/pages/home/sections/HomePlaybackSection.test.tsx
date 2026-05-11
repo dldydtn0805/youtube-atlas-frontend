@@ -27,7 +27,9 @@ vi.mock('./PlayerStage', () => ({
     </div>
   ),
   default: ({
+    chartContent,
     communityContent,
+    isCinematicModeActive,
     isVideoPlayerDocked,
     playerSectionRef,
     playerStageRef,
@@ -36,7 +38,9 @@ vi.mock('./PlayerStage', () => ({
     playerViewportRef,
     topContent,
   }: {
+    chartContent?: React.ReactNode;
     communityContent?: React.ReactNode;
+    isCinematicModeActive?: boolean;
     isVideoPlayerDocked?: boolean;
     playerSectionRef: React.RefObject<HTMLElement | null>;
     playerStageRef: React.RefObject<HTMLDivElement | null>;
@@ -55,6 +59,7 @@ vi.mock('./PlayerStage', () => ({
         </div>
       ) : null}
       {communityContent}
+      {isCinematicModeActive ? chartContent : null}
     </div>
   ),
 }));
@@ -255,6 +260,27 @@ describe('HomePlaybackSection', () => {
 
     expect(commentSection.compareDocumentPosition(chartPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(chartPanel.compareDocumentPosition(supplementalContent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('does not render the chart panel in cinematic mode', () => {
+    render(
+      <HomePlaybackSection
+        chartPanelProps={{} as never}
+        communityPanelProps={{} as never}
+        filterBarProps={{} as never}
+        playerStageProps={
+          {
+            isCinematicModeActive: true,
+            isMobileLayout: false,
+            playerSectionRef: createRef<HTMLElement>(),
+            playerStageRef: createRef<HTMLDivElement>(),
+            playerViewportRef: createRef<HTMLDivElement>(),
+          } as never
+        }
+      />,
+    );
+
+    expect(screen.queryByTestId('chart-panel')).not.toBeInTheDocument();
   });
 
   it('can collapse and expand the sticky selected video panel', async () => {
@@ -542,7 +568,7 @@ describe('HomePlaybackSection', () => {
     expect(onPlayNextStickySelectedVideo).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the sticky selected video panel in cinematic mode as well', async () => {
+  it('does not show the sticky selected video panel in cinematic mode', () => {
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -580,10 +606,11 @@ describe('HomePlaybackSection', () => {
 
     flushAnimationFrames();
 
-    await expandCollapsedStickyPanel();
+    expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toBeNull();
+    expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
   });
 
-  it('keeps the cinematic dock preview undocked while the selected video panel stays collapsed by default', async () => {
+  it('keeps the cinematic dock preview undocked without the selected video panel', () => {
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -630,10 +657,7 @@ describe('HomePlaybackSection', () => {
 
     flushAnimationFrames();
 
-    await waitFor(() => {
-      expect(screen.getByText('Now Playing')).toBeInTheDocument();
-    });
-
+    expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toBeNull();
     expect(screen.queryByText('Selected video actions')).not.toBeInTheDocument();
     expect(screen.getByTestId('player-dock-state')).toHaveTextContent('undocked');
   });
@@ -914,7 +938,7 @@ describe('HomePlaybackSection', () => {
     });
   });
 
-  it('hides the cinematic selected video panel while scrolling down and restores it when scrolling up', async () => {
+  it('keeps the cinematic selected video panel removed while scrolling', () => {
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -952,34 +976,24 @@ describe('HomePlaybackSection', () => {
 
     flushAnimationFrames();
 
-    await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toHaveAttribute(
-        'data-scroll-hidden',
-        'false',
-      );
-    });
+    expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toBeNull();
 
     const playerStage = screen.getByTestId('player-stage');
-    const stickySlot = document.querySelector('.app-shell__sticky-selected-video-slot');
 
     playerStage.scrollTop = 120;
     fireEvent.scroll(playerStage);
     flushAnimationFrames();
 
-    await waitFor(() => {
-      expect(stickySlot).toHaveAttribute('data-scroll-hidden', 'true');
-    });
+    expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toBeNull();
 
     playerStage.scrollTop = 40;
     fireEvent.scroll(playerStage);
     flushAnimationFrames();
 
-    await waitFor(() => {
-      expect(stickySlot).toHaveAttribute('data-scroll-hidden', 'false');
-    });
+    expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toBeNull();
   });
 
-  it('keeps the cinematic selected video panel hidden when it first appears during downward scroll', async () => {
+  it('does not show the cinematic selected video panel after the player scrolls away', () => {
     render(
       <HomePlaybackSection
         chartPanelProps={{} as never}
@@ -1044,12 +1058,7 @@ describe('HomePlaybackSection', () => {
     fireEvent.scroll(playerStage);
     flushAnimationFrames();
 
-    await waitFor(() => {
-      expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toHaveAttribute(
-        'data-scroll-hidden',
-        'true',
-      );
-    });
+    expect(document.querySelector('.app-shell__sticky-selected-video-slot')).toBeNull();
   });
 
   it('scrolls to the player stage when the top button is pressed', async () => {

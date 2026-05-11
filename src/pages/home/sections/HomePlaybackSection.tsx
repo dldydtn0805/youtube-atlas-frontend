@@ -9,7 +9,6 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { createPortal } from 'react-dom';
 import CommentSection from '../../../components/CommentSection/CommentSection';
 import { ChartPanel } from './ContentPanels';
 import type { FilterBarProps } from './FilterPanels';
@@ -51,10 +50,6 @@ interface HomePlaybackSectionProps {
   playerStageProps: Omit<ComponentProps<typeof PlayerStage>, 'chartContent' | 'filterContent'>;
   stickySelectedVideoContent?: ReactNode | ((controls: StickySelectedVideoControls) => ReactNode);
   stickySelectedVideoLabel?: string;
-}
-
-function getCinematicChartClassName(className?: string) {
-  return className ? `${className} app-shell__panel--chart-cinematic` : 'app-shell__panel--chart-cinematic';
 }
 
 function getInitialStickySelectedVideoCollapsed(isMobileLayout: boolean) {
@@ -115,91 +110,22 @@ export default function HomePlaybackSection({
     () => [playerStageProps.playerStageRef as RefObject<HTMLElement | null>],
     [playerStageProps.playerStageRef],
   );
+  const shouldUseStickySelectedVideo =
+    !playerStageProps.isCinematicModeActive && Boolean(stickySelectedVideoContent);
   const isStickySelectedVideoScrollHidden = useStickyAutoHide(
-    Boolean(stickySelectedVideoContent),
+    shouldUseStickySelectedVideo,
     stickySelectedVideoScrollRefs,
   );
-  const hasDesktopDockStyle = Boolean(desktopDockStyle);
+  const hasDesktopDockStyle = !playerStageProps.isCinematicModeActive && Boolean(desktopDockStyle);
 
   useLayoutEffect(() => {
-    if (!playerStageProps.isCinematicModeActive) {
-      setIsStickySelectedVideoVisible(Boolean(stickySelectedVideoContent));
-      return;
-    }
-
-    const playerViewport = playerStageProps.playerViewportRef.current;
-    const playerStage = playerStageProps.playerStageRef.current;
-
-    if (
-      typeof window === 'undefined' ||
-      !playerViewport ||
-      !stickySelectedVideoContent
-    ) {
-      setIsStickySelectedVideoVisible(false);
-      return;
-    }
-
-    let animationFrameId: number | null = null;
-    const fullscreenElement = getFullscreenElement();
-    const scrollTargets: Array<HTMLElement | Window> = [];
-
-    scrollTargets.push(window);
-
-    if (playerStage instanceof HTMLElement && !scrollTargets.includes(playerStage)) {
-      scrollTargets.push(playerStage);
-    }
-
-    if (fullscreenElement instanceof HTMLElement && !scrollTargets.includes(fullscreenElement)) {
-      scrollTargets.push(fullscreenElement);
-    }
-
-    const syncStickyVisibility = () => {
-      setIsStickySelectedVideoVisible((currentValue) => {
-        const playerViewportRect = playerViewport.getBoundingClientRect();
-        const nextIsVisible = playerViewportRect.bottom <= STICKY_SELECTED_VIDEO_TOP_OFFSET;
-
-        return currentValue === nextIsVisible ? currentValue : nextIsVisible;
-      });
-    };
-
-    const updateStickyVisibility = () => {
-      animationFrameId = null;
-      syncStickyVisibility();
-    };
-
-    const scheduleStickyVisibilityUpdate = () => {
-      if (animationFrameId !== null) {
-        return;
-      }
-
-      animationFrameId = window.requestAnimationFrame(updateStickyVisibility);
-    };
-
-    scheduleStickyVisibilityUpdate();
-    window.addEventListener('resize', scheduleStickyVisibilityUpdate);
-    scrollTargets.forEach((target) => {
-      target.addEventListener('scroll', scheduleStickyVisibilityUpdate, { passive: true });
-    });
-
-    return () => {
-      if (animationFrameId !== null) {
-        window.cancelAnimationFrame(animationFrameId);
-      }
-      window.removeEventListener('resize', scheduleStickyVisibilityUpdate);
-      scrollTargets.forEach((target) => {
-        target.removeEventListener('scroll', scheduleStickyVisibilityUpdate);
-      });
-    };
-  }, [
-    playerStageProps.isCinematicModeActive,
-    playerStageProps.playerStageRef,
-    playerStageProps.playerViewportRef,
-    stickySelectedVideoContent,
-  ]);
+    setIsStickySelectedVideoVisible(shouldUseStickySelectedVideo);
+  }, [shouldUseStickySelectedVideo]);
 
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
+      playerStageProps.isCinematicModeActive ||
       playerStageProps.isMobileLayout ||
       !playerStageProps.selectedVideoId ||
       !stickySelectedVideoContent
@@ -267,6 +193,7 @@ export default function HomePlaybackSection({
       });
     };
   }, [
+    playerStageProps.isCinematicModeActive,
     playerStageProps.isMobileLayout,
     playerStageProps.playerStageRef,
     playerStageProps.playerViewportRef,
@@ -372,6 +299,7 @@ export default function HomePlaybackSection({
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
+      playerStageProps.isCinematicModeActive ||
       playerStageProps.isMobileLayout ||
       !playerStageProps.selectedVideoId ||
       !isDesktopPlayerDockActive ||
@@ -460,6 +388,7 @@ export default function HomePlaybackSection({
   }, [
     isDesktopPlayerDockActive,
     isStickySelectedVideoCollapsed,
+    playerStageProps.isCinematicModeActive,
     playerStageProps.isMobileLayout,
     playerStageProps.playerStageRef,
     playerStageProps.playerViewportRef,
@@ -544,8 +473,8 @@ export default function HomePlaybackSection({
     handleScrollToTop();
   };
 
-  const renderedStickySelectedVideoContent =
-    typeof stickySelectedVideoContent === 'function'
+  const renderedStickySelectedVideoContent = shouldUseStickySelectedVideo
+    ? typeof stickySelectedVideoContent === 'function'
       ? stickySelectedVideoContent({
           isDesktopPlayerDockActive: Boolean(desktopDockStyle),
           desktopPlayerDockSlotRef,
@@ -562,10 +491,11 @@ export default function HomePlaybackSection({
             setIsStickySelectedVideoCollapsed(true);
           },
         })
-      : stickySelectedVideoContent;
+      : stickySelectedVideoContent
+    : null;
 
   const stickySelectedVideoSlot =
-    stickySelectedVideoContent && isStickySelectedVideoVisible ? (
+    shouldUseStickySelectedVideo && isStickySelectedVideoVisible ? (
       <div
         className="app-shell__sticky-selected-video-slot"
         data-cinematic={playerStageProps.isCinematicModeActive}
@@ -630,10 +560,10 @@ export default function HomePlaybackSection({
       </div>
     ) : null;
 
-  const renderChartPanel = (isCinematic = false) => (
+  const renderChartPanel = () => (
     <ChartPanel
       {...chartPanelProps}
-      className={isCinematic ? getCinematicChartClassName(chartPanelProps.className) : chartPanelProps.className}
+      className={chartPanelProps.className}
       onOpenRegionModal={filterBarProps.onOpenRegionModal}
       onSelectView={filterBarProps.onSelectView}
       selectedViewId={filterBarProps.selectedViewId}
@@ -641,17 +571,8 @@ export default function HomePlaybackSection({
     />
   );
 
-  const fullscreenElement = typeof document === 'undefined' ? null : getFullscreenElement();
-  const renderedStickySelectedVideoSlot =
-    playerStageProps.isCinematicModeActive &&
-    stickySelectedVideoSlot &&
-    fullscreenElement instanceof HTMLElement
-      ? createPortal(stickySelectedVideoSlot, fullscreenElement)
-      : stickySelectedVideoSlot;
-  const dockHiddenTransform = playerStageProps.isCinematicModeActive
-    ? 'translateY(calc(-100% - 20px))'
-    : 'translateY(calc(100% + 20px))';
-  const videoPlayerDockStyle: CSSProperties | undefined = desktopDockStyle
+  const dockHiddenTransform = 'translateY(calc(100% + 20px))';
+  const videoPlayerDockStyle: CSSProperties | undefined = hasDesktopDockStyle && desktopDockStyle
     ? {
         height: `${desktopDockStyle.dockHeight}px`,
         left: `${desktopDockStyle.left}px`,
@@ -674,7 +595,7 @@ export default function HomePlaybackSection({
 
   return (
     <>
-      {renderedStickySelectedVideoSlot}
+      {stickySelectedVideoSlot}
       {shouldRenderDetachedMobileViewport ? (
         <>
           <PlayerStageHeader
@@ -723,7 +644,6 @@ export default function HomePlaybackSection({
       ) : null}
       <PlayerStage
         {...playerStageCoreProps}
-        chartContent={renderChartPanel(true)}
         communityContent={<CommentSection hideHeader {...communityPanelProps} />}
         currentTierCode={playerStageCoreProps.currentTierCode}
         filterContent={undefined}
