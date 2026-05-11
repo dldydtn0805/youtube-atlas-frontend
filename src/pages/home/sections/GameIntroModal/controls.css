@@ -1,0 +1,89 @@
+.app-shell__game-intro-steps {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 16px;
+}
+
+.app-shell__game-intro-step-dot {
+  appearance: none;
+  background: color-mix(in srgb, var(--border-strong) 74%, transparent);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  flex: 1;
+  height: 3px;
+  min-width: 0;
+  padding: 0;
+  transition: background 0.2s ease;
+}
+
+.app-shell__game-intro-step-dot[data-state='active'] {
+  background: var(--accent);
+}
+
+.app-shell__game-intro-step-dot[data-state='done'] {
+  background: color-mix(in srgb, var(--accent) 54%, var(--border-strong));
+}
+
+.app-shell__game-intro-footer {
+  align-items: center;
+  border-top: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 20px 16px;
+}
+
+.app-shell__game-intro-dismiss {
+  align-items: center;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-shell__game-intro-dismiss-input {
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 15px;
+  margin: 0;
+  width: 15px;
+}
+
+.app-shell__game-intro-dismiss-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.app-shell__game-intro-next {
+  align-items: center;
+  background: var(--surface-emphasis);
+  border: 0;
+  border-radius: 999px;
+  color: var(--text-inverse);
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 15px;
+}
+
+.app-shell__game-intro-next:hover,
+.app-shell__game-intro-next:focus-visible {
+  box-shadow: var(--surface-emphasis-shadow-hover);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.app-shell__game-intro-next-icon {
+  height: 16px;
+  width: 16px;
+}

@@ -1,0 +1,105 @@
+.app-shell__game-intro-preview {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 6px 0;
+  min-height: 88px;
+}
+
+.app-shell__game-intro-bars {
+  align-items: flex-end;
+  display: flex;
+  gap: 5px;
+  height: 60px;
+}
+
+.app-shell__game-intro-bars span {
+  background: color-mix(in srgb, var(--accent) 24%, var(--surface-stat));
+  border-radius: 5px 5px 0 0;
+  width: 22px;
+}
+
+.app-shell__game-intro-bars span[data-hot='true'] {
+  background: var(--accent);
+}
+
+.app-shell__game-intro-preview-icon,
+.app-shell__game-intro-profit strong {
+  color: #dc2626;
+}
+
+.app-shell__game-intro-preview-icon {
+  height: 30px;
+  width: 30px;
+}
+
+.app-shell__game-intro-profit {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.app-shell__game-intro-profit span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.app-shell__game-intro-profit strong {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.app-shell__game-intro-tags {
+  align-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 118px;
+}
+
+.app-shell__game-intro-tags .app-shell__game-position-trend {
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 9px;
+}
+
+.app-shell__game-intro-tag-detail {
+  font-weight: 700;
+  opacity: 0.62;
+}
+
+.app-shell__game-intro-leaderboard {
+  gap: 7px;
+  margin: 6px 0;
+}
+
+.app-shell__game-intro-leaderboard-item {
+  border-radius: 12px;
+  gap: 8px;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  padding: 8px 9px;
+}
+
+.app-shell__game-intro-leaderboard-item .app-shell__game-leaderboard-rank {
+  font-size: 0.74rem;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
+}
+
+.app-shell__game-intro-leaderboard-item .app-shell__game-leaderboard-avatar {
+  height: 30px;
+  width: 30px;
+}
+
+.app-shell__game-intro-leaderboard-item .app-shell__game-leaderboard-total,
+.app-shell__game-intro-leaderboard-item .app-shell__game-leaderboard-name {
+  font-size: 0.74rem;
+}
+
+:root[data-theme='dark'] .app-shell__game-intro-preview-icon,
+:root[data-theme='dark'] .app-shell__game-intro-profit strong {
+  color: #f87171;
+}

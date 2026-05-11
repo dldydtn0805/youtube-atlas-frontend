@@ -3,9 +3,11 @@ import { createPortal } from 'react-dom';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
-import BoldNumberText from './BoldNumberText';
-import { strategyTagCriteriaCopy } from './gameTierGuideContent';
 import './GameIntroModal.css';
+import Footer from './GameIntroModal/Footer';
+import StepDots from './GameIntroModal/StepDots';
+import StepPreview from './GameIntroModal/StepPreview';
+import { gameIntroSteps } from './GameIntroModal/steps';
 
 interface GameIntroModalProps {
   isOpen: boolean;
@@ -13,7 +15,10 @@ interface GameIntroModalProps {
 }
 
 export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps) {
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [dismissForever, setDismissForever] = useState(false);
+  const currentStep = gameIntroSteps[currentStepIndex];
+  const isLastStep = currentStepIndex === gameIntroSteps.length - 1;
 
   useBodyScrollLock(isOpen);
   const { backdropStyle, bodySwipeHandlers, headerSwipeHandlers, modalStyle } = useHeaderSwipeToClose({
@@ -23,6 +28,7 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
 
   useEffect(() => {
     if (isOpen) {
+      setCurrentStepIndex(0);
       setDismissForever(false);
     }
   }, [isOpen]);
@@ -33,14 +39,18 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
 
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
+  const handleClose = () => onClose(dismissForever);
+  const handleNext = () => {
+    if (isLastStep) {
+      handleClose();
+      return;
+    }
+
+    setCurrentStepIndex((stepIndex) => stepIndex + 1);
+  };
 
   return createPortal(
-    <div
-      className="app-shell__modal-backdrop"
-      onClick={() => onClose(dismissForever)}
-      role="presentation"
-      style={backdropStyle}
-    >
+    <div className="app-shell__modal-backdrop" onClick={handleClose} role="presentation" style={backdropStyle}>
       <section
         aria-labelledby="game-intro-modal-title"
         aria-modal="true"
@@ -56,55 +66,29 @@ export default function GameIntroModal({ isOpen, onClose }: GameIntroModalProps)
               랭킹 게임 안내
             </h2>
           </div>
-          <button
-            aria-label="랭킹 게임 안내 닫기"
-            className="app-shell__modal-close"
-            onClick={() => onClose(dismissForever)}
-            type="button"
-          >
+          <button aria-label="랭킹 게임 안내 닫기" className="app-shell__modal-close" onClick={handleClose} type="button">
             닫기
           </button>
         </div>
 
+        <StepDots currentStepIndex={currentStepIndex} onSelectStep={setCurrentStepIndex} />
+
         <div className="app-shell__modal-body app-shell__modal-body--game-intro" {...bodySwipeHandlers}>
-          <div className="app-shell__modal-fields">
-            <section className="app-shell__modal-field app-shell__modal-field--game-intro">
-              <ol className="app-shell__game-intro-list">
-                <li className="app-shell__game-intro-item">
-                  <strong className="app-shell__game-intro-title">사고 팔아 포인트 벌기</strong>
-                  <p className="app-shell__game-intro-copy">
-                    홈에서 영상 차트를 확인하고, 순위가 오를 것 같은 영상을 싸게 사보세요. 나중에 순위가
-                    오르면 비싸게 팔아 차익을 포인트로 챙길 수 있어요!
-                  </p>
-                </li>
-                <li className="app-shell__game-intro-item">
-                  <strong className="app-shell__game-intro-title">하이라이트로 티어 올리기</strong>
-                  <p className="app-shell__game-intro-copy">
-                    <BoldNumberText>{strategyTagCriteriaCopy}</BoldNumberText>
-                  </p>
-                </li>
-                <li className="app-shell__game-intro-item">
-                  <strong className="app-shell__game-intro-title">기록과 경쟁</strong>
-                  <p className="app-shell__game-intro-copy">
-                    <BoldNumberText>
-                      거래내역에서 내가 했던 선택들을 돌아보고, 리더보드에서 다른 유저들과 이번 시즌 순위를 비교해보세요. 1위를 노려봐요!
-                    </BoldNumberText>
-                  </p>
-                </li>
-              </ol>
-            </section>
-          </div>
-          <label className="app-shell__game-intro-dismiss">
-            <input
-              checked={dismissForever}
-              className="app-shell__game-intro-dismiss-input"
-              onChange={(event) => setDismissForever(event.target.checked)}
-              type="checkbox"
-            />
-            <span className="app-shell__game-intro-dismiss-label">다시 보지 않기</span>
-          </label>
+          <section className="app-shell__game-intro-card" aria-live="polite">
+            <p className="app-shell__game-intro-step-label">{currentStep.stepLabel}</p>
+            <h3 className="app-shell__game-intro-title">{currentStep.title}</h3>
+            <StepPreview type={currentStep.previewType} />
+            <p className="app-shell__game-intro-copy">{currentStep.body}</p>
+          </section>
         </div>
-      </section>,
+
+        <Footer
+          dismissForever={dismissForever}
+          isLastStep={isLastStep}
+          onDismissForeverChange={setDismissForever}
+          onNext={handleNext}
+        />
+      </section>
     </div>,
     container,
   );

@@ -21,7 +21,6 @@ const QuickViewButtons = memo(function QuickViewButtons({
 
         return (
           <span key={option.id} className="app-shell__quick-category-slot">
-            {option.startsGroup ? <span aria-hidden="true" className="app-shell__quick-category-divider" /> : null}
             <button
               aria-pressed={isActive}
               className="app-shell__quick-category"
@@ -33,11 +32,6 @@ const QuickViewButtons = memo(function QuickViewButtons({
             >
               <QuickViewIcon live={option.live} tone={option.tone} />
               <span>{option.label}</span>
-              {option.badge ? (
-                <span className="app-shell__quick-category-badge" data-tone={option.badgeTone}>
-                  {option.badge}
-                </span>
-              ) : null}
             </button>
           </span>
         );

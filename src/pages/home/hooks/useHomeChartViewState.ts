@@ -145,34 +145,25 @@ export default function useHomeChartViewState({
         { id: 'popular', label: 'TOP 200', tone: 'top200' },
         {
           id: 'buyable',
-          badge: authStatus === 'authenticated' ? String(buyableChartSection?.items.length ?? 0) : undefined,
-          badgeTone: 'danger',
           label: '매수 가능',
           tone: 'buy',
           disabled: authStatus !== 'authenticated',
         },
         {
           id: 'favorites',
-          badge: authStatus === 'authenticated' ? String(favoriteStreamersCount) : undefined,
-          badgeTone: 'danger',
           disabled: authStatus !== 'authenticated',
           label: '즐겨찾기',
           tone: 'fav',
         },
         {
           id: 'realtime-surging',
-          badge: String(realtimeSurgingFeaturedSection?.section.items.length ?? 0),
-          badgeTone: 'danger',
           disabled: !isTrendRegionSelected,
           label: '급상승',
           live: true,
-          startsGroup: true,
           tone: 'surge',
         },
         {
           id: 'new-chart-entries',
-          badge: 'NEW',
-          badgeTone: 'info',
           label: '신규 진입',
           tone: 'new',
           disabled: !isTrendRegionSelected,
@@ -186,11 +177,8 @@ export default function useHomeChartViewState({
       ] satisfies ChartViewOption[],
     [
       authStatus,
-      buyableChartSection?.items.length,
-      favoriteStreamersCount,
       isTrendRegionSelected,
       musicChartSection,
-      realtimeSurgingFeaturedSection?.section.items.length,
     ],
   );
 

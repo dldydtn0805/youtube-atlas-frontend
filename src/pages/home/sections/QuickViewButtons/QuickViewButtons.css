@@ -10,12 +10,6 @@
   gap: 6px;
 }
 
-.app-shell__quick-category-divider {
-  background: var(--border);
-  margin: 4px 2px;
-  width: 1px;
-}
-
 .app-shell__quick-category {
   align-items: center;
   background: var(--surface-control);
@@ -73,18 +67,6 @@
   width: 6px;
 }
 
-.app-shell__quick-category-badge {
-  align-items: center;
-  border-radius: 8px;
-  display: inline-flex;
-  font-size: 0.64rem;
-  font-weight: 700;
-  justify-content: center;
-  line-height: 1;
-  min-width: 18px;
-  padding: 2px 5px;
-}
-
 .app-shell__quick-category[data-active='true'][data-tone='top200'] {
   border-color: var(--border-strong);
   border-width: 1.5px;
@@ -121,16 +103,6 @@
   color: var(--text);
 }
 
-.app-shell__quick-category-badge[data-tone='danger'] {
-  background: color-mix(in srgb, #dc2626 15%, var(--surface-control));
-  color: #b91c1c;
-}
-
-.app-shell__quick-category-badge[data-tone='info'] {
-  background: color-mix(in srgb, #0284c7 14%, var(--surface-control));
-  color: #0369a1;
-}
-
 :root[data-theme='dark'] .app-shell__quick-category[data-active='true'][data-tone='buy'] {
   color: #86efac;
 }
@@ -144,14 +116,6 @@
 }
 
 :root[data-theme='dark'] .app-shell__quick-category[data-active='true'][data-tone='new'] {
-  color: #7dd3fc;
-}
-
-:root[data-theme='dark'] .app-shell__quick-category-badge[data-tone='danger'] {
-  color: #fca5a5;
-}
-
-:root[data-theme='dark'] .app-shell__quick-category-badge[data-tone='info'] {
   color: #7dd3fc;
 }
 
