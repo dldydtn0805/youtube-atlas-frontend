@@ -57,6 +57,10 @@ function createAuthorizationHeader(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
 }
 
+function createOptionalAuthorizationHeader(accessToken: string | null) {
+  return accessToken ? createAuthorizationHeader(accessToken) : undefined;
+}
+
 function normalizeGameTier(tier: ApiGameTier): GameTier {
   return {
     ...tier,
@@ -140,12 +144,14 @@ export async function fetchMyGameSeasonResults(accessToken: string, regionCode: 
   });
 }
 
-export async function fetchGameMarket(accessToken: string, regionCode: string) {
+export async function fetchGameMarket(accessToken: string | null, regionCode: string) {
   const params = new URLSearchParams({ regionCode });
+  const headers = createOptionalAuthorizationHeader(accessToken);
 
-  return fetchApi<GameMarketVideo[]>(`/api/game/market?${params.toString()}`, {
-    headers: createAuthorizationHeader(accessToken),
-  });
+  return fetchApi<GameMarketVideo[]>(
+    `/api/game/market?${params.toString()}`,
+    headers ? { headers } : undefined,
+  );
 }
 
 export async function fetchBuyableMarketChart(accessToken: string, regionCode: string, pageToken?: string) {

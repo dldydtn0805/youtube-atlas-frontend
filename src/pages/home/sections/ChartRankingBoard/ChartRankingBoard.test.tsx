@@ -121,6 +121,64 @@ describe('ChartRankingBoard', () => {
     expect(onOpenSellTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
   });
 
+  it('uses inline current rank instead of pending rank copy', () => {
+    render(
+      <ChartRankingBoard
+        getRankLabel={() => '현재 순위 확인 중'}
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseItem,
+              trend: {
+                ...baseItem.trend,
+                currentRank: 152,
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('152위')).toBeInTheDocument();
+    expect(screen.queryByText('현재 순위 확인 중')).not.toBeInTheDocument();
+  });
+
+  it('falls back to row position when rank data is pending', () => {
+    render(
+      <ChartRankingBoard
+        getRankLabel={() => '현재 순위 미집계'}
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseItem,
+              trend: {
+                ...baseItem.trend,
+                currentRank: null,
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('1위')).toBeInTheDocument();
+    expect(screen.queryByText('현재 순위 미집계')).not.toBeInTheDocument();
+  });
+
   it('opens mobile trade actions from a ranking row sheet', () => {
     const onOpenBuyTradeModal = vi.fn();
     const onOpenSellTradeModal = vi.fn();

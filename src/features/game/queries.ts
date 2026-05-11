@@ -463,9 +463,9 @@ export function useBuyableMarketChart(accessToken: string | null, regionCode: st
 
 export function useGameMarket(accessToken: string | null, regionCode: string, enabled = true) {
   return useQuery({
-    enabled: enabled && Boolean(accessToken) && Boolean(regionCode),
+    enabled: enabled && Boolean(regionCode),
     queryKey: gameQueryKeys.market(accessToken, regionCode),
-    queryFn: () => fetchGameMarket(accessToken as string, regionCode),
+    queryFn: () => fetchGameMarket(accessToken, regionCode),
     staleTime: 1000 * 30,
   });
 }

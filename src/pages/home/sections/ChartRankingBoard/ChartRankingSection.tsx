@@ -10,6 +10,7 @@ import {
 } from './format';
 import ChartRankingRow from './ChartRankingRow';
 import ChartRankingTradeSheet from './ChartRankingTradeSheet';
+import { resolveChartRankLabel } from './rankLabel';
 import type { ChartRankingAction, ChartRankingBoardProps } from './types';
 
 interface ChartRankingSectionProps {
@@ -80,7 +81,7 @@ export default function ChartRankingSection({
   const tradeSheetItem = tradeSheetVisibleIndex >= 0 ? visibleItems[tradeSheetVisibleIndex] : null;
   const tradeSheetIndex = tradeSheetVisibleIndex >= 0 ? pageStartIndex + tradeSheetVisibleIndex : -1;
   const tradeSheetRankLabel = tradeSheetItem
-    ? getRankLabel?.(tradeSheetItem, tradeSheetIndex) ?? `${tradeSheetIndex + 1}위`
+    ? resolveChartRankLabel(tradeSheetItem, getRankLabel?.(tradeSheetItem, tradeSheetIndex), tradeSheetIndex)
     : '';
   const tradeSheetBadge = tradeSheetItem
     ? getRankingTrendBadge(tradeSheetItem, trendSignalsByVideoId, hasResolvedTrendSignals)
@@ -126,7 +127,7 @@ export default function ChartRankingSection({
             <tbody>
               {visibleItems.map((item, visibleIndex) => {
                 const index = pageStartIndex + visibleIndex;
-                const rankLabel = getRankLabel?.(item, index) ?? `${index + 1}위`;
+                const rankLabel = resolveChartRankLabel(item, getRankLabel?.(item, index), index);
                 const rankNumber = getRankNumber(item, rankLabel, index);
                 const badge = getRankingTrendBadge(item, trendSignalsByVideoId, hasResolvedTrendSignals);
                 const playbackQueueId = section.categoryId;

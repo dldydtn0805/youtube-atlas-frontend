@@ -391,6 +391,7 @@ function HomePage() {
     label: `${country.code} · ${country.name}`,
   }));
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
+  const shouldLoadGameMarket = isApiConfigured;
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
 
   const {
@@ -403,7 +404,7 @@ function HomePage() {
     data: gameMarket = [],
     error: gameMarketError,
     isLoading: isGameMarketLoading,
-  } = useGameMarket(accessToken, selectedRegionCode, shouldLoadGame);
+  } = useGameMarket(accessToken, selectedRegionCode, shouldLoadGameMarket);
   const {
     data: buyableMarketChartData,
     error: buyableMarketChartError,
