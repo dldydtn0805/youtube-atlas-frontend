@@ -84,16 +84,84 @@
   opacity: 0.42;
 }
 
-@media (max-width: 640px) {
-  .chart-ranking-board__section {
+@media (max-width: 768px),
+  (max-width: 1024px) and (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+  :root[data-mobile-layout='true'] .chart-ranking-board {
+    gap: 12px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__section {
     border-radius: 0;
     border-left: 0;
     border-right: 0;
-    padding: 14px;
+    padding: 12px 0;
   }
 
-  .chart-ranking-board__table {
-    min-width: 660px;
+  :root[data-mobile-layout='true'] .chart-ranking-board__header {
+    padding-bottom: 10px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__table-shell {
+    overflow-x: hidden;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__table {
+    font-size: 11px;
+    min-width: 0;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th {
+    font-size: 10px;
+    padding: 7px 3px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__table td {
+    font-size: 11px;
+    overflow: hidden;
+    padding: 8px 3px;
+    text-overflow: ellipsis;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(1) { width: 10%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(2) { width: 34%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(3) { width: 15%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(4) { width: 13%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(5) { width: 12%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(6) { width: 16%; }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__rank-cell {
+    font-size: 11px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__rank-cell [data-tone='top'] {
+    font-size: 12px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__video {
+    gap: 6px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__thumb-button {
+    height: 26px;
+    width: 36px;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__title,
+  :root[data-mobile-layout='true'] .chart-ranking-board__channel {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__trade-actions {
+    gap: 2px;
+    width: 100%;
+  }
+
+  :root[data-mobile-layout='true'] .chart-ranking-board__trade-button {
+    flex: 1 1 0;
+    font-size: 9px;
+    min-height: 21px;
+    min-width: 0;
+    padding: 2px;
   }
 }
-

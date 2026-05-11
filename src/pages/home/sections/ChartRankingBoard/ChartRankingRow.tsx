@@ -55,9 +55,9 @@ export default function ChartRankingRow({
           </button>
           <div className="chart-ranking-board__video-copy">
             <button
-              aria-label={`${item.snippet.title} 차트 보기`}
+              aria-label={`${item.snippet.title} 재생하기`}
               className="chart-ranking-board__title-button"
-              onClick={(event) => onOpenChart(event.currentTarget)}
+              onClick={(event) => onSelectVideo(event.currentTarget)}
               type="button"
             >
               <span className="chart-ranking-board__title">{item.snippet.title}</span>
@@ -75,7 +75,14 @@ export default function ChartRankingRow({
       </td>
       <td className="chart-ranking-board__price-cell">{priceLabel}</td>
       <td className="chart-ranking-board__change-cell" data-tone={badge?.tone ?? 'steady'}>
-        {badge?.label ?? '-'}
+        <button
+          aria-label={`${item.snippet.title} 등락 차트 보기`}
+          className="chart-ranking-board__change-button"
+          onClick={(event) => onOpenChart(event.currentTarget)}
+          type="button"
+        >
+          {badge?.label ?? '-'}
+        </button>
       </td>
       <td className="chart-ranking-board__views-cell">{viewsLabel}</td>
       <td className="chart-ranking-board__action-cell">
@@ -90,4 +97,3 @@ export default function ChartRankingRow({
     </tr>
   );
 }
-

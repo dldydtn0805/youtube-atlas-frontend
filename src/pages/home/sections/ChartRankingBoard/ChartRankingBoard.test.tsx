@@ -34,7 +34,7 @@ const baseSection = {
 };
 
 describe('ChartRankingBoard', () => {
-  it('keeps thumbnail playback and title chart actions separate', () => {
+  it('plays from thumbnail and title, then opens the chart from rank change', () => {
     const onOpenChart = vi.fn();
     const onSelectVideo = vi.fn();
 
@@ -52,9 +52,12 @@ describe('ChartRankingBoard', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 차트 보기' }));
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생하기' }));
+    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 등락 차트 보기' }));
 
-    expect(onSelectVideo).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
+    expect(onSelectVideo).toHaveBeenCalledTimes(2);
+    expect(onSelectVideo).toHaveBeenNthCalledWith(1, 'video-1', 'popular', expect.any(HTMLButtonElement));
+    expect(onSelectVideo).toHaveBeenNthCalledWith(2, 'video-1', 'popular', expect.any(HTMLButtonElement));
     expect(onOpenChart).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
   });
 
@@ -94,4 +97,3 @@ describe('ChartRankingBoard', () => {
     expect(onOpenSellTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
   });
 });
-

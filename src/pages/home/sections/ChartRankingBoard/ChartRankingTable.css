@@ -127,6 +127,22 @@
   width: 100%;
 }
 
+.chart-ranking-board__change-button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: inherit;
+  padding: 0;
+}
+
+.chart-ranking-board__change-button:hover,
+.chart-ranking-board__change-button:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .chart-ranking-board__title {
   color: var(--chart-board-text);
   display: block;
