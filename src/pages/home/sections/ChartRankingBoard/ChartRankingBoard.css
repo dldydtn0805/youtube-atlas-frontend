@@ -37,7 +37,9 @@
   align-items: center;
   border-bottom: 1px solid var(--chart-board-border);
   display: flex;
+  gap: 12px;
   justify-content: space-between;
+  min-width: 0;
   padding: 0 0 10px;
 }
 
@@ -68,6 +70,10 @@
   font-size: 13px;
   font-weight: 600;
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chart-ranking-board__badge {
@@ -102,4 +108,3 @@
   padding: 10px 0;
   text-align: center;
 }
-

@@ -111,7 +111,7 @@ describe('ChartRankingBoard', () => {
     );
 
     expect(screen.getByText('12,345P')).toBeInTheDocument();
-    expect(screen.queryByText('1.5천')).not.toBeInTheDocument();
+    expect(screen.getByText('1.5천')).toBeInTheDocument();
     expect(screen.getAllByText('▲6')).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: '테스트 영상 매수' }));

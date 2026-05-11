@@ -18,6 +18,7 @@ interface ChartRankingRowProps {
   priceLabel: string;
   rankLabel: string;
   rankNumber: number;
+  viewsLabel: string;
 }
 
 export default function ChartRankingRow({
@@ -33,6 +34,7 @@ export default function ChartRankingRow({
   priceLabel,
   rankLabel,
   rankNumber,
+  viewsLabel,
 }: ChartRankingRowProps) {
   const thumbnailUrl = getVideoThumbnailUrl(item);
   const rankTone = rankNumber <= 3 ? 'top' : undefined;
@@ -91,6 +93,7 @@ export default function ChartRankingRow({
         </div>
       </td>
       <td className="chart-ranking-board__price-cell">{priceLabel}</td>
+      <td className="chart-ranking-board__views-cell">{viewsLabel}</td>
       <td className="chart-ranking-board__change-cell" data-tone={badge?.tone ?? 'steady'}>
         <button
           aria-label={`${item.snippet.title} 등락 차트 보기`}

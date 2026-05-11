@@ -118,6 +118,7 @@ export default function ChartRankingSection({
                 <th>순위</th>
                 <th className="chart-ranking-board__left">영상</th>
                 <th>현재가</th>
+                <th>조회수</th>
                 <th>등락</th>
                 <th>거래</th>
               </tr>
@@ -161,6 +162,7 @@ export default function ChartRankingSection({
                     priceLabel={formatRankingPrice(marketPriceByVideoId?.[item.id])}
                     rankLabel={rankLabel}
                     rankNumber={rankNumber}
+                    viewsLabel={formatRankingViews(item)}
                   />
                 );
               })}

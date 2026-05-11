@@ -11,6 +11,11 @@
   font-weight: 600;
 }
 
+.chart-ranking-board__views-cell {
+  color: var(--chart-board-muted);
+  font-weight: 600;
+}
+
 .chart-ranking-board__change-cell {
   color: var(--chart-board-muted);
   font-weight: 500;
@@ -108,18 +113,20 @@
     text-overflow: ellipsis;
   }
 
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(1) { width: 11%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(2) { width: 39%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(3) { width: 17%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(1) { width: 10%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(2) { width: 31%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(3) { width: 14%; }
   :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(4) { width: 14%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(5) { width: 19%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(5) { width: 12%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(6) { width: 19%; }
 
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(1) { width: 12%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(2) { width: 49%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(3) { width: 21%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(4) { width: 18%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(1) { width: 11%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(2) { width: 38%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(3) { width: 16%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(4) { width: 17%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(5) { width: 18%; }
 
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(5),
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(6),
   :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__action-cell {
     display: none;
   }
