@@ -1,22 +1,17 @@
 import type { CommentHighlightMessage as CommentHighlight } from '../../features/comments/highlightTypes';
-import type { SelectedAchievementTitle } from '../../features/game/types';
-import CommentAuthorTitleText from './CommentAuthorTitleText';
+import CommentHighlightLabel from './CommentHighlightLabel';
 import { getCommentHighlightIdentity } from './commentHighlightIdentity';
 
-interface Props { availableTitles?: readonly SelectedAchievementTitle[]; highlight: CommentHighlight }
+interface Props { highlight: CommentHighlight }
 
-export default function CommentHighlightAuthor({ availableTitles, highlight }: Props) {
-  const identity = getCommentHighlightIdentity(highlight, availableTitles);
+export default function CommentHighlightAuthor({ highlight }: Props) {
+  const identity = getCommentHighlightIdentity(highlight);
   const author = highlight.author.replace(/^@+/, '').trim() || highlight.author;
 
   return (
-    <span
-      className="comment-message__identity"
-      data-tier-code={identity.tierCode}
-      data-title-grade={identity.title?.grade}
-    >
+    <span className="comment-message__identity">
       <strong className="comment-message__author">{author}</strong>
-      {identity.title ? <CommentAuthorTitleText title={identity.title} /> : null}
+      <CommentHighlightLabel label={identity.label} />
     </span>
   );
 }

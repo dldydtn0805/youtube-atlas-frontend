@@ -25,17 +25,16 @@ import {
 import { getChatParticipantId } from '../../features/comments/participant';
 import type { ChatMessage } from '../../features/comments/types';
 import type { CommentHighlightMessage as HighlightMessage } from '../../features/comments/highlightTypes';
-import type { SelectedAchievementTitle } from '../../features/game/types';
 import CommentPresenceBadge from './CommentPresenceBadge';
 import CommentAuthorTitleText from './CommentAuthorTitleText';
 import CommentHighlightMessage from './CommentHighlightMessage';
+import CommentHighlightToggle from './CommentHighlightToggle';
 import { getChatAuthorTitle } from './chatAchievementTitle';
 import { getChatAuthorTierCode } from './chatTier';
 import { useCommentHighlightPlayback } from './useCommentHighlightPlayback';
 import './CommentSection.css';
 
 interface CommentSectionProps {
-  availableTitles?: readonly SelectedAchievementTitle[];
   currentTierCode?: string | null;
   hideHeader?: boolean;
   regionCode?: string | null;
@@ -163,7 +162,6 @@ function getFallbackMessageContent(videoTitle?: string) {
 }
 
 function CommentSection({
-  availableTitles,
   currentTierCode,
   hideHeader = false,
   regionCode,
@@ -175,6 +173,7 @@ function CommentSection({
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [submissionError, setSubmissionError] = useState<CommentSubmissionError | null>(null);
   const [participantId] = useState(getChatParticipantId);
+  const [showCommentHighlights, setShowCommentHighlights] = useState(true);
   const composerRef = useRef<HTMLFormElement | null>(null);
   const commentListRef = useRef<HTMLDivElement | null>(null);
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -210,6 +209,7 @@ function CommentSection({
     commentHighlightsQuery.data ?? EMPTY_COMMENT_HIGHLIGHTS,
     isApiConfigured,
   );
+  const hasCommentHighlights = commentHighlights.length > 0;
   const visibleMessages = useMemo(
     () =>
       (commentsQuery.data ?? []).filter((message) => {
@@ -225,16 +225,18 @@ function CommentSection({
       kind: 'message' as const,
       message,
     }));
-    const highlightItems = commentHighlights.map((highlight) => ({
-      highlight,
-      key: `highlight:${highlight.id}`,
-      kind: 'highlight' as const,
-    }));
+    const highlightItems = showCommentHighlights
+      ? commentHighlights.map((highlight) => ({
+          highlight,
+          key: `highlight:${highlight.id}`,
+          kind: 'highlight' as const,
+        }))
+      : [];
 
     return [...messageItems, ...highlightItems].sort(
       (left, right) => getFeedItemTime(left) - getFeedItemTime(right),
     );
-  }, [commentHighlights, visibleMessages]);
+  }, [commentHighlights, showCommentHighlights, visibleMessages]);
 
   useEffect(() => {
     setContent('');
@@ -527,11 +529,21 @@ function CommentSection({
       )}
 
       <div ref={commentListRef} className="comment-list" aria-live="polite">
-        {typeof activeParticipantCount === 'number' ? (
-          <CommentPresenceBadge
-            activeCount={activeParticipantCount}
-            participants={chatPresence?.participants}
-          />
+        {typeof activeParticipantCount === 'number' || hasCommentHighlights ? (
+          <div className="comment-list__topbar">
+            {hasCommentHighlights ? (
+              <CommentHighlightToggle
+                active={showCommentHighlights}
+                onToggle={() => setShowCommentHighlights((current) => !current)}
+              />
+            ) : null}
+            {typeof activeParticipantCount === 'number' ? (
+              <CommentPresenceBadge
+                activeCount={activeParticipantCount}
+                participants={chatPresence?.participants}
+              />
+            ) : null}
+          </div>
         ) : null}
         {commentsQuery.isLoading ? (
           <p className="comment-section__status">채팅을 불러오는 중입니다.</p>
@@ -553,7 +565,6 @@ function CommentSection({
             return (
               <CommentHighlightMessage
                 key={item.key}
-                availableTitles={availableTitles}
                 formattedTime={formatMessageTime(item.highlight.created_at)}
                 highlight={item.highlight}
               />

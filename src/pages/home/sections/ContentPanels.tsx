@@ -3,7 +3,7 @@ import CommentSection from '../../../components/CommentSection/CommentSection';
 import VideoList, { type FeaturedVideoSection, type VideoCardTradeActionState } from '../../../components/VideoList/VideoList';
 import type { AuthStatus } from '../../../features/auth/types';
 import type { FavoriteStreamer } from '../../../features/favorites/types';
-import type { GameMarketVideo, SelectedAchievementTitle } from '../../../features/game/types';
+import type { GameMarketVideo } from '../../../features/game/types';
 import type { VideoTrendSignal } from '../../../features/trending/types';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
 import type { ChartSortMode } from '../types';
@@ -103,7 +103,6 @@ interface FavoriteVideosPanelProps {
 }
 
 interface CommunityPanelProps {
-  availableTitles?: readonly SelectedAchievementTitle[];
   currentTierCode?: string | null;
   regionCode?: string | null;
   selectedVideoId?: string;
@@ -328,7 +327,6 @@ export const FavoriteVideosPanel = memo(function FavoriteVideosPanel({
 });
 
 export const CommunityPanel = memo(function CommunityPanel({
-  availableTitles,
   currentTierCode,
   regionCode,
   selectedVideoId,
@@ -360,7 +358,6 @@ export const CommunityPanel = memo(function CommunityPanel({
       </div>
       {isCollapsed ? null : (
         <CommentSection
-          availableTitles={availableTitles}
           currentTierCode={currentTierCode}
           regionCode={regionCode}
           videoId={selectedVideoId}

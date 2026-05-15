@@ -353,7 +353,6 @@ describe('CommentSection', () => {
 
     render(
       <CommentSection
-        availableTitles={[selectedTitle]}
         videoId="video-1"
         videoTitle="Test video"
       />,
@@ -362,19 +361,22 @@ describe('CommentSection', () => {
     expect(useVideoCommentHighlightsMock).toHaveBeenCalledWith('video-1', true);
     expect(screen.getByText('YouTube Viewer')).toBeInTheDocument();
     expect(screen.queryByText('@YouTube Viewer')).not.toBeInTheDocument();
-    expect(screen.queryByText('인기 댓글')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '인기 댓글 안보기' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('이 부분 설명 진짜 좋네요')).toBeInTheDocument();
-    expect(screen.getByText('Atlas Sniper')).toHaveAttribute('data-grade', 'RARE');
-    const titleBadge = screen.getByText('Atlas Sniper').closest('.comment-message__title-badge');
+    expect(screen.queryByText('Atlas Sniper')).not.toBeInTheDocument();
+    const titleBadge = screen
+      .getByText('이 부분 설명 진짜 좋네요')
+      .closest('.comment-message')
+      ?.querySelector('.comment-message__title-badge');
 
-    expect(titleBadge).toHaveAttribute('data-grade', 'RARE');
+    expect(titleBadge).toHaveTextContent('인기 댓글');
     expect(titleBadge?.previousElementSibling).toHaveClass('comment-message__author');
-    expect(screen.getByText('YouTube Viewer').closest('.comment-message__identity')).toHaveAttribute(
+    expect(screen.getByText('YouTube Viewer').closest('.comment-message__identity')).not.toHaveAttribute(
       'data-tier-code',
     );
   });
 
-  it('shows the backend title on public highlights for anonymous users', () => {
+  it('shows the popular comment label on public highlights for anonymous users', () => {
     useAuthMock.mockReturnValue({
       accessToken: null,
       logout: vi.fn(),
@@ -393,10 +395,50 @@ describe('CommentSection', () => {
 
     const author = screen.getByText('YouTube Viewer');
 
-    expect(author.closest('.comment-message__identity')).toHaveAttribute('data-title-grade');
+    expect(author.closest('.comment-message__identity')).not.toHaveAttribute('data-title-grade');
     expect(author.parentElement?.querySelector('.comment-message__title-badge')).toHaveTextContent(
-      'Atlas Sniper',
+      '인기 댓글',
     );
+  });
+
+  it('toggles public YouTube comment highlights from the top controls', () => {
+    useCommentsMock.mockReturnValue({
+      data: [],
+      error: null,
+      isError: false,
+      isLoading: false,
+      presenceQuery: {
+        data: {
+          active_count: 7,
+        },
+      },
+    });
+    useVideoCommentHighlightsMock.mockReturnValue({
+      data: [commentHighlight('video-1', '토글로 숨길 인기 댓글')],
+    });
+    useCreateCommentMock.mockReturnValue({
+      isPending: false,
+      mutateAsync: vi.fn(),
+    });
+
+    render(<CommentSection videoId="video-1" videoTitle="Test video" />);
+
+    const hideToggle = screen.getByRole('button', { name: '인기 댓글 안보기' });
+    const toolbar = hideToggle.closest('.comment-list__topbar');
+
+    expect(toolbar).not.toBeNull();
+    expect(within(toolbar as HTMLElement).getByText('실시간 7명')).toBeInTheDocument();
+    expect(toolbar?.firstElementChild).toBe(hideToggle);
+    expect(screen.getByText('토글로 숨길 인기 댓글')).toBeInTheDocument();
+
+    fireEvent.click(hideToggle);
+
+    expect(screen.queryByText('토글로 숨길 인기 댓글')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '인기 댓글 보기' })).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: '인기 댓글 보기' }));
+
+    expect(screen.getByText('토글로 숨길 인기 댓글')).toBeInTheDocument();
   });
 
   it('resets public comment highlights when the selected video changes', () => {
