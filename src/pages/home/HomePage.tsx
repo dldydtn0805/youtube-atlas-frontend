@@ -51,6 +51,7 @@ import useHomeGameNotifications from './hooks/useHomeGameNotifications';
 import useHomeRankHistory from './hooks/useHomeRankHistory';
 import useHomeTradeFlow from './hooks/useHomeTradeFlow';
 import useLogoutOnUnauthorized from './hooks/useLogoutOnUnauthorized';
+import useNowPlayingDocumentTitle from './hooks/useNowPlayingDocumentTitle';
 import useSelectedVideoGameState from './hooks/useSelectedVideoGameState';
 import { getGameNotificationSellTargetHolding } from './homeGameNotificationSell';
 import { openGameModal as openGameModalAction } from './homeGameModalActions';
@@ -858,6 +859,7 @@ function HomePage() {
     user,
     videoPlayerRef,
   });
+  useNowPlayingDocumentTitle(resolvedSelectedVideo?.snippet.title);
   const selectedPlaybackCategoryLabel = useMemo(
     () =>
       resolvePlaybackCategoryLabel({
