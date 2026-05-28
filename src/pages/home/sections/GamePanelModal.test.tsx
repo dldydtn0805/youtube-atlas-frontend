@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import GamePanelModal from './GamePanelModal';
 
 describe('GamePanelModal', () => {
-  it('shows season time left next to the modal title', () => {
+  it('shows the current season number next to the modal title', () => {
     render(
       <GamePanelModal
         isOpen
@@ -16,7 +16,7 @@ describe('GamePanelModal', () => {
     );
 
     expect(screen.getByRole('heading', { name: '내 게임' })).toBeInTheDocument();
-    expect(screen.getByText('4개월 시즌')).toBeInTheDocument();
+    expect(screen.getByText('3rd 시즌')).toBeInTheDocument();
     expect(screen.getByText(/남음$/)).toBeInTheDocument();
   });
 

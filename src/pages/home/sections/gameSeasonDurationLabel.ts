@@ -8,21 +8,26 @@ function parseDate(value: string | null | undefined) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-export function formatSeasonDurationLabel(startAt?: string | null, endAt?: string | null) {
-  const startDate = parseDate(startAt);
+function formatSeasonOrdinal(endDate: Date) {
+  const month = endDate.getUTCMonth();
+
+  if (month < 3) {
+    return '1st';
+  }
+
+  if (month < 7) {
+    return '2nd';
+  }
+
+  return '3rd';
+}
+
+export function formatSeasonDurationLabel(_startAt?: string | null, endAt?: string | null) {
   const endDate = parseDate(endAt);
 
-  if (!startDate || !endDate) {
+  if (!endDate) {
     return null;
   }
 
-  const months =
-    (endDate.getUTCFullYear() - startDate.getUTCFullYear()) * 12 +
-    (endDate.getUTCMonth() - startDate.getUTCMonth());
-
-  if (months <= 0) {
-    return null;
-  }
-
-  return `${months}개월`;
+  return formatSeasonOrdinal(endDate);
 }
