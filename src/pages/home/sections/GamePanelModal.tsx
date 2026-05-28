@@ -4,6 +4,7 @@ import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import GameSeasonCountdown from './GameSeasonCountdown';
+import { formatSeasonDurationLabel } from './gameSeasonDurationLabel';
 import './GamePanelModal.css';
 
 interface GamePanelModalProps {
@@ -33,6 +34,7 @@ export default function GamePanelModal({
 
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
+  const seasonDurationLabel = formatSeasonDurationLabel(seasonStartAt, seasonEndAt);
 
   return createPortal(
     <div
@@ -56,6 +58,9 @@ export default function GamePanelModal({
               <h2 className="app-shell__section-title" id="game-panel-modal-title">
                 내 게임
               </h2>
+              {seasonDurationLabel ? (
+                <span className="app-shell__game-season-duration">{seasonDurationLabel} 시즌</span>
+              ) : null}
               {seasonEndAt ? <GameSeasonCountdown endAt={seasonEndAt} startAt={seasonStartAt} /> : null}
             </div>
           </div>

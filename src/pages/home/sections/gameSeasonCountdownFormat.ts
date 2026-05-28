@@ -1,49 +1,8 @@
+import { formatSeasonDurationLabel } from './gameSeasonDurationLabel';
+
 const SECOND_MS = 1_000;
 const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
-const seasonMonths = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-function formatOrdinal(value: number) {
-  if (value === 1) {
-    return '1st';
-  }
-
-  if (value === 2) {
-    return '2nd';
-  }
-
-  if (value === 3) {
-    return '3rd';
-  }
-
-  return `${value}th`;
-}
-
-function formatSeasonWeekLabel(startAt: string) {
-  const startDate = new Date(startAt);
-
-  if (!Number.isFinite(startDate.getTime())) {
-    return null;
-  }
-
-  const month = seasonMonths[startDate.getMonth()];
-  const week = Math.max(1, Math.ceil(startDate.getDate() / 7));
-
-  return `${month}, ${formatOrdinal(week)}`;
-}
 
 export function formatSeasonTimeLeft(endAt: string, nowMs = Date.now(), startAt = endAt) {
   const endDate = new Date(endAt);
@@ -53,11 +12,7 @@ export function formatSeasonTimeLeft(endAt: string, nowMs = Date.now(), startAt 
     return null;
   }
 
-  const seasonLabel = formatSeasonWeekLabel(startAt);
-
-  if (!seasonLabel) {
-    return null;
-  }
+  const seasonLabel = formatSeasonDurationLabel(startAt, endAt) ?? '시즌';
 
   const remainingMs = endMs - nowMs;
 

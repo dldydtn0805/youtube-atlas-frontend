@@ -5,12 +5,18 @@ import GamePanelModal from './GamePanelModal';
 describe('GamePanelModal', () => {
   it('shows season time left next to the modal title', () => {
     render(
-      <GamePanelModal isOpen onClose={() => undefined} seasonEndAt="2099-04-01T00:00:00.000Z">
+      <GamePanelModal
+        isOpen
+        onClose={() => undefined}
+        seasonEndAt="2099-08-01T00:00:00.000Z"
+        seasonStartAt="2099-04-01T00:00:00.000Z"
+      >
         <div>인벤토리 목록</div>
       </GamePanelModal>,
     );
 
     expect(screen.getByRole('heading', { name: '내 게임' })).toBeInTheDocument();
+    expect(screen.getByText('4개월 시즌')).toBeInTheDocument();
     expect(screen.getByText(/남음$/)).toBeInTheDocument();
   });
 

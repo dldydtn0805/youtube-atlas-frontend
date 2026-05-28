@@ -17,6 +17,25 @@
   margin: 0;
 }
 
+.app-shell__game-season-duration {
+  align-items: center;
+  background: color-mix(in srgb, rgb(var(--game-panel-tier-accent-rgb, 20, 184, 166)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, rgb(var(--game-panel-tier-accent-rgb, 20, 184, 166)) 28%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--text) 80%, rgb(var(--game-panel-tier-accent-rgb, 20, 184, 166)) 20%);
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+  padding: 3px 8px;
+}
+
+:root[data-theme='dark'] .app-shell__game-season-duration {
+  background: color-mix(in srgb, rgb(var(--game-panel-tier-accent-rgb, 20, 184, 166)) 20%, transparent);
+  border-color: color-mix(in srgb, rgb(var(--game-panel-tier-accent-rgb, 20, 184, 166)) 34%, transparent);
+}
+
 .app-shell__modal-body--game-panel {
   display: flex;
   flex: 1 1 auto;
