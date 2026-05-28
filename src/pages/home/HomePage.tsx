@@ -391,6 +391,26 @@ function HomePage() {
     value: country.code,
     label: `${country.code} · ${country.name}`,
   }));
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage = false,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+  } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
+  const {
+    data: musicChartData,
+    fetchNextPage: fetchNextMusicChartPage,
+    hasNextPage: hasNextMusicChartPage = false,
+    isFetchingNextPage: isFetchingNextMusicChartPage,
+    isLoading: isMusicChartLoading,
+    isError: isMusicChartError,
+  } = useMusicTopVideos(
+    selectedRegionCode,
+    selectedCategory?.id === ALL_VIDEO_CATEGORY_ID && supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode),
+  );
   const shouldLoadGame = isApiConfigured && authStatus === 'authenticated';
   const shouldLoadGameMarket = isApiConfigured;
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
@@ -519,27 +539,6 @@ function HomePage() {
   const sellGamePositionsMutation = useSellGamePositions(accessToken);
   const createScheduledSellOrderMutation = useCreateScheduledSellOrder(accessToken);
   const cancelScheduledSellOrderMutation = useCancelScheduledSellOrder(accessToken, selectedRegionCode);
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage = false,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-  } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
-  const {
-    data: musicChartData,
-    fetchNextPage: fetchNextMusicChartPage,
-    hasNextPage: hasNextMusicChartPage = false,
-    isFetchingNextPage: isFetchingNextMusicChartPage,
-    isLoading: isMusicChartLoading,
-    isError: isMusicChartError,
-  } = useMusicTopVideos(
-    selectedRegionCode,
-    selectedCategory?.id === ALL_VIDEO_CATEGORY_ID && supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode),
-  );
   const isAllCategorySelected = selectedCategory?.id === ALL_VIDEO_CATEGORY_ID;
   const shouldLoadFavorites = isApiConfigured && authStatus === 'authenticated';
   const isChartLoading =
