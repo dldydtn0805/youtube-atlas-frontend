@@ -1,6 +1,6 @@
 .game-notification-toast {
   align-items: center;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(8px);
   background: var(--surface-modal);
   border: 1px solid var(--border);
   border-radius: 8px;

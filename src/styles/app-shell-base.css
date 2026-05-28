@@ -31,7 +31,7 @@
 }
 
 .app-shell__panel--player {
-  backdrop-filter: blur(6px);
+  backdrop-filter: none;
 }
 
 .app-shell__panel--filters,
@@ -395,7 +395,7 @@
 
 .app-shell__fullscreen-loading {
   align-items: center;
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(8px);
   background: rgba(243, 244, 246, 0.76);
   display: flex;
   inset: 0;

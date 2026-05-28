@@ -1,7 +1,7 @@
 .app-shell__modal-backdrop {
   align-items: center;
   background: var(--modal-backdrop);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(8px);
   display: flex;
   inset: 0;
   justify-content: center;

@@ -339,7 +339,7 @@
 }
 
 .app-shell__profile-card {
-  backdrop-filter: blur(22px);
+  backdrop-filter: blur(8px);
   background: var(--surface-modal);
   border: 1px solid var(--border);
   border-radius: 22px;
