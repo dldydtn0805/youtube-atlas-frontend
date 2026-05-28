@@ -2,6 +2,38 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ChartRankingBoard from '.';
 
+class MockIntersectionObserver {
+  static instances: MockIntersectionObserver[] = [];
+
+  callback: IntersectionObserverCallback;
+
+  disconnect = vi.fn();
+
+  observe = vi.fn();
+
+  unobserve = vi.fn();
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+    MockIntersectionObserver.instances.push(this);
+  }
+
+  trigger(isIntersecting = true) {
+    const entry = {
+      boundingClientRect: {} as DOMRectReadOnly,
+      intersectionRatio: isIntersecting ? 1 : 0,
+      intersectionRect: {} as DOMRectReadOnly,
+      isIntersecting,
+      isVisible: isIntersecting,
+      rootBounds: null,
+      target: document.createElement('div'),
+      time: 0,
+    } as unknown as IntersectionObserverEntry;
+
+    this.callback([entry], this as never);
+  }
+}
+
 const baseItem = {
   contentDetails: { duration: 'PT1M' },
   id: 'video-1',
@@ -223,41 +255,32 @@ describe('ChartRankingBoard', () => {
     expect(onOpenSellTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
   });
 
-  it('keeps the requested page after fetching more ranking items', () => {
+  it('loads more items when the scroll anchor enters the viewport', () => {
     const onLoadMore = vi.fn();
-    const initialSection = makeSection(20, 'initial-video');
-    const fetchedSection = makeSection(40, 'fetched-video');
+    const originalIntersectionObserver = globalThis.IntersectionObserver;
 
-    const { rerender } = render(
-      <ChartRankingBoard
-        hasNextPage
-        isError={false}
-        isFetchingNextPage={false}
-        isLoading={false}
-        onLoadMore={onLoadMore}
-        onSelectVideo={vi.fn()}
-        section={initialSection}
-      />,
-    );
+    MockIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver as never);
 
-    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    try {
+      render(
+        <ChartRankingBoard
+          hasNextPage
+          isError={false}
+          isFetchingNextPage={false}
+          isLoading={false}
+          onLoadMore={onLoadMore}
+          onSelectVideo={vi.fn()}
+          section={makeSection(20, 'initial-video')}
+        />,
+      );
 
-    expect(onLoadMore).toHaveBeenCalledTimes(1);
+      expect(MockIntersectionObserver.instances).toHaveLength(1);
+      MockIntersectionObserver.instances[0].trigger();
 
-    rerender(
-      <ChartRankingBoard
-        hasNextPage={false}
-        isError={false}
-        isFetchingNextPage={false}
-        isLoading={false}
-        onLoadMore={onLoadMore}
-        onSelectVideo={vi.fn()}
-        section={fetchedSection}
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: '현재 페이지 2' })).toBeInTheDocument();
-    expect(screen.getByText('테스트 영상 21')).toBeInTheDocument();
-    expect(screen.queryByText('테스트 영상 1')).not.toBeInTheDocument();
+      expect(onLoadMore).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.stubGlobal('IntersectionObserver', originalIntersectionObserver);
+    }
   });
 });

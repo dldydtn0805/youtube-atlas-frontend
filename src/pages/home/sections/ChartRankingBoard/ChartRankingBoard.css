@@ -108,3 +108,34 @@
   padding: 10px 0;
   text-align: center;
 }
+
+.chart-ranking-board__scroll-anchor-wrap {
+  align-items: center;
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  padding: 0.45rem 0 0.1rem;
+}
+
+.chart-ranking-board__scroll-spinner-wrap {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 32px;
+}
+
+.chart-ranking-board__scroll-spinner {
+  animation: app-shell-spin 0.9s linear infinite;
+  border: 3px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  border-top-color: var(--accent);
+  display: block;
+  height: 24px;
+  width: 24px;
+}
+
+.chart-ranking-board__scroll-anchor {
+  height: 1px;
+  pointer-events: none;
+  width: 100%;
+}

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import VideoListPagination from '../../../../components/VideoList/Pagination/VideoListPagination';
-import VideoListPaginationOverlay from '../../../../components/VideoList/Pagination/VideoListPaginationOverlay';
+import type { MutableRefObject } from 'react';
 import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../../features/youtube/types';
 import {
   formatRankingPrice,
@@ -15,9 +14,6 @@ import type { ChartRankingAction, ChartRankingBoardProps } from './types';
 
 interface ChartRankingSectionProps {
   activePlaybackQueueId?: string;
-  canGoNext: boolean;
-  canGoPrevious: boolean;
-  currentPage: number;
   enableMobileTradeSheet?: boolean;
   emptyMessage?: string;
   eyebrow: string;
@@ -27,29 +23,23 @@ interface ChartRankingSectionProps {
   hasResolvedTrendSignals: boolean;
   isCollapsed?: boolean;
   isCollapsible?: boolean;
-  isPrefetchingAllPages: boolean;
+  isFetchingNextPage: boolean;
   marketPriceByVideoId?: Record<string, number>;
   onOpenBuyTradeModal?: ChartRankingAction;
   onOpenChart?: ChartRankingAction;
-  onOpenPageSelect: () => void;
   onOpenSellTradeModal?: ChartRankingAction;
-  onPageChange: (nextPageIndex: number) => void;
   onSelectVideo: ChartRankingAction;
   onToggle?: () => void;
-  pageStartIndex: number;
+  loadMoreSentinelRef: MutableRefObject<HTMLDivElement | null>;
   section: YouTubeCategorySection;
   selectedVideoId?: string;
-  shouldPaginate: boolean;
-  totalPages: number;
+  shouldLoadMore?: boolean;
   trendSignalsByVideoId?: ChartRankingBoardProps['trendSignalsByVideoId'];
   visibleItems: YouTubeVideoItem[];
 }
 
 export default function ChartRankingSection({
   activePlaybackQueueId,
-  canGoNext,
-  canGoPrevious,
-  currentPage,
   enableMobileTradeSheet = false,
   emptyMessage,
   eyebrow,
@@ -59,27 +49,24 @@ export default function ChartRankingSection({
   hasResolvedTrendSignals,
   isCollapsed = false,
   isCollapsible = false,
-  isPrefetchingAllPages,
+  isFetchingNextPage,
   marketPriceByVideoId,
   onOpenBuyTradeModal,
   onOpenChart,
-  onOpenPageSelect,
   onOpenSellTradeModal,
-  onPageChange,
   onSelectVideo,
   onToggle,
-  pageStartIndex,
+  loadMoreSentinelRef,
   section,
   selectedVideoId,
-  shouldPaginate,
-  totalPages,
+  shouldLoadMore = false,
   trendSignalsByVideoId,
   visibleItems,
 }: ChartRankingSectionProps) {
   const [tradeSheetVideoId, setTradeSheetVideoId] = useState<string | null>(null);
   const tradeSheetVisibleIndex = visibleItems.findIndex((item) => item.id === tradeSheetVideoId);
   const tradeSheetItem = tradeSheetVisibleIndex >= 0 ? visibleItems[tradeSheetVisibleIndex] : null;
-  const tradeSheetIndex = tradeSheetVisibleIndex >= 0 ? pageStartIndex + tradeSheetVisibleIndex : -1;
+  const tradeSheetIndex = tradeSheetVisibleIndex >= 0 ? tradeSheetVisibleIndex : -1;
   const tradeSheetRankLabel = tradeSheetItem
     ? resolveChartRankLabel(tradeSheetItem, getRankLabel?.(tradeSheetItem, tradeSheetIndex), tradeSheetIndex)
     : '';
@@ -126,7 +113,7 @@ export default function ChartRankingSection({
             </thead>
             <tbody>
               {visibleItems.map((item, visibleIndex) => {
-                const index = pageStartIndex + visibleIndex;
+                const index = visibleIndex;
                 const rankLabel = resolveChartRankLabel(item, getRankLabel?.(item, index), index);
                 const rankNumber = getRankNumber(item, rankLabel, index);
                 const badge = getRankingTrendBadge(item, trendSignalsByVideoId, hasResolvedTrendSignals);
@@ -188,20 +175,20 @@ export default function ChartRankingSection({
       ) : !isCollapsed ? (
         <p className="chart-ranking-board__section-status">{emptyMessage}</p>
       ) : null}
-      {isPrefetchingAllPages ? <VideoListPaginationOverlay /> : null}
-      {!isCollapsed && shouldPaginate && (section.items.length > visibleItems.length || hasNextPage) ? (
-        <VideoListPagination
-          canGoNext={canGoNext}
-          canGoPrevious={canGoPrevious}
-          currentPage={currentPage}
-          label={`${section.label} 페이지 이동`}
-          onNext={() => onPageChange(currentPage)}
-          onOpenPageSelect={onOpenPageSelect}
-          onPageChange={onPageChange}
-          onPrevious={() => onPageChange(currentPage - 2)}
-          shouldPreparePages={hasNextPage}
-          totalPages={totalPages}
-        />
+      {!isCollapsed && hasNextPage && shouldLoadMore ? (
+        <div className="chart-ranking-board__scroll-anchor-wrap" role="status" aria-live="polite">
+          {isFetchingNextPage ? (
+            <div className="chart-ranking-board__scroll-spinner-wrap">
+              <span className="chart-ranking-board__scroll-spinner" aria-hidden="true" />
+              <span className="sr-only">다음 영상을 불러오는 중</span>
+            </div>
+          ) : null}
+          <div
+            aria-hidden="true"
+            className="chart-ranking-board__scroll-anchor"
+            ref={loadMoreSentinelRef}
+          />
+        </div>
       ) : null}
     </section>
   );
