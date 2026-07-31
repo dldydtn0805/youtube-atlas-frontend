@@ -13,7 +13,9 @@
 - Enabled Google OAuth, registered the Supabase callback, and configured the Vercel production redirect.
 - Removed the retired Spring API URL and browser-side YouTube API key from Vercel.
 - Preserved pre-migration comments and trend signals in local JSON backups under `/tmp`.
-- Verified 375 frontend tests, ESLint, the production build, Deno type checks, remote database lint, and the deployed Edge API health endpoint.
+- Verified 377 frontend tests, ESLint, the production build, Deno type checks, remote database lint, and the deployed Edge API health endpoint.
 - Added a top-level runtime error boundary so a production render failure shows a recoverable diagnostic instead of a blank screen.
 - Verified the Vercel production UI renders the Supabase-backed TOP 200 chart, video player, and realtime chat shell.
 - Verified the production Google OAuth flow reaches Google's account chooser without a redirect URI mismatch.
+- Fixed the Edge API's YouTube comment-highlight contract and added a frontend fallback so async highlight data cannot crash the production UI.
+- Verified the deployed comment-highlight endpoint returns the complete frontend contract for a live YouTube video.

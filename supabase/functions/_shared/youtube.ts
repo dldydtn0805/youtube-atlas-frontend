@@ -267,15 +267,20 @@ export async function fetchCommentHighlights(videoId: string) {
     .map((item) => {
       const comment = item.snippet?.topLevelComment;
       const snippet = comment?.snippet;
+      const commentId = comment?.id ?? item.id;
 
       return {
         author: snippet?.authorDisplayName ?? 'YouTube 사용자',
         author_profile_image_url: snippet?.authorProfileImageUrl ?? null,
+        client_id: `youtube:${commentId}`,
         content: snippet?.textOriginal ?? snippet?.textDisplay ?? '',
         created_at: snippet?.publishedAt ?? new Date().toISOString(),
         ephemeral: true,
-        id: comment?.id ?? item.id,
+        id: commentId,
+        label: '인기 댓글',
         like_count: snippet?.likeCount ?? 0,
+        message_type: 'COMMENT_HIGHLIGHT',
+        source: 'YOUTUBE_COMMENT',
         video_id: videoId,
       };
     })
