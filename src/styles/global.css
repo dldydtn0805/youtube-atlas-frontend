@@ -4,6 +4,26 @@
   padding: 0;
 }
 
+.app-runtime-error {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.app-runtime-error__eyebrow {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-runtime-error code {
+  margin-top: 1rem;
+  max-width: 48rem;
+  overflow-wrap: anywhere;
+}
+
 .sr-only {
   border: 0;
   clip: rect(0 0 0 0);

@@ -14,3 +14,4 @@
 - Removed the retired Spring API URL and browser-side YouTube API key from Vercel.
 - Preserved pre-migration comments and trend signals in local JSON backups under `/tmp`.
 - Verified 374 frontend tests, ESLint, the production build, Deno type checks, remote database lint, and the deployed Edge API health endpoint.
+- Added a top-level runtime error boundary so a production render failure shows a recoverable diagnostic instead of a blank screen.
