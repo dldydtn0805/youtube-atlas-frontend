@@ -51,4 +51,5 @@ Authentication and realtime are the two deliberate exceptions:
 4. Configured function secrets, Vault, and seven active Cron jobs.
 5. Verified the health-adjacent public API, YouTube catalog, trend sync, settlement, and snapshot-backed top chart.
 6. Removed Vercel's retired API override and client-side YouTube key; retained the Supabase URL and anon key.
-7. Passed all 374 frontend unit tests, ESLint with no errors, the production build, Deno type checks, remote database lint, and the deployed Edge API health check.
+7. Passed all 375 frontend unit tests, ESLint with no errors, the production build, Deno type checks, remote database lint, and the deployed Edge API health check.
+8. Verified the Vercel production UI and the Google OAuth redirect through to Google's account chooser.
