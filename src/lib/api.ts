@@ -4,7 +4,12 @@ interface ApiErrorResponse {
   retryAfterSeconds?: number | null;
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '');
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '');
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim().replace(/\/+$/, '');
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const apiBaseUrl =
+  configuredApiBaseUrl || (supabaseUrl ? `${supabaseUrl}/functions/v1` : '');
+const usesSupabaseFunctions = apiBaseUrl.includes('.supabase.co/functions/v1');
 
 export const isApiConfigured = Boolean(apiBaseUrl);
 
@@ -77,7 +82,23 @@ function toApiRequestError(response: Response, body: unknown) {
 }
 
 export async function fetchApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(toApiUrl(path), init);
+  const requestInit =
+    usesSupabaseFunctions && supabaseAnonKey
+      ? {
+          ...init,
+          headers: (() => {
+            const headers = new Headers(init?.headers);
+
+            headers.set('apikey', supabaseAnonKey);
+            if (!headers.has('Authorization')) {
+              headers.set('Authorization', `Bearer ${supabaseAnonKey}`);
+            }
+
+            return headers;
+          })(),
+        }
+      : init;
+  const response = await fetch(toApiUrl(path), requestInit);
   const body = await parseResponseBody(response);
 
   if (!response.ok) {

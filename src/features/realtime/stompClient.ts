@@ -1,26 +1,32 @@
-import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs';
-import { getWebSocketUrl } from '../../lib/api';
-import { CHAT_PARTICIPANT_HEADER, getChatParticipantId } from '../comments/participant';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabase';
+import { getChatParticipantId } from '../comments/participant';
+import { readStoredAuthSession } from '../auth/storage';
 
 type TopicHandler = (messageBody: string) => void;
 type ConnectionHandler = () => void;
-type AuthenticatedConnectionHandler = (client: Client) => void;
+type RealtimePublisher = {
+  connected: boolean;
+  publish: (message: { body?: string; destination: string }) => void;
+};
+type AuthenticatedConnectionHandler = (client: RealtimePublisher) => void;
 
-let sharedClient: Client | null = null;
-let isConnected = false;
 const handlersByTopic = new Map<string, Set<TopicHandler>>();
-const subscriptionsByTopic = new Map<string, StompSubscription>();
+const channelsByTopic = new Map<string, RealtimeChannel>();
 const connectionHandlers = new Set<ConnectionHandler>();
+let connectedChannelCount = 0;
+let connectionChannel: RealtimeChannel | null = null;
 
-function dispatchMessage(topic: string, message: IMessage) {
+function dispatchMessage(topic: string, payload: unknown) {
   const handlers = handlersByTopic.get(topic);
 
   if (!handlers) {
     return;
   }
 
+  const messageBody = JSON.stringify(payload);
   [...handlers].forEach((handler) => {
-    handler(message.body);
+    handler(messageBody);
   });
 }
 
@@ -30,161 +36,225 @@ function dispatchConnection() {
   });
 }
 
-function subscribeTopic(topic: string) {
-  if (!sharedClient || !isConnected || subscriptionsByTopic.has(topic) || !handlersByTopic.has(topic)) {
-    return;
-  }
-
-  const subscription = sharedClient.subscribe(topic, (message) => {
-    dispatchMessage(topic, message);
-  });
-
-  subscriptionsByTopic.set(topic, subscription);
+function toNotification(payload: Record<string, unknown>) {
+  return {
+    channelTitle: payload.channel_title ?? null,
+    createdAt: payload.created_at,
+    highlightScore: payload.highlight_score ?? null,
+    id: String(payload.id),
+    message: payload.message,
+    notificationEventType: payload.event_type,
+    notificationType: payload.notification_type,
+    positionId: payload.position_id ?? null,
+    readAt: payload.read_at ?? null,
+    showModal: payload.show_modal ?? false,
+    strategyTags: payload.strategy_tags ?? [],
+    thumbnailUrl: payload.thumbnail_url ?? null,
+    title: payload.title,
+    titleCode: payload.title_code ?? null,
+    titleDisplayName: payload.title_display_name ?? null,
+    titleGrade: payload.title_grade ?? null,
+    videoId: payload.video_id ?? null,
+    videoTitle: payload.video_title ?? null,
+  };
 }
 
-function ensureSharedClient() {
-  if (sharedClient) {
-    return sharedClient;
+function createTopicChannel(topic: string) {
+  if (!supabase) {
+    return null;
   }
 
-  const client = new Client({
-    brokerURL: getWebSocketUrl(),
-    connectHeaders: {
-      [CHAT_PARTICIPANT_HEADER]: getChatParticipantId(),
-    },
-    debug: () => {},
-    reconnectDelay: 5_000,
-  });
+  const channelName = `atlas:${topic.replace(/[^a-zA-Z0-9_-]/g, ':')}`;
+  const channel = supabase.channel(channelName);
 
-  client.onConnect = () => {
-    if (sharedClient !== client) {
-      void client.deactivate();
+  if (topic === '/topic/comments') {
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+      },
+      (payload) => {
+        dispatchMessage(topic, payload.new);
+      },
+    );
+  } else if (topic === '/topic/comments/presence') {
+    channel.on('presence', { event: 'sync' }, () => {
+      const participants = Object.values(channel.presenceState())
+        .flat()
+        .map((presence) => {
+          const presenceData = presence as unknown as Record<string, unknown>;
+
+          return {
+            display_name:
+              typeof presenceData.display_name === 'string'
+                ? presenceData.display_name
+                : '익명',
+            participant_id:
+              typeof presenceData.participant_id === 'string'
+                ? presenceData.participant_id
+                : String(presenceData.presence_ref ?? ''),
+          };
+        })
+        .filter((participant) => participant.participant_id);
+
+      dispatchMessage(topic, {
+        active_count: participants.length,
+        participants,
+      });
+    });
+  } else if (topic === '/user/queue/game/notifications') {
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'game_notifications',
+      },
+      (payload) => {
+        dispatchMessage(topic, toNotification(payload.new));
+      },
+    );
+  } else if (topic.startsWith('/topic/game/')) {
+    const regionCode = topic.slice('/topic/game/'.length).toUpperCase();
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        filter: `region_code=eq.${regionCode}`,
+        schema: 'public',
+        table: 'game_positions',
+      },
+      () => {
+        dispatchMessage(topic, {
+          capturedAt: null,
+          eventType: 'wallet-updated',
+          occurredAt: new Date().toISOString(),
+          regionCode,
+          seasonId: null,
+        });
+      },
+    );
+  } else {
+    channel.on('broadcast', { event: 'message' }, ({ payload }) => {
+      dispatchMessage(topic, payload);
+    });
+  }
+
+  channel.subscribe((status) => {
+    if (status !== 'SUBSCRIBED') {
       return;
     }
 
-    isConnected = true;
-    handlersByTopic.forEach((_handlers, topic) => {
-      subscribeTopic(topic);
-    });
+    connectedChannelCount += 1;
     dispatchConnection();
-  };
 
-  client.onWebSocketClose = () => {
-    isConnected = false;
-    subscriptionsByTopic.clear();
-  };
+    if (topic === '/topic/comments/presence') {
+      const session = readStoredAuthSession();
+      void channel.track({
+        display_name: session?.user.displayName ?? '익명',
+        participant_id: getChatParticipantId(),
+      });
+    }
+  });
 
-  sharedClient = client;
-  client.activate();
-
-  return client;
+  channelsByTopic.set(topic, channel);
+  return channel;
 }
 
-function deactivateSharedClient() {
-  if (!sharedClient || handlersByTopic.size > 0) {
+function ensureTopicChannel(topic: string) {
+  return channelsByTopic.get(topic) ?? createTopicChannel(topic);
+}
+
+function removeTopicChannel(topic: string) {
+  const channel = channelsByTopic.get(topic);
+
+  if (!channel || !supabase) {
     return;
   }
 
-  subscriptionsByTopic.forEach((subscription) => {
-    subscription.unsubscribe();
-  });
-  subscriptionsByTopic.clear();
-  isConnected = false;
-  void sharedClient.deactivate();
-  sharedClient = null;
+  channelsByTopic.delete(topic);
+  connectedChannelCount = Math.max(0, connectedChannelCount - 1);
+  void supabase.removeChannel(channel);
 }
 
 export function subscribeToRealtimeTopic(topic: string, handler: TopicHandler) {
-  const existingHandlers = handlersByTopic.get(topic);
+  const handlers = handlersByTopic.get(topic) ?? new Set<TopicHandler>();
 
-  if (existingHandlers) {
-    existingHandlers.add(handler);
-  } else {
-    handlersByTopic.set(topic, new Set([handler]));
-  }
-
-  ensureSharedClient();
-  subscribeTopic(topic);
+  handlers.add(handler);
+  handlersByTopic.set(topic, handlers);
+  ensureTopicChannel(topic);
 
   return () => {
-    const handlers = handlersByTopic.get(topic);
+    const currentHandlers = handlersByTopic.get(topic);
 
-    if (!handlers) {
-      return;
-    }
-
-    handlers.delete(handler);
-
-    if (handlers.size === 0) {
+    currentHandlers?.delete(handler);
+    if (!currentHandlers || currentHandlers.size === 0) {
       handlersByTopic.delete(topic);
-      const subscription = subscriptionsByTopic.get(topic);
-      subscription?.unsubscribe();
-      subscriptionsByTopic.delete(topic);
+      removeTopicChannel(topic);
     }
-
-    deactivateSharedClient();
   };
 }
 
 export function subscribeToRealtimeConnection(handler: ConnectionHandler) {
   connectionHandlers.add(handler);
-  ensureSharedClient();
 
-  if (isConnected) {
+  if (connectedChannelCount > 0) {
     handler();
+  } else if (supabase && !connectionChannel) {
+    connectionChannel = supabase.channel('atlas:connection');
+    connectionChannel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        dispatchConnection();
+      }
+    });
   }
 
   return () => {
     connectionHandlers.delete(handler);
-    deactivateSharedClient();
+
+    if (connectionHandlers.size === 0 && connectionChannel && supabase) {
+      void supabase.removeChannel(connectionChannel);
+      connectionChannel = null;
+    }
   };
 }
 
 export function subscribeToAuthenticatedRealtimeTopic(
   topic: string,
-  accessToken: string,
+  _accessToken: string,
   handler: TopicHandler,
   onConnect?: AuthenticatedConnectionHandler,
 ) {
-  let subscription: StompSubscription | null = null;
-  const client = new Client({
-    brokerURL: getWebSocketUrl(),
-    connectHeaders: {
-      Authorization: `Bearer ${accessToken}`,
-      [CHAT_PARTICIPANT_HEADER]: getChatParticipantId(),
-    },
-    debug: () => {},
-    reconnectDelay: 5_000,
+  const unsubscribe = subscribeToRealtimeTopic(topic, handler);
+
+  onConnect?.({
+    connected: true,
+    publish: () => {},
   });
 
-  client.onConnect = () => {
-    subscription = client.subscribe(topic, (message) => {
-      handler(message.body);
-    });
-    onConnect?.(client);
-  };
-
-  client.onWebSocketClose = () => {
-    subscription = null;
-  };
-
-  client.activate();
-
-  return () => {
-    subscription?.unsubscribe();
-    subscription = null;
-    void client.deactivate();
-  };
+  return unsubscribe;
 }
 
 export function resetSharedRealtimeClientForTests() {
-  subscriptionsByTopic.forEach((subscription) => {
-    subscription.unsubscribe();
-  });
-  subscriptionsByTopic.clear();
   handlersByTopic.clear();
   connectionHandlers.clear();
-  isConnected = false;
-  void sharedClient?.deactivate();
-  sharedClient = null;
+
+  if (supabase) {
+    const activeSupabase = supabase;
+
+    channelsByTopic.forEach((channel) => {
+      void activeSupabase.removeChannel(channel);
+    });
+
+    if (connectionChannel) {
+      void activeSupabase.removeChannel(connectionChannel);
+    }
+  }
+
+  channelsByTopic.clear();
+  connectedChannelCount = 0;
+  connectionChannel = null;
 }

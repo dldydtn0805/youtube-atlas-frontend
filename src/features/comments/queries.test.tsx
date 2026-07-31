@@ -4,62 +4,65 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from './types';
 
-const clientInstances: MockClient[] = [];
+const topicHandlers = new Map<string, Set<(message: string) => void>>();
+const connectionHandlers = new Set<() => void>();
 
-class MockClient {
-  brokerURL?: string;
-  connectHeaders?: Record<string, string>;
-  debug?: () => void;
-  reconnectDelay?: number;
-  onConnect?: () => void;
-  connected = true;
-  publish = vi.fn();
-  subscribe = vi.fn(() => ({
-    unsubscribe: vi.fn(),
-  }));
-  activate = vi.fn();
-  deactivate = vi.fn(async () => {});
-
-  constructor(config: {
-    brokerURL: string;
-    connectHeaders?: Record<string, string>;
-    debug: () => void;
-    reconnectDelay: number;
-  }) {
-    this.brokerURL = config.brokerURL;
-    this.connectHeaders = config.connectHeaders;
-    this.debug = config.debug;
-    this.reconnectDelay = config.reconnectDelay;
-    clientInstances.push(this);
-  }
-}
-
-vi.mock('@stomp/stompjs', () => ({
-  Client: MockClient,
-}));
-
-vi.mock('../../lib/api', () => ({
-  getWebSocketUrl: () => 'ws://example.com/ws',
+vi.mock('../realtime/stompClient', () => ({
+  resetSharedRealtimeClientForTests: vi.fn(() => {
+    topicHandlers.clear();
+    connectionHandlers.clear();
+  }),
+  subscribeToAuthenticatedRealtimeTopic: vi.fn(
+    (topic: string, _accessToken: string, handler: (message: string) => void) => {
+      const handlers = topicHandlers.get(topic) ?? new Set();
+      handlers.add(handler);
+      topicHandlers.set(topic, handlers);
+      return () => handlers.delete(handler);
+    },
+  ),
+  subscribeToRealtimeConnection: vi.fn((handler: () => void) => {
+    connectionHandlers.add(handler);
+    return () => connectionHandlers.delete(handler);
+  }),
+  subscribeToRealtimeTopic: vi.fn((topic: string, handler: (message: string) => void) => {
+    const handlers = topicHandlers.get(topic) ?? new Set();
+    handlers.add(handler);
+    topicHandlers.set(topic, handlers);
+    return () => handlers.delete(handler);
+  }),
 }));
 
 vi.mock('./api', async () => {
   const actual = await vi.importActual<typeof import('./api')>('./api');
-  const fetchCommentPresence = vi.fn().mockResolvedValue({ active_count: 0 });
-  const updateCommentPresenceIdentity = vi.fn().mockResolvedValue({
-    active_count: 1,
-    participants: [
-      {
-        display_name: 'Atlas User',
-        participant_id: 'participant-1',
-      },
-    ],
-  });
 
   return {
     ...actual,
+    fetchCommentHighlights: vi.fn().mockResolvedValue([
+      {
+        author: 'YouTube Viewer',
+        client_id: 'yt-comment:comment-1',
+        content: '좋아요 많은 댓글',
+        created_at: '2026-05-03T10:00:00Z',
+        ephemeral: true,
+        id: 'yt-comment:comment-1',
+        label: '인기 댓글',
+        like_count: 10,
+        message_type: 'COMMENT_HIGHLIGHT',
+        source: 'YOUTUBE_COMMENT',
+        video_id: 'video-1',
+      },
+    ]),
+    fetchCommentPresence: vi.fn().mockResolvedValue({ active_count: 0 }),
     fetchComments: vi.fn().mockResolvedValue([]),
-    fetchCommentPresence,
-    updateCommentPresenceIdentity,
+    updateCommentPresenceIdentity: vi.fn().mockResolvedValue({
+      active_count: 1,
+      participants: [
+        {
+          display_name: 'Atlas User',
+          participant_id: 'participant-1',
+        },
+      ],
+    }),
   };
 });
 
@@ -69,14 +72,17 @@ function createWrapper(queryClient: QueryClient) {
   };
 }
 
+function emitTopic(topic: string, payload: unknown) {
+  topicHandlers.get(topic)?.forEach((handler) => handler(JSON.stringify(payload)));
+}
+
 describe('comments queries', () => {
   afterEach(async () => {
-    clientInstances.length = 0;
     vi.clearAllMocks();
+    topicHandlers.clear();
+    connectionHandlers.clear();
     const { resetCommentsRealtimeForTests } = await import('./queries');
     resetCommentsRealtimeForTests();
-    const { resetSharedRealtimeClientForTests } = await import('../realtime/stompClient');
-    resetSharedRealtimeClientForTests();
   });
 
   it('merges duplicate comment events when the realtime payload uses a different id', async () => {
@@ -106,36 +112,7 @@ describe('comments queries', () => {
     ]);
   });
 
-  it('does not subscribe after the effect has already been cleaned up', async () => {
-    const { useComments } = await import('./queries');
-
-    function HookHarness({ videoId }: { videoId: string }) {
-      useComments(videoId);
-      return null;
-    }
-
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
-    const view = render(<HookHarness videoId="video-1" />, {
-      wrapper: createWrapper(queryClient),
-    });
-    const client = clientInstances.at(-1);
-
-    expect(client).toBeDefined();
-
-    view.unmount();
-    client?.onConnect?.();
-
-    expect(client?.subscribe).not.toHaveBeenCalled();
-  });
-
-  it('subscribes to the global comments topic', async () => {
+  it('cleans up Supabase Realtime subscriptions when unmounted', async () => {
     const { useComments } = await import('./queries');
 
     function HookHarness() {
@@ -143,24 +120,31 @@ describe('comments queries', () => {
       return null;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
+    const queryClient = new QueryClient();
+    const view = render(<HookHarness />, {
+      wrapper: createWrapper(queryClient),
     });
 
+    expect(topicHandlers.get('/topic/comments')?.size).toBe(1);
+    view.unmount();
+    expect(topicHandlers.get('/topic/comments')?.size).toBe(0);
+  });
+
+  it('subscribes to Supabase comment and presence topics', async () => {
+    const { useComments } = await import('./queries');
+
+    function HookHarness() {
+      useComments(undefined);
+      return null;
+    }
+
+    const queryClient = new QueryClient();
     render(<HookHarness />, {
       wrapper: createWrapper(queryClient),
     });
-    const client = clientInstances.at(-1);
 
-    client?.onConnect?.();
-
-    expect(client?.subscribe).toHaveBeenCalledWith('/topic/comments', expect.any(Function));
-    expect(client?.subscribe).toHaveBeenCalledWith('/topic/comments/presence', expect.any(Function));
-    expect(client?.connectHeaders).toMatchObject({ 'x-participant-id': expect.any(String) });
+    expect(topicHandlers.get('/topic/comments')?.size).toBe(1);
+    expect(topicHandlers.get('/topic/comments/presence')?.size).toBe(1);
   });
 
   it('fetches comments for the selected region', async () => {
@@ -172,16 +156,8 @@ describe('comments queries', () => {
       return null;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
     render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
+      wrapper: createWrapper(new QueryClient()),
     });
 
     await waitFor(() => {
@@ -201,16 +177,8 @@ describe('comments queries', () => {
       return null;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
     render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
+      wrapper: createWrapper(new QueryClient()),
     });
 
     await waitFor(() => {
@@ -218,33 +186,37 @@ describe('comments queries', () => {
     });
   });
 
-  it('reuses a single realtime client across multiple mounted comment hooks', async () => {
+  it('merges a Supabase insert into the active comment query', async () => {
     const { useComments } = await import('./queries');
+    const { fetchComments } = await import('./api');
 
     function HookHarness() {
-      useComments(undefined);
-      return null;
+      const query = useComments(undefined);
+      return <div>{query.data?.map((comment) => comment.content).join(',')}</div>;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
+    render(<HookHarness />, {
+      wrapper: createWrapper(new QueryClient()),
     });
 
-    render(
-      <>
-        <HookHarness />
-        <HookHarness />
-      </>,
-      {
-        wrapper: createWrapper(queryClient),
-      },
-    );
+    await waitFor(() => {
+      expect(fetchComments).toHaveBeenCalled();
+    });
 
-    expect(clientInstances).toHaveLength(1);
+    act(() => {
+      emitTopic('/topic/comments', {
+        author: 'Atlas',
+        client_id: 'client-1',
+        content: 'Supabase realtime',
+        created_at: '2026-07-31T10:00:00Z',
+        id: 1,
+        video_id: 'global',
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Supabase realtime')).toBeInTheDocument();
+    });
   });
 
   it('refetches presence after the realtime connection is established', async () => {
@@ -256,26 +228,18 @@ describe('comments queries', () => {
       return null;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
     render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
+      wrapper: createWrapper(new QueryClient()),
     });
 
-    let initialCallCount = 0;
     await waitFor(() => {
-      initialCallCount = vi.mocked(fetchCommentPresence).mock.calls.length;
-      expect(initialCallCount).toBeGreaterThan(0);
+      expect(fetchCommentPresence).toHaveBeenCalled();
     });
+    const initialCallCount = vi.mocked(fetchCommentPresence).mock.calls.length;
 
-    const client = clientInstances.at(-1);
-    client?.onConnect?.();
+    act(() => {
+      connectionHandlers.forEach((handler) => handler());
+    });
 
     await waitFor(() => {
       expect(fetchCommentPresence).toHaveBeenCalledTimes(initialCallCount + 1);
@@ -294,20 +258,13 @@ describe('comments queries', () => {
       return null;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
     render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
+      wrapper: createWrapper(new QueryClient()),
     });
-    const client = clientInstances.at(-1);
 
-    client?.onConnect?.();
+    act(() => {
+      connectionHandlers.forEach((handler) => handler());
+    });
 
     await waitFor(() => {
       expect(updateCommentPresenceIdentity).toHaveBeenCalledWith({
@@ -317,70 +274,21 @@ describe('comments queries', () => {
     });
   });
 
-  it('starts the authenticated personal comment highlight stream', async () => {
+  it('loads YouTube comment highlights through the Edge API', async () => {
     const { useCommentHighlights } = await import('./queries');
 
     function HookHarness() {
       const highlights = useCommentHighlights('video-1', 'access-token-1');
 
-      return (
-        <div>
-          {highlights.map((highlight) => (
-            <span key={highlight.id}>{highlight.content}</span>
-          ))}
-        </div>
-      );
+      return <div>{highlights.map((highlight) => highlight.content).join(',')}</div>;
     }
 
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
     render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
-    });
-    const client = clientInstances.at(-1);
-
-    client?.onConnect?.();
-
-    expect(client?.connectHeaders).toMatchObject({
-      Authorization: 'Bearer access-token-1',
-    });
-    expect(client?.subscribe).toHaveBeenCalledWith(
-      '/user/queue/comments/highlights',
-      expect.any(Function),
-    );
-    expect(client?.publish).toHaveBeenCalledWith({
-      body: JSON.stringify({ videoId: 'video-1' }),
-      destination: '/app/comments/highlights/start',
+      wrapper: createWrapper(new QueryClient()),
     });
 
-    const callback = client?.subscribe.mock.calls.at(0)?.at(1) as
-      | ((message: { body: string }) => void)
-      | undefined;
-
-    act(() => {
-      callback?.({
-        body: JSON.stringify({
-          author: 'YouTube Viewer',
-          client_id: 'yt-comment:comment-1',
-          content: '좋아요 많은 댓글',
-          created_at: '2026-05-03T10:00:00Z',
-          ephemeral: true,
-          id: 'yt-comment:comment-1',
-          label: '인기 댓글',
-          like_count: 10,
-          message_type: 'COMMENT_HIGHLIGHT',
-          source: 'YOUTUBE_COMMENT',
-          video_id: 'video-1',
-        }),
-      });
+    await waitFor(() => {
+      expect(screen.getByText('좋아요 많은 댓글')).toBeInTheDocument();
     });
-
-    expect(screen.getByText('좋아요 많은 댓글')).toBeInTheDocument();
   });
 });

@@ -1,13 +1,13 @@
 # YouTube Atlas
 
-YouTube 인기 차트를 기반으로 영상을 사고파는 시즌제 랭킹 게임 프론트엔드입니다.  
+YouTube 인기 차트를 기반으로 영상을 사고파는 시즌제 랭킹 게임입니다.
 단순한 영상 탐색 앱이 아니라 `차트 탐색 -> 진입 판단 -> 포지션 운영 -> 티어/칭호/알림 확인` 흐름을 한 화면 안에서 이어지도록 만든 토이 프로젝트입니다.
 
 배포 링크: [https://youtube-atlas.vercel.app/](https://youtube-atlas.vercel.app/)
 
-관련 레포지토리
+레거시 레포지토리
 
-- Backend: [youtube-atlas-backend](https://github.com/dldydtn0805/youtube-atlas-backend)
+- Spring Backend (retired): [youtube-atlas-backend](https://github.com/dldydtn0805/youtube-atlas-backend)
 
 ## 현재 상태
 
@@ -18,7 +18,7 @@ YouTube 인기 차트를 기반으로 영상을 사고파는 시즌제 랭킹 �
 - 실시간 순위 변화 반영
 - 티어, 하이라이트, 칭호 수집
 - 시즌 코인과 리더보드 경쟁
-- WebSocket 기반 알림/채팅
+- Supabase Realtime 기반 알림/채팅
 - 관리자 화면을 통한 운영 데이터 확인
 
 즉, "유튜브 데이터를 보는 앱"보다는 "유튜브 차트 데이터를 가지고 플레이하는 게임형 서비스 프로토타입"에 가깝습니다.
@@ -79,7 +79,7 @@ YouTube Atlas는 YouTube 랭킹 데이터를 게임화해 다음 흐름을 만�
 
 - 영상 기반 공개 채팅
 - 익명 채팅과 로그인 사용자 채팅 모두 지원
-- WebSocket 구독 기반 새 메시지 반영
+- Supabase Realtime 구독 기반 새 메시지 반영
 - 게임 알림 토스트/모달/목록 제공
 - 5초 쿨다운, 중복 메시지 방지 등 기본 스팸 제어
 
@@ -115,7 +115,7 @@ YouTube Atlas는 YouTube 랭킹 데이터를 게임화해 다음 흐름을 만�
 3. 사용자는 `전체`, `TOP 200`, `실시간 급상승`, `신규 진입`, `즐겨찾기` 차트에서 진입 대상을 탐색합니다.
 4. 영상을 선택하면 플레이어와 재생 큐가 갱신되고, 조건에 맞는 경우 즉시 매수/매도 또는 상세 게임 정보를 확인할 수 있습니다.
 5. 포지션은 순위 변화에 따라 성과가 갱신되고, 티어/하이라이트/리더보드/알림에서 시즌 진행 상황을 확인할 수 있습니다.
-6. 채팅과 실시간 알림은 WebSocket 구독을 통해 반영됩니다.
+6. 채팅과 실시간 알림은 Supabase Realtime 구독을 통해 반영됩니다.
 
 ## 기술 스택
 
@@ -123,8 +123,8 @@ YouTube Atlas는 YouTube 랭킹 데이터를 게임화해 다음 흐름을 만�
 - TypeScript
 - Vite 6
 - TanStack Query
-- STOMP WebSocket
-- Google Identity Services
+- Supabase Auth, Postgres, Realtime, Edge Functions, Cron
+- Google OAuth
 - ESLint
 - Vitest
 - Testing Library
@@ -148,39 +148,42 @@ npm run dev
 
 | 이름 | 설명 |
 | --- | --- |
-| `VITE_API_BASE_URL` | 백엔드 API 기본 주소입니다. 카탈로그, 인증, 채팅, 즐겨찾기, 재생 기록, 게임, 관리자 API와 WebSocket 연결의 기준이 됩니다. |
+| `VITE_SUPABASE_URL` | Supabase 프로젝트 URL입니다. |
+| `VITE_SUPABASE_ANON_KEY` | 브라우저에서 사용하는 Supabase 공개 anon key입니다. |
 
 `.env.example`
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8080
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
 ### 선택
 
 | 이름 | 설명 |
 | --- | --- |
-| `VITE_SUPABASE_URL` | 보조 자산으로 남아 있는 Supabase 클라이언트 설정입니다. 현재 메인 앱 흐름의 핵심 의존성은 아닙니다. |
-| `VITE_SUPABASE_ANON_KEY` | 위 Supabase 설정과 함께 사용하는 anon key입니다. |
+| `VITE_API_BASE_URL` | 별도 API 호환 서버를 테스트할 때만 사용합니다. 비워 두면 Supabase Edge Function을 사용합니다. |
 
-## 백엔드 의존성
+## 백엔드
 
-이 프로젝트는 프론트 단독으로 완결되지 않고, 아래 계열의 백엔드 기능을 전제로 합니다.
+운영 백엔드는 별도 EC2/Spring 서버 없이 같은 저장소의 `supabase/` 디렉터리로 관리합니다.
 
-백엔드 구현 레포: [youtube-atlas-backend](https://github.com/dldydtn0805/youtube-atlas-backend)
+- `supabase/migrations/`: 스키마, RLS, 거래 RPC, Realtime publication, Cron
+- `supabase/functions/api/`: 기존 `/api/**` 응답 규격을 유지하는 Edge Function
+- `supabase/functions/sync-trending/`: YouTube 차트 수집
+- `supabase/functions/settle-game/`: 예약 매도 정산
 
-- 카탈로그/카테고리/비디오 조회 API
-- 급상승 트렌드 API
-- 신규 진입 차트 API
-- Google 로그인 및 세션 API
-- 댓글 조회/작성 API
-- 즐겨찾기 API
-- 재생 위치 저장/복원 API
-- 랭킹 게임 API
-- 관리자 API
-- STOMP WebSocket `/ws`
+서비스 역할 키와 YouTube API 키는 Supabase Function Secret에만 저장하며 Vite 환경 변수로 노출하지 않습니다.
 
-즉, `VITE_API_BASE_URL`이 설정되지 않거나 해당 서버가 준비되지 않으면 앱은 열리더라도 API 의존 기능은 정상 동작하지 않습니다.
+## Supabase 배포
+
+```bash
+npx supabase link --project-ref zmgstrqoxpmbzgjifjje
+npx supabase db push
+npx supabase functions deploy api sync-trending settle-game --use-api --no-verify-jwt
+```
+
+운영 설정과 검증 항목은 [SUPABASE_MIGRATION_PLAN.md](./SUPABASE_MIGRATION_PLAN.md)를 참고합니다.
 
 ## 스크립트
 

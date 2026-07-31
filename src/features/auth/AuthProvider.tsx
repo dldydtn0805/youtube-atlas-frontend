@@ -1,136 +1,127 @@
 import {
   PropsWithChildren,
-  useCallback,
   startTransition,
+  useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError, isApiConfigured } from '../../lib/api';
-import {
-  fetchCurrentUser,
-  fetchGoogleAuthConfig,
-  loginWithGoogleAuthorizationCode,
-  logoutSession,
-} from './api';
+import { useQueryClient } from '@tanstack/react-query';
+import type { Session } from '@supabase/supabase-js';
+import { ApiRequestError } from '../../lib/api';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
+import { fetchCurrentUser } from './api';
 import {
   clearStoredAuthSession,
-  readStoredAuthSession,
   writeStoredAuthSession,
 } from './storage';
 import { AuthContext } from './context';
 import { authQueryKeys } from './queries';
 import type { AuthSession, AuthStatus, AuthUser } from './types';
 
-const initialSession = readStoredAuthSession();
+function toAuthSession(session: Session, user: AuthUser): AuthSession {
+  const expiresAt = new Date(
+    (session.expires_at ?? Math.floor(Date.now() / 1000) + 3600) * 1000,
+  ).toISOString();
+
+  return {
+    accessToken: session.access_token,
+    expiresAt,
+    tokenType: session.token_type || 'bearer',
+    user,
+  };
+}
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
-  const [session, setSession] = useState<AuthSession | null>(initialSession);
-  const [status, setStatus] = useState<AuthStatus>(initialSession ? 'loading' : 'anonymous');
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [status, setStatus] = useState<AuthStatus>(
+    isSupabaseConfigured ? 'loading' : 'anonymous',
+  );
   const [authError, setAuthError] = useState<string | null>(null);
-  const [googleClientId, setGoogleClientId] = useState('');
-  const [isGoogleAuthAvailable, setIsGoogleAuthAvailable] = useState(false);
-  const [isGoogleAuthLoading, setIsGoogleAuthLoading] = useState(isApiConfigured);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [hasVerifiedInitialSession, setHasVerifiedInitialSession] = useState(
-    !initialSession?.accessToken,
-  );
-  const accessToken = session?.accessToken ?? null;
 
-  const currentUserQuery = useQuery({
-    enabled: Boolean(accessToken),
-    queryKey: authQueryKeys.currentUser(accessToken),
-    queryFn: () => fetchCurrentUser(accessToken as string),
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
+  const applySupabaseSession = useCallback(
+    async (nextSupabaseSession: Session | null) => {
+      if (!nextSupabaseSession) {
+        clearStoredAuthSession();
+        queryClient.removeQueries({ queryKey: authQueryKeys.all });
+        startTransition(() => {
+          setSession(null);
+          setStatus('anonymous');
+        });
+        return;
+      }
+
+      try {
+        const user = await fetchCurrentUser(nextSupabaseSession.access_token);
+        const nextSession = toAuthSession(nextSupabaseSession, user);
+
+        queryClient.setQueryData(
+          authQueryKeys.currentUser(nextSession.accessToken),
+          nextSession.user,
+        );
+        writeStoredAuthSession(nextSession);
+        startTransition(() => {
+          setSession(nextSession);
+          setStatus('authenticated');
+        });
+        setAuthError(null);
+      } catch (error) {
+        clearStoredAuthSession();
+        startTransition(() => {
+          setSession(null);
+          setStatus('anonymous');
+        });
+        setAuthError(
+          error instanceof ApiRequestError
+            ? error.message
+            : '로그인 정보를 불러오지 못했습니다.',
+        );
+      }
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
-    if (!isApiConfigured) {
-      setIsGoogleAuthLoading(false);
-      setIsGoogleAuthAvailable(false);
-      setGoogleClientId('');
+    if (!supabase) {
+      clearStoredAuthSession();
+      setStatus('anonymous');
       return;
     }
 
-    let isCancelled = false;
+    let cancelled = false;
 
-    setIsGoogleAuthLoading(true);
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (cancelled) {
+        return;
+      }
 
-    void fetchGoogleAuthConfig()
-      .then((config) => {
-        if (isCancelled) {
-          return;
+      if (error) {
+        setAuthError('로그인 상태를 확인하지 못했습니다.');
+        setStatus('anonymous');
+        return;
+      }
+
+      void applySupabaseSession(data.session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      window.setTimeout(() => {
+        if (!cancelled) {
+          void applySupabaseSession(nextSession);
         }
-
-        setGoogleClientId(config.clientId);
-        setIsGoogleAuthAvailable(config.enabled);
-      })
-      .catch(() => {
-        if (isCancelled) {
-          return;
-        }
-
-        setGoogleClientId('');
-        setIsGoogleAuthAvailable(false);
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsGoogleAuthLoading(false);
-        }
-      });
+      }, 0);
+    });
 
     return () => {
-      isCancelled = true;
+      cancelled = true;
+      subscription.unsubscribe();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!session || !currentUserQuery.data) {
-      return;
-    }
-
-    setHasVerifiedInitialSession(true);
-
-    if (session.user === currentUserQuery.data && status === 'authenticated') {
-      return;
-    }
-
-    const nextSession = { ...session, user: currentUserQuery.data };
-
-    writeStoredAuthSession(nextSession);
-    startTransition(() => {
-      setSession(nextSession);
-      setStatus('authenticated');
-    });
-  }, [currentUserQuery.data, session, status]);
-
-  useEffect(() => {
-    if (!currentUserQuery.error) {
-      return;
-    }
-
-    const shouldClearSession =
-      (currentUserQuery.error instanceof ApiRequestError &&
-        (currentUserQuery.error.code === 'unauthorized' ||
-          currentUserQuery.error.code === 'session_expired')) ||
-      !hasVerifiedInitialSession;
-
-    if (!shouldClearSession) {
-      return;
-    }
-
-    clearStoredAuthSession();
-    queryClient.removeQueries({ queryKey: authQueryKeys.all });
-    startTransition(() => {
-      setSession(null);
-      setStatus('anonymous');
-    });
-    setHasVerifiedInitialSession(true);
-  }, [currentUserQuery.error, hasVerifiedInitialSession, queryClient]);
+  }, [applySupabaseSession]);
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
@@ -148,8 +139,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
           return currentSession;
         }
 
-        const nextSession = { ...currentSession, user: nextUser };
-        queryClient.setQueryData(authQueryKeys.currentUser(currentSession.accessToken), nextUser);
+        const nextSession = {
+          ...currentSession,
+          user: nextUser,
+        };
+
+        queryClient.setQueryData(
+          authQueryKeys.currentUser(currentSession.accessToken),
+          nextUser,
+        );
         writeStoredAuthSession(nextSession);
         return nextSession;
       });
@@ -158,84 +156,71 @@ export function AuthProvider({ children }: PropsWithChildren) {
   );
 
   const refreshCurrentUser = useCallback(async () => {
-    if (!accessToken) {
+    if (!session?.accessToken) {
       return;
     }
 
-    const refreshedUser = await queryClient.fetchQuery({
-      queryKey: authQueryKeys.currentUser(accessToken),
-      queryFn: () => fetchCurrentUser(accessToken),
-      staleTime: 0,
-    });
+    const user = await fetchCurrentUser(session.accessToken);
 
     setSession((currentSession) => {
-      if (!currentSession || currentSession.accessToken !== accessToken) {
+      if (!currentSession || currentSession.accessToken !== session.accessToken) {
         return currentSession;
       }
 
-      const nextSession = { ...currentSession, user: refreshedUser };
+      const nextSession = {
+        ...currentSession,
+        user,
+      };
       writeStoredAuthSession(nextSession);
       return nextSession;
     });
-    setStatus('authenticated');
-  }, [accessToken, queryClient]);
+  }, [session?.accessToken]);
 
   const loginWithGoogleCode = useCallback(
-    async (code: string, redirectUri: string) => {
+    async (_code: string, redirectUri: string) => {
+      if (!supabase) {
+        setAuthError('Supabase 연결 설정이 필요합니다.');
+        return;
+      }
+
       setIsLoggingIn(true);
       setAuthError(null);
 
-      try {
-        const nextSession = await loginWithGoogleAuthorizationCode(code, redirectUri);
+      const { error } = await supabase.auth.signInWithOAuth({
+        options: {
+          redirectTo: redirectUri,
+          scopes: 'openid email profile',
+        },
+        provider: 'google',
+      });
 
-        queryClient.setQueryData(
-          authQueryKeys.currentUser(nextSession.accessToken),
-          nextSession.user,
-        );
-        writeStoredAuthSession(nextSession);
-        setHasVerifiedInitialSession(true);
-        startTransition(() => {
-          setSession(nextSession);
-          setStatus('authenticated');
-        });
-      } catch (error) {
-        const nextMessage =
-          error instanceof ApiRequestError
-            ? error.message
-            : '구글 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-
-        setAuthError(nextMessage);
-        throw error;
-      } finally {
+      if (error) {
         setIsLoggingIn(false);
+        setAuthError(error.message || '구글 로그인에 실패했습니다.');
+        throw error;
       }
     },
-    [queryClient],
+    [],
   );
 
   const logout = useCallback(async () => {
-    const accessToken = session?.accessToken;
-
     setIsLoggingOut(true);
     setAuthError(null);
 
     try {
-      if (accessToken) {
-        await logoutSession(accessToken);
+      if (supabase) {
+        await supabase.auth.signOut();
       }
-    } catch {
-      // Local sign-out should still succeed even if the backend session cleanup fails.
     } finally {
       clearStoredAuthSession();
       queryClient.removeQueries({ queryKey: authQueryKeys.all });
-      setHasVerifiedInitialSession(true);
       startTransition(() => {
         setSession(null);
         setStatus('anonymous');
       });
       setIsLoggingOut(false);
     }
-  }, [queryClient, session?.accessToken]);
+  }, [queryClient]);
 
   const value = useMemo(
     () => ({
@@ -243,9 +228,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       applyCurrentUser,
       authError,
       clearAuthError,
-      googleClientId,
-      isGoogleAuthAvailable,
-      isGoogleAuthLoading,
+      googleClientId: '',
+      isGoogleAuthAvailable: isSupabaseConfigured,
+      isGoogleAuthLoading: status === 'loading',
       isLoggingIn,
       isLoggingOut,
       loginWithGoogleAuthorizationCode: loginWithGoogleCode,
@@ -255,12 +240,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       user: session?.user ?? null,
     }),
     [
-      authError,
       applyCurrentUser,
+      authError,
       clearAuthError,
-      googleClientId,
-      isGoogleAuthAvailable,
-      isGoogleAuthLoading,
       isLoggingIn,
       isLoggingOut,
       loginWithGoogleCode,

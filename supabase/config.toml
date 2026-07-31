@@ -1,0 +1,31 @@
+project_id = "zmgstrqoxpmbzgjifjje"
+
+[auth]
+site_url = "https://youtube-atlas.vercel.app"
+additional_redirect_urls = [
+  "https://youtube-atlas.vercel.app/**",
+  "http://localhost:5173/**",
+]
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[storage.vector]
+enabled = false
+max_buckets = 10
+max_indexes = 5
+
+[functions.api]
+verify_jwt = false
+
+[functions.sync-trending]
+verify_jwt = false
+
+[functions.settle-game]
+verify_jwt = false

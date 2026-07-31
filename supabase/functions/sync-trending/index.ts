@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+import { requireCronSecret } from '../_shared/cron.ts';
 
 const YOUTUBE_DATA_API_BASE_URL = 'https://www.googleapis.com/youtube/v3/videos';
 const MAX_RESULTS_PER_CATEGORY = 50;
@@ -25,6 +26,8 @@ interface YouTubeVideoItem {
     duration: string;
   };
   snippet: {
+    categoryId?: string;
+    channelId?: string;
     channelTitle: string;
     publishedAt?: string;
     thumbnails: {
@@ -46,6 +49,7 @@ interface YouTubeVideoListResponse {
     message?: string;
   };
   items: YouTubeVideoItem[];
+  nextPageToken?: string;
 }
 
 interface SourceCategoryPageResult {
@@ -55,7 +59,9 @@ interface SourceCategoryPageResult {
 
 interface TrendSnapshotInsert {
   category_id: string;
+  channel_id: string | null;
   channel_title: string;
+  duration: string | null;
   published_at: string | null;
   rank: number;
   region_code: string;
@@ -63,6 +69,8 @@ interface TrendSnapshotInsert {
   thumbnail_url: string;
   title: string;
   video_id: string;
+  video_category_id: string | null;
+  video_category_label: string | null;
   view_count: number | null;
 }
 
@@ -169,6 +177,7 @@ async function fetchMostPopularVideos(
   regionCode: string,
   youtubeApiKey: string,
   categoryId?: string,
+  pageToken?: string,
 ) {
   const params = new URLSearchParams({
     chart: 'mostPopular',
@@ -182,6 +191,10 @@ async function fetchMostPopularVideos(
     params.set('videoCategoryId', categoryId);
   }
 
+  if (pageToken) {
+    params.set('pageToken', pageToken);
+  }
+
   const response = await fetch(`${YOUTUBE_DATA_API_BASE_URL}?${params.toString()}`);
   const result = (await response.json()) as YouTubeVideoListResponse;
 
@@ -189,7 +202,10 @@ async function fetchMostPopularVideos(
     throw new Error(result.error?.message ?? `YouTube request failed with status ${response.status}.`);
   }
 
-  return result.items.filter((item) => !isShortFormVideo(item));
+  return {
+    items: result.items.filter((item) => !isShortFormVideo(item)),
+    nextPageToken: result.nextPageToken,
+  };
 }
 
 async function fetchPopularVideosPageForSource(
@@ -199,7 +215,7 @@ async function fetchPopularVideosPageForSource(
 ): Promise<SourceCategoryPageResult> {
   try {
     return {
-      items: await fetchMostPopularVideos(regionCode, youtubeApiKey, sourceCategoryId),
+      items: (await fetchMostPopularVideos(regionCode, youtubeApiKey, sourceCategoryId)).items,
     };
   } catch (error) {
     if (!isIgnorableCategoryFetchError(error)) {
@@ -213,23 +229,54 @@ async function fetchPopularVideosPageForSource(
   }
 }
 
+async function fetchPopularVideoPages(
+  regionCode: string,
+  youtubeApiKey: string,
+  sourceCategoryId?: string,
+) {
+  const collected: YouTubeVideoItem[] = [];
+  let pageToken: string | undefined;
+
+  for (let pageIndex = 0; pageIndex < 4; pageIndex += 1) {
+    const page = await fetchMostPopularVideos(
+      regionCode,
+      youtubeApiKey,
+      sourceCategoryId,
+      pageToken,
+    );
+
+    collected.push(...page.items);
+    pageToken = page.nextPageToken;
+
+    if (!pageToken) {
+      break;
+    }
+  }
+
+  return dedupeVideos(collected);
+}
+
 async function fetchMergedCategoryVideos(
   regionCode: string,
   youtubeApiKey: string,
   sourceCategoryIds: string[],
 ) {
   if (sourceCategoryIds.length === 0) {
-    return fetchMostPopularVideos(regionCode, youtubeApiKey);
+    return fetchPopularVideoPages(regionCode, youtubeApiKey);
   }
 
   if (sourceCategoryIds.length === 1) {
-    const sourcePage = await fetchPopularVideosPageForSource(regionCode, youtubeApiKey, sourceCategoryIds[0]);
+    try {
+      return await fetchPopularVideoPages(regionCode, youtubeApiKey, sourceCategoryIds[0]);
+    } catch (error) {
+      if (!isIgnorableCategoryFetchError(error)) {
+        throw error;
+      }
 
-    if (sourcePage.unavailableReason === 'unsupported') {
-      throw new Error(`현재 ${regionCode}에서는 요청한 카테고리 인기 차트를 지원하지 않습니다.`);
+      throw new Error(
+        `현재 ${regionCode}에서는 요청한 카테고리 인기 차트를 지원하지 않습니다.`,
+      );
     }
-
-    return sourcePage.items;
   }
 
   const sourcePages = await Promise.all(
@@ -251,11 +298,14 @@ function createSnapshotRows(
   runId: number,
   regionCode: string,
   categoryId: string,
+  categoryLabel: string,
   videos: YouTubeVideoItem[],
 ) {
   return videos.map<TrendSnapshotInsert>((item, index) => ({
     category_id: categoryId,
+    channel_id: item.snippet.channelId ?? null,
     channel_title: item.snippet.channelTitle,
+    duration: item.contentDetails.duration ?? null,
     published_at: item.snippet.publishedAt ?? null,
     rank: index + 1,
     region_code: regionCode,
@@ -263,6 +313,8 @@ function createSnapshotRows(
     thumbnail_url: getThumbnailUrl(item),
     title: item.snippet.title,
     video_id: item.id,
+    video_category_id: item.snippet.categoryId ?? null,
+    video_category_label: categoryLabel,
     view_count: parseViewCount(item.statistics?.viewCount),
   }));
 }
@@ -276,6 +328,16 @@ serve(async (request) => {
     return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
       headers: corsHeaders,
       status: 405,
+    });
+  }
+
+  try {
+    requireCronSecret(request);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unauthorized.';
+    return new Response(JSON.stringify({ error: message }), {
+      headers: corsHeaders,
+      status: 401,
     });
   }
 
@@ -337,7 +399,13 @@ serve(async (request) => {
 
     console.log('sync-trending:created-run', { runId: run.id });
 
-    const snapshotRows = createSnapshotRows(run.id, regionCode, categoryId, videos);
+    const snapshotRows = createSnapshotRows(
+      run.id,
+      regionCode,
+      categoryId,
+      categoryLabel,
+      videos,
+    );
     const { error: snapshotError } = await supabase.from('video_trend_snapshots').insert(snapshotRows);
 
     if (snapshotError) {
@@ -392,11 +460,13 @@ serve(async (request) => {
         captured_at: run.captured_at,
         category_id: categoryId,
         category_label: categoryLabel,
+        channel_id: snapshot.channel_id,
         channel_title: snapshot.channel_title,
         current_rank: snapshot.rank,
         current_run_id: run.id,
         current_view_count: snapshot.view_count,
         is_new: previousRank === null,
+        duration: snapshot.duration,
         previous_rank: previousRank,
         previous_run_id: previousRun?.id ?? null,
         previous_view_count: previousViewCount,
@@ -406,6 +476,8 @@ serve(async (request) => {
         title: snapshot.title,
         updated_at: new Date().toISOString(),
         video_id: snapshot.video_id,
+        video_category_id: snapshot.video_category_id,
+        video_category_label: snapshot.video_category_label,
         view_count_delta:
           previousViewCount === null || snapshot.view_count === null
             ? null
