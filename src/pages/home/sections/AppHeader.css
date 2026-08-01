@@ -31,7 +31,7 @@
   border-radius: 12px;
   color: inherit;
   display: flex;
-  gap: 10px;
+  gap: 5px;
   min-width: 0;
   padding: 4px 7px 4px 2px;
   text-decoration: none;
@@ -60,7 +60,7 @@
   transition:
     filter 0.22s ease,
     transform 0.22s ease;
-  width: 116px;
+  width: 170px;
 }
 
 .app-shell__title-link:hover .app-shell__title-logo-art {
@@ -72,15 +72,21 @@
   display: block;
   height: 36px;
   overflow: visible;
-  width: 116px;
+  width: 170px;
 }
 
 .app-shell__title-logo-ink-top {
-  stop-color: var(--title-logo-ink-top);
+  stop-color: #3a3a3a;
 }
 
 .app-shell__title-logo-ink-bottom {
-  stop-color: var(--title-logo-ink-bottom);
+  stop-color: #0d0d0d;
+}
+
+.app-shell__title-logo-pixel-grid {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 0.75;
 }
 
 .app-shell__title {
@@ -122,6 +128,14 @@
 :root[data-theme='dark'] .app-shell__title-link {
   --title-logo-ink-bottom: #8c8c8c;
   --title-logo-ink-top: #f1f1f1;
+}
+
+:root[data-theme='dark'] .app-shell__title-logo-ink-top {
+  stop-color: #f1f1f1;
+}
+
+:root[data-theme='dark'] .app-shell__title-logo-ink-bottom {
+  stop-color: #8c8c8c;
 }
 
 .app-shell__theme-toggle {
@@ -747,14 +761,14 @@
   }
 
   :root[data-mobile-layout='true'] .app-shell__title-link {
-    gap: 7px;
+    gap: 4px;
     padding: 3px 4px 3px 1px;
   }
 
   :root[data-mobile-layout='true'] .app-shell__title-logo-art,
   :root[data-mobile-layout='true'] .app-shell__title-logo-art-icon {
     height: 23px;
-    width: 74px;
+    width: 109px;
   }
 
   :root[data-mobile-layout='true'] .app-shell__title-main {
@@ -800,18 +814,35 @@
 
 @media (max-width: 480px) {
   :root[data-mobile-layout='true'] .app-shell__title-link {
-    gap: 5px;
+    gap: 3px;
   }
 
   :root[data-mobile-layout='true'] .app-shell__title-logo-art,
   :root[data-mobile-layout='true'] .app-shell__title-logo-art-icon {
     height: 18px;
-    width: 58px;
+    width: 85px;
   }
 
   :root[data-mobile-layout='true'] .app-shell__title-main {
     font-size: 0.9rem;
     gap: 0.2em;
+  }
+}
+
+@media (max-width: 360px) {
+  :root[data-mobile-layout='true'] .app-shell__title-link {
+    gap: 2px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-logo-art,
+  :root[data-mobile-layout='true'] .app-shell__title-logo-art-icon {
+    height: 15px;
+    width: 71px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-main {
+    font-size: 0.78rem;
+    gap: 0.16em;
   }
 }
 

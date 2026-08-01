@@ -319,28 +319,38 @@ function AppHeader({
           aria-label="The Rank Game 메인 페이지로 이동"
         >
           <span className="app-shell__title-logo-art" aria-hidden="true">
-            <svg className="app-shell__title-logo-art-icon" shapeRendering="crispEdges" viewBox="0 0 116 36">
+            <svg className="app-shell__title-logo-art-icon" shapeRendering="crispEdges" viewBox="0 30 740 160">
               <defs>
-                <linearGradient id="app-header-title-ink" x1="0" x2="0" y1="0" y2="1">
+                <linearGradient id="app-header-title-ink-tile" x1="0" x2="0" y1="0" y2="1">
                   <stop className="app-shell__title-logo-ink-top" offset="0" />
                   <stop className="app-shell__title-logo-ink-bottom" offset="1" />
                 </linearGradient>
-                <linearGradient id="app-header-title-metal" x1="0" x2="0" y1="0" y2="1">
+                <linearGradient id="app-header-title-metal-tile" x1="0" x2="0" y1="0" y2="1">
                   <stop stopColor="#d9d9d9" offset="0" />
                   <stop stopColor="#8c8c8c" offset="1" />
                 </linearGradient>
+                <pattern id="app-header-title-ink-pixels" height="10" patternUnits="userSpaceOnUse" width="10">
+                  <rect fill="url(#app-header-title-ink-tile)" height="10" width="10" />
+                  <path className="app-shell__title-logo-pixel-grid" d="M9.5 0v10M0 9.5h10" />
+                </pattern>
+                <pattern id="app-header-title-metal-pixels" height="10" patternUnits="userSpaceOnUse" width="10">
+                  <rect fill="url(#app-header-title-metal-tile)" height="10" width="10" />
+                  <path className="app-shell__title-logo-pixel-grid" d="M9.5 0v10M0 9.5h10" />
+                </pattern>
               </defs>
               <path
-                d="M0 13h60v5H0V13Zm6-5h13v5H6V8Zm22-4h32v9H28V4Zm26-3h6v3h-6V1ZM0 18h60v6H0v-6Zm0 6h9v10H0V24Zm18 0h14v4H18v-4Zm3 4h4v6h-4v-6Zm7 0h7v6h-7v-3h4v-3h-4Z"
-                fill="url(#app-header-title-ink)"
+                d="M450 30h40v10h-40ZM250 40h240v10h-240ZM50 50h100v10H50ZM250 50h240v10h-240ZM50 60h100v10H50ZM250 60h240v10h-240ZM0 70h70v10H0ZM290 70h30v10h-30ZM420 70h70v10h-70ZM0 80h70v10H0ZM290 80h30v10h-30ZM420 80h30v10h-30ZM0 90h70v10H0ZM290 90h30v10h-30ZM420 90h30v10h-30ZM0 100h480v10H0ZM700 100h40v10h-40ZM0 110h480v10H0ZM700 110h40v10h-40ZM0 120h480v10H0ZM700 120h40v10h-40ZM0 130h480v10H0ZM700 130h40v10h-40ZM0 140h70v10H0ZM160 140h50v10h-50ZM0 150h70v10H0ZM160 150h100v10H160ZM0 160h70v10H0ZM170 160h30v10h-30ZM210 160h10v10h-10ZM250 160h10v10h-10ZM0 170h70v10H0ZM170 170h30v10h-30ZM210 170h10v10h-10ZM250 170h10v10h-10ZM180 180h20v10h-20ZM210 180h50v10h-50Z"
+                fill="url(#app-header-title-ink-pixels)"
               />
-              <rect fill="url(#app-header-title-metal)" height="6" width="49" x="60" y="18" />
-              <rect fill="url(#app-header-title-ink)" height="12" width="7" x="109" y="15" />
+              <path
+                d="M480 110h220v10H480ZM480 120h220v10H480Z"
+                fill="url(#app-header-title-metal-pixels)"
+              />
             </svg>
           </span>
           <h1 className="app-shell__title" aria-label="The Rank Game">
             <span className="app-shell__title-main" aria-hidden="true">
-              <span className="app-shell__title-the">The</span>
+              <span className="app-shell__title-the">he</span>
               <span className="app-shell__title-rank">Rank</span>
               <span className="app-shell__title-game">Game</span>
             </span>
