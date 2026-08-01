@@ -24,13 +24,13 @@ function MarketPreview() {
   return (
     <div className="app-shell__game-intro-preview app-shell__game-intro-preview--market" aria-hidden="true">
       <div className="app-shell__game-intro-market-row">
-        <span>순위 앵커 기본가</span>
+        <span>현재 순위 기본가</span>
         <strong>500,000P</strong>
       </div>
       <div className="app-shell__game-intro-market-counts">
-        <span data-tone="buy">매수 3회</span>
-        <span data-tone="sell">매도 1회</span>
-        <strong>+2% 프리미엄</strong>
+        <span data-tone="buy">구매 3회</span>
+        <span data-tone="sell">판매 1회</span>
+        <strong>가격 +2%</strong>
       </div>
     </div>
   );

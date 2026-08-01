@@ -13,8 +13,11 @@ describe('GameIntroModal', () => {
     expect(screen.getByText(/같은 영상은 1개만 매수/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
-    expect(screen.getByText('순위와 거래 카운트로 가격 결정')).toBeInTheDocument();
-    expect(screen.getByText(/순위 변동 자체에는 프리미엄이 없고/)).toBeInTheDocument();
+    expect(screen.getByText('순위와 구매·판매 횟수로 가격 결정')).toBeInTheDocument();
+    expect(screen.getByText(/구매한 횟수와 판매한 횟수의 차이로 가격이 움직입니다/)).toBeInTheDocument();
+    expect(screen.getByText('구매 3회')).toBeInTheDocument();
+    expect(screen.getByText('판매 1회')).toBeInTheDocument();
+    expect(screen.getByText('가격 +2%')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByText('다음 순위 갱신 후 전량 매도')).toBeInTheDocument();
