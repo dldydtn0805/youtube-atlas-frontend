@@ -499,7 +499,7 @@ function HomePage() {
     ) ?? sortedVideoCategories[0];
   const regionOptions = sortedCountryCodes.map((country) => ({
     value: country.code,
-    label: `${country.code} · ${country.name}`,
+    label: country.name,
   }));
   const {
     data,
@@ -2871,9 +2871,12 @@ function HomePage() {
             videoTitle: resolvedSelectedVideo?.snippet.title,
           }}
           filterBarProps={{
-            onOpenRegionModal: () => setIsRegionModalOpen(true),
+            onSelectRegion: (regionCode) =>
+              handleSelectRegion(regionCode as RegionCode),
             onSelectView: handleSelectChartView,
+            regionOptions,
             selectedCountryName,
+            selectedRegionCode,
             selectedViewId: effectiveChartView,
             viewOptions: chartViewOptions,
           }}

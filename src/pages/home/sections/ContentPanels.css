@@ -48,6 +48,25 @@
   max-width: 52ch;
 }
 
+.app-shell__chart-quick-filters {
+  display: grid;
+  gap: 10px;
+}
+
+.app-shell__quick-filter-row {
+  align-items: flex-start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+.app-shell__quick-filter-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 32px;
+}
+
 @media (min-width: 769px) {
   :root:not([data-mobile-layout="true"])
     .app-shell__panel--ranking-chart
@@ -147,6 +166,15 @@
   :root[data-mobile-layout="true"] .app-shell__chart-explore {
     gap: 14px;
     margin-bottom: 18px;
+  }
+
+  :root[data-mobile-layout="true"] .app-shell__quick-filter-row {
+    gap: 6px;
+    grid-template-columns: 1fr;
+  }
+
+  :root[data-mobile-layout="true"] .app-shell__quick-filter-label {
+    line-height: 1.3;
   }
 }
 

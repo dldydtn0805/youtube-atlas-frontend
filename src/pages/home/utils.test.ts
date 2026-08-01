@@ -15,6 +15,7 @@ import {
   REALTIME_SURGING_QUEUE_ID,
   relabelVideoSection,
   resolvePlaybackCategoryLabel,
+  sortedCountryCodes,
   shouldRenderRealtimeSurgingSection,
   shouldPrefetchBuyableVideos,
   sortVideoSection,
@@ -62,6 +63,14 @@ function createVideoSection(
 }
 
 describe("home utils", () => {
+  it("limits the home country filter to Korea, the US, and Japan", () => {
+    expect(sortedCountryCodes).toEqual([
+      { code: "KR", name: "한국" },
+      { code: "US", name: "미국" },
+      { code: "JP", name: "일본" },
+    ]);
+  });
+
   it("can skip adjacent positions that share the same video id", () => {
     const positions: GamePosition[] = [
       {

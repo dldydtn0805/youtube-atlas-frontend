@@ -8,3 +8,8 @@ export interface ViewOption {
   live?: boolean;
   tone?: ViewOptionTone;
 }
+
+export interface RegionOption {
+  label: string;
+  value: string;
+}

@@ -12,8 +12,9 @@ import type {
 } from "../../../features/youtube/types";
 import type { ChartSortMode } from "../types";
 import ChartRankingBoard from "./ChartRankingBoard";
+import QuickRegionButtons from "./QuickRegionButtons";
 import QuickViewButtons from "./QuickViewButtons";
-import type { ViewOption } from "./filterPanelTypes";
+import type { RegionOption, ViewOption } from "./filterPanelTypes";
 import "./ContentPanels.css";
 import "./ContentPanelsMobileChart.css";
 
@@ -56,7 +57,7 @@ interface ChartPanelProps {
     playbackQueueId: string,
     triggerElement?: HTMLButtonElement,
   ) => void;
-  onOpenRegionModal: () => void;
+  onSelectRegion: (regionCode: string) => void;
   onOpenSellTradeModal?: (
     videoId: string,
     playbackQueueId: string,
@@ -70,10 +71,12 @@ interface ChartPanelProps {
     triggerElement?: HTMLButtonElement,
   ) => void;
   primarySectionEyebrow?: string;
+  regionOptions: RegionOption[];
   section?: YouTubeCategorySection;
   sectionEmptyMessage?: string;
   selectedCategoryLabel?: string;
   selectedCountryName: string;
+  selectedRegionCode: string;
   selectedViewId: string;
   selectedVideoId?: string;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
@@ -111,16 +114,18 @@ export const ChartPanel = memo(function ChartPanel({
   onLoadMore,
   onOpenBuyTradeModal,
   onOpenChart,
-  onOpenRegionModal,
+  onSelectRegion,
   onOpenSellTradeModal,
   onSelectView,
   onToggleFeaturedSectionCollapse,
   onSelectVideo,
   primarySectionEyebrow,
+  regionOptions,
   section,
   sectionEmptyMessage,
   selectedCategoryLabel,
   selectedCountryName,
+  selectedRegionCode,
   selectedViewId,
   selectedVideoId,
   trendSignalsByVideoId,
@@ -136,28 +141,36 @@ export const ChartPanel = memo(function ChartPanel({
         <div className="app-shell__chart-explore-copy">
           <p className="app-shell__section-eyebrow">Explore</p>
           <h3 className="app-shell__chart-explore-title">
-            <button
-              className="app-shell__section-title-button"
-              onClick={onOpenRegionModal}
-              type="button"
-            >
-              {selectedCountryName}
-            </button>{" "}
-            탐색 필터
+            {selectedCountryName} 탐색 필터
           </h3>
           <p className="app-shell__chart-explore-helper">
-            국가명을 클릭하면 다른 국가 차트로 바꿀 수 있어요.
+            국가 버튼을 누르면 영상 목록이 바로 바뀌어요.
           </p>
         </div>
-        <div
-          className="app-shell__quick-category-group"
-          aria-label="탐색 필터 선택"
-        >
-          <QuickViewButtons
-            onSelectView={onSelectView}
-            options={viewOptions}
-            selectedViewId={selectedViewId}
-          />
+        <div className="app-shell__chart-quick-filters">
+          <div className="app-shell__quick-filter-row">
+            <span className="app-shell__quick-filter-label">국가</span>
+            <div className="app-shell__quick-category-group" aria-label="국가 선택">
+              <QuickRegionButtons
+                onSelectRegion={onSelectRegion}
+                options={regionOptions}
+                selectedRegionCode={selectedRegionCode}
+              />
+            </div>
+          </div>
+          <div className="app-shell__quick-filter-row">
+            <span className="app-shell__quick-filter-label">카테고리</span>
+            <div
+              className="app-shell__quick-category-group"
+              aria-label="카테고리 선택"
+            >
+              <QuickViewButtons
+                onSelectView={onSelectView}
+                options={viewOptions}
+                selectedViewId={selectedViewId}
+              />
+            </div>
+          </div>
         </div>
       </div>
       <div className="app-shell__section-heading app-shell__section-heading--chart">

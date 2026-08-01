@@ -35,6 +35,7 @@
 
 .app-shell__filter-bar {
   display: grid;
+  gap: 10px;
 }
 
 .app-shell__modal--region-filter {

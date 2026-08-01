@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import countryCodes from "../../../constants/countryCodes";
 import {
   ALL_VIDEO_CATEGORY_ID,
   supportsVideoGameActions,
@@ -30,6 +29,7 @@ import {
   relabelVideoSection,
   shouldPrefetchBuyableVideos,
   sortVideoSection,
+  sortedCountryCodes,
 } from "../utils";
 import useHomeTrendSections from "./useHomeTrendSections";
 
@@ -240,8 +240,8 @@ export default function useHomeChartCollections({
     [selectedCategory?.id, selectedSection],
   );
   const selectedCountryName =
-    countryCodes.find((country) => country.code === selectedRegionCode)?.name ??
-    selectedRegionCode;
+    sortedCountryCodes.find((country) => country.code === selectedRegionCode)
+      ?.name ?? selectedRegionCode;
   const isAllCategorySelected = selectedCategory?.id === ALL_VIDEO_CATEGORY_ID;
   const isTrendRegionSelected = supportsVideoTrendSignals(
     ALL_VIDEO_CATEGORY_ID,

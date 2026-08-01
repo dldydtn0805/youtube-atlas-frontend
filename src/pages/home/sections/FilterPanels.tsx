@@ -1,15 +1,18 @@
 import { createPortal } from 'react-dom';
-import SearchBar, { type SearchBarOption } from '../../../components/SearchBar/SearchBar';
+import SearchBar from '../../../components/SearchBar/SearchBar';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import { getFullscreenElement } from '../utils';
+import QuickRegionButtons from './QuickRegionButtons';
 import QuickViewButtons from './QuickViewButtons';
-import type { ViewOption } from './filterPanelTypes';
+import type { RegionOption, ViewOption } from './filterPanelTypes';
 import './FilterPanels.css';
 
 export interface FilterBarProps {
-  onOpenRegionModal: () => void;
+  onSelectRegion: (regionCode: string) => void;
   onSelectView: (viewId: string, triggerElement?: HTMLButtonElement) => void;
+  regionOptions: RegionOption[];
   selectedCountryName: string;
+  selectedRegionCode: string;
   selectedViewId: string;
   viewOptions: ViewOption[];
 }
@@ -18,7 +21,7 @@ interface RegionFilterModalProps {
   isOpen: boolean;
   onChangeRegion: (regionCode: string) => void;
   onClose: () => void;
-  regionOptions: SearchBarOption[];
+  regionOptions: RegionOption[];
   selectedRegionCode: string;
 }
 
@@ -81,9 +84,11 @@ export function RegionFilterModal({
 }
 
 export function FilterBar({
-  onOpenRegionModal,
+  onSelectRegion,
   onSelectView,
+  regionOptions,
   selectedCountryName,
+  selectedRegionCode,
   selectedViewId,
   viewOptions,
 }: FilterBarProps) {
@@ -93,20 +98,22 @@ export function FilterBar({
         <div className="app-shell__section-heading-copy">
           <div className="app-shell__section-heading">
             <p className="app-shell__section-eyebrow">Explore</p>
-            <h2 className="app-shell__section-title">
-              <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
-                {selectedCountryName}
-              </button>{' '}
-              탐색 필터
-            </h2>
+            <h2 className="app-shell__section-title">{selectedCountryName} 탐색 필터</h2>
           </div>
           <p className="app-shell__filter-helper-text">
-            국가명을 클릭하면 다른 국가 차트로 바꿀 수 있어요.
+            국가 버튼을 누르면 영상 목록이 바로 바뀌어요.
           </p>
         </div>
       </div>
       <div className="app-shell__filter-fields">
         <div className="app-shell__filter-bar" aria-label="탐색 필터 선택">
+          <div className="app-shell__quick-category-group" aria-label="국가 선택">
+            <QuickRegionButtons
+              onSelectRegion={onSelectRegion}
+              options={regionOptions}
+              selectedRegionCode={selectedRegionCode}
+            />
+          </div>
           <div className="app-shell__quick-category-group" aria-label="차트 보기 선택">
             <QuickViewButtons onSelectView={onSelectView} options={viewOptions} selectedViewId={selectedViewId} />
           </div>

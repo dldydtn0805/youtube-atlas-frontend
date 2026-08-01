@@ -107,6 +107,12 @@
   color: var(--text);
 }
 
+.app-shell__quick-region[data-active="true"] {
+  background: color-mix(in srgb, #dc2626 12%, var(--surface-control));
+  border-color: color-mix(in srgb, #dc2626 42%, var(--border));
+  color: #b91c1c;
+}
+
 :root[data-theme="dark"]
   .app-shell__quick-category[data-active="true"][data-tone="buy"] {
   color: #86efac;
@@ -125,6 +131,10 @@
 :root[data-theme="dark"]
   .app-shell__quick-category[data-active="true"][data-tone="new"] {
   color: #7dd3fc;
+}
+
+:root[data-theme="dark"] .app-shell__quick-region[data-active="true"] {
+  color: #fca5a5;
 }
 
 @keyframes app-shell-live-dot-pulse {

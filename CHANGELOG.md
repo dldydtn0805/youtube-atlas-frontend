@@ -3,6 +3,7 @@
 ## 2026-08-01
 
 - Removed the YouTube playlist creation action from the music video list; verified with 442 tests, a production build, and ESLint with no errors.
+- Added one-tap `한국`, `미국`, and `일본` country buttons directly to the video-list filter, replacing the extra modal step for normal chart switching; verified with 442 tests, a production build, ESLint with no errors, desktop/mobile browser checks, and live asynchronous TOP 200 data for all three countries.
 - Made videos already present in the loaded YouTube liked list render with an active like action immediately, so the first click cancels the YouTube like without waiting for a duplicate rating lookup.
 - Fixed liked videos outside the synced TOP 200 so they display `차트 아웃` instead of inheriting their row position as a false rank, including removal of top-three styling from chart-out rows.
 - Renamed the personal chart UI from `좋아요 영상` to `좋아요`, and made successful YouTube like/unlike status messages clear automatically after one second.

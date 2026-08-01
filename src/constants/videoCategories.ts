@@ -7,6 +7,7 @@ export interface VideoCategory {
 
 export const ALL_VIDEO_CATEGORY_ID = '0';
 export const VIDEO_GAME_REGION_CODE = 'KR';
+export const VIDEO_FILTER_REGION_CODES = ['KR', 'US', 'JP'] as const;
 export const TREND_SNAPSHOT_REGION_CODES = ['KR', 'US', 'JP', 'BR', 'ID'] as const;
 export const MAIN_VIDEO_CATEGORY_IDS = [
   ALL_VIDEO_CATEGORY_ID,

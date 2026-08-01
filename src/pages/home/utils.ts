@@ -1,7 +1,7 @@
 import countryCodes from "../../constants/countryCodes";
 import {
   ALL_VIDEO_CATEGORY_ID,
-  TREND_SNAPSHOT_REGION_CODES,
+  VIDEO_FILTER_REGION_CODES,
 } from "../../constants/videoCategories";
 import type {
   GameHighlight,
@@ -61,7 +61,7 @@ export const LIKED_VIDEO_SECTION: YouTubeCategorySection = {
 export const BUYABLE_ONLY_PREFETCH_LIMIT = 50;
 export const HISTORY_PLAYBACK_QUEUE_ID = "history-playback";
 
-export type RegionCode = (typeof countryCodes)[number]["code"];
+export type RegionCode = (typeof VIDEO_FILTER_REGION_CODES)[number];
 export type ThemeMode = "light" | "dark";
 export interface PendingPlaybackRestore {
   restoreId: number;
@@ -69,11 +69,16 @@ export interface PendingPlaybackRestore {
   positionSeconds: number;
 }
 
-const SUPPORTED_REGION_CODES = new Set<string>(TREND_SNAPSHOT_REGION_CODES);
+const SUPPORTED_REGION_CODES = new Set<string>(VIDEO_FILTER_REGION_CODES);
 
-export const sortedCountryCodes = countryCodes
-  .filter((country) => SUPPORTED_REGION_CODES.has(country.code))
-  .sort((left, right) => left.name.localeCompare(right.name, "ko"));
+export const sortedCountryCodes = VIDEO_FILTER_REGION_CODES.map((code) => {
+  const country = countryCodes.find((item) => item.code === code);
+
+  return {
+    code,
+    name: code === "KR" ? "한국" : (country?.name ?? code),
+  };
+});
 
 export function isSupportedRegionCode(
   regionCode: string,
