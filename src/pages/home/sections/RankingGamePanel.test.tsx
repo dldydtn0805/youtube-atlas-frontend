@@ -683,7 +683,7 @@ describe("RankingGamePositionsTab", () => {
     );
 
     expect(
-      screen.getByText("다음 트렌드 싱크 후 매도 가능"),
+      screen.getByText("다음 순위 갱신 후 매도 가능"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Holding Video 매도")).toBeDisabled();
   });

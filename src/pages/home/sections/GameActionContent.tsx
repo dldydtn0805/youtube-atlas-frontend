@@ -404,7 +404,7 @@ export function GameSelectedVideoPriceSummary({
             <span
               className="app-shell__game-selected-status-badge"
               data-demand-price-type={selectedVideoMarketEntry.demandPriceType}
-              title={`이번 트렌드 싱크 누적 매수 ${selectedVideoMarketEntry.syncBuyCount ?? 0}회 · 누적 매도 ${selectedVideoMarketEntry.syncSellCount ?? 0}회`}
+              title={`현재 순위 기준 누적 매수 ${selectedVideoMarketEntry.syncBuyCount ?? 0}회 · 누적 매도 ${selectedVideoMarketEntry.syncSellCount ?? 0}회`}
             >
               {selectedVideoDemandPriceBadge}
             </span>

@@ -17,7 +17,7 @@ describe('GameIntroModal', () => {
     expect(screen.getByText(/순위 변동 자체에는 프리미엄이 없고/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
-    expect(screen.getByText('다음 싱크부터 전량 매도')).toBeInTheDocument();
+    expect(screen.getByText('다음 순위 갱신 후 전량 매도')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByText('총자산으로 티어 경쟁')).toBeInTheDocument();

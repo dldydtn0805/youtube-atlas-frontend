@@ -39,9 +39,9 @@ function MarketPreview() {
 function SellPreview() {
   return (
     <div className="app-shell__game-intro-preview app-shell__game-intro-preview--sell" aria-hidden="true">
-      <span className="app-shell__game-intro-sync-card">이번 싱크<br /><strong>1개 매수</strong></span>
+      <span className="app-shell__game-intro-sync-card">현재 순위<br /><strong>1개 매수</strong></span>
       <span className="app-shell__game-intro-sync-arrow">→</span>
-      <span className="app-shell__game-intro-sync-card" data-active="true">다음 싱크<br /><strong>전량 매도</strong></span>
+      <span className="app-shell__game-intro-sync-card" data-active="true">순위 갱신 후<br /><strong>전량 매도</strong></span>
     </div>
   );
 }

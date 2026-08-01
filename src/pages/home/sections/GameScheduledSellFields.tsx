@@ -119,8 +119,8 @@ export default function GameScheduledSellFields({
       </div>
       <p className="app-shell__modal-field-copy">
         {isDropTrigger
-          ? '차트 동기화 때 현재 순위가 방어 순위 밖으로 밀리면 이 포지션을 자동 매도합니다.'
-          : '차트 동기화 때 현재 순위가 목표 순위 안으로 들어오면 이 포지션을 자동 매도합니다.'}
+          ? '순위 갱신 때 현재 순위가 방어 순위 밖으로 밀리면 이 포지션을 자동 매도합니다.'
+          : '순위 갱신 때 현재 순위가 목표 순위 안으로 들어오면 이 포지션을 자동 매도합니다.'}
       </p>
         </>
       ) : (
@@ -171,7 +171,7 @@ export default function GameScheduledSellFields({
             </div>
           </div>
           <p className="app-shell__modal-field-copy">
-            차트 동기화 때 현재 평가 금액이 매수 금액 대비 목표 수익률에 도달하면 자동 매도합니다.
+            순위 갱신 때 현재 평가 금액이 매수 금액 대비 목표 수익률에 도달하면 자동 매도합니다.
           </p>
         </>
       )}

@@ -1493,7 +1493,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
           : sellableQuantity > 0
             ? "보유 영상 1개를 전량 매도할 수 있습니다."
             : syncLockedVideoIds.has(item.id)
-              ? "이번 트렌드 싱크에서 매수했습니다. 다음 트렌드 싱크 후 매도할 수 있습니다."
+              ? "현재 순위 기준으로 매수했습니다. 다음 순위 갱신 후 매도할 수 있습니다."
               : ownedQuantity > 0
                 ? "매도 대기 시간이 끝난 뒤 보유 영상을 전량 매도할 수 있습니다."
                 : "보유 영상이 있을 때만 매도할 수 있습니다.";

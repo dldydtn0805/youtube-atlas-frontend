@@ -70,7 +70,7 @@ interface ScheduledOrderBody {
 const VIDEO_ALREADY_OWNED_MESSAGE =
   '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.';
 const NEXT_TREND_SYNC_REQUIRED_MESSAGE =
-  '이번 트렌드 싱크에서 매수한 영상입니다. 다음 트렌드 싱크 후 매도할 수 있습니다.';
+  '현재 순위 기준으로 매수한 영상입니다. 다음 순위 갱신 후 매도할 수 있습니다.';
 const FULL_POSITION_SELL_REQUIRED_MESSAGE =
   '보유 영상은 수량을 나눌 수 없으며 1개 전량만 매도할 수 있습니다.';
 

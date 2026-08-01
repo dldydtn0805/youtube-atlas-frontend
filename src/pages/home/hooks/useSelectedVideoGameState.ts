@@ -447,7 +447,7 @@ export default function useSelectedVideoGameState({
           ? `${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후 보유한 1개를 전량 매도할 수 있습니다.`
           : "보유한 영상 1개를 전량 매도합니다."
       : selectedOpenHoldingSellLockedUntilNextSync
-        ? "이번 트렌드 싱크에서 매수한 영상입니다. 다음 트렌드 싱크 후 매도할 수 있습니다."
+        ? "현재 순위 기준으로 매수한 영상입니다. 다음 순위 갱신 후 매도할 수 있습니다."
         : selectedOpenHoldingNextSellableInSeconds !== null
           ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
           : "지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.";

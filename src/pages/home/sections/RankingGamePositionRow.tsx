@@ -128,7 +128,7 @@ function RankingGamePositionRowComponent({
   const sellableStatusBadge = !canShowGameActions
     ? '전체 카테고리에서 매도 가능'
     : holding.sellLockedUntilNextSync
-      ? '다음 트렌드 싱크 후 매도 가능'
+      ? '다음 순위 갱신 후 매도 가능'
     : holding.sellableQuantity > 0
       ? '전량 매도 가능'
       : typeof holding.nextSellableInSeconds === 'number' && holding.nextSellableInSeconds > 0

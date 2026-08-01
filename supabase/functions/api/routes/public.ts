@@ -26,7 +26,7 @@ function categoryDescription(categoryId: string, label: string) {
   }
 
   if (categoryId === MUSIC_VIDEO_CATEGORY_ID) {
-    return 'TOP 200 트렌드 싱크에 포함된 음악 영상을 원래 순위대로 보여줍니다.';
+    return '현재 TOP 200에 포함된 음악 영상을 전체 차트 순위대로 보여줍니다.';
   }
 
   return `${label} 카테고리 인기 영상을 확인할 수 있습니다.`;

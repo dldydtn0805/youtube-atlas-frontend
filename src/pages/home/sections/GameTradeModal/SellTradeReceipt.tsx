@@ -185,7 +185,7 @@ export default function SellTradeReceipt({
       </div>
 
       <div className="app-shell__game-sell-receipt-foot">
-        YOUTUBE ATLAS | {isScheduledSellMode ? '예약 매도는 차트 동기화 시 자동 체결됩니다' : '이 거래는 게임 포인트로 진행됩니다'}
+        YOUTUBE ATLAS | {isScheduledSellMode ? '예약 매도는 순위 갱신 시 자동 체결됩니다' : '이 거래는 게임 포인트로 진행됩니다'}
       </div>
     </>
   );
