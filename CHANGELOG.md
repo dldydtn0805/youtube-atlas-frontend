@@ -1,5 +1,9 @@
 # Change Log
 
+## 2026-08-02
+
+- Replaced the country and category controls above the video player with a single `Now Playing` heading on desktop and mobile; verified with 455 tests, a production build, ESLint with no errors, and desktop/mobile browser checks.
+
 ## 2026-08-01
 
 - Added URL-addressable nation and chart routes such as `/kr/top`, `/us/music`, and `/jp/surging`; country and category controls now update browser history, back navigation restores both selections, root and invalid paths resolve to the stored country's TOP route, and pending YouTube liked-view OAuth returns resolve to the liked route. Verified with 453 tests, a production build, ESLint with no errors, and browser checks for country/category navigation and back-state restoration.

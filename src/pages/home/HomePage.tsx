@@ -412,10 +412,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(
     null,
   );
-  const openChartViewModal = useCallback(
-    () => setIsChartViewModalOpen(true),
-    [],
-  );
   const closeChartViewModal = useCallback(
     () => setIsChartViewModalOpen(false),
     [],
@@ -2940,12 +2936,10 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
             openPositionCount: openDistinctVideoCount,
             onNextVideo: handlePlayNextVideoWithPreview,
             onOpenGameModal: handleOpenGamePositionsModal,
-            onOpenRegionModal: () => setIsRegionModalOpen(true),
             onOpenTierModal: isMobileLayout ? openTierModal : undefined,
             onOpenWalletModal: isMobileLayout
               ? () => setIsWalletModalOpen(true)
               : undefined,
-            onOpenViewModal: openChartViewModal,
             onPlaybackRestoreApplied: handlePlaybackRestoreApplied,
             onPlaybackStateChange: handlePlaybackStateChange,
             onPreviousVideo: handlePlayPreviousVideoWithPreview,
@@ -2955,8 +2949,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
             playerSectionRef,
             playerStageRef,
             playerViewportRef,
-            selectedCategoryLabel: selectedChartViewOption.label,
-            selectedCountryName,
             walletBalancePoints: currentGameSeason?.wallet.balancePoints,
             selectedVideoChannelTitle:
               resolvedSelectedVideo?.snippet.channelTitle,

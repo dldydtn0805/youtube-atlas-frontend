@@ -285,22 +285,6 @@
   letter-spacing: -0.03em;
 }
 
-.app-shell__section-title-button {
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  margin: 0;
-  padding: 0;
-}
-
-.app-shell__section-title-button:hover,
-.app-shell__section-title-button:focus-visible {
-  color: var(--accent);
-  outline: none;
-}
-
 .app-shell__subtle-toggle {
   background: var(--surface-interactive);
   border: 1px solid var(--border);

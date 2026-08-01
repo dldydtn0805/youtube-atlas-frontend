@@ -618,13 +618,9 @@ export default function HomePlaybackSection({
             isOpenPositionLimitReached={playerStageProps.isOpenPositionLimitReached}
             openPositionCount={playerStageProps.openPositionCount}
             onOpenGameModal={playerStageProps.onOpenGameModal}
-            onOpenRegionModal={playerStageProps.onOpenRegionModal}
             onOpenTierModal={playerStageProps.onOpenTierModal}
             onOpenWalletModal={playerStageProps.onOpenWalletModal}
-            onOpenViewModal={playerStageProps.onOpenViewModal}
             onToggleCinematicMode={playerStageProps.onToggleCinematicMode}
-            selectedCategoryLabel={playerStageProps.selectedCategoryLabel}
-            selectedCountryName={playerStageProps.selectedCountryName}
             walletBalancePoints={playerStageProps.walletBalancePoints}
           />
           <div

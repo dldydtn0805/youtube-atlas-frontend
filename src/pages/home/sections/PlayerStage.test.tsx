@@ -27,19 +27,29 @@ function createProps(
     manualPlaybackSaveButtonLabel: "재생 저장",
     onManualPlaybackSave: vi.fn(),
     onNextVideo: vi.fn(),
-    onOpenRegionModal: vi.fn(),
     onPreviousVideo: vi.fn(),
     onToggleCinematicMode: vi.fn(),
     playerRef: createRef(),
     playerSectionRef: createRef(),
     playerStageRef: createRef(),
     playerViewportRef: createRef(),
-    selectedCountryName: "대한민국",
     ...overrides,
   };
 }
 
 describe("PlayerStage", () => {
+  it.each([false, true])(
+    "shows a fixed Now Playing heading when mobile layout is %s",
+    (isMobileLayout) => {
+      render(<PlayerStage {...createProps({ isMobileLayout })} />);
+
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Now Playing" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("대한민국")).not.toBeInTheDocument();
+    },
+  );
+
   it("shows the cinematic toggle on desktop layouts", () => {
     render(<PlayerStage {...createProps({ isMobileLayout: false })} />);
 

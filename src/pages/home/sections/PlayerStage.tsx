@@ -38,13 +38,9 @@ interface PlayerStageHeaderProps {
   isOpenPositionLimitReached?: boolean;
   openPositionCount?: number;
   onOpenGameModal?: () => void;
-  onOpenRegionModal: () => void;
   onOpenTierModal?: () => void;
   onOpenWalletModal?: () => void;
-  onOpenViewModal?: () => void;
   onToggleCinematicMode: () => void;
-  selectedCategoryLabel?: string;
-  selectedCountryName: string;
   walletBalancePoints?: number | null;
 }
 
@@ -64,17 +60,13 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   onManualPlaybackSave: () => void;
   openPositionCount?: number;
   onOpenGameModal?: () => void;
-  onOpenRegionModal: () => void;
   onOpenTierModal?: () => void;
   onOpenWalletModal?: () => void;
-  onOpenViewModal?: () => void;
   onToggleCinematicMode: () => void;
   playerSectionRef: RefObject<HTMLElement | null>;
   playerStageRef: RefObject<HTMLDivElement | null>;
   renderHeaderInline?: boolean;
   renderViewportInline?: boolean;
-  selectedCategoryLabel?: string;
-  selectedCountryName: string;
   walletBalancePoints?: number | null;
   selectedVideoChannelTitle?: string;
   selectedVideoRankLabel?: string;
@@ -147,13 +139,9 @@ export function PlayerStageHeader({
   isOpenPositionLimitReached = false,
   openPositionCount = 0,
   onOpenGameModal,
-  onOpenRegionModal,
   onOpenTierModal,
   onOpenWalletModal,
-  onOpenViewModal,
   onToggleCinematicMode,
-  selectedCategoryLabel,
-  selectedCountryName,
   walletBalancePoints,
 }: PlayerStageHeaderProps) {
   const isAuthenticated = authStatus === "authenticated";
@@ -172,25 +160,7 @@ export function PlayerStageHeader({
             <div className="app-shell__player-mobile-header-row">
               <div className="app-shell__player-title-row app-shell__player-title-row--mobile">
                 <h2 className="app-shell__section-title app-shell__section-title--mobile-player">
-                  <button
-                    className="app-shell__section-title-button"
-                    onClick={onOpenRegionModal}
-                    type="button"
-                  >
-                    {selectedCountryName}
-                  </button>
-                  {selectedCategoryLabel ? (
-                    <>
-                      {" "}
-                      <button
-                        className="app-shell__section-title-button"
-                        onClick={onOpenViewModal}
-                        type="button"
-                      >
-                        {selectedCategoryLabel}
-                      </button>
-                    </>
-                  ) : null}
+                  Now Playing
                 </h2>
               </div>
               {isAuthenticated ? (
@@ -253,28 +223,7 @@ export function PlayerStageHeader({
           </>
         ) : (
           <div className="app-shell__player-title-row app-shell__player-title-row--desktop">
-            <p className="app-shell__section-eyebrow">Now Playing</p>
-            <h2 className="app-shell__section-title">
-              <button
-                className="app-shell__section-title-button"
-                onClick={onOpenRegionModal}
-                type="button"
-              >
-                {selectedCountryName}
-              </button>
-              {selectedCategoryLabel ? (
-                <>
-                  {" · "}
-                  <button
-                    className="app-shell__section-title-button"
-                    onClick={onOpenViewModal}
-                    type="button"
-                  >
-                    {selectedCategoryLabel}
-                  </button>
-                </>
-              ) : null}
-            </h2>
+            <h2 className="app-shell__section-title">Now Playing</h2>
           </div>
         )}
       </div>
@@ -324,10 +273,8 @@ function PlayerStage({
   openPositionCount,
   onOpenGameModal,
   onNextVideo,
-  onOpenRegionModal,
   onOpenTierModal,
   onOpenWalletModal,
-  onOpenViewModal,
   onPreviousVideo,
   onPlaybackRestoreApplied,
   onPlaybackStateChange,
@@ -340,8 +287,6 @@ function PlayerStage({
   playerViewportStyle,
   renderHeaderInline = true,
   renderViewportInline = true,
-  selectedCategoryLabel,
-  selectedCountryName,
   walletBalancePoints,
   selectedVideoChannelTitle,
   selectedVideoId,
@@ -376,13 +321,9 @@ function PlayerStage({
       isOpenPositionLimitReached={isOpenPositionLimitReached}
       openPositionCount={openPositionCount}
       onOpenGameModal={onOpenGameModal}
-      onOpenRegionModal={onOpenRegionModal}
       onOpenTierModal={onOpenTierModal}
       onOpenWalletModal={onOpenWalletModal}
-      onOpenViewModal={onOpenViewModal}
       onToggleCinematicMode={onToggleCinematicMode}
-      selectedCategoryLabel={selectedCategoryLabel}
-      selectedCountryName={selectedCountryName}
       walletBalancePoints={walletBalancePoints}
     />
   ) : null;
