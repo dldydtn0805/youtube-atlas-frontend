@@ -860,17 +860,8 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       );
     }
 
-    const currentSignal = signalMap(
-      await getSignalsForRegion(context.service, position.region_code),
-    ).get(position.video_id);
-
-    if (isPositionSellLockedUntilNextSync(position, currentSignal)) {
-      throw new ApiError(
-        409,
-        'next_trend_sync_required',
-        NEXT_TREND_SYNC_REQUIRED_MESSAGE,
-      );
-    }
+    // 예약은 매수 직후에도 등록할 수 있다. 실제 체결은 settle-game과
+    // atlas_sell_position이 다음 순위 갱신 전까지 계속 보류한다.
 
     const { data: order, error } = await context.service
       .from('game_scheduled_sell_orders')

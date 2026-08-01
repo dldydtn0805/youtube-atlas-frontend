@@ -50,6 +50,7 @@ import {
   formatPercent,
   formatPoints,
   formatRank,
+  getGamePositionManualSellQuantity,
   getGamePositionQuantity,
   getPointTone,
   normalizeGameOrderCapacity,
@@ -1426,15 +1427,19 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
 
     return quantityByVideoId;
   }, [openGameHoldings]);
-  const syncLockedVideoIds = useMemo(
-    () =>
-      new Set(
-        openGameHoldings
-          .filter((holding) => holding.sellLockedUntilNextSync === true)
-          .map((holding) => holding.videoId),
-      ),
-    [openGameHoldings],
-  );
+  const openGameScheduledSellCapacityByVideoId = useMemo(() => {
+    const quantityByVideoId = new Map<string, number>();
+
+    for (const holding of openGameHoldings) {
+      quantityByVideoId.set(
+        holding.videoId,
+        (quantityByVideoId.get(holding.videoId) ?? 0) +
+          getGamePositionManualSellQuantity(holding),
+      );
+    }
+
+    return quantityByVideoId;
+  }, [openGameHoldings]);
   const remainingOpenPositionSlotsForCards = currentGameSeason
     ? Math.max(
         0,
@@ -1448,6 +1453,8 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       const ownedQuantity = openGamePositionQuantityByVideoId.get(item.id) ?? 0;
       const sellableQuantity =
         openGameSellableQuantityByVideoId.get(item.id) ?? 0;
+      const scheduledSellCapacity =
+        openGameScheduledSellCapacityByVideoId.get(item.id) ?? 0;
       const isAlreadyOwned = ownedQuantity > 0;
       const maxBuyQuantity =
         currentGameSeason && marketVideo?.currentPricePoints
@@ -1472,7 +1479,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       const canSell =
         canShowGameActions &&
         authStatus === "authenticated" &&
-        sellableQuantity > 0;
+        (sellableQuantity > 0 || scheduledSellCapacity > 0);
       const buyTitle = !canShowGameActions
         ? "전체 카테고리에서만 매수할 수 있습니다."
         : authStatus !== "authenticated"
@@ -1491,10 +1498,10 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
           ? "로그인 후 매도할 수 있습니다."
           : sellableQuantity > 0
             ? "보유 영상을 매도할 수 있습니다."
-            : syncLockedVideoIds.has(item.id)
-              ? "현재 순위 기준으로 매수했습니다. 다음 순위 갱신 후 매도할 수 있습니다."
+            : scheduledSellCapacity > 0
+              ? "예약 매도는 지금 등록할 수 있습니다. 즉시 매도는 다음 순위 갱신 후 가능합니다."
               : ownedQuantity > 0
-                ? "매도 대기 시간이 끝난 뒤 보유 영상을 매도할 수 있습니다."
+                ? "이미 예약 매도 중인 영상입니다."
                 : "보유 영상이 있을 때만 매도할 수 있습니다.";
 
       return {
@@ -1511,9 +1518,9 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       currentGameSeason,
       gameMarketByVideoId,
       openGamePositionQuantityByVideoId,
+      openGameScheduledSellCapacityByVideoId,
       openGameSellableQuantityByVideoId,
       remainingOpenPositionSlotsForCards,
-      syncLockedVideoIds,
     ],
   );
   const {
@@ -1523,6 +1530,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     isSelectedVideoBuyDisabled,
     isSelectedVideoSellDisabled,
     maxBuyQuantity,
+    maxScheduledSellQuantity,
     maxSellQuantity,
     normalizedBuyQuantity,
     normalizedSellQuantity,
@@ -1601,6 +1609,9 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const tradeMaxSellQuantity = isTradeTargetActive
     ? tradeTargetGameState.maxSellQuantity
     : maxSellQuantity;
+  const tradeMaxScheduledSellQuantity = isTradeTargetActive
+    ? tradeTargetGameState.maxScheduledSellQuantity
+    : maxScheduledSellQuantity;
   const tradeNormalizedBuyQuantity = isTradeTargetActive
     ? tradeTargetGameState.normalizedBuyQuantity
     : normalizedBuyQuantity;
@@ -1793,6 +1804,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     currentGameSeasonError,
     logout,
     maxBuyQuantity: tradeMaxBuyQuantity,
+    maxScheduledSellQuantity: tradeMaxScheduledSellQuantity,
     maxSellQuantity: tradeMaxSellQuantity,
     mutateBuyGamePosition: buyGamePositionMutation.mutateAsync,
     mutateSellGamePositions: sellGamePositionsMutation.mutateAsync,
@@ -2302,7 +2314,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       );
       const preset = getScheduledSellPresetForStrategy(strategyType);
       const quantity = normalizeGameOrderCapacity(
-        holding?.sellableQuantity ?? 0,
+        holding ? getGamePositionManualSellQuantity(holding) : 0,
       );
 
       if (!holding || !preset || quantity <= 0) {
@@ -3168,7 +3180,11 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         helperText={tradeSellModalHelperText}
         isOpen={isSellTradeModalOpen}
         isSubmitting={isSellSubmitting || isScheduledSellSubmitting}
-        maxQuantity={tradeMaxSellQuantity}
+        maxQuantity={
+          sellOrderMode === "scheduled"
+            ? tradeMaxScheduledSellQuantity
+            : tradeMaxSellQuantity
+        }
         mode="sell"
         onChangeQuantity={handleSellQuantityChange}
         onClose={closeTradeModalFromFlow}

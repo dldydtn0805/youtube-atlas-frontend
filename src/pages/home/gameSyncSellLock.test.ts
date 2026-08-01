@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { GamePosition } from '../../features/game/types';
-import { buildOpenGameHoldings } from './gameHelpers';
+import {
+  buildOpenGameHoldings,
+  getGamePositionManualSellQuantity,
+} from './gameHelpers';
 
 function createPosition(overrides: Partial<GamePosition> = {}): GamePosition {
   return {
@@ -36,6 +39,11 @@ describe('current trend sync sell lock', () => {
     expect(holding.lockedQuantity).toBe(100);
     expect(holding.nextSellableInSeconds).toBeNull();
     expect(holding.sellLockedUntilNextSync).toBe(true);
+    expect(
+      getGamePositionManualSellQuantity(
+        createPosition({ sellLockedUntilNextSync: true }),
+      ),
+    ).toBe(100);
   });
 
   it('makes the position sellable after the next trend sync clears the lock', () => {

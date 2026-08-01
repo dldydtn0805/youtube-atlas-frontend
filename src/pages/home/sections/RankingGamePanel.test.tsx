@@ -626,13 +626,19 @@ describe("RankingGamePositionsTab", () => {
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it("disables sell action until a holding has sellable quantity", () => {
+  it("disables sell action when the holding is already reserved", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
         likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
-        holdings={[createOpenGameHolding({ sellableQuantity: 0 })]}
+        holdings={[
+          createOpenGameHolding({
+            reservedForSell: true,
+            scheduledSellQuantity: 1,
+            sellableQuantity: 0,
+          }),
+        ]}
         onOpenSellTradeModal={vi.fn()}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
@@ -663,7 +669,9 @@ describe("RankingGamePositionsTab", () => {
     expect(screen.getByText("현재 매도 불가")).toBeInTheDocument();
   });
 
-  it("shows that a current-sync purchase unlocks after the next trend sync", () => {
+  it("allows scheduling a current-sync purchase while instant sell stays locked", () => {
+    const onOpenSellTradeModal = vi.fn();
+
     render(
       <RankingGamePositionsTab
         canShowGameActions
@@ -676,16 +684,23 @@ describe("RankingGamePositionsTab", () => {
             sellLockedUntilNextSync: true,
           }),
         ]}
-        onOpenSellTradeModal={vi.fn()}
+        onOpenSellTradeModal={onOpenSellTradeModal}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
     expect(
-      screen.getByText("다음 순위 갱신 후 매도 가능"),
+      screen.getByText("예약 가능 · 즉시 매도는 다음 순위 갱신 후"),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Holding Video 매도")).toBeDisabled();
+    const sellButton = screen.getByLabelText("Holding Video 매도");
+    expect(sellButton).toBeEnabled();
+
+    fireEvent.click(sellButton);
+
+    expect(onOpenSellTradeModal).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+    );
   });
 
   it("shows a reserved sell badge when a holding is already queued for scheduled sell", () => {

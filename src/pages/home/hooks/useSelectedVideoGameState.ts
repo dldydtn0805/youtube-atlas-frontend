@@ -74,6 +74,7 @@ interface UseSelectedVideoGameStateResult {
   isSelectedVideoSellDisabled: boolean;
   isChartActionDisabled: boolean;
   maxBuyQuantity: number;
+  maxScheduledSellQuantity: number;
   maxSellQuantity: number;
   normalizedBuyQuantity: number;
   normalizedSellQuantity: number;
@@ -407,8 +408,15 @@ export default function useSelectedVideoGameState({
     (count, position) => count + getGamePositionManualSellQuantity(position),
     0,
   );
+  const maxScheduledSellQuantity = selectedVideoOpenPositions.reduce(
+    (count, position) => count + getGamePositionManualSellQuantity(position),
+    0,
+  );
   const normalizedSellQuantity = normalizeGameOrderQuantity(sellQuantity);
   const maxOrderSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
+  const maxOrderScheduledSellQuantity = normalizeGameOrderCapacity(
+    maxScheduledSellQuantity,
+  );
   const selectedVideoSellSummary = useMemo(
     () =>
       summarizeSellCandidates(
@@ -533,7 +541,7 @@ export default function useSelectedVideoGameState({
     authStatus !== "authenticated" ||
     !canShowGameActions ||
     selectedVideoOpenPositionCount <= 0 ||
-    maxOrderSellQuantity <= 0;
+    (maxOrderSellQuantity <= 0 && maxOrderScheduledSellQuantity <= 0);
   const buyActionTitle =
     authStatus !== "authenticated"
       ? "로그인 후 매수할 수 있습니다."
@@ -550,7 +558,9 @@ export default function useSelectedVideoGameState({
     ? "전체 카테고리에서만 매도할 수 있습니다."
     : maxOrderSellQuantity > 0
       ? "보유한 영상을 매도합니다."
-      : sellModalHelperText;
+      : maxOrderScheduledSellQuantity > 0
+        ? "예약 매도는 지금 등록할 수 있습니다. 즉시 매도는 다음 순위 갱신 후 가능합니다."
+        : sellModalHelperText;
   const selectedVideoTradeThumbnailUrl =
     selectedVideoMarketEntry?.thumbnailUrl ??
     selectedVideoOpenPosition?.thumbnailUrl ??
@@ -574,6 +584,7 @@ export default function useSelectedVideoGameState({
     isSelectedVideoBuyDisabled,
     isSelectedVideoSellDisabled,
     maxBuyQuantity,
+    maxScheduledSellQuantity,
     maxSellQuantity,
     normalizedBuyQuantity,
     normalizedSellQuantity,

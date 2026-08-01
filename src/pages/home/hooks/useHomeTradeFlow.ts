@@ -19,6 +19,7 @@ import {
 } from '../gameHelpers';
 import useDebouncedValue from './useDebouncedValue';
 import useHomeGameTradeActions from './useHomeGameTradeActions';
+import { getDefaultSellOrderMode, getSellOrderCapacity } from '../sellOrderMode';
 
 const SELL_PREVIEW_DEBOUNCE_MS = 300;
 
@@ -32,6 +33,7 @@ interface UseHomeTradeFlowOptions {
   currentGameSeasonError: unknown;
   logout: () => Promise<void>;
   maxBuyQuantity: number;
+  maxScheduledSellQuantity: number;
   maxSellQuantity: number;
   mutateBuyGamePosition: UseHomeGameTradeActionsOptions['mutateBuyGamePosition'];
   mutateSellGamePositions: UseHomeGameTradeActionsOptions['mutateSellGamePositions'];
@@ -77,6 +79,7 @@ export default function useHomeTradeFlow({
   currentGameSeasonError,
   logout,
   maxBuyQuantity,
+  maxScheduledSellQuantity,
   maxSellQuantity,
   mutateBuyGamePosition,
   mutateSellGamePositions,
@@ -99,6 +102,7 @@ export default function useHomeTradeFlow({
 }: UseHomeTradeFlowOptions) {
   const [isScheduledSellSubmitting, setIsScheduledSellSubmitting] = useState(false);
   const lastInstantSellDefaultKeyRef = useRef<string | null>(null);
+  const lastSellModalSelectionKeyRef = useRef<string | null>(null);
   const [sellOrderMode, setSellOrderMode] = useState<'instant' | 'scheduled'>('instant');
   const [scheduledSellTriggerType, setScheduledSellTriggerType] =
     useState<ScheduledSellTriggerType>('RANK');
@@ -121,16 +125,46 @@ export default function useHomeTradeFlow({
   }, [authStatus]);
 
   useEffect(() => {
-    setSellOrderMode('instant');
     setScheduledSellTriggerType('RANK');
     setScheduledSellTargetRank(100);
     setScheduledSellTargetProfitRatePercent(300);
     setScheduledSellTriggerDirection('RANK_IMPROVES_TO');
   }, [selectedOpenPositionId, selectedVideoId]);
 
-  const canScheduleSellCurrentSelection = selectedSellPositionId != null;
-  const fullSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
-  const debouncedSellPreviewQuantity = useDebouncedValue(fullSellQuantity, SELL_PREVIEW_DEBOUNCE_MS);
+  useEffect(() => {
+    if (activeTradeModal !== 'sell') {
+      lastSellModalSelectionKeyRef.current = null;
+      return;
+    }
+
+    const selectionKey = `${selectedSellPositionId ?? 'video'}:${selectedVideoId ?? ''}`;
+
+    if (lastSellModalSelectionKeyRef.current === selectionKey) {
+      return;
+    }
+
+    lastSellModalSelectionKeyRef.current = selectionKey;
+    setSellOrderMode(
+      getDefaultSellOrderMode(maxSellQuantity, maxScheduledSellQuantity),
+    );
+  }, [
+    activeTradeModal,
+    maxScheduledSellQuantity,
+    maxSellQuantity,
+    selectedSellPositionId,
+    selectedVideoId,
+  ]);
+
+  const canScheduleSellCurrentSelection =
+    selectedSellPositionId != null && maxScheduledSellQuantity > 0;
+  const fullInstantSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
+  const fullScheduledSellQuantity = normalizeGameOrderCapacity(
+    maxScheduledSellQuantity,
+  );
+  const debouncedSellPreviewQuantity = useDebouncedValue(
+    fullInstantSellQuantity,
+    SELL_PREVIEW_DEBOUNCE_MS,
+  );
   const sellPreviewRequest = useMemo(
     () =>
       debouncedSellPreviewQuantity > 0
@@ -149,8 +183,8 @@ export default function useHomeTradeFlow({
     activeTradeModal === 'sell' && sellOrderMode === 'instant' && maxSellQuantity > 0,
   );
   const activeSellPreview =
-    debouncedSellPreviewQuantity === fullSellQuantity &&
-    sellPreviewQuery.data?.quantity === fullSellQuantity
+    debouncedSellPreviewQuantity === fullInstantSellQuantity &&
+    sellPreviewQuery.data?.quantity === fullInstantSellQuantity
       ? sellPreviewQuery.data
       : undefined;
   const [lastSuccessfulSellPreview, setLastSuccessfulSellPreview] = useState<typeof activeSellPreview>();
@@ -305,9 +339,14 @@ export default function useHomeTradeFlow({
       return;
     }
 
+    if (fullScheduledSellQuantity <= 0) {
+      setGameActionStatus('지금 예약 매도할 수 있는 영상이 없습니다.');
+      return;
+    }
+
     const inputBase = {
       positionId: selectedSellPositionId,
-      quantity: fullSellQuantity,
+      quantity: fullScheduledSellQuantity,
       regionCode: selectedRegionCode,
     };
     const scheduledSellOrderInput: CreateScheduledSellOrderInput =
@@ -360,7 +399,7 @@ export default function useHomeTradeFlow({
     createScheduledSellOrder,
     currentGameSeason,
     logout,
-    fullSellQuantity,
+    fullScheduledSellQuantity,
     onScheduledSellSuccess,
     scheduledSellConditionError,
     scheduledSellTargetProfitRatePercent,
@@ -406,7 +445,31 @@ export default function useHomeTradeFlow({
   const isBuyTradeModalOpen =
     activeTradeModal === 'buy' && Boolean(selectedVideoId) && Boolean(selectedVideoMarketEntry);
   const isSellTradeModalOpen =
-    activeTradeModal === 'sell' && Boolean(selectedVideoId) && maxSellQuantity > 0;
+    activeTradeModal === 'sell' &&
+    Boolean(selectedVideoId) &&
+    (maxSellQuantity > 0 || maxScheduledSellQuantity > 0);
+  const openSellTradeModalForAvailableMode = useCallback(() => {
+    const defaultMode = getDefaultSellOrderMode(
+      maxSellQuantity,
+      maxScheduledSellQuantity,
+    );
+    const defaultQuantity = getSellOrderCapacity(
+      defaultMode,
+      maxSellQuantity,
+      maxScheduledSellQuantity,
+    );
+
+    openSellTradeModal();
+    setSellOrderMode(defaultMode);
+    if (defaultQuantity > 0) {
+      setSellQuantity(defaultQuantity);
+    }
+  }, [
+    maxScheduledSellQuantity,
+    maxSellQuantity,
+    openSellTradeModal,
+    setSellQuantity,
+  ]);
 
   return {
     canScheduleSellCurrentSelection,
@@ -422,7 +485,7 @@ export default function useHomeTradeFlow({
     isSellSubmitting,
     isSellTradeModalOpen,
     openBuyTradeModal,
-    openSellTradeModal,
+    openSellTradeModal: openSellTradeModalForAvailableMode,
     projectedWalletBalanceAfterBuy,
     projectedWalletBalanceAfterSell,
     resolvedSellSummary,

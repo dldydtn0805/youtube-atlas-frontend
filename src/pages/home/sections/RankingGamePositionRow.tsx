@@ -6,6 +6,7 @@ import {
   formatHoldCountdown,
   formatMaybePoints,
   formatRank,
+  getGamePositionManualSellQuantity,
   getPointTone,
   type OpenGameHolding,
 } from '../gameHelpers';
@@ -120,10 +121,12 @@ function RankingGamePositionRowComponent({
   const profitTone = getPointTone(holding.profitPoints);
   const profitMeterWidth = Number.isFinite(profitRate) ? Math.min(Math.abs(profitRate) * 100, 100) : 0;
   const positionStatusBadge = holding.chartOut ? '차트 아웃' : null;
+  const position = mapHoldingToGamePosition(holding);
+  const scheduledSellCapacity = getGamePositionManualSellQuantity(position);
   const sellableStatusBadge = !canShowGameActions
     ? '전체 카테고리에서 매도 가능'
     : holding.sellLockedUntilNextSync
-      ? '다음 순위 갱신 후 매도 가능'
+      ? '예약 가능 · 즉시 매도는 다음 순위 갱신 후'
     : holding.sellableQuantity > 0
       ? '매도 가능'
       : typeof holding.nextSellableInSeconds === 'number' && holding.nextSellableInSeconds > 0
@@ -132,10 +135,14 @@ function RankingGamePositionRowComponent({
   const hasDetailBadges = Boolean(
     strategyBadges.length || holdingRankTrendBadge || positionStatusBadge || holding.reservedForSell || sellableStatusBadge,
   );
-  const position = mapHoldingToGamePosition(holding);
-  const canOpenSellTrade = canShowGameActions && holding.sellableQuantity > 0 && Boolean(onOpenSellTradeModal);
+  const canOpenSellTrade =
+    canShowGameActions &&
+    (holding.sellableQuantity > 0 || scheduledSellCapacity > 0) &&
+    Boolean(onOpenSellTradeModal);
   const canOpenStrategyScheduledSellTrade =
-    canShowGameActions && holding.sellableQuantity > 0 && Boolean(onOpenStrategyScheduledSellTradeModal);
+    canShowGameActions &&
+    scheduledSellCapacity > 0 &&
+    Boolean(onOpenStrategyScheduledSellTradeModal);
   const handleOpenPositionChart = () => onOpenPositionChart?.(position);
 
   return (
@@ -294,6 +301,8 @@ function RankingGamePositionRowComponent({
                 ? '전체 카테고리에서만 매도할 수 있습니다.'
                 : holding.sellableQuantity > 0
                   ? '매도'
+                  : scheduledSellCapacity > 0
+                    ? '예약 매도는 지금 등록할 수 있습니다. 즉시 매도는 다음 순위 갱신 후 가능합니다.'
                   : holding.reservedForSell
                     ? '예약 취소 후 매도할 수 있습니다.'
                     : '아직 매도할 수 없는 보유 영상입니다.'
