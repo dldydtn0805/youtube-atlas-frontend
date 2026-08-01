@@ -43,6 +43,37 @@ describe("useYouTubeLike", () => {
     updateYouTubeVideoRatingMock.mockReset();
   });
 
+  it("activates a video from the liked list immediately and cancels it on the first click", async () => {
+    useAuthMock.mockReturnValue({
+      accessToken: "app-token",
+      googleProviderAccessToken: "youtube-token",
+      requestYouTubeAccess: vi.fn(),
+      status: "authenticated",
+    });
+    updateYouTubeVideoRatingMock.mockResolvedValue({
+      rating: "none",
+      videoId: "video-liked",
+    });
+    const { result } = renderHook(() => useYouTubeLike("video-liked", true), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLiked).toBe(true);
+    expect(fetchYouTubeVideoRatingMock).not.toHaveBeenCalled();
+
+    act(() => result.current.toggleLike());
+
+    await waitFor(() =>
+      expect(updateYouTubeVideoRatingMock).toHaveBeenCalledWith(
+        "app-token",
+        "youtube-token",
+        "video-liked",
+        "none",
+      ),
+    );
+    await waitFor(() => expect(result.current.isLiked).toBe(false));
+  });
+
   it("sets a YouTube like directly when contextual access is already available", async () => {
     useAuthMock.mockReturnValue({
       accessToken: "app-token",

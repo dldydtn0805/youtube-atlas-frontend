@@ -58,7 +58,7 @@ function shouldRequestYouTubeAccess(error: unknown) {
   );
 }
 
-export default function useYouTubeLike(videoId?: string) {
+export default function useYouTubeLike(videoId?: string, isKnownLiked = false) {
   const {
     accessToken,
     googleProviderAccessToken,
@@ -83,6 +83,7 @@ export default function useYouTubeLike(videoId?: string) {
     enabled:
       authStatus === "authenticated" &&
       Boolean(accessToken && googleProviderAccessToken && videoId) &&
+      !isKnownLiked &&
       !isResumingPending,
     queryFn: () =>
       fetchYouTubeVideoRating(
@@ -244,7 +245,9 @@ export default function useYouTubeLike(videoId?: string) {
     isResumingPending,
   ]);
 
-  const isLiked = ratingQuery.data?.rating === "like";
+  const isLiked =
+    ratingQuery.data?.rating === "like" ||
+    (ratingQuery.data === undefined && isKnownLiked);
   const isPending = phase === "authorizing" || phase === "updating";
   const toggleLike = useCallback(() => {
     if (!videoId || authStatus !== "authenticated" || isPending) {

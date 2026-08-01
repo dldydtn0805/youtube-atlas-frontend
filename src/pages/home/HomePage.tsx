@@ -1028,7 +1028,18 @@ function HomePage() {
     user,
     videoPlayerRef,
   });
-  const youtubeLike = useYouTubeLike(selectedVideoId);
+  const isSelectedVideoKnownLiked = useMemo(
+    () =>
+      Boolean(
+        selectedVideoId &&
+        likedVideoSection?.items.some((item) => item.id === selectedVideoId),
+      ),
+    [likedVideoSection?.items, selectedVideoId],
+  );
+  const youtubeLike = useYouTubeLike(
+    selectedVideoId,
+    isSelectedVideoKnownLiked,
+  );
   useNowPlayingDocumentTitle(resolvedSelectedVideo?.snippet.title);
   const selectedPlaybackCategoryLabel = useMemo(
     () =>
