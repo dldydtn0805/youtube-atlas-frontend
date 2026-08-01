@@ -68,11 +68,11 @@ interface ScheduledOrderBody {
 }
 
 const VIDEO_ALREADY_OWNED_MESSAGE =
-  '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.';
+  '이미 보유 중인 영상입니다. 매도한 뒤 다시 매수할 수 있습니다.';
 const NEXT_TREND_SYNC_REQUIRED_MESSAGE =
   '현재 순위 기준으로 매수한 영상입니다. 다음 순위 갱신 후 매도할 수 있습니다.';
 const FULL_POSITION_SELL_REQUIRED_MESSAGE =
-  '보유 영상은 수량을 나눌 수 없으며 1개 전량만 매도할 수 있습니다.';
+  '이 영상은 한 번에 매도해 주세요.';
 
 async function listSerializedPositions(
   context: RequestContext,
@@ -238,14 +238,14 @@ async function findSellPositions(
   } else if (body.videoId) {
     query = query.eq('video_id', body.videoId);
   } else {
-    throw new ApiError(400, 'validation_error', '매도할 포지션을 선택해 주세요.');
+    throw new ApiError(400, 'validation_error', '매도할 영상을 선택해 주세요.');
   }
 
   const { data, error } = await query;
 
   if (error) throw error;
   if (!data?.length) {
-    throw new ApiError(404, 'position_not_found', '매도할 포지션을 찾을 수 없습니다.');
+    throw new ApiError(404, 'position_not_found', '매도할 영상을 찾을 수 없습니다.');
   }
 
   return data as GamePositionRow[];
@@ -260,7 +260,7 @@ async function previewSell(
   const quantity = Math.floor(body.quantity ?? 0);
 
   if (quantity <= 0) {
-    throw new ApiError(400, 'validation_error', '매도 수량이 필요합니다.');
+    throw new ApiError(400, 'validation_error', '매도할 영상을 확인해 주세요.');
   }
 
   const [season, priceAnchors] = await Promise.all([
@@ -408,7 +408,7 @@ async function executeSell(context: RequestContext, userId: number, body: SellBo
 
     if ((data?.highlightScore ?? 0) > 0) {
       await context.service.from('game_highlights').insert({
-        description: `${position.buy_rank}위에서 ${sellRank}위까지 상승한 포지션입니다.`,
+        description: `${position.buy_rank}위에서 ${sellRank}위까지 상승한 영상입니다.`,
         highlight_rank: sellRank,
         highlight_score: data.highlightScore,
         highlight_type: 'RANK_RISE',
@@ -713,7 +713,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       throw new ApiError(
         400,
         'invalid_buy_quantity',
-        '영상은 한 번에 1개만 매수할 수 있습니다.',
+        '같은 영상은 중복 구매할 수 없습니다.',
       );
     }
 

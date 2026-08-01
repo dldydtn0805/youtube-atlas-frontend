@@ -122,7 +122,7 @@ export default function GameWalletSummary({
           >
             {season ? formatPoints(openPositionsBuyPoints) : '-'}
           </span>
-          <span className="app-shell__game-panel-metric-meta">현재 보유 포지션 원금</span>
+          <span className="app-shell__game-panel-metric-meta">현재 보유 영상 매수 금액</span>
         </span>
         <span className="app-shell__game-panel-metric">
           <span className="app-shell__game-panel-metric-label">총 평가 금액</span>

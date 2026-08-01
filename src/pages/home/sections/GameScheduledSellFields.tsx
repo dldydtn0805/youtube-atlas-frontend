@@ -119,8 +119,8 @@ export default function GameScheduledSellFields({
       </div>
       <p className="app-shell__modal-field-copy">
         {isDropTrigger
-          ? '순위 갱신 때 현재 순위가 방어 순위 밖으로 밀리면 이 포지션을 자동 매도합니다.'
-          : '순위 갱신 때 현재 순위가 목표 순위 안으로 들어오면 이 포지션을 자동 매도합니다.'}
+          ? '순위 갱신 때 현재 순위가 방어 순위 밖으로 밀리면 이 영상을 자동 매도합니다.'
+          : '순위 갱신 때 현재 순위가 목표 순위 안으로 들어오면 이 영상을 자동 매도합니다.'}
       </p>
         </>
       ) : (

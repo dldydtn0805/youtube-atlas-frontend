@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import GameTradeModal from './GameTradeModal';
 
 describe('GameTradeModal', () => {
-  it('shows a fixed one-unit buy without quantity controls', () => {
+  it('explains duplicate purchase limits without exposing quantity controls', () => {
     render(
       <GameTradeModal
         confirmLabel="매수"
@@ -17,23 +17,24 @@ describe('GameTradeModal', () => {
         onClose={vi.fn()}
         onConfirm={vi.fn()}
         quantity={100}
-        summaryItems={[{ label: '수량', value: '1개' }]}
+        summaryItems={[{ label: '매수 금액', value: '100P' }]}
         thumbnailUrl={null}
         title="테스트 영상"
         unitPointsLabel="100P"
       />,
     );
 
-    expect(screen.getByLabelText('고정 매수 수량')).toHaveTextContent('1개');
+    expect(screen.getByLabelText('매수 안내')).toBeInTheDocument();
     expect(screen.queryByRole('spinbutton', { name: '매수 수량' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '100%' })).not.toBeInTheDocument();
-    expect(screen.getByText('영상마다 1개만 매수할 수 있습니다.')).toBeInTheDocument();
+    expect(screen.getByText('같은 영상은 중복 구매할 수 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByText(/수량|1개/)).not.toBeInTheDocument();
   });
 
   it('renders buy orders with the receipt layout', () => {
     render(
       <GameTradeModal
-        confirmLabel="1개 매수"
+        confirmLabel="매수"
         currentRankLabel="1위"
         helperText="구매 후 포인트가 남습니다."
         isOpen
@@ -45,9 +46,7 @@ describe('GameTradeModal', () => {
         onConfirm={vi.fn()}
         quantity={100}
         summaryItems={[
-          { label: '수량', value: '1개' },
-          { label: '1개당 가격', value: '100P' },
-          { label: '총 매수', value: '100P' },
+          { label: '매수 금액', value: '100P' },
           { label: '거래 후 잔액', value: '900P' },
         ]}
         thumbnailUrl={null}
@@ -60,7 +59,8 @@ describe('GameTradeModal', () => {
     expect(screen.getByText('BUY ORDER')).toBeInTheDocument();
     expect(screen.getByText('테스트 영상')).toBeInTheDocument();
     expect(screen.getByText('TOTAL')).toBeInTheDocument();
-    expect(screen.getAllByText('100P')).toHaveLength(4);
+    expect(screen.getAllByText('100P')).toHaveLength(3);
+    expect(screen.queryByText(/수량|1개당/)).not.toBeInTheDocument();
   });
 
   it('renders the shared play overlay on the modal thumbnail', () => {
@@ -77,7 +77,7 @@ describe('GameTradeModal', () => {
         onClose={vi.fn()}
         onConfirm={vi.fn()}
         quantity={100}
-        summaryItems={[{ label: '수량', value: '1개' }]}
+        summaryItems={[{ label: '매수 금액', value: '100P' }]}
         thumbnailUrl="https://example.com/thumb.jpg"
         title="테스트 영상"
         unitPointsLabel="100P"
@@ -120,9 +120,9 @@ describe('GameTradeModal', () => {
   it('renders a sell order without quantity or highlight-score details', () => {
     render(
       <GameTradeModal
-        confirmLabel="1개 즉시 매도"
+        confirmLabel="즉시 매도"
         currentRankLabel="3위"
-        helperText="보유 영상 1개를 전량 매도합니다."
+        helperText="보유 영상을 매도합니다."
         isOpen
         isSubmitting={false}
         maxQuantity={100}
@@ -144,10 +144,11 @@ describe('GameTradeModal', () => {
 
     expect(screen.getByRole('heading', { name: '매도 주문서' })).toBeInTheDocument();
     expect(screen.getByText('SELL ORDER')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '즉시 매도' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '즉시 매도' })).toHaveLength(2);
     expect(screen.queryByLabelText('고정 매도 수량')).not.toBeInTheDocument();
     expect(screen.queryByText('QUANTITY')).not.toBeInTheDocument();
     expect(screen.queryByRole('spinbutton', { name: '매도 수량' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/전량|1개당|매도 수량/)).not.toBeInTheDocument();
     expect(screen.queryByText(/하이라이트 점수/)).not.toBeInTheDocument();
     expect(screen.getByText('TOTAL')).toBeInTheDocument();
     expect(screen.getAllByText('900P')).toHaveLength(2);

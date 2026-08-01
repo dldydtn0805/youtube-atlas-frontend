@@ -1,7 +1,6 @@
 import { forwardRef, type CSSProperties } from 'react';
 import type { GameScheduledSellOrder } from '../../../features/game/types';
 import {
-  formatGameOrderQuantity,
   formatGameTimestamp,
   formatPercent,
   formatRank,
@@ -58,7 +57,7 @@ function RankingGameReservedSellOrderMenu({
               {getConditionLabel(order)}
             </span>
             <span className="app-shell__game-reserved-sell-option-meta">
-              {formatGameOrderQuantity(order.quantity)} · {formatGameTimestamp(order.createdAt)}
+              {formatGameTimestamp(order.createdAt)}
             </span>
             <span className="app-shell__game-reserved-sell-option-action">
               {isCanceling ? '취소 중' : '예약 취소'}

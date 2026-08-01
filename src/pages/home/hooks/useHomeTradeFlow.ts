@@ -296,7 +296,7 @@ export default function useHomeTradeFlow({
     }
 
     if (selectedSellPositionId == null) {
-      setGameActionStatus('예약 매도는 인벤토리의 단일 포지션에서 설정할 수 있습니다.');
+      setGameActionStatus('예약 매도할 영상을 인벤토리에서 선택해 주세요.');
       return;
     }
 

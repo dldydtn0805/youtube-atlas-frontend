@@ -19,7 +19,6 @@ import {
   buildSellCandidates,
   calculateGameOrderPoints,
   DEFAULT_GAME_QUANTITY,
-  formatGameQuantity,
   formatHoldCountdown,
   formatPoints,
   getBuyRemainingPointsText,
@@ -441,16 +440,16 @@ export default function useSelectedVideoGameState({
   const sellModalHelperText =
     maxOrderSellQuantity > 0
       ? selectedOpenHoldingReservedQuantity > 0
-        ? "이 영상은 예약 매도에 등록되어 있습니다. 예약을 취소하면 보유한 1개를 전량 매도할 수 있습니다."
+        ? "이 영상은 예약 매도에 등록되어 있습니다. 예약을 취소하면 바로 매도할 수 있습니다."
         : selectedOpenHoldingLockedQuantity > 0 &&
             selectedOpenHoldingNextSellableInSeconds !== null
-          ? `${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후 보유한 1개를 전량 매도할 수 있습니다.`
-          : "보유한 영상 1개를 전량 매도합니다."
+          ? `${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후 매도할 수 있습니다.`
+          : "보유한 영상을 매도합니다."
       : selectedOpenHoldingSellLockedUntilNextSync
         ? "현재 순위 기준으로 매수한 영상입니다. 다음 순위 갱신 후 매도할 수 있습니다."
         : selectedOpenHoldingNextSellableInSeconds !== null
           ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
-          : "지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.";
+          : "지금은 최소 보유 시간이 지나지 않아 매도 가능한 영상이 없습니다.";
   const defaultPreviewBuyQuantity =
     maxOrderBuyQuantity > 0
       ? Math.min(DEFAULT_GAME_QUANTITY, maxOrderBuyQuantity)
@@ -476,10 +475,10 @@ export default function useSelectedVideoGameState({
     normalizedBuyQuantity,
   );
   const buyModalHelperText = selectedVideoAlreadyOwned
-    ? "이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다."
+    ? "이미 보유 중인 영상입니다. 매도한 뒤 다시 매수할 수 있습니다."
     : maxOrderBuyQuantity > 0
       ? (buyModalRemainingPointsText ??
-        `남은 종목 슬롯 ${remainingOpenPositionSlots}개 안에서 서로 다른 영상을 보유할 수 있으며, 같은 영상은 1개만 매수할 수 있습니다.`)
+        `남은 종목 슬롯은 ${remainingOpenPositionSlots}개이며, 같은 영상은 중복 구매할 수 없습니다.`)
       : (buyModalShortfallPointsText ??
         selectedVideoMarketEntry?.buyBlockedReason ??
         (nextInventoryTierText
@@ -488,9 +487,9 @@ export default function useSelectedVideoGameState({
   const currentVideoGameHelperText = !canShowGameActions
     ? "매수/매도는 전체 카테고리에서만 가능합니다."
     : authStatus !== "authenticated"
-      ? "로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다."
+      ? "로그인하면 지금 보는 영상도 바로 인벤토리에 담을 수 있습니다."
       : selectedVideoOpenPositionCount > 0
-        ? `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중입니다. 전량 매도하면 다시 매수할 수 있습니다.`
+        ? "현재 이 영상을 보유 중입니다. 매도하면 다시 매수할 수 있습니다."
         : selectedVideoMarketEntry
           ? selectedVideoMarketEntry.canBuy
             ? (buyRemainingPointsText ?? "지금 바로 매수할 수 있습니다.")
@@ -539,9 +538,9 @@ export default function useSelectedVideoGameState({
     authStatus !== "authenticated"
       ? "로그인 후 매수할 수 있습니다."
       : selectedVideoAlreadyOwned
-        ? "이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다."
+        ? "이미 보유 중인 영상입니다. 매도한 뒤 다시 매수할 수 있습니다."
         : selectedVideoMarketEntry?.canBuy
-          ? "현재 영상을 1개 매수합니다."
+          ? "현재 영상을 매수합니다."
           : (buyShortfallPointsText ??
             selectedVideoMarketEntry?.buyBlockedReason ??
             (currentGameSeason
@@ -550,7 +549,7 @@ export default function useSelectedVideoGameState({
   const sellActionTitle = !canShowGameActions
     ? "전체 카테고리에서만 매도할 수 있습니다."
     : maxOrderSellQuantity > 0
-      ? "보유한 영상 1개를 전량 매도합니다."
+      ? "보유한 영상을 매도합니다."
       : sellModalHelperText;
   const selectedVideoTradeThumbnailUrl =
     selectedVideoMarketEntry?.thumbnailUrl ??

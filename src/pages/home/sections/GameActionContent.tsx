@@ -243,7 +243,7 @@ export function GameSelectedVideoPriceSummary({
 
   if (selectedVideoOpenPositionCount > 0 && preferMarketSummary && selectedVideoIsChartOut) {
     return (
-      <div className="app-shell__game-selected-summary" aria-label="선택한 포지션 현재 상태">
+      <div className="app-shell__game-selected-summary" aria-label="선택한 영상 현재 상태">
         <p className="app-shell__game-selected-summary-line">
           <span className="app-shell__game-selected-summary-label">순위</span>{' '}
           <span
@@ -287,7 +287,7 @@ export function GameSelectedVideoPriceSummary({
       ...badge,
       label: formatTrendBadgeLabel(badge),
     }));
-    const sellableStatusBadge = maxSellQuantity > 0 ? '전량 매도 가능' : null;
+    const sellableStatusBadge = maxSellQuantity > 0 ? '매도 가능' : null;
     const statusBadge = selectedVideoIsChartOut ? '차트 아웃' : null;
 
     return (
@@ -387,7 +387,7 @@ export function GameSelectedVideoPriceSummary({
           {formatRank(selectedVideoMarketEntry.currentRank)}
         </span>
         {viewCountSummary}
-        {' · '}<span className="app-shell__game-selected-summary-label">현재 단가</span>{' '}
+        {' · '}<span className="app-shell__game-selected-summary-label">현재가</span>{' '}
         <span className="app-shell__game-selected-summary-value">
           {formatPoints(selectedVideoMarketEntry.currentPricePoints)}
         </span>

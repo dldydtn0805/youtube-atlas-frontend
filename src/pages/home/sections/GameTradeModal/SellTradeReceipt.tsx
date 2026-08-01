@@ -108,7 +108,7 @@ export default function SellTradeReceipt({
           <div className="app-shell__game-sell-receipt-item-copy">
             <p className="app-shell__game-sell-receipt-label">ITEM</p>
             <strong>{title}</strong>
-            <span>현재 {currentRankLabel} | 1개당 {unitPointsLabel}</span>
+            <span>현재 {currentRankLabel}</span>
           </div>
           <div className="app-shell__game-sell-receipt-price">
             <span>현재가</span>

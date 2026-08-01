@@ -12,6 +12,7 @@ import {
   formatHeaderPoints,
   formatPointBalance,
   formatPoints,
+  formatRelativeGameTime,
   normalizeGameOrderCapacity,
   normalizeGameOrderQuantity,
   parseGameOrderQuantityInput,
@@ -69,5 +70,15 @@ describe('gameHelpers', () => {
   it('renders the chart-out sentinel rank as chart out when unavailable ranks are enabled', () => {
     expect(formatRank(201, { unavailableAsChartOut: true })).toBe('차트 아웃');
     expect(formatRank(200, { unavailableAsChartOut: true })).toBe('200위');
+  });
+
+  it('formats sale times relative to now', () => {
+    const now = Date.parse('2026-08-02T12:00:00Z');
+
+    expect(formatRelativeGameTime('2026-08-02T11:59:30Z', now)).toBe('방금');
+    expect(formatRelativeGameTime('2026-08-02T11:55:00Z', now)).toBe('5분 전');
+    expect(formatRelativeGameTime('2026-08-02T09:00:00Z', now)).toBe('3시간 전');
+    expect(formatRelativeGameTime('2026-07-30T12:00:00Z', now)).toBe('3일 전');
+    expect(formatRelativeGameTime('not-a-date', now)).toBe('집계 중');
   });
 });

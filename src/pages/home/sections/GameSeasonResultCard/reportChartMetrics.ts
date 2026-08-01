@@ -25,7 +25,7 @@ export function getReportChartMetrics(result: GameSeasonResult) {
       width: bound(Math.abs(result.realizedPnlPoints) / 100),
     },
     {
-      label: '포지션 수',
+      label: '매수 건수',
       tone: 'neutral',
       value: `${result.positionCount.toLocaleString('ko-KR')}개`,
       width: bound(result.positionCount * 8),

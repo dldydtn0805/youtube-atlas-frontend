@@ -3,7 +3,6 @@ import { memo } from 'react';
 import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { GamePosition, GameScheduledSellOrder, GameStrategyType } from '../../../features/game/types';
 import {
-  calculateGameUnitPricePoints,
   formatHoldCountdown,
   formatMaybePoints,
   formatRank,
@@ -120,17 +119,13 @@ function RankingGamePositionRowComponent({
   const profitRate = getHoldingProfitRate(holding);
   const profitTone = getPointTone(holding.profitPoints);
   const profitMeterWidth = Number.isFinite(profitRate) ? Math.min(Math.abs(profitRate) * 100, 100) : 0;
-  const currentUnitPricePoints =
-    typeof holding.currentPricePoints === 'number'
-      ? calculateGameUnitPricePoints(holding.currentPricePoints, holding.quantity)
-      : null;
   const positionStatusBadge = holding.chartOut ? '차트 아웃' : null;
   const sellableStatusBadge = !canShowGameActions
     ? '전체 카테고리에서 매도 가능'
     : holding.sellLockedUntilNextSync
       ? '다음 순위 갱신 후 매도 가능'
     : holding.sellableQuantity > 0
-      ? '전량 매도 가능'
+      ? '매도 가능'
       : typeof holding.nextSellableInSeconds === 'number' && holding.nextSellableInSeconds > 0
         ? `매도 대기 · ${formatHoldCountdown(holding.nextSellableInSeconds)}`
         : '현재 매도 불가';
@@ -208,7 +203,7 @@ function RankingGamePositionRowComponent({
                   })}
                 </span>
                 {' · '}<span className="app-shell__game-position-meta-label">평가 금액</span> {formatMaybePoints(holding.currentPricePoints)}
-                {' · '}<span className="app-shell__game-position-meta-label">현재 단가</span> {formatMaybePoints(currentUnitPricePoints)}
+                {' · '}<span className="app-shell__game-position-meta-label">현재가</span> {formatMaybePoints(holding.currentPricePoints)}
                 {' · '}<span className="app-shell__game-position-meta-label">손익률</span>{' '}
                 <span data-tone={getPointTone(holding.profitPoints)}>
                   {formatSignedProfitRate(holding.profitPoints, holding.stakePoints)}
@@ -239,7 +234,7 @@ function RankingGamePositionRowComponent({
                               onOpenStrategyScheduledSellTradeModal?.(position, badge.type);
                             }}
                             onKeyDown={(event) => event.stopPropagation()}
-                            title={`${badge.label} 목표로 전량 예약 매도`}
+                            title={`${badge.label} 목표로 예약 매도`}
                             type="button"
                           >
                             {badge.label}

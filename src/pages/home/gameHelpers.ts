@@ -386,6 +386,37 @@ export function formatGameTimestamp(timestamp?: string | null) {
   return seasonDateTimeFormatter.format(new Date(timestamp));
 }
 
+export function formatRelativeGameTime(timestamp?: string | null, now = Date.now()) {
+  if (!timestamp) {
+    return '집계 중';
+  }
+
+  const timestampMs = new Date(timestamp).getTime();
+
+  if (!Number.isFinite(timestampMs)) {
+    return '집계 중';
+  }
+
+  const elapsedMs = Math.max(0, now - timestampMs);
+  const elapsedMinutes = Math.floor(elapsedMs / 60_000);
+
+  if (elapsedMinutes < 1) {
+    return '방금';
+  }
+
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes}분 전`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+
+  if (elapsedHours < 24) {
+    return `${elapsedHours}시간 전`;
+  }
+
+  return `${Math.floor(elapsedHours / 24)}일 전`;
+}
+
 export function getBuyBalanceDeltaPoints(
   currentGameSeason?: GameCurrentSeason,
   selectedVideoMarketEntry?: GameMarketVideo,

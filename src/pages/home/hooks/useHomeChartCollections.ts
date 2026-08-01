@@ -281,7 +281,7 @@ export default function useHomeChartCollections({
             new Date(left.buyCapturedAt).getTime(),
         )
         .map(mapGamePositionToVideoItem),
-      label: "내 보유 포지션",
+      label: "내 보유 영상",
     }),
     [openGamePositions],
   );
@@ -442,7 +442,7 @@ export default function useHomeChartCollections({
     currentGameSeason != null && openDistinctVideoCount >= inventorySlotLimit;
   const buyableChartEmptyMessage = useMemo(() => {
     if (currentGameSeason && openDistinctVideoCount >= inventorySlotLimit) {
-      return "현재 티어의 인벤토리 슬롯을 모두 사용 중입니다. 티어를 올리거나 기존 포지션을 정리하면 다시 매수 가능한 영상이 표시됩니다.";
+      return "현재 티어의 인벤토리 슬롯을 모두 사용 중입니다. 티어를 올리거나 보유 영상을 매도하면 다시 매수 가능한 영상이 표시됩니다.";
     }
 
     if (

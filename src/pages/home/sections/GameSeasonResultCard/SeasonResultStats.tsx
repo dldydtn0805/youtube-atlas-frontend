@@ -35,7 +35,7 @@ export default function SeasonResultStats({ result }: SeasonResultStatsProps) {
         </dd>
       </div>
       <div>
-        <dt>거래 포지션</dt>
+        <dt>매수 건수</dt>
         <dd>{result.positionCount.toLocaleString('ko-KR')}개</dd>
       </div>
       <div>

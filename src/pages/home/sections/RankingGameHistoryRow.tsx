@@ -1,7 +1,14 @@
 import { memo, type RefObject } from 'react';
 import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { GamePosition } from '../../../features/game/types';
-import { formatGameTimestamp, formatMaybePoints, formatPoints, formatRank, getPointTone } from '../gameHelpers';
+import {
+  formatGameTimestamp,
+  formatMaybePoints,
+  formatPoints,
+  formatRank,
+  formatRelativeGameTime,
+  getPointTone,
+} from '../gameHelpers';
 import { calculateSellFeePoints, formatSignedProfitRate } from '../utils';
 
 interface RankingGameHistoryRowProps {
@@ -167,9 +174,12 @@ function RankingGameHistoryRowComponent({
                   >
                     {historyStatusLabel}
                   </span>
-                  <span className="app-shell__game-history-badge">
+                  <span
+                    className="app-shell__game-history-badge"
+                    title={position.closedAt ? `판매일 ${formatGameTimestamp(position.closedAt)}` : undefined}
+                  >
                     {position.closedAt
-                      ? `종료 ${formatGameTimestamp(position.closedAt)}`
+                      ? formatRelativeGameTime(position.closedAt)
                       : `진입 ${formatGameTimestamp(position.createdAt)}`}
                   </span>
                 </div>

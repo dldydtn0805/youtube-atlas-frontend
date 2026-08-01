@@ -126,8 +126,8 @@ export default function ScheduledSellReceiptFields({
       <p className="app-shell__scheduled-sell-receipt-note">
         {isRankTrigger
           ? isDropTrigger
-            ? '순위 갱신 때 현재 순위가 방어 순위 밖으로 밀리면 이 포지션을 자동 매도합니다.'
-            : '순위 갱신 때 현재 순위가 목표 순위 안으로 들어오면 이 포지션을 자동 매도합니다.'
+            ? '순위 갱신 때 현재 순위가 방어 순위 밖으로 밀리면 이 영상을 자동 매도합니다.'
+            : '순위 갱신 때 현재 순위가 목표 순위 안으로 들어오면 이 영상을 자동 매도합니다.'
           : '순위 갱신 때 현재 평가 금액이 매수 금액 대비 목표 수익률에 도달하면 자동 매도합니다.'}
         <br />
         차트아웃 상태에서는 예약 매도가 체결되지 않습니다.

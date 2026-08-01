@@ -30,7 +30,7 @@ export default function GameInventorySummary({
   const activeSegment = summary.segments.find((segment) => segment.id === activeSegmentId);
 
   return (
-    <section className="app-shell__game-inventory-summary" aria-label="보유 포지션 요약">
+    <section className="app-shell__game-inventory-summary" aria-label="보유 영상 요약">
       <div className="app-shell__game-inventory-stats">
         <span className="app-shell__game-inventory-stat">
           <span>총 평가금액</span>

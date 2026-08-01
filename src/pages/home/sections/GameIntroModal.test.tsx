@@ -10,7 +10,7 @@ describe('GameIntroModal', () => {
 
     expect(screen.getByRole('heading', { name: '랭킹 게임 안내' })).toBeInTheDocument();
     expect(screen.getByText('100,000P로 시작하기')).toBeInTheDocument();
-    expect(screen.getByText(/같은 영상은 1개만 매수/)).toBeInTheDocument();
+    expect(screen.getByText(/같은 영상은 중복 구매할 수 없/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByText('순위와 구매·판매 횟수로 가격 결정')).toBeInTheDocument();
@@ -21,7 +21,8 @@ describe('GameIntroModal', () => {
     expect(screen.queryByText(/프리미엄|순매수|순매도|거래 카운트|순위 앵커/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
-    expect(screen.getByText('다음 순위 갱신 후 전량 매도')).toBeInTheDocument();
+    expect(screen.getByText('다음 순위 갱신 후 매도')).toBeInTheDocument();
+    expect(screen.queryByText(/전량|수량 선택|1개 매도/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByText('총자산으로 티어 경쟁')).toBeInTheDocument();

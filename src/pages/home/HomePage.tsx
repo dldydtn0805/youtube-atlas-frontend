@@ -47,7 +47,6 @@ import { isProjectedHighlightNotification } from "./sections/gameNotificationEve
 import {
   DEFAULT_GAME_QUANTITY,
   buildOpenGameHoldings,
-  formatGameOrderQuantity,
   formatPercent,
   formatPoints,
   formatRank,
@@ -1479,9 +1478,9 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         : authStatus !== "authenticated"
           ? "로그인 후 매수할 수 있습니다."
           : isAlreadyOwned
-            ? "이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다."
+            ? "이미 보유 중인 영상입니다. 매도한 뒤 다시 매수할 수 있습니다."
             : marketVideo?.canBuy && maxOrderBuyQuantity > 0
-              ? "이 영상을 1개 매수할 수 있습니다."
+              ? "이 영상을 매수할 수 있습니다."
               : (marketVideo?.buyBlockedReason ??
                 (currentGameSeason
                   ? "현재 영상은 게임 거래 대상이 아닙니다."
@@ -1491,11 +1490,11 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         : authStatus !== "authenticated"
           ? "로그인 후 매도할 수 있습니다."
           : sellableQuantity > 0
-            ? "보유 영상 1개를 전량 매도할 수 있습니다."
+            ? "보유 영상을 매도할 수 있습니다."
             : syncLockedVideoIds.has(item.id)
               ? "현재 순위 기준으로 매수했습니다. 다음 순위 갱신 후 매도할 수 있습니다."
               : ownedQuantity > 0
-                ? "매도 대기 시간이 끝난 뒤 보유 영상을 전량 매도할 수 있습니다."
+                ? "매도 대기 시간이 끝난 뒤 보유 영상을 매도할 수 있습니다."
                 : "보유 영상이 있을 때만 매도할 수 있습니다.";
 
       return {
@@ -1826,7 +1825,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       );
 
       if (target.status === "notFound") {
-        setGameActionStatus("매도할 수 있는 보유 포지션을 찾을 수 없습니다.");
+        setGameActionStatus("매도할 수 있는 보유 영상을 찾을 수 없습니다.");
         return;
       }
 
@@ -2418,7 +2417,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const positionsEmptyMessage = currentGameSeason
     ? canShowGameActions
       ? "아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다."
-      : "새 포지션 매수와 기존 포지션 매도는 전체 카테고리에서만 가능합니다."
+      : "영상 매수와 매도는 전체 카테고리에서만 가능합니다."
     : null;
   const renderSelectedVideoActionsContent = (
     panelControls?: ReactNode,
@@ -2766,8 +2765,8 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
           </p>
           <p className="app-shell__fullscreen-loading-copy">
             {isScheduledSellSubmitting
-              ? "예약 조건을 확인한 뒤 보유 영상 전량 매도 주문을 등록하고 있습니다. 잠시만 기다려 주세요."
-              : "주문을 서버에 반영하고 지갑과 포지션을 갱신하고 있습니다. 잠시만 기다려 주세요."}
+              ? "예약 조건을 확인한 뒤 매도 주문을 등록하고 있습니다. 잠시만 기다려 주세요."
+              : "주문을 서버에 반영하고 지갑과 보유 영상을 갱신하고 있습니다. 잠시만 기다려 주세요."}
           </p>
         </div>
       </div>
@@ -3125,7 +3124,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         </Suspense>
       ) : null}
       <GameTradeModal
-        confirmLabel={`${formatGameOrderQuantity(tradeNormalizedBuyQuantity)} 매수`}
+        confirmLabel="매수"
         currentRankLabel={formatRank(tradeSelectedVideoCurrentChartRank, {
           chartOut: tradeSelectedVideoIsChartOut,
         })}
@@ -3140,15 +3139,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         quantity={tradeNormalizedBuyQuantity}
         summaryItems={[
           {
-            label: "수량",
-            value: formatGameOrderQuantity(tradeNormalizedBuyQuantity),
-          },
-          {
-            label: "1개당 가격",
-            value: formatPoints(tradeSelectedVideoUnitPricePoints ?? 0),
-          },
-          {
-            label: "총 매수",
+            label: "매수 금액",
             value: formatPoints(
               tradeTotalSelectedVideoBuyPoints ??
                 tradeSelectedVideoUnitPricePoints ??

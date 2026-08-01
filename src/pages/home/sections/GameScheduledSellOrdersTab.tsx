@@ -344,7 +344,7 @@ export default function GameScheduledSellOrdersTab({
                         <span>{formatRank(order.currentRank)}</span>
                         {' · '}
                         <span className="app-shell__game-position-meta-label">방식</span>{' '}
-                        <span>보유 영상 전량 매도</span>
+                        <span>예약 매도</span>
                         {' · '}
                         <span className="app-shell__game-position-meta-label">생성</span>{' '}
                         <span>{formatGameTimestamp(order.createdAt)}</span>

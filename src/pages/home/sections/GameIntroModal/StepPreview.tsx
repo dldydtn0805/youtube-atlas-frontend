@@ -13,8 +13,8 @@ function WalletPreview() {
         <strong>100,000P</strong>
       </div>
       <div className="app-shell__game-intro-rule-chips">
-        <span>다른 영상 여러 개</span>
-        <span>같은 영상 1개</span>
+        <span>여러 영상 보유</span>
+        <span>중복 구매 불가</span>
       </div>
     </div>
   );
@@ -39,9 +39,9 @@ function MarketPreview() {
 function SellPreview() {
   return (
     <div className="app-shell__game-intro-preview app-shell__game-intro-preview--sell" aria-hidden="true">
-      <span className="app-shell__game-intro-sync-card">현재 순위<br /><strong>1개 매수</strong></span>
+      <span className="app-shell__game-intro-sync-card">현재 순위<br /><strong>매수</strong></span>
       <span className="app-shell__game-intro-sync-arrow">→</span>
-      <span className="app-shell__game-intro-sync-card" data-active="true">순위 갱신 후<br /><strong>전량 매도</strong></span>
+      <span className="app-shell__game-intro-sync-card" data-active="true">순위 갱신 후<br /><strong>매도</strong></span>
     </div>
   );
 }

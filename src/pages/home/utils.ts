@@ -876,7 +876,7 @@ export function resolvePlaybackCategoryLabel({
   selectedVideoId?: string;
 }) {
   if (activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID) {
-    return "내 포지션";
+    return "내 보유 영상";
   }
 
   if (activePlaybackQueueId === HISTORY_PLAYBACK_QUEUE_ID) {

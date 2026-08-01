@@ -21,7 +21,11 @@ interface BuyTradeReceiptProps {
 }
 
 function getBuyReceiptTotal(items: GameTradeModalSummaryItem[]) {
-  return items.find((item) => item.label.includes('총')) ?? items[items.length - 1];
+  return (
+    items.find((item) => item.label.includes('매수 금액')) ??
+    items.find((item) => item.label.includes('총')) ??
+    items[items.length - 1]
+  );
 }
 
 export default function BuyTradeReceipt({
@@ -66,17 +70,14 @@ export default function BuyTradeReceipt({
             <span className="app-shell__game-buy-receipt-rank">{currentRankLabel} -&gt; ??? 랭크</span>
           </div>
           <div className="app-shell__game-buy-receipt-unit">
-            <span>단가</span>
+            <span>현재가</span>
             <strong>{unitPointsLabel}</strong>
           </div>
         </section>
 
-        <section className="app-shell__game-buy-receipt-section" aria-label="매수 수량">
-          <p className="app-shell__game-buy-receipt-label">QUANTITY</p>
-          <output className="app-shell__game-buy-receipt-fixed-quantity" aria-label="고정 매수 수량">
-            1개
-          </output>
-          <p className="app-shell__game-buy-receipt-hint">영상마다 1개만 매수할 수 있습니다.</p>
+        <section className="app-shell__game-buy-receipt-section" aria-label="매수 안내">
+          <p className="app-shell__game-buy-receipt-label">ORDER</p>
+          <p className="app-shell__game-buy-receipt-hint">같은 영상은 중복 구매할 수 없습니다.</p>
           <p className="app-shell__game-buy-receipt-help">{helperText}</p>
         </section>
 

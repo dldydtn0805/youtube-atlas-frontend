@@ -640,7 +640,7 @@ describe("home utils", () => {
         ]),
         selectedVideoId: "video-1",
       }),
-    ).toBe("내 포지션");
+    ).toBe("내 보유 영상");
 
     expect(
       resolvePlaybackCategoryLabel({

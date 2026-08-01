@@ -12,7 +12,7 @@ export const gameIntroSteps: GameIntroStep[] = [
     stepLabel: 'STEP 1 / 4',
     title: '100,000P로 시작하기',
     previewType: 'wallet',
-    body: '모든 플레이어는 100,000P로 시작합니다. 서로 다른 영상은 여러 개 보유할 수 있지만, 같은 영상은 1개만 매수할 수 있어요.',
+    body: '모든 플레이어는 100,000P로 시작합니다. 서로 다른 영상은 여러 개 보유할 수 있지만, 같은 영상은 중복 구매할 수 없어요.',
   },
   {
     stepLabel: 'STEP 2 / 4',
@@ -22,9 +22,9 @@ export const gameIntroSteps: GameIntroStep[] = [
   },
   {
     stepLabel: 'STEP 3 / 4',
-    title: '다음 순위 갱신 후 전량 매도',
+    title: '다음 순위 갱신 후 매도',
     previewType: 'sell',
-    body: '현재 순위 기준으로 매수한 영상은 다음 순위 갱신 후 매도할 수 있습니다. 수량 선택 없이 보유한 1개를 전량 매도하며, 예약 매도도 같은 원칙이에요.',
+    body: '현재 순위 기준으로 매수한 영상은 다음 순위 갱신 후 매도할 수 있습니다. 예약 매도도 같은 원칙이에요.',
   },
   {
     stepLabel: 'STEP 4 / 4',

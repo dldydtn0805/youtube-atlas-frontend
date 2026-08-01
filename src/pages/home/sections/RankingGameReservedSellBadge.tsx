@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import type { GameScheduledSellOrder } from '../../../features/game/types';
-import { formatGameQuantity, type OpenGameHolding } from '../gameHelpers';
+import type { OpenGameHolding } from '../gameHelpers';
 import { getPendingScheduledSellOrdersForHolding } from '../scheduledSellOrderFocus';
 import { getFullscreenElement } from '../utils';
 import RankingGameReservedSellOrderMenu from './RankingGameReservedSellOrderMenu';
@@ -186,11 +186,7 @@ export default function RankingGameReservedSellBadge({
     return null;
   }
 
-  const scheduledSellQuantity =
-    reservedSellOrders.length > 0
-      ? reservedSellOrders.reduce((totalQuantity, order) => totalQuantity + order.quantity, 0)
-      : holding.scheduledSellQuantity;
-  const label = `${formatGameQuantity(Math.max(scheduledSellQuantity, 1))} 예약 중`;
+  const label = '예약 매도 중';
   const canCancelScheduledOrder = Boolean(onCancelScheduledSellOrder);
   const directOrderId = reservedSellOrders[0]?.id ?? holding.scheduledSellOrderId ?? undefined;
   const menuOrders =

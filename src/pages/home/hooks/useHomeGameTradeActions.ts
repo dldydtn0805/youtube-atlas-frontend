@@ -10,7 +10,6 @@ import type {
 import { ApiRequestError } from '../../../lib/api';
 import {
   DEFAULT_GAME_QUANTITY,
-  formatGameOrderQuantity,
   getBuyShortfallPointsText,
   normalizeGameOrderCapacity,
   normalizeGameOrderQuantity,
@@ -130,9 +129,7 @@ export default function useHomeGameTradeActions({
 
     if (maxOrderBuyQuantity <= 0 || clampedBuyQuantity > maxOrderBuyQuantity) {
       setGameActionStatus(
-        maxOrderBuyQuantity > 0
-          ? `지금은 최대 ${formatGameOrderQuantity(maxOrderBuyQuantity)}까지 한 번에 매수할 수 있습니다.`
-          : buyShortfallMessage ?? '지금은 매수할 수 없습니다.',
+        buyShortfallMessage ?? '지금은 이 영상을 매수할 수 없습니다.',
       );
       return;
     }
@@ -188,14 +185,14 @@ export default function useHomeGameTradeActions({
     }
 
     if (authStatus !== 'authenticated' || !selectedVideoId) {
-      setGameActionStatus('로그인 후 보유 포지션을 매도할 수 있습니다.');
+      setGameActionStatus('로그인 후 보유 영상을 매도할 수 있습니다.');
       return;
     }
 
     const maxOrderSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
 
     if (maxOrderSellQuantity <= 0) {
-      setGameActionStatus('지금 바로 매도 가능한 포지션이 없습니다.');
+      setGameActionStatus('지금 바로 매도 가능한 영상이 없습니다.');
       return;
     }
 

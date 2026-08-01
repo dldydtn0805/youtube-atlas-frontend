@@ -64,7 +64,7 @@ describe('GameSelectedVideoPriceSummary', () => {
     );
 
     expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
-      '순위 3위 · 조회수 12.5만 · 현재 단가',
+      '순위 3위 · 조회수 12.5만 · 현재가',
     );
     expect(screen.queryByText(/프리미엄/)).not.toBeInTheDocument();
     expect(screen.queryByText(/세일/)).not.toBeInTheDocument();
@@ -271,7 +271,7 @@ describe('GameSelectedVideoPriceSummary', () => {
     );
 
     expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
-      '순위 3위 · 조회수 12.5만 · 현재 단가',
+      '순위 3위 · 조회수 12.5만 · 현재가',
     );
     expect(screen.queryByText('하이라이트 점수')).not.toBeInTheDocument();
   });

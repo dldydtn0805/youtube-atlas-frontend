@@ -707,7 +707,7 @@ describe("RankingGamePositionsTab", () => {
       />,
     );
 
-    expect(screen.getByText("1개 예약 중")).toBeInTheDocument();
+    expect(screen.getByText("예약 매도 중")).toBeInTheDocument();
   });
 
   it("opens a fallback cancel menu from the reserved sell badge", () => {
@@ -854,7 +854,7 @@ describe("RankingGamePositionsTab", () => {
       />,
     );
 
-    expect(screen.getByText("1개 예약 중")).toBeInTheDocument();
+    expect(screen.getByText("예약 매도 중")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Holding Video 예약 매도 취소" }),
@@ -998,6 +998,37 @@ describe("RankingGameHistoryTab", () => {
     expect(
       screen.queryByText("거래내역을 불러오는 중입니다."),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows how long ago a completed sale happened", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-02T12:00:00.000Z"));
+
+    try {
+      render(
+        <RankingGameHistoryTab
+          emptyMessage={null}
+          historyPlaybackLoadingVideoId={null}
+          isLoading={false}
+          onSelectPosition={vi.fn()}
+          positions={[
+            createGamePosition({
+              closedAt: "2026-07-30T12:00:00.000Z",
+              status: "SOLD",
+            }),
+          ]}
+          resolvePlaybackQueueId={() => undefined}
+        />,
+      );
+
+      expect(screen.getByText("3일 전")).toHaveAttribute(
+        "title",
+        expect.stringContaining("판매일"),
+      );
+      expect(screen.queryByText(/종료/)).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("opens the chart from the history title without selecting playback", () => {
