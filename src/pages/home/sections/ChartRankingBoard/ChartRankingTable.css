@@ -31,6 +31,10 @@
 .chart-ranking-board__table th:nth-child(5) { width: 13%; }
 .chart-ranking-board__table th:nth-child(6) { width: 13%; }
 
+.chart-ranking-board__table th.chart-ranking-board__change-header {
+  text-align: center;
+}
+
 .chart-ranking-board__table th.chart-ranking-board__left {
   text-align: left;
 }

@@ -8,6 +8,7 @@
 - Deployed API v20 and Vercel production deployment `dpl_Hp6DbiedjDpERMpHrKbzFkpxSc2K`; verified the protected live rating route, async TOP 200 rendering, anonymous button state, mobile layout, clean browser console, and Google account-chooser redirect without changing a real account rating.
 - Moved each video card's rank-change badge directly beside its rank so the two related signals can be scanned together.
 - Moved the ranking table's existing trend column from the far right to a separate column immediately after rank.
+- Centered the trend header and values between the rank and video columns for consistent table alignment.
 - Added a one-click music-chart export that requests YouTube permission only when needed, creates a new private playlist from the current TOP 20, reports partial failures, and links to the finished playlist.
 - Kept the Google provider token out of the app's custom persisted session and limited the export API to the current synced music chart.
 - Aligned the Supabase OAuth site URL and redirect allowlist with the live `trg.life` domain so playlist authorization returns to the same browser origin.

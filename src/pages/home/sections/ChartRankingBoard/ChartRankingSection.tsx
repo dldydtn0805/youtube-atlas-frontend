@@ -104,7 +104,7 @@ export default function ChartRankingSection({
             <thead>
               <tr>
                 <th>순위</th>
-                <th>등락</th>
+                <th className="chart-ranking-board__change-header">등락</th>
                 <th className="chart-ranking-board__left">영상</th>
                 <th>현재가</th>
                 <th>조회수</th>
