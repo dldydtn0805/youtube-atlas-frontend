@@ -114,17 +114,17 @@
   }
 
   :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(1) { width: 10%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(2) { width: 31%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(3) { width: 14%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(2) { width: 12%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(3) { width: 31%; }
   :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(4) { width: 14%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(5) { width: 12%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(5) { width: 14%; }
   :root[data-mobile-layout='true'] .chart-ranking-board__table th:nth-child(6) { width: 19%; }
 
   :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(1) { width: 11%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(2) { width: 38%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(3) { width: 16%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(4) { width: 17%; }
-  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(5) { width: 18%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(2) { width: 18%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(3) { width: 38%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(4) { width: 16%; }
+  :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(5) { width: 17%; }
 
   :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__table th:nth-child(6),
   :root[data-mobile-layout='true'] .chart-ranking-board[data-mobile-trade-sheet='true'] .chart-ranking-board__action-cell {

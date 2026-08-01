@@ -111,6 +111,19 @@ describe('ChartRankingBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생하기' }));
     fireEvent.click(screen.getByRole('button', { name: '테스트 영상 등락 차트 보기' }));
 
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      '순위',
+      '등락',
+      '영상',
+      '현재가',
+      '조회수',
+      '거래',
+    ]);
+    expect(screen.getAllByRole('cell').slice(0, 3).map((cell) => cell.textContent)).toEqual([
+      '2위',
+      '▲6',
+      '테스트 영상테스트 채널',
+    ]);
     expect(onSelectVideo).toHaveBeenCalledTimes(2);
     expect(onSelectVideo).toHaveBeenNthCalledWith(1, 'video-1', 'popular', expect.any(HTMLButtonElement));
     expect(onSelectVideo).toHaveBeenNthCalledWith(2, 'video-1', 'popular', expect.any(HTMLButtonElement));
