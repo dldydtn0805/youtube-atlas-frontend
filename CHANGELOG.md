@@ -6,6 +6,7 @@
 - Replaced the country and category controls above the video player with a single `Now Playing` heading on desktop and mobile; verified with 455 tests, a production build, ESLint with no errors, and desktop/mobile browser checks.
 - Included complete YouTube account authorization in the initial Google login so liked-video loading and YouTube like actions no longer require a separate connection step; verified with 456 tests, a production build, and ESLint with no errors.
 - Fixed Google and YouTube OAuth callbacks to return to the current canonical page instead of the root, preventing the router from clearing Supabase's callback session before login restoration; verified with 457 tests, a production build, and ESLint with no errors.
+- Removed the empty `#` left in the browser URL after Supabase finishes restoring a Google OAuth session while preserving unprocessed callback hashes; verified with 459 tests, a production build, and ESLint with no errors.
 
 ## 2026-08-01
 

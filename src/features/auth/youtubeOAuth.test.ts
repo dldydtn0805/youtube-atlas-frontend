@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clearEmptyOAuthHash,
   createGoogleLoginOAuthRequest,
   createYouTubeOAuthRequest,
   getCurrentOAuthRedirectUrl,
@@ -7,6 +8,23 @@ import {
 } from './youtubeOAuth';
 
 describe('YouTube OAuth request', () => {
+  it('clears the empty hash left after Supabase restores an OAuth session', () => {
+    window.history.replaceState({ source: 'oauth' }, '', '/kr/top?sort=rank#');
+
+    clearEmptyOAuthHash();
+
+    expect(window.location.href).toBe('http://localhost:3000/kr/top?sort=rank');
+    expect(window.history.state).toEqual({ source: 'oauth' });
+  });
+
+  it('keeps a non-empty OAuth hash until Supabase consumes it', () => {
+    window.history.replaceState({}, '', '/kr/top#access_token=active-token');
+
+    clearEmptyOAuthHash();
+
+    expect(window.location.hash).toBe('#access_token=active-token');
+  });
+
   it('returns to the current page without carrying an existing URL hash', () => {
     expect(
       getCurrentOAuthRedirectUrl(

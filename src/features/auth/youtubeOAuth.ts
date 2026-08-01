@@ -1,5 +1,17 @@
 export const YOUTUBE_WRITE_SCOPE = 'https://www.googleapis.com/auth/youtube';
 
+export function clearEmptyOAuthHash() {
+  if (window.location.hash || !window.location.href.endsWith('#')) {
+    return;
+  }
+
+  window.history.replaceState(
+    window.history.state,
+    '',
+    `${window.location.pathname}${window.location.search}`,
+  );
+}
+
 export function getCurrentOAuthRedirectUrl(
   locationHref = window.location.href,
 ) {

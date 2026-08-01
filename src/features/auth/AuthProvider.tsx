@@ -19,6 +19,7 @@ import { AuthContext } from './context';
 import { authQueryKeys } from './queries';
 import type { AuthSession, AuthStatus, AuthUser } from './types';
 import {
+  clearEmptyOAuthHash,
   createGoogleLoginOAuthRequest,
   createYouTubeOAuthRequest,
 } from './youtubeOAuth';
@@ -105,6 +106,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (cancelled) {
         return;
       }
+
+      clearEmptyOAuthHash();
 
       if (error) {
         setAuthError('로그인 상태를 확인하지 못했습니다.');
