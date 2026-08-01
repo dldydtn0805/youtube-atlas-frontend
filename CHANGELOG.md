@@ -2,7 +2,7 @@
 
 ## 2026-08-02
 
-- Rebuilt the `The Rank Game` home title from the supplied pixel-art sidearm reference, lengthening the metal barrel and using the sidearm itself as the visual `T` before `HE / RANK / GAME`; preserved responsive sizing and accessible naming, and verified with 459 tests, a production build, ESLint with no errors, and desktop/mobile browser checks across light and dark themes.
+- Rebuilt the `The Rank Game` home title from the supplied pixel-art sidearm reference, lengthening the metal barrel and using the sidearm itself as the visual `T` before `HE / RANK / GAME` on desktop and compact `RG` on mobile; preserved accessible naming, and verified with 459 tests, a production build, ESLint with no errors, and desktop/mobile browser checks across light and dark themes.
 - Replaced the country and category controls above the video player with a single `Now Playing` heading on desktop and mobile; verified with 455 tests, a production build, ESLint with no errors, and desktop/mobile browser checks.
 - Included complete YouTube account authorization in the initial Google login so liked-video loading and YouTube like actions no longer require a separate connection step; verified with 456 tests, a production build, and ESLint with no errors.
 - Fixed Google and YouTube OAuth callbacks to return to the current canonical page instead of the root, preventing the router from clearing Supabase's callback session before login restoration; verified with 457 tests, a production build, and ESLint with no errors.

@@ -29,6 +29,8 @@ describe('AppHeader', () => {
     expect(screen.getByRole('heading', { name: 'The Rank Game' })).toBeInTheDocument();
     expect(brandLink).toHaveAttribute('href', '/');
     expect(screen.getByText('he')).toBeInTheDocument();
+    expect(screen.getByText('R')).toHaveClass('app-shell__title-rank');
+    expect(screen.getByText('G')).toHaveClass('app-shell__title-game');
     expect(screen.queryByText('The')).not.toBeInTheDocument();
     expect(brandLink.querySelector('.app-shell__title-logo-art')).toHaveAttribute(
       'aria-hidden',

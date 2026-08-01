@@ -349,10 +349,14 @@ function AppHeader({
             </svg>
           </span>
           <h1 className="app-shell__title" aria-label="The Rank Game">
-            <span className="app-shell__title-main" aria-hidden="true">
+            <span className="app-shell__title-main app-shell__title-main--desktop" aria-hidden="true">
               <span className="app-shell__title-the">he</span>
               <span className="app-shell__title-rank">Rank</span>
               <span className="app-shell__title-game">Game</span>
+            </span>
+            <span className="app-shell__title-main app-shell__title-main--mobile" aria-hidden="true">
+              <span className="app-shell__title-rank">R</span>
+              <span className="app-shell__title-game">G</span>
             </span>
           </h1>
         </Link>

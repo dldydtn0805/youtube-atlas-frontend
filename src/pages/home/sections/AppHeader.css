@@ -109,6 +109,10 @@
   white-space: nowrap;
 }
 
+.app-shell__title-main--mobile {
+  display: none;
+}
+
 .app-shell__title-the,
 .app-shell__title-game {
   background: linear-gradient(180deg, var(--title-logo-ink-top) 0%, var(--title-logo-ink-bottom) 100%);
@@ -774,6 +778,15 @@
   :root[data-mobile-layout='true'] .app-shell__title-main {
     font-size: 1rem;
     gap: 0.24em;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-main--desktop {
+    display: none;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-main--mobile {
+    display: flex;
+    gap: 0.05em;
   }
 
   :root[data-mobile-layout='true'] .app-shell__auth-panel,
