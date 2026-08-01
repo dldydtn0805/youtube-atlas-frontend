@@ -37,6 +37,7 @@ The existing database was deleted, so this migration starts with a fresh applica
 | P1 | YouTube music playlist export | Done: users can grant contextual YouTube access and export the current music TOP 20 to a new private playlist with partial-failure reporting |
 | P1 | YouTube account like action | Done: the selected-video action reads and toggles the signed-in account's real YouTube rating, requests contextual permission only when needed, resumes after OAuth without persisting the Google token, and is deployed to production |
 | P1 | Four calendar seasons and three-month tier curve | Done: game seasons use spring, summer, autumn, and winter three-month UTC windows, while tier profit requirements are tripled from the 100,000P starting asset baseline |
+| P1 | Single-name home branding | Done: the two-line YouTube Atlas and the rank game header is replaced by the single The Rank Game brand with matching accessible navigation text |
 | P2 | Historical season highlights and advanced settlement parity | Long-term game history matches the legacy Spring behavior |
 
 ## Compatibility strategy

@@ -2,6 +2,7 @@
 
 ## 2026-08-01
 
+- Simplified the two-line home header brand from `YouTube Atlas / the rank game` to the single name `The Rank Game`, including its accessible home-link label and responsive styles.
 - Replaced the ambiguous numbered game-season label with spring, summer, autumn, and winter seasons using fixed three-month calendar windows.
 - Renamed and extended the active season to its current calendar-season boundary, and made newly created seasons use the same boundaries.
 - Tripled each tier's required asset gain above the 100,000P starting baseline for the longer season: Silver 160,000P, Gold 250,000P, Platinum 400,000P, Diamond 700,000P, Master 1,300,000P, and Legend 2,800,000P.
