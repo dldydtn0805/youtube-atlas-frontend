@@ -197,7 +197,7 @@ export default function GameTierModal({
       >
         <div className="app-shell__modal-header app-shell__modal-header--swipe-close" {...headerSwipeHandlers}>
           <div className="app-shell__section-heading">
-            <p className="app-shell__section-eyebrow">Highlight Tier</p>
+            <p className="app-shell__section-eyebrow">Asset Tier</p>
             <h2 className="app-shell__section-title" id="game-dividend-modal-title">
               티어
             </h2>

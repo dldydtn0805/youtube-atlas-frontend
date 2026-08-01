@@ -8,7 +8,7 @@ interface GameHighlightSortControlProps {
 
 const SORT_OPTIONS: ReadonlyArray<{ label: string; mode: GameHighlightSortMode }> = [
   { label: '최신순', mode: 'latest' },
-  { label: '티어 점수순', mode: 'tierScore' },
+  { label: '하이라이트 점수순', mode: 'tierScore' },
 ];
 
 export default function GameHighlightSortControl({

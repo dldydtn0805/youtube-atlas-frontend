@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { GameScheduledSellOrder } from '../../../features/game/types';
 import {
-  formatGameOrderQuantity,
   formatGameTimestamp,
   formatMaybePoints,
   formatPercent,
@@ -344,8 +343,8 @@ export default function GameScheduledSellOrdersTab({
                         <span className="app-shell__game-position-meta-label">현재</span>{' '}
                         <span>{formatRank(order.currentRank)}</span>
                         {' · '}
-                        <span className="app-shell__game-position-meta-label">수량</span>{' '}
-                        <span>{formatGameOrderQuantity(order.quantity)}</span>
+                        <span className="app-shell__game-position-meta-label">방식</span>{' '}
+                        <span>보유 영상 전량 매도</span>
                         {' · '}
                         <span className="app-shell__game-position-meta-label">생성</span>{' '}
                         <span>{formatGameTimestamp(order.createdAt)}</span>

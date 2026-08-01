@@ -1,11 +1,14 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.99.2';
 import {
+  calculateChartOutPricePoints,
   calculatePositionPoints,
-  calculatePricePoints,
+  calculateSignalPricePoints,
   resolveNextTier,
   resolveStrategyTags,
   resolveTier,
   TIER_DEFINITIONS,
+  type GameTierDefinition,
+  type PriceAnchor,
   type TrendSignalRow,
 } from '../../_shared/game.ts';
 
@@ -88,7 +91,9 @@ export async function ensureActiveSeason(service: SupabaseClient, regionCode: st
 
   if (existingError) throw existingError;
   if (existingSeason) {
-    await service.rpc('seed_game_tiers', { target_season_id: existingSeason.id });
+    await service.rpc('seed_game_tiers', {
+      target_season_id: existingSeason.id,
+    });
     return existingSeason;
   }
 
@@ -124,11 +129,7 @@ export async function ensureActiveSeason(service: SupabaseClient, regionCode: st
   return createdSeason;
 }
 
-export async function ensureWallet(
-  service: SupabaseClient,
-  season: GameSeasonRow,
-  userId: number,
-) {
+export async function ensureWallet(service: SupabaseClient, season: GameSeasonRow, userId: number) {
   await service.from('game_wallets').upsert(
     {
       balance_points: season.starting_balance_points,
@@ -182,7 +183,18 @@ export function signalMap(signals: TrendSignalRow[]) {
   return new Map(signals.map((signal) => [signal.video_id, signal]));
 }
 
-export function tierResponse(tier: typeof TIER_DEFINITIONS[number]) {
+export function isPositionSellLockedUntilNextSync(
+  position: GamePositionRow,
+  signal: TrendSignalRow | undefined,
+) {
+  if (!signal) {
+    return false;
+  }
+
+  return new Date(signal.captured_at).getTime() <= new Date(position.buy_captured_at).getTime();
+}
+
+export function tierResponse(tier: GameTierDefinition) {
   return { ...tier };
 }
 
@@ -236,11 +248,7 @@ export async function getPositionRows(
   return (data ?? []) as GamePositionRow[];
 }
 
-export async function getPendingOrders(
-  service: SupabaseClient,
-  seasonId: number,
-  userId: number,
-) {
+export async function getPendingOrders(service: SupabaseClient, seasonId: number, userId: number) {
   const { data, error } = await service
     .from('game_scheduled_sell_orders')
     .select('*')
@@ -257,12 +265,13 @@ export function serializePosition(
   position: GamePositionRow,
   signal: TrendSignalRow | undefined,
   order?: ScheduledOrderRow,
+  priceAnchors?: ReadonlyArray<PriceAnchor>,
 ) {
   const currentRank = signal?.current_rank ?? null;
   const chartOut = currentRank === null;
-  const unitPricePoints = chartOut
-    ? 2_900
-    : calculatePricePoints(currentRank, signal?.rank_change ?? null);
+  const unitPricePoints = signal
+    ? calculateSignalPricePoints(signal, priceAnchors)
+    : calculateChartOutPricePoints(priceAnchors);
   const currentPricePoints = calculatePositionPoints(unitPricePoints, position.quantity);
   const profitPoints = currentPricePoints - position.stake_points;
   const profitRatePercent =
@@ -291,6 +300,7 @@ export function serializePosition(
     scheduledSellTargetRank: order?.target_rank ?? null,
     scheduledSellTriggerDirection: order?.trigger_direction ?? null,
     scheduledSellTriggerType: order?.trigger_type ?? null,
+    sellLockedUntilNextSync: isPositionSellLockedUntilNextSync(position, signal),
     stakePoints: position.stake_points,
     status: position.status,
     strategyTags,
@@ -305,14 +315,15 @@ export function walletResponse(
   wallet: GameWalletRow,
   positions: GamePositionRow[],
   signalsByVideoId: Map<string, TrendSignalRow>,
+  priceAnchors?: ReadonlyArray<PriceAnchor>,
 ) {
   const totalEvaluationPoints = positions
     .filter((position) => position.status === 'OPEN')
     .reduce((total, position) => {
       const signal = signalsByVideoId.get(position.video_id);
       const unitPricePoints = signal
-        ? calculatePricePoints(signal.current_rank, signal.rank_change)
-        : 2_900;
+        ? calculateSignalPricePoints(signal, priceAnchors)
+        : calculateChartOutPricePoints(priceAnchors);
       return total + calculatePositionPoints(unitPricePoints, position.quantity);
     }, 0);
 
@@ -327,21 +338,21 @@ export function walletResponse(
 
 export function tierProgressResponse(
   season: GameSeasonRow,
-  score: number,
-  manualAdjustment = 0,
+  totalAssetPoints: number,
+  tiers: ReadonlyArray<GameTierDefinition> = TIER_DEFINITIONS,
 ) {
-  const currentTier = resolveTier(score);
-  const nextTier = resolveNextTier(score);
+  const currentTier = resolveTier(totalAssetPoints, tiers);
+  const nextTier = resolveNextTier(totalAssetPoints, tiers);
 
   return {
-    calculatedHighlightScore: score - manualAdjustment,
     currentTier: tierResponse(currentTier),
-    highlightScore: score,
-    manualTierScoreAdjustment: manualAdjustment,
+    highlightScore: totalAssetPoints,
     nextTier: nextTier ? tierResponse(nextTier) : null,
     regionCode: season.region_code,
     seasonId: season.id,
     seasonName: season.name,
-    tiers: TIER_DEFINITIONS.map(tierResponse),
+    tierBasis: 'TOTAL_ASSET_POINTS',
+    tiers: tiers.map(tierResponse),
+    totalAssetPoints,
   };
 }

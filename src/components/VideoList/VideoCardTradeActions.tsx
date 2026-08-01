@@ -1,6 +1,7 @@
 export interface VideoCardTradeActionState {
   canBuy: boolean;
   canSell: boolean;
+  buyLabel?: string;
   buyTitle: string;
   sellTitle: string;
 }
@@ -50,7 +51,7 @@ export default function VideoCardTradeActions({
         type="button"
       >
         <TradeActionIcon direction="buy" />
-        <span>매수</span>
+        <span>{state.buyLabel ?? '매수'}</span>
       </button>
       <button
         aria-label={sellAriaLabel}

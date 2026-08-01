@@ -447,6 +447,7 @@ serve(async (request) => {
       (previousSnapshots.data ?? []).map((item) => [item.video_id as string, item]),
     );
 
+    // A new main-chart sync unlocks prior buys and resets both sides of market demand.
     const signalRows = snapshotRows.map((snapshot) => {
       const previousSnapshot = previousSnapshotByVideoId.get(snapshot.video_id);
       const previousRank =
@@ -472,6 +473,10 @@ serve(async (request) => {
         previous_view_count: previousViewCount,
         rank_change: previousRank === null ? null : previousRank - snapshot.rank,
         region_code: regionCode,
+        sync_buy_count: 0,
+        sync_buy_quantity: 0,
+        sync_sell_count: 0,
+        sync_sell_quantity: 0,
         thumbnail_url: snapshot.thumbnail_url,
         title: snapshot.title,
         updated_at: new Date().toISOString(),
@@ -527,6 +532,7 @@ serve(async (request) => {
       JSON.stringify({
         capturedAt: run.captured_at,
         categoryId,
+        demandCounterVersion: 2,
         regionCode,
         signalCount: signalRows.length,
         syncedVideos: snapshotRows.length,

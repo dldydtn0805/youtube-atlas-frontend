@@ -17,7 +17,7 @@ const tiers: GameTierProgress['tiers'] = [
     badgeCode: 'SILVER',
     displayName: '실버',
     inventorySlots: 7,
-    minScore: 5000,
+    minScore: 120000,
     profileThemeCode: 'SILVER',
     tierCode: 'SILVER',
     titleCode: 'SILVER',
@@ -26,7 +26,7 @@ const tiers: GameTierProgress['tiers'] = [
     badgeCode: 'GOLD',
     displayName: '골드',
     inventorySlots: 10,
-    minScore: 10000,
+    minScore: 150000,
     profileThemeCode: 'GOLD',
     tierCode: 'GOLD',
     titleCode: 'GOLD',
@@ -44,6 +44,7 @@ const tierProgress: GameTierProgress = {
     titleCode: 'BRONZE',
   },
   highlightScore: 1200,
+  totalAssetPoints: 100000,
   nextTier: null,
   regionCode: 'KR',
   seasonId: 1,
@@ -68,7 +69,7 @@ describe('GameTierModal', () => {
     expect(track?.style.getPropertyValue('--tier-modal-slide-width')).toBe('');
   });
 
-  it('shows highlight tier guidance in the criteria tab', () => {
+  it('shows asset-point tier guidance in the criteria tab', () => {
     render(<GameTierModal isOpen onClose={() => undefined} tierProgress={tierProgress} />);
 
     expect(screen.getByRole('heading', { name: '티어' })).toBeInTheDocument();
@@ -78,18 +79,19 @@ describe('GameTierModal', () => {
 
     expect(screen.getByRole('tab', { name: '기준' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByText('하이라이트 티어 기준')).not.toBeInTheDocument();
-    expect(screen.getByText('티어별 점수 기준은 이렇습니다')).toBeInTheDocument();
+    expect(screen.getByText('티어별 총자산 기준은 이렇습니다')).toBeInTheDocument();
     expect(
       Array.from(document.querySelectorAll('.app-shell__tier-guide-copy')).some((element) => (
-        element.textContent?.includes('실버 5,000점 이상')
+        element.textContent?.includes('실버 120,000P 이상')
       )),
     ).toBe(true);
     expect(
       Array.from(document.querySelectorAll('.app-shell__tier-guide-copy')).some((element) => (
-        element.textContent?.includes('30,000P면 약 24점')
+        element.textContent?.includes('보유 영상의 현재 평가액')
       )),
     ).toBe(true);
-    expect(screen.getAllByText('하이라이트 점수로 티어가 정해집니다').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('총자산으로 티어가 정해집니다').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('하이라이트 점수는 티어와 별개입니다').length).toBeGreaterThan(0);
   });
 
   it('shows the highlights tab when highlight content is provided', () => {

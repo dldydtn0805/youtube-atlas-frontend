@@ -108,6 +108,36 @@ describe('game realtime', () => {
     expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(1);
   });
 
+  it('invalidates game queries when current-sync market demand changes', async () => {
+    const { useGameRealtimeInvalidation } = await import('./realtime');
+    const queryClient = new QueryClient();
+
+    function HookHarness() {
+      useGameRealtimeInvalidation('token-1', 'KR');
+      return null;
+    }
+
+    render(<HookHarness />, {
+      wrapper: createWrapper(queryClient),
+    });
+
+    act(() => {
+      emitTopic('/topic/game/KR', {
+        capturedAt: '2026-04-11T11:00:00Z',
+        eventType: 'market-updated',
+        occurredAt: '2026-04-11T11:05:00Z',
+        regionCode: 'KR',
+        seasonId: null,
+      });
+    });
+
+    expect(invalidateGameQueriesMock).toHaveBeenCalledWith(queryClient, {
+      accessToken: 'token-1',
+      includeLeaderboardPositions: true,
+      regionCode: 'KR',
+    });
+  });
+
   it('does not coalesce distinct wallet updates', async () => {
     const { useGameRealtimeInvalidation } = await import('./realtime');
 

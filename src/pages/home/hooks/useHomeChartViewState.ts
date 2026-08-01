@@ -309,7 +309,7 @@ export default function useHomeChartViewState({
         : effectiveChartView === 'favorites'
           ? favoriteStreamersCount === 0
             ? '저장한 채널이 생기면 해당 채널의 인기 영상을 여기에서 바로 볼 수 있습니다.'
-            : undefined
+            : '현재 TOP 200에 즐겨찾기한 채널의 영상이 없습니다.'
           : effectiveChartView === 'music'
             ? '음악 차트에 표시할 영상이 없습니다.'
           : undefined;
@@ -338,26 +338,19 @@ export default function useHomeChartViewState({
           : effectiveChartView === 'music'
             ? isMusicChartError
           : false;
-  const activeChartIsLoading =
-    effectiveChartView === 'favorites'
-      ? activeTrendViewIsLoading
-      : isTrendOnlyViewSelected
-        ? isChartLoading || activeTrendViewIsLoading
-        : isChartLoading;
-  const activeChartIsError =
-    effectiveChartView === 'favorites'
-      ? activeTrendViewIsError
-      : isTrendOnlyViewSelected
-        ? isChartError || activeTrendViewIsError
-        : isChartError;
+  const usesBaseChartState = effectiveChartView === 'all' || effectiveChartView === 'popular';
+  const activeChartIsLoading = usesBaseChartState ? isChartLoading : activeTrendViewIsLoading;
+  const activeChartIsError = usesBaseChartState ? isChartError : activeTrendViewIsError;
   const activeChartErrorMessage =
     effectiveChartView === 'favorites'
       ? isFavoriteStreamersError
         ? '즐겨찾기 채널을 불러오지 못했습니다.'
         : favoriteStreamerVideoErrorMessage
-      : activeTrendViewIsError && !chartErrorMessage
-        ? '선택한 차트 보기를 불러오지 못했습니다.'
-        : chartErrorMessage;
+      : usesBaseChartState
+        ? chartErrorMessage
+        : activeTrendViewIsError
+          ? '선택한 차트 보기를 불러오지 못했습니다.'
+          : undefined;
   const activeChartHasNextPage =
     effectiveChartView === 'buyable'
       ? hasNextBuyableChartPage

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildGameStrategyBadges, buildPositionStrategyBadges, resolveGameStrategyTags } from './gameStrategyTags';
-import {
-  getScheduledSellHalfQuantity,
-  getScheduledSellPresetForStrategy,
-  getScheduledSellTargetRankForStrategy,
-} from './scheduledSellStrategyPreset';
+import { getScheduledSellPresetForStrategy, getScheduledSellTargetRankForStrategy } from './scheduledSellStrategyPreset';
 
 describe('gameStrategyTags', () => {
   it('keeps backend strategy order and builds highlight badges', () => {
@@ -63,11 +59,5 @@ describe('gameStrategyTags', () => {
       targetRank: null,
       triggerType: 'PROFIT_RATE',
     });
-  });
-
-  it('rounds 50% scheduled sell presets to the game quantity step', () => {
-    expect(getScheduledSellHalfQuantity(300)).toBe(200);
-    expect(getScheduledSellHalfQuantity(100)).toBe(100);
-    expect(getScheduledSellHalfQuantity(0)).toBe(0);
   });
 });

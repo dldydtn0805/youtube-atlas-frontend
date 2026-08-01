@@ -4,6 +4,8 @@ import { useAuth } from '../../features/auth/useAuth';
 import {
   useCloseAdminSeason,
   useAdminDashboard,
+  useAdminPriceAnchors,
+  useAdminTierThresholds,
   useAdminTrendSnapshots,
   useAdminUserDetail,
   useAdminUserHighlights,
@@ -14,6 +16,8 @@ import {
   usePurgeAdminHighlightHistory,
   usePurgeAdminTradeHistory,
   useUpdateAdminUserPosition,
+  useUpdateAdminPriceAnchors,
+  useUpdateAdminTierThresholds,
   useUpdateAdminSeasonSchedule,
   useUpdateAdminSeasonStartingBalance,
   useUpdateAdminUserWallet,
@@ -25,6 +29,7 @@ import type {
   AdminTrendSnapshotHistoryItem,
   AdminTrendSnapshot,
   AdminTierSummary,
+  AdminTierThresholdUpdate,
   AdminUserDetail,
   AdminUserGameSummary,
   AdminUserHighlightSummary,
@@ -35,6 +40,8 @@ import useLogoutOnUnauthorized from '../home/hooks/useLogoutOnUnauthorized';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import countryCodes from '../../constants/countryCodes';
 import AdminUserHighlightsPanel from './components/AdminUserHighlightsPanel';
+import AdminPriceAnchorsPanel from './components/AdminPriceAnchorsPanel';
+import AdminTierThresholdsPanel from './components/AdminTierThresholdsPanel';
 import './AdminPage.css';
 
 function formatDateTime(value: string | null | undefined) {
@@ -552,13 +559,10 @@ function UserDetailPanel({
               <p><span>참여 여부</span><strong>{selectedSeasonGame.participating ? '참여 중' : '미참여'}</strong></p>
               <p><span>오픈 포지션</span><strong>{formatNumber(selectedSeasonGame.openPositionCount)}</strong></p>
               <p><span>종료 포지션</span><strong>{formatNumber(selectedSeasonGame.closedPositionCount)}</strong></p>
-              <p><span>계산 티어 점수</span><strong>{formatNumber(selectedSeasonGame.calculatedTierScore)}</strong></p>
-              <p><span>수동 보정값</span><strong>{formatNumber(selectedSeasonGame.manualTierScoreAdjustment)}</strong></p>
-              <p><span>최종 티어 점수</span><strong>{formatNumber(selectedSeasonGame.tierScore)}</strong></p>
+              <p><span>티어 기준 총자산</span><strong>{formatNumber(selectedSeasonGame.tierScore)}P</strong></p>
               <p><span>현재 티어</span><strong>{selectedSeasonGame.currentTier?.displayName ?? '-'}</strong></p>
               <p><span>다음 티어</span><strong>{selectedSeasonGame.nextTier?.displayName ?? '최종 티어'}</strong></p>
-              <p><span>다음 티어까지</span><strong>{remainingScoreToNextTier !== null ? formatNumber(remainingScoreToNextTier) : '-'}</strong></p>
-              <p><span>총 자산</span><strong>{formatNumber(selectedSeasonGame.totalAssetPoints)}</strong></p>
+              <p><span>다음 티어까지</span><strong>{remainingScoreToNextTier !== null ? `${formatNumber(remainingScoreToNextTier)}P` : '-'}</strong></p>
             </div>
             <div className="admin-page__form-grid">
               <label className="admin-page__field">
@@ -588,18 +592,9 @@ function UserDetailPanel({
                   value={walletDraft.realizedPnlPoints}
                 />
               </label>
-              <label className="admin-page__field">
-                <span>티어 보정값</span>
-                <input
-                  inputMode="numeric"
-                  onChange={(event) => onWalletDraftChange('manualTierScoreAdjustment', event.target.value)}
-                  type="text"
-                  value={walletDraft.manualTierScoreAdjustment}
-                />
-              </label>
             </div>
             <p className="admin-page__muted">
-              예약 포인트는 오픈 포지션과 연결되어 있을 수 있습니다. 티어 점수는 계산 점수에 수동 보정값을 더해 최종 반영됩니다.
+              티어는 가용 포인트, 예약 포인트, 보유 영상의 현재 평가액을 합친 총자산으로 자동 계산됩니다.
             </p>
             <div className="admin-page__action-row">
               <button className="admin-page__button" disabled={isSaving || isDeleting} onClick={onSaveWallet} type="button">
@@ -728,20 +723,6 @@ function parsePointInput(value: string, label: string) {
   return Number.parseInt(normalized, 10);
 }
 
-function parseSignedPointInput(value: string, label: string) {
-  const normalized = value.trim();
-
-  if (!normalized) {
-    throw new Error(`${label} 값을 입력해주세요.`);
-  }
-
-  if (!/^-?\d+$/.test(normalized)) {
-    throw new Error(`${label}는 정수만 입력할 수 있습니다.`);
-  }
-
-  return Number.parseInt(normalized, 10);
-}
-
 function parseOptionalUserIdInput(value: string, label: string) {
   const normalized = value.trim();
 
@@ -800,6 +781,8 @@ export default function AdminPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
+  const priceAnchorsQuery = useAdminPriceAnchors(accessToken, status === 'authenticated');
+  const tierThresholdsQuery = useAdminTierThresholds(accessToken, status === 'authenticated');
   const trendSnapshotsQuery = useAdminTrendSnapshots(
     accessToken,
     submittedTrendSnapshotRange.startAt,
@@ -812,6 +795,8 @@ export default function AdminPage() {
   const highlightsQuery = useAdminUserHighlights(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
   const positionsQuery = useAdminUserPositions(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
   const updateSeasonMutation = useUpdateAdminSeasonSchedule(accessToken);
+  const updatePriceAnchorsMutation = useUpdateAdminPriceAnchors(accessToken);
+  const updateTierThresholdsMutation = useUpdateAdminTierThresholds(accessToken);
   const updateSeasonStartingBalanceMutation = useUpdateAdminSeasonStartingBalance(accessToken);
   const closeSeasonMutation = useCloseAdminSeason(accessToken);
   const updateWalletMutation = useUpdateAdminUserWallet(accessToken);
@@ -822,6 +807,8 @@ export default function AdminPage() {
   const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
+  useLogoutOnUnauthorized(priceAnchorsQuery.error, logout);
+  useLogoutOnUnauthorized(tierThresholdsQuery.error, logout);
   useLogoutOnUnauthorized(trendSnapshotsQuery.error, logout);
   useLogoutOnUnauthorized(usersQuery.error, logout);
   useLogoutOnUnauthorized(detailQuery.error, logout);
@@ -966,6 +953,10 @@ export default function AdminPage() {
   const errorMessage =
     dashboardQuery.error instanceof ApiRequestError
       ? dashboardQuery.error.message
+      : priceAnchorsQuery.error instanceof ApiRequestError
+        ? priceAnchorsQuery.error.message
+        : tierThresholdsQuery.error instanceof ApiRequestError
+          ? tierThresholdsQuery.error.message
         : usersQuery.error instanceof ApiRequestError
           ? usersQuery.error.message
           : detailQuery.error instanceof ApiRequestError
@@ -1117,7 +1108,6 @@ export default function AdminPage() {
         balancePoints: parsePointInput(walletDraft.balancePoints, '가용 포인트'),
         reservedPoints: parsePointInput(walletDraft.reservedPoints, '예약 포인트'),
         realizedPnlPoints: parsePointInput(walletDraft.realizedPnlPoints, '실현 손익'),
-        manualTierScoreAdjustment: parseSignedPointInput(walletDraft.manualTierScoreAdjustment, '티어 보정값'),
       };
 
       setActionMessage(null);
@@ -1318,6 +1308,41 @@ export default function AdminPage() {
     }
   };
 
+  const handlePriceAnchorsSave = (
+    anchors: Array<{ pricePoints: number; rank: number }>,
+  ) => {
+    setActionMessage(null);
+    updatePriceAnchorsMutation.mutate(
+      { anchors },
+      {
+        onSuccess: () => {
+          setActionMessage('등수별 가격 앵커가 저장되어 게임 가격에 즉시 반영되었습니다.');
+        },
+        onError: (error) => {
+          setActionMessage(error instanceof Error ? error.message : '가격 앵커 저장에 실패했습니다.');
+        },
+      },
+    );
+  };
+
+  const handleTierThresholdsSave = (
+    seasonId: number,
+    tiers: AdminTierThresholdUpdate[],
+  ) => {
+    setActionMessage(null);
+    updateTierThresholdsMutation.mutate(
+      { seasonId, tiers },
+      {
+        onSuccess: () => {
+          setActionMessage('보유 포인트 티어 기준이 저장되어 현재 티어에 즉시 반영되었습니다.');
+        },
+        onError: (error) => {
+          setActionMessage(error instanceof Error ? error.message : '티어 기준 저장에 실패했습니다.');
+        },
+      },
+    );
+  };
+
   if (!isApiConfigured) {
     return (
       <main className="admin-page">
@@ -1392,13 +1417,13 @@ export default function AdminPage() {
         </div>
       </section>
 
-      {dashboardQuery.isLoading || usersQuery.isLoading ? (
+      {dashboardQuery.isLoading || priceAnchorsQuery.isLoading || tierThresholdsQuery.isLoading || usersQuery.isLoading ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">대시보드 로딩 중</h2>
         </section>
       ) : null}
 
-      {dashboardQuery.isError || trendSnapshotsQuery.isError || usersQuery.isError || detailQuery.isError || positionsQuery.isError ? (
+      {dashboardQuery.isError || priceAnchorsQuery.isError || tierThresholdsQuery.isError || trendSnapshotsQuery.isError || usersQuery.isError || detailQuery.isError || positionsQuery.isError ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">{isForbidden ? '접근 권한 없음' : '불러오기 실패'}</h2>
           <p className="admin-page__error">{errorMessage}</p>
@@ -1423,6 +1448,20 @@ export default function AdminPage() {
             <MetricCard label="트렌드 수집 런" value={dashboardQuery.data.metrics.totalTrendRuns} />
             <MetricCard label="총 거래내역" value={dashboardQuery.data.metrics.totalTradeHistories} />
           </section>
+
+          <AdminPriceAnchorsPanel
+            anchors={priceAnchorsQuery.data?.anchors ?? []}
+            isLoading={priceAnchorsQuery.isLoading}
+            isSaving={updatePriceAnchorsMutation.isPending}
+            onSave={handlePriceAnchorsSave}
+          />
+
+          <AdminTierThresholdsPanel
+            isLoading={tierThresholdsQuery.isLoading}
+            isSaving={updateTierThresholdsMutation.isPending}
+            onSave={handleTierThresholdsSave}
+            seasons={tierThresholdsQuery.data?.seasons ?? []}
+          />
 
           <section className="admin-page__grid">
             <article className="admin-page__panel">

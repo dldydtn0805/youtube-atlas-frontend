@@ -77,6 +77,55 @@ export interface AdminDashboard {
   recentFavorites: AdminFavoriteSummary[];
 }
 
+export interface AdminPriceAnchor {
+  rank: number;
+  pricePoints: number;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export interface AdminPriceAnchorList {
+  anchors: AdminPriceAnchor[];
+  updatedAt: string | null;
+}
+
+export interface AdminPriceAnchorUpdate {
+  rank: number;
+  pricePoints: number;
+}
+
+export interface AdminPriceAnchorUpdateRequest {
+  anchors: AdminPriceAnchorUpdate[];
+}
+
+export interface AdminTierThreshold {
+  displayName: string;
+  inventorySlots: number;
+  minPoints: number;
+  tierCode: string;
+}
+
+export interface AdminSeasonTierThresholds {
+  regionCode: string;
+  seasonId: number;
+  seasonName: string;
+  tiers: AdminTierThreshold[];
+}
+
+export interface AdminTierThresholdList {
+  seasons: AdminSeasonTierThresholds[];
+}
+
+export interface AdminTierThresholdUpdate {
+  minPoints: number;
+  tierCode: string;
+}
+
+export interface AdminTierThresholdUpdateRequest {
+  seasonId: number;
+  tiers: AdminTierThresholdUpdate[];
+}
+
 export interface AdminTrendSnapshotHistoryItem {
   id: number;
   runId: number;
@@ -241,7 +290,7 @@ export interface AdminWalletUpdateRequest {
   balancePoints: number;
   reservedPoints: number;
   realizedPnlPoints: number;
-  manualTierScoreAdjustment: number;
+  manualTierScoreAdjustment?: number;
 }
 
 export interface AdminPositionUpdateRequest {

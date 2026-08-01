@@ -3,7 +3,6 @@ import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPla
 import type { GameMarketVideo, GamePosition } from '../../../features/game/types';
 import type { VideoTrendBadge } from '../../../features/trending/presentation';
 import {
-  formatGameQuantity,
   formatPercentValue,
   formatPoints,
   formatRank,
@@ -117,27 +116,23 @@ function formatTrendBadgeLabel(badge: VideoTrendBadge) {
   return badge.label;
 }
 
-function formatMomentumPriceBadge(entry: GameMarketVideo) {
+function formatDemandPriceBadge(entry: GameMarketVideo) {
   if (
-    entry.momentumPriceType !== 'PREMIUM' &&
-    entry.momentumPriceType !== 'DISCOUNT'
+    (entry.demandPriceType !== 'PREMIUM' && entry.demandPriceType !== 'DISCOUNT') ||
+    typeof entry.demandPriceDeltaPercent !== 'number' ||
+    !Number.isFinite(entry.demandPriceDeltaPercent) ||
+    entry.demandPriceDeltaPercent === 0
   ) {
     return null;
   }
 
-  if (
-    typeof entry.momentumPriceDeltaPercent !== 'number' ||
-    !Number.isFinite(entry.momentumPriceDeltaPercent) ||
-    entry.momentumPriceDeltaPercent === 0
-  ) {
-    return null;
-  }
+  const buyCount = Math.max(0, Math.floor(entry.syncBuyCount ?? 0));
+  const sellCount = Math.max(0, Math.floor(entry.syncSellCount ?? 0));
+  const countSummary = `매수 ${buyCount}회 · 매도 ${sellCount}회`;
 
-  const absolutePercent = Math.abs(entry.momentumPriceDeltaPercent);
-  const formattedPercent = formatPercentValue(absolutePercent);
-  return entry.momentumPriceType === 'PREMIUM'
-    ? `프리미엄 +${formattedPercent}%`
-    : `세일 -${formattedPercent}%`;
+  return entry.demandPriceType === 'PREMIUM'
+    ? `프리미엄 +${formatPercentValue(Math.abs(entry.demandPriceDeltaPercent))}% · ${countSummary}`
+    : `세일 -${formatPercentValue(Math.abs(entry.demandPriceDeltaPercent))}% · ${countSummary}`;
 }
 
 export function GameSelectedVideoPriceSummary({
@@ -292,7 +287,7 @@ export function GameSelectedVideoPriceSummary({
       ...badge,
       label: formatTrendBadgeLabel(badge),
     }));
-    const sellableStatusBadge = maxSellQuantity > 0 ? `${formatGameQuantity(maxSellQuantity)} 매도 가능` : null;
+    const sellableStatusBadge = maxSellQuantity > 0 ? '전량 매도 가능' : null;
     const statusBadge = selectedVideoIsChartOut ? '차트 아웃' : null;
 
     return (
@@ -382,7 +377,7 @@ export function GameSelectedVideoPriceSummary({
     label: formatTrendBadgeLabel(badge),
   }));
   const selectedVideoStatusBadge = selectedVideoIsChartOut ? '차트 아웃' : null;
-  const selectedVideoMomentumPriceBadge = formatMomentumPriceBadge(selectedVideoMarketEntry);
+  const selectedVideoDemandPriceBadge = formatDemandPriceBadge(selectedVideoMarketEntry);
 
   return (
     <div className="app-shell__game-selected-summary" aria-label="선택한 영상 현재 가격">
@@ -397,19 +392,21 @@ export function GameSelectedVideoPriceSummary({
           {formatPoints(selectedVideoMarketEntry.currentPricePoints)}
         </span>
       </p>
-      {selectedVideoFormattedTrendBadges.length > 0 || selectedVideoStatusBadge || selectedVideoMomentumPriceBadge ? (
+      {selectedVideoFormattedTrendBadges.length > 0 ||
+      selectedVideoStatusBadge ||
+      selectedVideoDemandPriceBadge ? (
         <p className="app-shell__game-selected-summary-badges">
           <TrendBadges badges={selectedVideoFormattedTrendBadges} />
           {selectedVideoStatusBadge ? (
             <span className="app-shell__game-selected-status-badge">{selectedVideoStatusBadge}</span>
           ) : null}
-          {selectedVideoMomentumPriceBadge ? (
+          {selectedVideoDemandPriceBadge ? (
             <span
               className="app-shell__game-selected-status-badge"
-              data-momentum-price-type={selectedVideoMarketEntry.momentumPriceType}
-              title={`기본가 ${formatPoints(selectedVideoMarketEntry.basePricePoints ?? selectedVideoMarketEntry.currentPricePoints)}`}
+              data-demand-price-type={selectedVideoMarketEntry.demandPriceType}
+              title={`이번 트렌드 싱크 누적 매수 ${selectedVideoMarketEntry.syncBuyCount ?? 0}회 · 누적 매도 ${selectedVideoMarketEntry.syncSellCount ?? 0}회`}
             >
-              {selectedVideoMomentumPriceBadge}
+              {selectedVideoDemandPriceBadge}
             </span>
           ) : null}
         </p>
@@ -458,7 +455,9 @@ export function GameStageActions({
             </svg>
           </span>
         </button>
-        <span className="app-shell__stage-action-caption">매수</span>
+        <span className="app-shell__stage-action-caption">
+          {selectedVideoOpenPositionCount > 0 ? '보유 중' : '매수'}
+        </span>
       </div>
       <div className="app-shell__stage-action-item">
         <button
@@ -467,7 +466,7 @@ export function GameStageActions({
           data-variant="sell"
           disabled={isSelectedVideoSellDisabled || selectedVideoOpenPositionCount <= 0}
           onClick={onOpenSellTradeModal}
-          title={selectedVideoOpenPositionCount > 0 ? sellActionTitle : '보유 수량이 있을 때만 매도할 수 있습니다.'}
+          title={selectedVideoOpenPositionCount > 0 ? sellActionTitle : '보유 영상이 있을 때만 매도할 수 있습니다.'}
           type="button"
         >
           <span className="app-shell__stage-action-icon" aria-hidden="true">
@@ -604,6 +603,7 @@ export function SelectedVideoGameActionsBundle({
       mainPlayerRef={mainPlayerRef}
       isBuyDisabled={isSelectedVideoBuyDisabled}
       isBuySubmitting={isBuySubmitting}
+      isVideoOwned={selectedVideoOpenPositionCount > 0}
       isSellDisabled={isSelectedVideoSellDisabled}
       isSellSubmitting={isSellSubmitting}
       onContentClick={onContentClick}

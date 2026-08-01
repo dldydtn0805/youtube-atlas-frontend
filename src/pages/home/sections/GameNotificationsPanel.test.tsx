@@ -46,7 +46,7 @@ describe('GameNotificationsPanel', () => {
     expect(onDelete).toHaveBeenCalledWith('notification-1');
   });
 
-  it('opens the highlights tab and deletes a tier score notification from its thumbnail', () => {
+  it('opens the highlights tab and deletes a highlight record notification from its thumbnail', () => {
     const onDelete = vi.fn();
     const onOpenHighlights = vi.fn();
 
@@ -56,7 +56,7 @@ describe('GameNotificationsPanel', () => {
           createNotification({
             notificationEventType: 'TIER_SCORE_GAIN',
             showModal: true,
-            title: '티어 점수 상승',
+            title: '하이라이트 기록',
           }),
         ]}
         onDelete={onDelete}

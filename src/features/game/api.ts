@@ -31,8 +31,12 @@ type ApiGameInventorySlots = Omit<GameCurrentSeason['inventorySlots'], 'currentT
   tiers?: ApiGameTier[] | null;
 };
 
-type ApiGameTierProgress = Omit<GameTierProgress, 'currentTier' | 'nextTier' | 'tiers'> & {
+type ApiGameTierProgress = Omit<
+  GameTierProgress,
+  'currentTier' | 'nextTier' | 'tiers' | 'totalAssetPoints'
+> & {
   currentTier: ApiGameTier;
+  totalAssetPoints?: number | null;
   nextTier: ApiGameTier | null;
   tiers: ApiGameTier[];
 };
@@ -77,6 +81,12 @@ function normalizeGameTierProgress(progress: ApiGameTierProgress): GameTierProgr
     ...progress,
     currentTier: normalizeGameTier(progress.currentTier),
     nextTier: progress.nextTier ? normalizeGameTier(progress.nextTier) : null,
+    totalAssetPoints:
+      typeof progress.totalAssetPoints === 'number' && Number.isFinite(progress.totalAssetPoints)
+        ? progress.totalAssetPoints
+        : typeof progress.highlightScore === 'number' && Number.isFinite(progress.highlightScore)
+          ? progress.highlightScore
+          : 0,
     tiers: progress.tiers.map(normalizeGameTier),
   };
 }

@@ -211,6 +211,28 @@ function setGamePanelViewportWidth(width = 320) {
 }
 
 describe('RankingGameSelectedVideoActions', () => {
+  it('labels the disabled buy action as owned', () => {
+    render(
+      <RankingGameSelectedVideoActions
+        buyActionTitle="이미 보유 중인 영상입니다."
+        canShowGameActions
+        currentVideoGamePriceSummary={<span>1위</span>}
+        isBuyDisabled
+        isBuySubmitting={false}
+        isSellDisabled={false}
+        isSellSubmitting={false}
+        isVideoOwned
+        onOpenBuyTradeModal={vi.fn()}
+        onOpenSellTradeModal={vi.fn()}
+        selectedGameActionTitle="Video Title"
+        sellActionTitle="매도"
+      />,
+    );
+
+    expect(screen.getByText('보유 중')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '선택한 영상 보유 중' })).toBeDisabled();
+  });
+
   it('keeps the now playing label and selected title click targets separate', () => {
     const onContentClick = vi.fn();
     const onEyebrowClick = vi.fn();
@@ -425,8 +447,7 @@ describe('RankingGamePositionsTab', () => {
     expect(screen.getByText('Tooltip Video · Tooltip Channel')).toBeInTheDocument();
   });
 
-  it('opens position trade actions from the holding card', () => {
-    const onOpenBuyTradeModal = vi.fn();
+  it('keeps only the sell action on inventory holding cards', () => {
     const onOpenSellTradeModal = vi.fn();
 
     render(
@@ -435,17 +456,17 @@ describe('RankingGamePositionsTab', () => {
         favoriteTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
-        onOpenBuyTradeModal={onOpenBuyTradeModal}
         onOpenSellTradeModal={onOpenSellTradeModal}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 추가 매수' }));
     fireEvent.click(screen.getByRole('button', { name: 'Holding Video 매도' }));
 
-    expect(onOpenBuyTradeModal).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(screen.queryByRole('button', { name: 'Holding Video 추가 매수' })).not.toBeInTheDocument();
+    expect(screen.queryByText('예상 티어 점수')).not.toBeInTheDocument();
+    expect(screen.queryByText('획득 티어점수')).not.toBeInTheDocument();
     expect(onOpenSellTradeModal).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
   });
 
@@ -566,7 +587,30 @@ describe('RankingGamePositionsTab', () => {
     );
 
     expect(screen.queryByText('매도 대기 · 0초')).not.toBeInTheDocument();
-    expect(screen.getByText('매도 가능 수량 없음')).toBeInTheDocument();
+    expect(screen.getByText('현재 매도 불가')).toBeInTheDocument();
+  });
+
+  it('shows that a current-sync purchase unlocks after the next trend sync', () => {
+    render(
+      <RankingGamePositionsTab
+        canShowGameActions
+        favoriteTrendSignalsByVideoId={{}}
+        gameMarketSignalsByVideoId={{}}
+        holdings={[
+          createOpenGameHolding({
+            lockedQuantity: 100,
+            sellableQuantity: 0,
+            sellLockedUntilNextSync: true,
+          }),
+        ]}
+        onOpenSellTradeModal={vi.fn()}
+        onSelectPosition={vi.fn()}
+        trendSignalsByVideoId={{}}
+      />,
+    );
+
+    expect(screen.getByText('다음 트렌드 싱크 후 매도 가능')).toBeInTheDocument();
+    expect(screen.getByLabelText('Holding Video 매도')).toBeDisabled();
   });
 
   it('shows a reserved sell badge when a holding is already queued for scheduled sell', () => {

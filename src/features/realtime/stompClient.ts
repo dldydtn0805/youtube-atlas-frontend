@@ -137,6 +137,27 @@ function createTopicChannel(topic: string) {
         });
       },
     );
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        filter: `region_code=eq.${regionCode}`,
+        schema: 'public',
+        table: 'video_trend_signals',
+      },
+      (payload) => {
+        const signal = payload.new as Record<string, unknown>;
+
+        dispatchMessage(topic, {
+          capturedAt: typeof signal.captured_at === 'string' ? signal.captured_at : null,
+          eventType: 'market-updated',
+          occurredAt: new Date().toISOString(),
+          regionCode,
+          seasonId: null,
+        });
+      },
+    );
   } else {
     channel.on('broadcast', { event: 'message' }, ({ payload }) => {
       dispatchMessage(topic, payload);

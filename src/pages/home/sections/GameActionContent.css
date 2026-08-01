@@ -70,6 +70,18 @@
   padding: 0 7px;
 }
 
+.app-shell__game-selected-status-badge[data-demand-price-type='PREMIUM'] {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.28);
+  color: #d97706;
+}
+
+.app-shell__game-selected-status-badge[data-demand-price-type='DISCOUNT'] {
+  background: rgba(14, 165, 233, 0.13);
+  border-color: rgba(14, 165, 233, 0.28);
+  color: #0284c7;
+}
+
 @media (max-width: 768px),
   (max-width: 1024px) and (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
   :root[data-mobile-layout='true'] .app-shell__game-selected-summary-line {

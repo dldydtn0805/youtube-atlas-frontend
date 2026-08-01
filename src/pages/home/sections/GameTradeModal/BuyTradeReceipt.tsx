@@ -1,29 +1,19 @@
 import type { HTMLAttributes } from 'react';
 import ThumbnailPlayOverlay from '../../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
-import {
-  GAME_ORDER_QUANTITY_STEP,
-  formatGameOrderQuantity,
-  parseGameOrderQuantityInput,
-  toDisplayGameOrderQuantity,
-} from '../../gameHelpers';
-import type { GameTradeModalSummaryItem, GameTradeQuickAction } from './types';
+import type { GameTradeModalSummaryItem } from './types';
 import './BuyTradeReceipt.css';
 
 interface BuyTradeReceiptProps {
   bodySwipeHandlers: HTMLAttributes<HTMLDivElement>;
   confirmLabel: string;
   currentRankLabel: string;
-  disableQuantityControls: boolean;
   headerSwipeHandlers: HTMLAttributes<HTMLDivElement>;
   helperText: string;
   isSubmitting: boolean;
   modalTitleId: string;
   normalizedMaxQuantity: number;
-  normalizedQuantity: number;
-  onChangeQuantity: (quantity: number) => void;
   onClose: () => void;
   onConfirm: () => void;
-  quickActions: GameTradeQuickAction[];
   summaryItems: GameTradeModalSummaryItem[];
   thumbnailUrl?: string | null;
   title: string;
@@ -34,37 +24,23 @@ function getBuyReceiptTotal(items: GameTradeModalSummaryItem[]) {
   return items.find((item) => item.label.includes('총')) ?? items[items.length - 1];
 }
 
-function clampBuyQuantity(quantity: number, maxQuantity: number) {
-  if (maxQuantity <= 0) {
-    return GAME_ORDER_QUANTITY_STEP;
-  }
-
-  return Math.max(GAME_ORDER_QUANTITY_STEP, Math.min(maxQuantity, quantity));
-}
-
 export default function BuyTradeReceipt({
   bodySwipeHandlers,
   confirmLabel,
   currentRankLabel,
-  disableQuantityControls,
   headerSwipeHandlers,
   helperText,
   isSubmitting,
   modalTitleId,
   normalizedMaxQuantity,
-  normalizedQuantity,
-  onChangeQuantity,
   onClose,
   onConfirm,
-  quickActions,
   summaryItems,
   thumbnailUrl,
   title,
   unitPointsLabel,
 }: BuyTradeReceiptProps) {
   const totalItem = getBuyReceiptTotal(summaryItems);
-  const previousQuantity = clampBuyQuantity(normalizedQuantity - GAME_ORDER_QUANTITY_STEP, normalizedMaxQuantity);
-  const nextQuantity = clampBuyQuantity(normalizedQuantity + GAME_ORDER_QUANTITY_STEP, normalizedMaxQuantity);
 
   return (
     <>
@@ -97,43 +73,10 @@ export default function BuyTradeReceipt({
 
         <section className="app-shell__game-buy-receipt-section" aria-label="매수 수량">
           <p className="app-shell__game-buy-receipt-label">QUANTITY</p>
-          <div className="app-shell__game-buy-receipt-quantity">
-            <button disabled={disableQuantityControls} onClick={() => onChangeQuantity(previousQuantity)} type="button">
-              -
-            </button>
-            <input
-              aria-label="매수 수량"
-              disabled={disableQuantityControls}
-              inputMode="numeric"
-              max={normalizedMaxQuantity > 0 ? toDisplayGameOrderQuantity(normalizedMaxQuantity) : undefined}
-              min={1}
-              onChange={(event) => onChangeQuantity(parseGameOrderQuantityInput(Number(event.target.value)))}
-              step="1"
-              type="number"
-              value={toDisplayGameOrderQuantity(normalizedQuantity)}
-            />
-            <button disabled={disableQuantityControls} onClick={() => onChangeQuantity(nextQuantity)} type="button">
-              +
-            </button>
-          </div>
-          {quickActions.length > 0 ? (
-            <div className="app-shell__game-buy-receipt-pcts">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  data-active={action.quantity === normalizedQuantity}
-                  disabled={disableQuantityControls}
-                  onClick={() => onChangeQuantity(action.quantity)}
-                  type="button"
-                >
-                  {action.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <p className="app-shell__game-buy-receipt-hint">
-            1개 단위로만 주문할 수 있습니다. 현재 선택: {formatGameOrderQuantity(normalizedQuantity)}
-          </p>
+          <output className="app-shell__game-buy-receipt-fixed-quantity" aria-label="고정 매수 수량">
+            1개
+          </output>
+          <p className="app-shell__game-buy-receipt-hint">영상마다 1개만 매수할 수 있습니다.</p>
           <p className="app-shell__game-buy-receipt-help">{helperText}</p>
         </section>
 

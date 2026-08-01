@@ -23,6 +23,18 @@ The existing database was deleted, so this migration starts with a fresh applica
 | P0 | Scheduled trending sync and retention | Done: seven Cron jobs are active within the free-plan limits |
 | P1 | Scheduled sell orders, notifications, tiers, titles | Done: Edge API and five-minute settlement job are deployed |
 | P1 | Admin read/write operations | Done: `/admin` routes use service-role operations behind an admin allowlist |
+| P1 | Admin-editable game price anchors | Done: database-backed anchors feed market, trade, valuation, and settlement prices, with admin-only editing deployed to production |
+| P1 | Trend-sync demand pricing | Done: buys atomically count demand, current prices gain a capped sync-scoped premium, and new wallets start with 100,000P |
+| P1 | One active position per user and video | Done: users may own multiple videos, but an owned video cannot be bought again until its position is fully sold |
+| P1 | Fixed one-unit buy orders | Done: the buy sheet has no quantity selector, and both API and database RPCs accept exactly one unit per new video position |
+| P1 | Asset-point tiers and admin thresholds | Done: tiers use live total assets instead of highlights, and active-season thresholds are editable from the admin page |
+| P1 | Trend-sync sell discounts and sell lock | Done: sells add capped sync-scoped discounts, and current-sync purchases cannot be sold until the next main-chart sync |
+| P1 | Fixed full-position sells and reliable personal charts | Done: each owned video is one unit sold only in full, while buyable and favorite chart views load independently and return the correct filtered videos |
+| P1 | Sync-ranked category charts | Done: music and detail categories are filtered from the synced TOP 200 and preserve each video's synced overall rank |
+| P1 | Net-order count pricing and lean sell sheet | Done: rank movement no longer changes price, net buy/sell counts drive premium or sale, and sell orders omit quantity and highlight-score explanations |
+| P1 | Current rule guides and sync-ranked favorites | Done: the initial popup and manual guide share the current rules, while favorite videos come from the synced TOP 200 with their original ranks |
+| P1 | Video-list rank movement placement | Done: every video card places its rank-change badge immediately after the rank on desktop and mobile layouts |
+| P1 | YouTube music playlist export | Done: users can grant contextual YouTube access and export the current music TOP 20 to a new private playlist with partial-failure reporting |
 | P2 | Historical season highlights and advanced settlement parity | Long-term game history matches the legacy Spring behavior |
 
 ## Compatibility strategy
@@ -53,3 +65,15 @@ Authentication and realtime are the two deliberate exceptions:
 6. Removed Vercel's retired API override and client-side YouTube key; retained the Supabase URL and anon key.
 7. Passed all 377 frontend unit tests, ESLint with no errors, the production build, Deno type checks, remote database lint, and the deployed Edge API health check.
 8. Verified the Vercel production UI and the Google OAuth redirect through to Google's account chooser.
+9. Deployed admin-editable game price anchors, verified the production market API reads the seeded anchors, and published the admin editor to Vercel.
+10. Applied the `balanced-v1` anchor curve to production and verified sampled ranks from 1st through 170th against the live market API.
+11. Replaced it with the cleaner `pretty-million-v1` curve led by a 1,000,000P first-rank anchor and verified the live API after redeployment.
+12. Deployed sync-scoped demand pricing and a 100,000P starting balance, then verified the live market exposes demand count, quantity, delta, and adjusted price fields.
+13. Enforced one active position per user and video at the database and API layers, deployed API v11, and published the owned-video disabled state to Vercel.
+14. Removed buy quantity selection, enforced exactly one-unit buys in API v12 and migration `20260731026000`, and published the fixed-order UI to Vercel.
+15. Replaced highlight-based tiers with live total-asset tiers, deployed API v13 and migration `20260731027000`, added an active-season threshold editor, and verified the production tier rows and protected routes.
+16. Deployed current-sync sell counts and discounts, database-enforced next-sync sell locks, and realtime market refreshes through migration `20260731028000`, API v14, settlement v9, and the recreated active `sync-trending` function.
+17. Deployed migration `20260731029000`, API v15, and Vercel deployment `dpl_FJoiqjXcnBaxMETSisvYQ3sSrD1S` for one-unit full-position sells, inventory/sell-sheet cleanup, and reliable buyable/favorite chart loading and filtering.
+18. Deployed API v16 so music and every detail category filter the synced TOP 200 by YouTube category while preserving the original trend-sync rank; verified the live KR category results against all synced chart rows.
+19. Deployed API v17, settlement v10, and Vercel deployment `dpl_Bm5zrWtXUvgARohsFCgVrDM14mwk` for net buy/sell count pricing and the quantity-free, highlight-explanation-free sell order sheet; verified every live KR market row against the formula.
+20. Deployed API v18 and Vercel deployment `dpl_9iYRPF6h67o3gQGv9tayQ1pgbdxC` for the shared four-step current-rule guide and sync-ranked favorite videos; verified 402 tests, the production build, the live popup layout and console, and a targeted 142nd-rank signal lookup.

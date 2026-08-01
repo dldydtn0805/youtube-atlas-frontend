@@ -12,8 +12,8 @@ import type { YouTubeCategorySection } from '../../../features/youtube/types';
 import { findPlaybackQueueIdForVideo } from '../utils';
 import type { OpenGameHolding } from '../gameHelpers';
 import BoldNumberText from './BoldNumberText';
+import { gameIntroSteps } from './GameIntroModal/steps';
 import GameScheduledSellOrdersTab, { type ScheduledSellOrderFocusRequest } from './GameScheduledSellOrdersTab';
-import { strategyTagCriteriaCopy } from './gameTierGuideContent';
 import {
   RankingGameTierOverview,
   RankingGameHistoryTab,
@@ -51,7 +51,6 @@ interface GamePanelSectionProps {
   onOpenPositionChart: (position: GamePosition) => void;
   onRefreshTab?: (tab: GameTab) => Promise<void> | void;
   onOpenScheduledSellOrderChart?: (order: GameScheduledSellOrder) => void;
-  onOpenPositionBuyTradeModal?: (position: GamePosition) => void;
   onOpenPositionSellTradeModal?: (position: GamePosition) => void;
   onOpenStrategyScheduledSellTradeModal?: (position: GamePosition, strategyType: GameStrategyType) => void;
   onCancelScheduledSellOrder?: (orderId: number) => void;
@@ -105,7 +104,6 @@ export default function GamePanelSection({
   onOpenPositionChart,
   onRefreshTab,
   onOpenScheduledSellOrderChart,
-  onOpenPositionBuyTradeModal,
   onOpenPositionSellTradeModal,
   onOpenStrategyScheduledSellTradeModal,
   onCancelScheduledSellOrder,
@@ -167,7 +165,6 @@ export default function GamePanelSection({
       isLoading={isOpenGamePositionsLoading}
       onCancelScheduledSellOrder={onCancelScheduledSellOrder}
       onOpenPositionChart={onOpenPositionChart}
-      onOpenBuyTradeModal={onOpenPositionBuyTradeModal}
       onOpenSellTradeModal={onOpenPositionSellTradeModal}
       onOpenStrategyScheduledSellTradeModal={onOpenStrategyScheduledSellTradeModal}
       onSelectPosition={onSelectGamePositionVideo}
@@ -219,27 +216,14 @@ export default function GamePanelSection({
   const guideContent = (
     <div className="app-shell__game-guide" aria-label="랭킹 게임 설명">
       <ol className="app-shell__game-guide-list">
-        <li className="app-shell__game-guide-item">
-          <strong className="app-shell__game-guide-title">사고 팔아 포인트 벌기</strong>
-          <p className="app-shell__game-guide-copy">
-            홈에서 영상 차트를 확인하고, 순위가 오를 것 같은 영상을 싸게 사보세요. 나중에 순위가 오르면
-            비싸게 팔아 차익을 포인트로 챙길 수 있어요!
-          </p>
-        </li>
-        <li className="app-shell__game-guide-item">
-          <strong className="app-shell__game-guide-title">하이라이트로 티어 올리기</strong>
-          <p className="app-shell__game-guide-copy">
-            <BoldNumberText>{strategyTagCriteriaCopy}</BoldNumberText>
-          </p>
-        </li>
-        <li className="app-shell__game-guide-item">
-          <strong className="app-shell__game-guide-title">기록과 경쟁</strong>
-          <p className="app-shell__game-guide-copy">
-            <BoldNumberText>
-              거래내역에서 내가 했던 선택들을 돌아보고, 리더보드에서 다른 유저들과 이번 시즌 순위를 비교해보세요. 1위를 노려봐요!
-            </BoldNumberText>
-          </p>
-        </li>
+        {gameIntroSteps.map((step) => (
+          <li key={step.title} className="app-shell__game-guide-item">
+            <strong className="app-shell__game-guide-title">{step.title}</strong>
+            <p className="app-shell__game-guide-copy">
+              <BoldNumberText>{step.body}</BoldNumberText>
+            </p>
+          </li>
+        ))}
       </ol>
     </div>
   );

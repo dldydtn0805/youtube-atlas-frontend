@@ -18,6 +18,7 @@ import {
 import { AuthContext } from './context';
 import { authQueryKeys } from './queries';
 import type { AuthSession, AuthStatus, AuthUser } from './types';
+import { createYouTubePlaylistOAuthRequest } from './youtubeOAuth';
 
 function toAuthSession(session: Session, user: AuthUser): AuthSession {
   const expiresAt = new Date(
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     isSupabaseConfigured ? 'loading' : 'anonymous',
   );
   const [authError, setAuthError] = useState<string | null>(null);
+  const [googleProviderAccessToken, setGoogleProviderAccessToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!nextSupabaseSession) {
         clearStoredAuthSession();
         queryClient.removeQueries({ queryKey: authQueryKeys.all });
+        setGoogleProviderAccessToken(null);
         startTransition(() => {
           setSession(null);
           setStatus('anonymous');
@@ -63,6 +66,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           nextSession.user,
         );
         writeStoredAuthSession(nextSession);
+        setGoogleProviderAccessToken(nextSupabaseSession.provider_token ?? null);
         startTransition(() => {
           setSession(nextSession);
           setStatus('authenticated');
@@ -70,6 +74,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setAuthError(null);
       } catch (error) {
         clearStoredAuthSession();
+        setGoogleProviderAccessToken(null);
         startTransition(() => {
           setSession(null);
           setStatus('anonymous');
@@ -203,6 +208,27 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [],
   );
 
+  const requestYouTubePlaylistAccess = useCallback(async (redirectUri: string) => {
+    if (!supabase) {
+      const error = new Error('Supabase 연결 설정이 필요합니다.');
+      setAuthError(error.message);
+      throw error;
+    }
+
+    setIsLoggingIn(true);
+    setAuthError(null);
+
+    const { error } = await supabase.auth.signInWithOAuth(
+      createYouTubePlaylistOAuthRequest(redirectUri),
+    );
+
+    if (error) {
+      setIsLoggingIn(false);
+      setAuthError(error.message || 'YouTube 연결에 실패했습니다.');
+      throw error;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     setIsLoggingOut(true);
     setAuthError(null);
@@ -214,6 +240,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     } finally {
       clearStoredAuthSession();
       queryClient.removeQueries({ queryKey: authQueryKeys.all });
+      setGoogleProviderAccessToken(null);
       startTransition(() => {
         setSession(null);
         setStatus('anonymous');
@@ -229,12 +256,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       authError,
       clearAuthError,
       googleClientId: '',
+      googleProviderAccessToken,
       isGoogleAuthAvailable: isSupabaseConfigured,
       isGoogleAuthLoading: status === 'loading',
       isLoggingIn,
       isLoggingOut,
       loginWithGoogleAuthorizationCode: loginWithGoogleCode,
       logout,
+      requestYouTubePlaylistAccess,
       refreshCurrentUser,
       status,
       user: session?.user ?? null,
@@ -243,10 +272,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       applyCurrentUser,
       authError,
       clearAuthError,
+      googleProviderAccessToken,
       isLoggingIn,
       isLoggingOut,
       loginWithGoogleCode,
       logout,
+      requestYouTubePlaylistAccess,
       refreshCurrentUser,
       session,
       status,

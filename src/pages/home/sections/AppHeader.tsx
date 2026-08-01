@@ -472,7 +472,7 @@ function AppHeader({
                       }}
                       type="button"
                     >
-                      <span>티어 점수</span>
+                      <span>티어 총자산</span>
                       <strong>{tierScoreSummary}</strong>
                     </button>
                     {onOpenSeasonResults ? (

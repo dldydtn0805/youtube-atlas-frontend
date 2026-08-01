@@ -17,15 +17,16 @@ import {
 } from '../../_shared/youtube.ts';
 
 const ALL_CATEGORY_IDS = ['all', '0'];
-const MUSIC_CATEGORY_IDS = ['music', '10'];
+const MUSIC_VIDEO_CATEGORY_ID = '10';
+const TOP_VIDEO_PAGE_SIZE = 50;
 
 function categoryDescription(categoryId: string, label: string) {
   if (ALL_CATEGORY_IDS.includes(categoryId)) {
     return '카테고리 구분 없이 현재 국가 전체 인기 영상을 보여줍니다.';
   }
 
-  if (MUSIC_CATEGORY_IDS.includes(categoryId)) {
-    return '뮤직비디오, 라이브, 음원 관련 인기 영상을 확인할 수 있습니다.';
+  if (categoryId === MUSIC_VIDEO_CATEGORY_ID) {
+    return 'TOP 200 트렌드 싱크에 포함된 음악 영상을 원래 순위대로 보여줍니다.';
   }
 
   return `${label} 카테고리 인기 영상을 확인할 수 있습니다.`;
@@ -39,14 +40,20 @@ async function findSignals(
     ascending?: boolean;
     column?: string;
     limit?: number;
+    videoIds?: string[];
   } = {},
 ) {
   let query = context.service
     .from('video_trend_signals')
     .select('*')
     .eq('region_code', regionCode.toUpperCase())
-    .in('category_id', categoryIds)
-    .limit(options.limit ?? 200);
+    .in('category_id', categoryIds);
+
+  if (options.videoIds && options.videoIds.length > 0) {
+    query = query.in('video_id', options.videoIds);
+  }
+
+  query = query.limit(options.limit ?? 200);
 
   if (options.column) {
     query = query.order(options.column, {
@@ -104,32 +111,59 @@ function toFeed(
   };
 }
 
+export function filterTopSignalsByVideoCategory(
+  signals: TrendSignalRow[],
+  videoCategoryId?: string,
+) {
+  if (!videoCategoryId || ALL_CATEGORY_IDS.includes(videoCategoryId)) {
+    return signals;
+  }
+
+  return signals.filter((signal) => signal.video_category_id === videoCategoryId);
+}
+
 async function listTopVideos(
   context: RequestContext,
   regionCode: string,
-  categoryIds: string[],
+  options: {
+    categoryId?: string;
+    description?: string;
+    label?: string;
+    source?: {
+      categoryId: string;
+      signals: TrendSignalRow[];
+    };
+    videoCategoryId?: string;
+  } = {},
 ) {
   const offset = Math.max(
     0,
     Number.parseInt(context.url.searchParams.get('pageToken') ?? '0', 10) || 0,
   );
-  const { categoryId, signals } = await findFirstAvailableSignals(
-    context,
-    regionCode,
-    categoryIds,
+  const { categoryId, signals } =
+    options.source ??
+    (await findFirstAvailableSignals(context, regionCode, ALL_CATEGORY_IDS));
+  const filteredSignals = filterTopSignalsByVideoCategory(
+    signals,
+    options.videoCategoryId,
   );
-  const pageSize = 50;
-  const items = signals.slice(offset, offset + pageSize).map(toTrendVideo);
-  const nextOffset = offset + pageSize;
-  const label = signals[0]?.category_label ?? (MUSIC_CATEGORY_IDS.includes(categoryId) ? '음악' : '전체');
+  const items = filteredSignals
+    .slice(offset, offset + TOP_VIDEO_PAGE_SIZE)
+    .map(toTrendVideo);
+  const nextOffset = offset + TOP_VIDEO_PAGE_SIZE;
+  const responseCategoryId =
+    options.categoryId ?? options.videoCategoryId ?? categoryId;
+  const label = options.label ?? signals[0]?.category_label ?? '전체';
 
   return json({
     availableCategories: [],
-    categoryId,
-    description: categoryDescription(categoryId, label),
+    categoryId: responseCategoryId,
+    description:
+      options.description ?? categoryDescription(responseCategoryId, label),
     items,
     label,
-    nextPageToken: nextOffset < signals.length ? String(nextOffset) : null,
+    nextPageToken:
+      nextOffset < filteredSignals.length ? String(nextOffset) : null,
   });
 }
 
@@ -223,12 +257,29 @@ export async function handlePublicRoute(
   if (categoryVideosMatch && method === 'GET') {
     const regionCode = decodeURIComponent(categoryVideosMatch[1]).toUpperCase();
     const categoryId = decodeURIComponent(categoryVideosMatch[2]);
+    const [categories, topSignalSource] = await Promise.all([
+      fetchCategories(regionCode),
+      findFirstAvailableSignals(context, regionCode, ALL_CATEGORY_IDS),
+    ]);
+    const category = categories.find((item) => item.id === categoryId);
+
+    if (topSignalSource.signals.length > 0) {
+      return listTopVideos(context, regionCode, {
+        categoryId,
+        description:
+          category?.description ??
+          categoryDescription(categoryId, category?.label ?? categoryId),
+        label: category?.label ?? categoryId,
+        source: topSignalSource,
+        videoCategoryId: categoryId,
+      });
+    }
+
     const page = await fetchPopularVideos({
       categoryId,
       pageToken: context.url.searchParams.get('pageToken'),
       regionCode,
     });
-    const category = (await fetchCategories(regionCode)).find((item) => item.id === categoryId);
     const signals = await findSignals(context, regionCode, [categoryId], {
       limit: 250,
     });
@@ -265,6 +316,7 @@ export async function handlePublicRoute(
     const videoIds = context.url.searchParams.getAll('videoIds').filter(Boolean);
     let signals = await findSignals(context, regionCode, [categoryId], {
       limit: Math.max(videoIds.length, 1),
+      videoIds,
     });
 
     if (videoIds.length > 0) {
@@ -327,7 +379,6 @@ export async function handlePublicRoute(
     return listTopVideos(
       context,
       requiredSearchParam(context.url, 'regionCode').toUpperCase(),
-      ALL_CATEGORY_IDS,
     );
   }
 
@@ -335,7 +386,11 @@ export async function handlePublicRoute(
     return listTopVideos(
       context,
       requiredSearchParam(context.url, 'regionCode').toUpperCase(),
-      MUSIC_CATEGORY_IDS,
+      {
+        categoryId: MUSIC_VIDEO_CATEGORY_ID,
+        label: '음악',
+        videoCategoryId: MUSIC_VIDEO_CATEGORY_ID,
+      },
     );
   }
 

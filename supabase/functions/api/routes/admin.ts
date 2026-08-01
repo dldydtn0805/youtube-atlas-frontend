@@ -11,14 +11,169 @@ import {
 } from '../../_shared/http.ts';
 import {
   ensureWallet,
-  getHighlightScore,
   getPositionRows,
+  getSignalsForRegion,
+  signalMap,
+  walletResponse,
   type GamePositionRow,
 } from './game-helpers.ts';
 import {
   resolveNextTier,
   resolveTier,
 } from '../../_shared/game.ts';
+import { loadSeasonTiers } from '../../_shared/game-tiers.ts';
+import { loadPriceAnchors } from '../../_shared/price-anchors.ts';
+
+interface AdminPriceAnchorInput {
+  pricePoints?: number;
+  rank?: number;
+}
+
+interface AdminTierThresholdInput {
+  minPoints?: number;
+  tierCode?: string;
+}
+
+function toAdminTierThreshold(tier: Awaited<ReturnType<typeof loadSeasonTiers>>[number]) {
+  return {
+    displayName: tier.displayName,
+    inventorySlots: tier.inventorySlots,
+    minPoints: tier.minScore,
+    tierCode: tier.tierCode,
+  };
+}
+
+async function getAdminTierThresholds(context: RequestContext) {
+  const { data: seasons, error } = await context.service
+    .from('game_seasons')
+    .select('*')
+    .eq('status', 'ACTIVE')
+    .order('region_code', { ascending: true });
+
+  if (error) throw error;
+
+  return {
+    seasons: await Promise.all(
+      (seasons ?? []).map(async (season) => ({
+        regionCode: season.region_code,
+        seasonId: season.id,
+        seasonName: season.name,
+        tiers: (await loadSeasonTiers(context.service, season.id)).map(
+          toAdminTierThreshold,
+        ),
+      })),
+    ),
+  };
+}
+
+function validateTierThresholds(
+  inputs: AdminTierThresholdInput[] | undefined,
+  currentTiers: Awaited<ReturnType<typeof loadSeasonTiers>>,
+) {
+  if (!Array.isArray(inputs) || inputs.length !== currentTiers.length) {
+    throw new ApiError(400, 'validation_error', '모든 티어의 기준 포인트가 필요합니다.');
+  }
+
+  const inputByCode = new Map(inputs.map((input) => [input.tierCode?.trim().toUpperCase(), input]));
+  const thresholds = currentTiers.map((tier) => ({
+    ...tier,
+    minScore: inputByCode.get(tier.tierCode)?.minPoints,
+  }));
+
+  if (
+    inputByCode.size !== currentTiers.length ||
+    thresholds.some((tier) => !Number.isSafeInteger(tier.minScore) || Number(tier.minScore) < 0)
+  ) {
+    throw new ApiError(400, 'validation_error', '티어 기준은 0 이상의 정수여야 합니다.');
+  }
+
+  if (Number(thresholds[0]?.minScore) !== 0) {
+    throw new ApiError(400, 'validation_error', '첫 번째 티어 기준은 0P여야 합니다.');
+  }
+
+  for (let index = 1; index < thresholds.length; index += 1) {
+    if (Number(thresholds[index].minScore) <= Number(thresholds[index - 1].minScore)) {
+      throw new ApiError(
+        400,
+        'validation_error',
+        '상위 티어 기준 포인트는 이전 티어보다 커야 합니다.',
+      );
+    }
+  }
+
+  return thresholds.map((tier) => ({ ...tier, minScore: Number(tier.minScore) }));
+}
+
+function validatePriceAnchors(inputs: AdminPriceAnchorInput[] | undefined) {
+  if (!Array.isArray(inputs) || inputs.length < 2) {
+    throw new ApiError(400, 'validation_error', '가격 앵커가 두 개 이상 필요합니다.');
+  }
+
+  const anchors = inputs
+    .map((input) => ({
+      pricePoints: input.pricePoints,
+      rank: input.rank,
+    }))
+    .sort((left, right) => Number(left.rank) - Number(right.rank));
+
+  for (const anchor of anchors) {
+    if (!Number.isInteger(anchor.rank) || Number(anchor.rank) < 1 || Number(anchor.rank) > 200) {
+      throw new ApiError(400, 'validation_error', '앵커 순위는 1에서 200 사이의 정수여야 합니다.');
+    }
+
+    if (!Number.isSafeInteger(anchor.pricePoints) || Number(anchor.pricePoints) <= 0) {
+      throw new ApiError(400, 'validation_error', '앵커 가격은 1 이상의 안전한 정수여야 합니다.');
+    }
+  }
+
+  const ranks = anchors.map((anchor) => Number(anchor.rank));
+  if (new Set(ranks).size !== ranks.length) {
+    throw new ApiError(400, 'validation_error', '같은 순위의 가격 앵커를 중복할 수 없습니다.');
+  }
+
+  if (ranks[0] !== 1 || ranks.at(-1) !== 200) {
+    throw new ApiError(400, 'validation_error', '1위와 200위 가격 앵커가 반드시 필요합니다.');
+  }
+
+  for (let index = 1; index < anchors.length; index += 1) {
+    if (Number(anchors[index].pricePoints) > Number(anchors[index - 1].pricePoints)) {
+      throw new ApiError(
+        400,
+        'validation_error',
+        '순위가 낮아질수록 가격이 높아질 수 없습니다.',
+      );
+    }
+  }
+
+  return anchors.map((anchor) => ({
+    pricePoints: Number(anchor.pricePoints),
+    rank: Number(anchor.rank),
+  }));
+}
+
+async function getAdminPriceAnchors(context: RequestContext) {
+  const { data, error } = await context.service
+    .from('game_price_anchors')
+    .select('rank, price_points, updated_at, updated_by')
+    .order('rank', { ascending: true });
+
+  if (error) throw error;
+
+  const anchors = (data ?? []).map((anchor) => ({
+    pricePoints: Number(anchor.price_points),
+    rank: anchor.rank,
+    updatedAt: anchor.updated_at,
+    updatedBy: anchor.updated_by,
+  }));
+
+  return {
+    anchors,
+    updatedAt: anchors.reduce<string | null>(
+      (latest, anchor) => (!latest || anchor.updatedAt > latest ? anchor.updatedAt : latest),
+      null,
+    ),
+  };
+}
 
 function toSeasonSummary(season: Record<string, unknown>) {
   return {
@@ -97,22 +252,27 @@ async function buildUserDetail(context: RequestContext, userId: number) {
   const activeSeasonGames = [];
   for (const season of seasons ?? []) {
     const wallet = await ensureWallet(context.service, season, userId);
-    const positions = await getPositionRows(context.service, {
-      seasonId: season.id,
-      userId,
-    });
-    const score = await getHighlightScore(
-      context.service,
-      season.id,
-      userId,
-      wallet.manual_tier_score_adjustment,
+    const [positions, signals, priceAnchors, tiers] = await Promise.all([
+      getPositionRows(context.service, {
+        seasonId: season.id,
+        userId,
+      }),
+      getSignalsForRegion(context.service, season.region_code),
+      loadPriceAnchors(context.service),
+      loadSeasonTiers(context.service, season.id),
+    ]);
+    const walletSummary = walletResponse(
+      wallet,
+      positions,
+      signalMap(signals),
+      priceAnchors,
     );
-    const currentTier = resolveTier(score);
-    const nextTier = resolveNextTier(score);
+    const currentTier = resolveTier(walletSummary.totalAssetPoints, tiers);
+    const nextTier = resolveNextTier(walletSummary.totalAssetPoints, tiers);
 
     activeSeasonGames.push({
       balancePoints: wallet.balance_points,
-      calculatedTierScore: score - wallet.manual_tier_score_adjustment,
+      calculatedTierScore: walletSummary.totalAssetPoints,
       closedPositionCount: positions.filter((position) => position.status === 'CLOSED').length,
       currentTier: { ...currentTier },
       manualTierScoreAdjustment: wallet.manual_tier_score_adjustment,
@@ -124,8 +284,9 @@ async function buildUserDetail(context: RequestContext, userId: number) {
       reservedPoints: wallet.reserved_points,
       seasonId: season.id,
       seasonName: season.name,
-      tierScore: score,
-      totalAssetPoints: wallet.balance_points + wallet.reserved_points,
+      tierBasis: 'TOTAL_ASSET_POINTS',
+      tierScore: walletSummary.totalAssetPoints,
+      totalAssetPoints: walletSummary.totalAssetPoints,
     });
   }
 
@@ -158,7 +319,96 @@ export async function handleAdminRoute(
     return null;
   }
 
-  await requireAdmin(context);
+  const { profile: adminProfile } = await requireAdmin(context);
+
+  if (path === '/api/admin/game/price-anchors' && method === 'GET') {
+    return json(await getAdminPriceAnchors(context));
+  }
+
+  if (path === '/api/admin/game/price-anchors' && method === 'PUT') {
+    const body = await readJson<{ anchors?: AdminPriceAnchorInput[] }>(context.request);
+    const anchors = validatePriceAnchors(body.anchors);
+    const { data: existing, error: existingError } = await context.service
+      .from('game_price_anchors')
+      .select('rank')
+      .order('rank', { ascending: true });
+
+    if (existingError) throw existingError;
+
+    const existingRanks = (existing ?? []).map((anchor) => anchor.rank);
+    if (
+      existingRanks.length !== anchors.length ||
+      existingRanks.some((rank, index) => rank !== anchors[index].rank)
+    ) {
+      throw new ApiError(
+        400,
+        'validation_error',
+        '기존 가격 앵커의 순위 구성은 변경할 수 없습니다.',
+      );
+    }
+
+    const updatedAt = new Date().toISOString();
+    const { error } = await context.service.from('game_price_anchors').upsert(
+      anchors.map((anchor) => ({
+        price_points: anchor.pricePoints,
+        rank: anchor.rank,
+        updated_at: updatedAt,
+        updated_by: adminProfile.email,
+      })),
+      { onConflict: 'rank' },
+    );
+
+    if (error) throw error;
+    return json(await getAdminPriceAnchors(context));
+  }
+
+  if (path === '/api/admin/game/tiers' && method === 'GET') {
+    return json(await getAdminTierThresholds(context));
+  }
+
+  if (path === '/api/admin/game/tiers' && method === 'PUT') {
+    const body = await readJson<{
+      seasonId?: number;
+      tiers?: AdminTierThresholdInput[];
+    }>(context.request);
+    const seasonId = Math.floor(body.seasonId ?? 0);
+
+    if (seasonId <= 0) {
+      throw new ApiError(400, 'validation_error', '수정할 시즌이 필요합니다.');
+    }
+
+    const { data: season, error: seasonError } = await context.service
+      .from('game_seasons')
+      .select('id')
+      .eq('id', seasonId)
+      .eq('status', 'ACTIVE')
+      .maybeSingle();
+
+    if (seasonError) throw seasonError;
+    if (!season) {
+      throw new ApiError(404, 'season_not_found', '활성 시즌을 찾을 수 없습니다.');
+    }
+
+    const currentTiers = await loadSeasonTiers(context.service, seasonId);
+    const tiers = validateTierThresholds(body.tiers, currentTiers);
+    const { error } = await context.service.from('game_season_tiers').upsert(
+      tiers.map((tier, index) => ({
+        badge_code: tier.badgeCode,
+        display_name: tier.displayName,
+        inventory_slots: tier.inventorySlots,
+        min_score: tier.minScore,
+        profile_theme_code: tier.profileThemeCode,
+        season_id: seasonId,
+        sort_order: index + 1,
+        tier_code: tier.tierCode,
+        title_code: tier.titleCode,
+      })),
+      { onConflict: 'season_id,tier_code' },
+    );
+
+    if (error) throw error;
+    return json(await getAdminTierThresholds(context));
+  }
 
   if (path === '/api/admin/dashboard' && method === 'GET') {
     const [

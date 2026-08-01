@@ -13,7 +13,6 @@ import ChartViewModal from './sections/ChartViewModal';
 import { RegionFilterModal } from './sections/FilterPanels';
 import GamePanelSection from './sections/GamePanelSection';
 import GameRankHistoryModal from './sections/GameRankHistoryModal';
-import GameSellPreviewDetail from './sections/GameSellPreviewDetail';
 import GameTradeModal from './sections/GameTradeModal';
 import GameIntroModal from './sections/GameIntroModal';
 import GameNotificationModal from './sections/GameNotificationModal';
@@ -38,10 +37,7 @@ import {
   SELL_FEE_RATE_LABEL,
   summarizeGamePositions,
 } from './gameHelpers';
-import {
-  getScheduledSellHalfQuantity,
-  getScheduledSellPresetForStrategy,
-} from './scheduledSellStrategyPreset';
+import { getScheduledSellPresetForStrategy } from './scheduledSellStrategyPreset';
 import useAppPreferences from './hooks/useAppPreferences';
 import useHomeChartCollections from './hooks/useHomeChartCollections';
 import useHomeChartViewState from './hooks/useHomeChartViewState';
@@ -124,6 +120,7 @@ import { fetchVideoById } from '../../features/youtube/api';
 import { useMusicTopVideos, usePopularVideosByCategory, useVideoCategories } from '../../features/youtube/queries';
 import type { YouTubeVideoItem } from '../../features/youtube/types';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
+import MusicPlaylistExportAction from '../../features/youtubePlaylists/MusicPlaylistExportAction';
 import '../../styles/app.css';
 
 const GameSeasonResultsModal = lazy(() => import('./sections/GameSeasonResultsModal/GameSeasonResultsModal'));
@@ -131,7 +128,7 @@ const GameTierModal = lazy(() => import('./sections/GameTierModal'));
 const GameWalletModal = lazy(() => import('./sections/GameWalletModal'));
 
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
-const GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY = 'youtube-atlas-game-intro-dismissed';
+const GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY = 'youtube-atlas-game-intro-rules-v2-dismissed';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
 const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'popular-asc',
@@ -141,9 +138,6 @@ const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'rank-down',
 ]);
 
-function formatHighlightScore(score: number) {
-  return formatPoints(score).replace(/P$/, '점');
-}
 const MAX_CHART_ITEM_COUNT = 200;
 const MAX_SORT_PREFETCH_PAGE_COUNT = 10;
 const CHART_SORT_OPTIONS: Array<{ id: ChartSortMode; label: string }> = [
@@ -305,6 +299,7 @@ function HomePage() {
   const [pendingRegionTopVideoSelection, setPendingRegionTopVideoSelection] = useState<string | null>(null);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [selectedChartView, setSelectedChartView] = useState<ChartViewMode>('popular');
+  const restoreMusicChartView = useCallback(() => setSelectedChartView('music'), []);
   const [chartSortMode, setChartSortMode] = useState<ChartSortMode>('popular-desc');
   const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(null);
   const openChartViewModal = useCallback(() => setIsChartViewModalOpen(true), []);
@@ -568,7 +563,7 @@ function HomePage() {
   } = useFavoriteStreamerVideos(
     accessToken,
     selectedRegionCode,
-    shouldLoadFavorites && favoriteStreamers.length > 0 && isAllCategorySelected,
+    shouldLoadFavorites && favoriteStreamers.length > 0,
   );
   const toggleFavoriteStreamerMutation = useToggleFavoriteStreamer(accessToken);
   const {
@@ -1172,6 +1167,15 @@ function HomePage() {
 
     return quantityByVideoId;
   }, [openGameHoldings]);
+  const syncLockedVideoIds = useMemo(
+    () =>
+      new Set(
+        openGameHoldings
+          .filter((holding) => holding.sellLockedUntilNextSync === true)
+          .map((holding) => holding.videoId),
+      ),
+    [openGameHoldings],
+  );
   const remainingOpenPositionSlotsForCards = currentGameSeason
     ? Math.max(0, getGameInventorySlotLimit(currentGameSeason) - openGamePositionQuantityByVideoId.size)
     : 0;
@@ -1186,12 +1190,13 @@ function HomePage() {
           ? Math.floor((currentGameSeason.wallet.balancePoints * DEFAULT_GAME_QUANTITY) / marketVideo.currentPricePoints)
           : 0;
       const maxOrderBuyQuantity = normalizeGameOrderCapacity(
-        isAlreadyOwned || remainingOpenPositionSlotsForCards > 0 ? maxBuyQuantity : 0,
+        !isAlreadyOwned && remainingOpenPositionSlotsForCards > 0 ? maxBuyQuantity : 0,
       );
       const canBuy = Boolean(
         canShowGameActions &&
           authStatus === 'authenticated' &&
           currentGameSeason &&
+          !isAlreadyOwned &&
           marketVideo?.canBuy &&
           maxOrderBuyQuantity > 0,
       );
@@ -1200,20 +1205,28 @@ function HomePage() {
         ? '전체 카테고리에서만 매수할 수 있습니다.'
         : authStatus !== 'authenticated'
           ? '로그인 후 매수할 수 있습니다.'
-          : marketVideo?.canBuy && maxOrderBuyQuantity > 0
-            ? `${formatGameOrderQuantity(Math.min(DEFAULT_GAME_QUANTITY, maxOrderBuyQuantity))}부터 매수할 수 있습니다.`
-            : marketVideo?.buyBlockedReason ?? (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
+          : isAlreadyOwned
+            ? '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.'
+            : marketVideo?.canBuy && maxOrderBuyQuantity > 0
+              ? '이 영상을 1개 매수할 수 있습니다.'
+              : marketVideo?.buyBlockedReason ??
+                (currentGameSeason
+                  ? '현재 영상은 게임 거래 대상이 아닙니다.'
+                  : '활성 시즌이 없습니다.');
       const sellTitle = !canShowGameActions
         ? '전체 카테고리에서만 매도할 수 있습니다.'
         : authStatus !== 'authenticated'
           ? '로그인 후 매도할 수 있습니다.'
           : sellableQuantity > 0
-            ? `${formatGameOrderQuantity(sellableQuantity)} 즉시 매도할 수 있습니다.`
+            ? '보유 영상 1개를 전량 매도할 수 있습니다.'
+            : syncLockedVideoIds.has(item.id)
+              ? '이번 트렌드 싱크에서 매수했습니다. 다음 트렌드 싱크 후 매도할 수 있습니다.'
             : ownedQuantity > 0
-              ? '매도 대기 시간이 끝난 수량만 매도할 수 있습니다.'
-          : '보유 수량이 있을 때만 매도할 수 있습니다.';
+              ? '매도 대기 시간이 끝난 뒤 보유 영상을 전량 매도할 수 있습니다.'
+          : '보유 영상이 있을 때만 매도할 수 있습니다.';
 
       return {
+        buyLabel: isAlreadyOwned ? '보유 중' : '매수',
         buyTitle,
         canBuy,
         canSell,
@@ -1228,6 +1241,7 @@ function HomePage() {
       openGamePositionQuantityByVideoId,
       openGameSellableQuantityByVideoId,
       remainingOpenPositionSlotsForCards,
+      syncLockedVideoIds,
     ],
   );
   const {
@@ -1448,7 +1462,6 @@ function HomePage() {
 
   const {
     closeTradeModal: closeTradeModalFromFlow,
-    displaySellPreview,
     handleBuyCurrentVideo,
     handleBuyQuantityChange,
     handleCreateScheduledSellOrder,
@@ -1457,7 +1470,6 @@ function HomePage() {
     isBuySubmitting,
     isBuyTradeModalOpen,
     isScheduledSellSubmitting,
-    isSellPreviewPending,
     isSellSubmitting,
     isSellTradeModalOpen,
     openBuyTradeModal,
@@ -1481,7 +1493,6 @@ function HomePage() {
     accessToken,
     activeTradeModal,
     authStatus,
-    buyQuantity,
     closeTradeModal,
     createScheduledSellOrder: createScheduledSellOrderMutation.mutateAsync,
     currentGameSeason,
@@ -1492,20 +1503,17 @@ function HomePage() {
     maxSellQuantity: tradeMaxSellQuantity,
     mutateBuyGamePosition: buyGamePositionMutation.mutateAsync,
     mutateSellGamePositions: sellGamePositionsMutation.mutateAsync,
-    normalizedSellQuantity: tradeNormalizedSellQuantity,
     onBuySuccess: refetchGameDataAfterBuy,
     onSellSuccess: refetchGameTradePanels,
     onScheduledSellSuccess: refetchGameTradePanels,
     selectedOpenPositionId: tradeSelectedSellPositionId,
     selectedSellPositionId: tradeSelectedSellPositionId,
-    selectedGameActionTitle: tradeSelectedGameActionTitle,
     selectedRegionCode,
     selectedVideoCurrentChartRank: tradeSelectedVideoCurrentChartRank,
     selectedVideoId: tradeSelectedVideoId,
     selectedVideoMarketEntry: tradeSelectedVideoMarketEntry,
     selectedVideoSellSummary: tradeSelectedVideoSellSummary,
     selectedVideoUnitPricePoints: tradeSelectedVideoUnitPricePoints,
-    sellQuantity,
     setActiveTradeModal,
     setBuyQuantity,
     setGameActionStatus,
@@ -1526,7 +1534,7 @@ function HomePage() {
       }
 
       if (target.status === 'noSellableQuantity') {
-        setGameActionStatus('지금 바로 매도 가능한 수량이 없습니다.');
+        setGameActionStatus('지금 바로 매도할 수 없는 보유 영상입니다.');
         return;
       }
 
@@ -1939,14 +1947,6 @@ function HomePage() {
     },
     [gamePortfolioSection.categoryId, handleSelectVideoWithPreview, scrollToPlayerStage],
   );
-  const handleOpenPositionBuyTradeModal = useCallback(
-    (position: GamePosition) => {
-      setTradeTargetVideoId(position.videoId);
-      setTradeTargetPositionId(position.id);
-      setActiveTradeModal('buy');
-    },
-    [setActiveTradeModal],
-  );
   const handleOpenPositionSellTradeModal = useCallback(
     (position: GamePosition) => {
       setTradeTargetVideoId(position.videoId);
@@ -1959,10 +1959,10 @@ function HomePage() {
     (position: GamePosition, strategyType: GameStrategyType) => {
       const holding = openGameHoldings.find((item) => item.positionId === position.id);
       const preset = getScheduledSellPresetForStrategy(strategyType);
-      const quantity = getScheduledSellHalfQuantity(holding?.sellableQuantity ?? 0);
+      const quantity = normalizeGameOrderCapacity(holding?.sellableQuantity ?? 0);
 
       if (!holding || !preset || quantity <= 0) {
-        setGameActionStatus('지금 예약 매도할 수 있는 수량이 없습니다.');
+        setGameActionStatus('지금 예약 매도할 수 없는 보유 영상입니다.');
         return;
       }
 
@@ -2262,7 +2262,6 @@ function HomePage() {
       onOpenPositionChart={handleOpenGamePositionChart}
       onRefreshTab={handleRefreshGameTab}
       onOpenScheduledSellOrderChart={handleOpenScheduledSellOrderChart}
-      onOpenPositionBuyTradeModal={handleOpenPositionBuyTradeModal}
       onOpenPositionSellTradeModal={handleOpenPositionSellTradeModal}
       onOpenStrategyScheduledSellTradeModal={handleOpenStrategyScheduledSellTradeModal}
       onSelectGameHistoryVideo={handleSelectGameHistoryVideo}
@@ -2344,7 +2343,7 @@ function HomePage() {
           </p>
           <p className="app-shell__fullscreen-loading-copy">
             {isScheduledSellSubmitting
-              ? '예약 조건과 수량을 확인한 뒤 자동 매도 주문을 등록하고 있습니다. 잠시만 기다려 주세요.'
+              ? '예약 조건을 확인한 뒤 보유 영상 전량 매도 주문을 등록하고 있습니다. 잠시만 기다려 주세요.'
               : '주문을 서버에 반영하고 지갑과 포지션을 갱신하고 있습니다. 잠시만 기다려 주세요.'}
           </p>
         </div>
@@ -2365,7 +2364,7 @@ function HomePage() {
         authStatus={authStatus}
         currentTierCode={gameTierProgress?.currentTier.tierCode}
         currentTierName={gameTierProgress?.currentTier.displayName}
-        currentTierScore={gameTierProgress?.highlightScore}
+        currentTierScore={gameTierProgress?.totalAssetPoints}
         highlightCount={gameHighlights.length}
         isOpenPositionLimitReached={isOpenPositionLimitReached}
         openPositionCount={openDistinctVideoCount}
@@ -2426,6 +2425,14 @@ function HomePage() {
           onResumeStickySelectedVideo={handleResumeCurrentVideo}
           chartPanelProps={{
             chartErrorMessage: activeChartErrorMessage,
+            chartHeaderAction: (
+              <MusicPlaylistExportAction
+                isVisible={effectiveChartView === 'music'}
+                items={sortedFilteredMusicChartSection?.items ?? []}
+                onRestoreMusicView={restoreMusicChartView}
+                regionCode={selectedRegionCode}
+              />
+            ),
             marketPriceByVideoId,
             chartSortMode,
             chartSortOptions,
@@ -2699,16 +2706,10 @@ function HomePage() {
       <GameTradeModal
         confirmLabel={
           sellOrderMode === 'scheduled'
-            ? `${formatGameOrderQuantity(tradeNormalizedSellQuantity)} 예약 매도`
-            : `${formatGameOrderQuantity(tradeNormalizedSellQuantity)} 즉시 매도`
+            ? '예약 매도'
+            : '즉시 매도'
         }
         currentRankLabel={formatRank(tradeSelectedVideoCurrentChartRank, { chartOut: tradeSelectedVideoIsChartOut })}
-        detailContent={sellOrderMode === 'instant' ? (
-          <GameSellPreviewDetail
-            isLoading={isSellPreviewPending}
-            preview={displaySellPreview}
-          />
-        ) : null}
         helperText={tradeSellModalHelperText}
         isOpen={isSellTradeModalOpen}
         isSubmitting={isSellSubmitting || isScheduledSellSubmitting}
@@ -2747,35 +2748,11 @@ function HomePage() {
                         ? `${formatRank(scheduledSellTargetRank)} 이하 이탈`
                         : `${formatRank(scheduledSellTargetRank)} 이내 진입`,
                 },
-                { label: '대상 수량', value: formatGameOrderQuantity(tradeNormalizedSellQuantity) },
                 { label: '현재 순위', value: formatRank(tradeSelectedVideoCurrentChartRank, { chartOut: tradeSelectedVideoIsChartOut }) },
                 { label: '처리 방식', value: '조건 도달 시 자동 매도' },
               ]
             : [
-                { label: '수량', value: formatGameOrderQuantity(resolvedSellSummary.quantity) },
                 { label: '정산 금액', value: formatPoints(resolvedSellSummary.settledPoints) },
-                {
-                  label: '해당 매도 시 하이라이트 점수',
-                  value:
-                    isSellPreviewPending
-                      ? '계산 중'
-                      : displaySellPreview
-                        ? formatHighlightScore(displaySellPreview.projectedHighlightScore)
-                        : '--',
-                },
-                {
-                  label: '하이라이트 점수 증가량',
-                  tone:
-                    (displaySellPreview?.appliedHighlightScoreDelta ?? 0) > 0
-                      ? 'gain'
-                      : 'flat',
-                  value:
-                    isSellPreviewPending
-                      ? '계산 중'
-                      : displaySellPreview
-                        ? formatHighlightScore(displaySellPreview.appliedHighlightScoreDelta)
-                        : '--',
-                },
                 ...(typeof projectedWalletBalanceAfterSell === 'number'
                   ? [{ label: '거래 후 잔액', value: formatPoints(projectedWalletBalanceAfterSell) }]
                   : []),

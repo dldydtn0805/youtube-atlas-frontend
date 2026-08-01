@@ -144,15 +144,19 @@ export interface GameMarketVideo {
   rankChange: number | null;
   basePricePoints?: number;
   currentPricePoints: number;
-  momentumPriceDeltaPoints?: number;
-  momentumPriceDeltaPercent?: number;
-  momentumPriceType?: 'PREMIUM' | 'DISCOUNT' | 'NONE';
+  demandPriceDeltaPoints?: number;
+  demandPriceDeltaPercent?: number;
+  demandPriceType?: 'PREMIUM' | 'DISCOUNT' | 'NONE';
   currentViewCount: number | null;
   viewCountDelta: number | null;
   isNew: boolean;
   canBuy: boolean;
   buyBlockedReason: string | null;
   capturedAt: string;
+  syncBuyCount?: number;
+  syncBuyQuantity?: number;
+  syncSellCount?: number;
+  syncSellQuantity?: number;
 }
 
 export interface GameLeaderboardEntry {
@@ -200,7 +204,9 @@ export interface GameTierProgress {
   seasonId: number;
   seasonName: string;
   regionCode: string;
-  highlightScore: number;
+  totalAssetPoints: number;
+  tierBasis?: 'TOTAL_ASSET_POINTS';
+  highlightScore?: number;
   calculatedHighlightScore?: number;
   manualTierScoreAdjustment?: number;
   currentTier: GameTier;
@@ -285,6 +291,7 @@ export interface GamePosition {
   scheduledSellTargetProfitRatePercent?: number | null;
   scheduledSellTriggerDirection?: ScheduledSellTriggerDirection | null;
   scheduledSellQuantity?: number | null;
+  sellLockedUntilNextSync?: boolean;
 }
 
 export interface GameScheduledSellOrder {

@@ -1,36 +1,52 @@
-const PRICE_ANCHORS: ReadonlyArray<readonly [number, number]> = [
-  [1, 2_000_000],
-  [2, 1_333_333],
-  [3, 1_320_000],
-  [4, 1_300_000],
-  [5, 1_270_000],
-  [6, 1_240_000],
-  [7, 1_200_000],
-  [8, 1_150_000],
-  [9, 1_100_000],
-  [10, 1_050_000],
-  [20, 750_000],
-  [30, 550_000],
-  [40, 400_000],
-  [50, 290_000],
-  [60, 210_000],
-  [70, 150_000],
-  [80, 110_000],
-  [90, 80_000],
-  [100, 58_000],
-  [110, 42_000],
-  [120, 31_000],
-  [130, 23_000],
-  [140, 17_000],
-  [150, 13_000],
-  [160, 10_000],
-  [170, 7_500],
-  [180, 5_500],
-  [190, 4_000],
-  [200, 3_000],
+export type PriceAnchor = readonly [rank: number, pricePoints: number];
+
+export const GAME_QUANTITY_SCALE = 100;
+export const ORDER_COUNT_PRICE_BPS = 100;
+export const MAX_ORDER_COUNT_PRICE_ADJUSTMENT_BPS = 3_000;
+
+export const DEFAULT_PRICE_ANCHORS: ReadonlyArray<PriceAnchor> = [
+  [1, 1_000_000],
+  [2, 900_000],
+  [3, 850_000],
+  [4, 800_000],
+  [5, 750_000],
+  [6, 720_000],
+  [7, 690_000],
+  [8, 660_000],
+  [9, 630_000],
+  [10, 600_000],
+  [20, 500_000],
+  [30, 420_000],
+  [40, 350_000],
+  [50, 300_000],
+  [60, 250_000],
+  [70, 210_000],
+  [80, 180_000],
+  [90, 150_000],
+  [100, 125_000],
+  [110, 105_000],
+  [120, 90_000],
+  [130, 78_000],
+  [140, 68_000],
+  [150, 60_000],
+  [160, 54_000],
+  [170, 50_000],
+  [180, 46_000],
+  [190, 43_000],
+  [200, 40_000],
 ];
 
-export const TIER_DEFINITIONS = [
+export interface GameTierDefinition {
+  badgeCode: string;
+  displayName: string;
+  inventorySlots: number;
+  minScore: number;
+  profileThemeCode: string;
+  tierCode: string;
+  titleCode: string;
+}
+
+export const TIER_DEFINITIONS: ReadonlyArray<GameTierDefinition> = [
   {
     badgeCode: 'season-bronze',
     displayName: '브론즈',
@@ -44,7 +60,7 @@ export const TIER_DEFINITIONS = [
     badgeCode: 'season-silver',
     displayName: '실버',
     inventorySlots: 7,
-    minScore: 5_000,
+    minScore: 120_000,
     profileThemeCode: 'silver',
     tierCode: 'SILVER',
     titleCode: 'silver-investor',
@@ -53,7 +69,7 @@ export const TIER_DEFINITIONS = [
     badgeCode: 'season-gold',
     displayName: '골드',
     inventorySlots: 10,
-    minScore: 15_000,
+    minScore: 150_000,
     profileThemeCode: 'gold',
     tierCode: 'GOLD',
     titleCode: 'gold-investor',
@@ -62,7 +78,7 @@ export const TIER_DEFINITIONS = [
     badgeCode: 'season-platinum',
     displayName: '플래티넘',
     inventorySlots: 12,
-    minScore: 60_000,
+    minScore: 200_000,
     profileThemeCode: 'platinum',
     tierCode: 'PLATINUM',
     titleCode: 'platinum-investor',
@@ -80,7 +96,7 @@ export const TIER_DEFINITIONS = [
     badgeCode: 'season-master',
     displayName: '마스터',
     inventorySlots: 17,
-    minScore: 1_800_000,
+    minScore: 500_000,
     profileThemeCode: 'master',
     tierCode: 'MASTER',
     titleCode: 'master-investor',
@@ -89,12 +105,12 @@ export const TIER_DEFINITIONS = [
     badgeCode: 'season-legend',
     displayName: '레전드',
     inventorySlots: 20,
-    minScore: 12_600_000,
+    minScore: 1_000_000,
     profileThemeCode: 'legend',
     tierCode: 'LEGEND',
     titleCode: 'legend-investor',
   },
-] as const;
+];
 
 export interface TrendSignalRow {
   captured_at: string;
@@ -110,6 +126,10 @@ export interface TrendSignalRow {
   previous_view_count: number | null;
   rank_change: number | null;
   region_code: string;
+  sync_buy_count: number;
+  sync_buy_quantity: number;
+  sync_sell_count?: number;
+  sync_sell_quantity?: number;
   thumbnail_url: string;
   title: string;
   video_category_id?: string | null;
@@ -118,44 +138,86 @@ export interface TrendSignalRow {
   view_count_delta: number | null;
 }
 
-export function calculateBasePricePoints(rank: number) {
+export function calculateBasePricePoints(
+  rank: number,
+  priceAnchors: ReadonlyArray<PriceAnchor> = DEFAULT_PRICE_ANCHORS,
+) {
   if (rank > 200) {
     return 0;
   }
 
   const normalizedRank = Math.max(1, Math.floor(rank));
-  let previousAnchor = PRICE_ANCHORS[0];
+  let previousAnchor = priceAnchors[0] ?? DEFAULT_PRICE_ANCHORS[0];
 
-  for (const anchor of PRICE_ANCHORS) {
+  for (const anchor of priceAnchors) {
     if (anchor[0] === normalizedRank) {
       return anchor[1];
     }
 
     if (anchor[0] > normalizedRank) {
-      const progress =
-        (normalizedRank - previousAnchor[0]) / (anchor[0] - previousAnchor[0]);
-      return Math.round(
-        previousAnchor[1] * Math.pow(anchor[1] / previousAnchor[1], progress),
-      );
+      const progress = (normalizedRank - previousAnchor[0]) / (anchor[0] - previousAnchor[0]);
+      return Math.round(previousAnchor[1] * Math.pow(anchor[1] / previousAnchor[1], progress));
     }
 
     previousAnchor = anchor;
   }
 
-  return PRICE_ANCHORS.at(-1)?.[1] ?? 0;
+  return priceAnchors.at(-1)?.[1] ?? 0;
 }
 
-export function calculatePricePoints(rank: number, rankChange: number | null) {
-  const basePricePoints = calculateBasePricePoints(rank);
+export function calculateOrderCountAdjustmentBps(
+  syncBuyCount: number,
+  syncSellCount: number,
+) {
+  const normalizedBuyCount = Number.isFinite(syncBuyCount)
+    ? Math.max(0, Math.floor(syncBuyCount))
+    : 0;
+  const normalizedSellCount = Number.isFinite(syncSellCount)
+    ? Math.max(0, Math.floor(syncSellCount))
+    : 0;
+  const netOrderCount = normalizedBuyCount - normalizedSellCount;
 
-  if (!rankChange) {
-    return basePricePoints;
+  return Math.max(
+    -MAX_ORDER_COUNT_PRICE_ADJUSTMENT_BPS,
+    Math.min(
+      MAX_ORDER_COUNT_PRICE_ADJUSTMENT_BPS,
+      netOrderCount * ORDER_COUNT_PRICE_BPS,
+    ),
+  );
+}
+
+export function calculateOrderCountPricePoints(
+  basePricePoints: number,
+  syncBuyCount: number,
+  syncSellCount = 0,
+) {
+  if (basePricePoints <= 0) {
+    return 0;
   }
 
-  const cappedRankChange = Math.max(-30, Math.min(30, rankChange));
-  const coefficient = cappedRankChange > 0 ? 0.002 : 0.003;
+  const adjustmentBps = calculateOrderCountAdjustmentBps(syncBuyCount, syncSellCount);
+  return Math.max(0, Math.round((basePricePoints * (10_000 + adjustmentBps)) / 10_000));
+}
 
-  return Math.max(0, Math.round(basePricePoints * Math.exp(coefficient * cappedRankChange)));
+export function calculateSignalPricePoints(
+  signal: Pick<
+    TrendSignalRow,
+    'current_rank' | 'sync_buy_count' | 'sync_sell_count'
+  >,
+  priceAnchors: ReadonlyArray<PriceAnchor> = DEFAULT_PRICE_ANCHORS,
+) {
+  const basePricePoints = calculateBasePricePoints(signal.current_rank, priceAnchors);
+  return calculateOrderCountPricePoints(
+    basePricePoints,
+    signal.sync_buy_count ?? 0,
+    signal.sync_sell_count ?? 0,
+  );
+}
+
+export function calculateChartOutPricePoints(
+  priceAnchors: ReadonlyArray<PriceAnchor> = DEFAULT_PRICE_ANCHORS,
+) {
+  return Math.max(0, Math.round((calculateBasePricePoints(200, priceAnchors) * 29) / 30));
 }
 
 export function calculatePositionPoints(unitPricePoints: number, quantity: number) {
@@ -183,14 +245,18 @@ export function calculateSellValues(
   };
 }
 
-export function resolveTier(score: number) {
-  return [...TIER_DEFINITIONS]
-    .reverse()
-    .find((tier) => score >= tier.minScore) ?? TIER_DEFINITIONS[0];
+export function resolveTier(
+  score: number,
+  tiers: ReadonlyArray<GameTierDefinition> = TIER_DEFINITIONS,
+) {
+  return [...tiers].reverse().find((tier) => score >= tier.minScore) ?? tiers[0];
 }
 
-export function resolveNextTier(score: number) {
-  return TIER_DEFINITIONS.find((tier) => score < tier.minScore) ?? null;
+export function resolveNextTier(
+  score: number,
+  tiers: ReadonlyArray<GameTierDefinition> = TIER_DEFINITIONS,
+) {
+  return tiers.find((tier) => score < tier.minScore) ?? null;
 }
 
 export function resolveStrategyTags(
@@ -222,10 +288,19 @@ export function resolveStrategyTags(
   return tags;
 }
 
-export function toMarketVideo(signal: TrendSignalRow, canBuy = true, buyBlockedReason: string | null = null) {
-  const basePricePoints = calculateBasePricePoints(signal.current_rank);
-  const currentPricePoints = calculatePricePoints(signal.current_rank, signal.rank_change);
-  const momentumPriceDeltaPoints = currentPricePoints - basePricePoints;
+export function toMarketVideo(
+  signal: TrendSignalRow,
+  canBuy = true,
+  buyBlockedReason: string | null = null,
+  priceAnchors: ReadonlyArray<PriceAnchor> = DEFAULT_PRICE_ANCHORS,
+) {
+  const basePricePoints = calculateBasePricePoints(signal.current_rank, priceAnchors);
+  const currentPricePoints = calculateOrderCountPricePoints(
+    basePricePoints,
+    signal.sync_buy_count ?? 0,
+    signal.sync_sell_count ?? 0,
+  );
+  const demandPriceDeltaPoints = currentPricePoints - basePricePoints;
 
   return {
     basePricePoints,
@@ -236,18 +311,22 @@ export function toMarketVideo(signal: TrendSignalRow, canBuy = true, buyBlockedR
     currentPricePoints,
     currentRank: signal.current_rank,
     currentViewCount: signal.current_view_count,
-    isNew: signal.is_new,
-    momentumPriceDeltaPercent:
-      basePricePoints > 0 ? (momentumPriceDeltaPoints * 100) / basePricePoints : 0,
-    momentumPriceDeltaPoints,
-    momentumPriceType:
-      momentumPriceDeltaPoints > 0
+    demandPriceDeltaPercent:
+      basePricePoints > 0 ? (demandPriceDeltaPoints * 100) / basePricePoints : 0,
+    demandPriceDeltaPoints,
+    demandPriceType:
+      demandPriceDeltaPoints > 0
         ? 'PREMIUM'
-        : momentumPriceDeltaPoints < 0
+        : demandPriceDeltaPoints < 0
           ? 'DISCOUNT'
           : 'NONE',
+    isNew: signal.is_new,
     previousRank: signal.previous_rank,
     rankChange: signal.rank_change,
+    syncBuyCount: signal.sync_buy_count ?? 0,
+    syncBuyQuantity: signal.sync_buy_quantity ?? 0,
+    syncSellCount: signal.sync_sell_count ?? 0,
+    syncSellQuantity: signal.sync_sell_quantity ?? 0,
     thumbnailUrl: signal.thumbnail_url,
     title: signal.title,
     videoId: signal.video_id,
@@ -301,8 +380,7 @@ export function toTrendVideo(signal: TrendSignalRow) {
       title: signal.title,
     },
     statistics: {
-      viewCount:
-        signal.current_view_count === null ? null : String(signal.current_view_count),
+      viewCount: signal.current_view_count === null ? null : String(signal.current_view_count),
     },
     trend: {
       capturedAt: signal.captured_at,

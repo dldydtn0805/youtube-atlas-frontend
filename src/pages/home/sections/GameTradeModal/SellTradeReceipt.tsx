@@ -1,31 +1,20 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { HTMLAttributes } from 'react';
 import ThumbnailPlayOverlay from '../../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../../features/game/types';
-import {
-  GAME_ORDER_QUANTITY_STEP,
-  formatGameOrderQuantity,
-  parseGameOrderQuantityInput,
-  toDisplayGameOrderQuantity,
-} from '../../gameHelpers';
 import ScheduledSellReceiptFields from './ScheduledSellReceiptFields';
 import SellOrderModeTabs from './SellOrderModeTabs';
-import type { GameTradeModalSummaryItem, GameTradeQuickAction } from './types';
+import type { GameTradeModalSummaryItem } from './types';
 import './SellTradeReceipt.css';
 
 interface SellTradeReceiptProps {
   bodySwipeHandlers: HTMLAttributes<HTMLDivElement>;
   confirmLabel: string;
   currentRankLabel: string;
-  detailContent?: ReactNode;
-  disableQuantityControls: boolean;
   headerSwipeHandlers: HTMLAttributes<HTMLDivElement>;
-  helperText: string;
   isScheduledSellMode: boolean;
   isSubmitting: boolean;
   modalTitleId: string;
   normalizedMaxQuantity: number;
-  normalizedQuantity: number;
-  onChangeQuantity: (quantity: number) => void;
   onChangeSellOrderMode?: (mode: 'instant' | 'scheduled') => void;
   onChangeScheduledSellTargetProfitRatePercent?: (profitRatePercent: number | null) => void;
   onChangeScheduledSellTargetRank?: (rank: number | null) => void;
@@ -33,7 +22,6 @@ interface SellTradeReceiptProps {
   onChangeScheduledSellTriggerType?: (triggerType: ScheduledSellTriggerType) => void;
   onClose: () => void;
   onConfirm: () => void;
-  quickActions: GameTradeQuickAction[];
   scheduledSellConditionError?: string | null;
   scheduledSellTargetProfitRatePercent?: number | null;
   scheduledSellTargetRank?: number | null;
@@ -46,17 +34,9 @@ interface SellTradeReceiptProps {
   unitPointsLabel: string;
 }
 
-function clampSellQuantity(quantity: number, maxQuantity: number) {
-  if (maxQuantity <= 0) {
-    return GAME_ORDER_QUANTITY_STEP;
-  }
-
-  return Math.max(GAME_ORDER_QUANTITY_STEP, Math.min(maxQuantity, quantity));
-}
-
 function getTotalItem(items: GameTradeModalSummaryItem[], isScheduledSellMode: boolean) {
   if (isScheduledSellMode) {
-    return items.find((item) => item.label.includes('대상')) ?? items.find((item) => item.label.includes('수량'));
+    return items.find((item) => item.label.includes('예약 조건')) ?? items.find((item) => item.label.includes('처리 방식'));
   }
 
   return items.find((item) => item.label.includes('정산')) ?? items.find((item) => item.label.includes('매도'));
@@ -70,16 +50,11 @@ export default function SellTradeReceipt({
   bodySwipeHandlers,
   confirmLabel,
   currentRankLabel,
-  detailContent,
-  disableQuantityControls,
   headerSwipeHandlers,
-  helperText,
   isScheduledSellMode,
   isSubmitting,
   modalTitleId,
   normalizedMaxQuantity,
-  normalizedQuantity,
-  onChangeQuantity,
   onChangeSellOrderMode,
   onChangeScheduledSellTargetProfitRatePercent,
   onChangeScheduledSellTargetRank,
@@ -87,7 +62,6 @@ export default function SellTradeReceipt({
   onChangeScheduledSellTriggerType,
   onClose,
   onConfirm,
-  quickActions,
   scheduledSellConditionError = null,
   scheduledSellTargetProfitRatePercent = 300,
   scheduledSellTargetRank = 100,
@@ -99,11 +73,9 @@ export default function SellTradeReceipt({
   title,
   unitPointsLabel,
 }: SellTradeReceiptProps) {
-  const previousQuantity = clampSellQuantity(normalizedQuantity - GAME_ORDER_QUANTITY_STEP, normalizedMaxQuantity);
-  const nextQuantity = clampSellQuantity(normalizedQuantity + GAME_ORDER_QUANTITY_STEP, normalizedMaxQuantity);
   const totalItem = getTotalItem(summaryItems, isScheduledSellMode);
-  const statItems = isScheduledSellMode ? summaryItems.slice(0, 2) : summaryItems.slice(0, 6);
-  const ledgerItems = isScheduledSellMode ? [] : summaryItems.slice(6);
+  const statItems = summaryItems.slice(0, 2);
+  const ledgerItems = summaryItems.slice(2);
   const canEditSchedule =
     onChangeScheduledSellTriggerType &&
     onChangeScheduledSellTargetRank &&
@@ -142,48 +114,6 @@ export default function SellTradeReceipt({
             <span>현재가</span>
             <strong>{unitPointsLabel}</strong>
           </div>
-        </section>
-
-        <section className="app-shell__game-sell-receipt-section" aria-label="매도 수량">
-          <p className="app-shell__game-sell-receipt-label">QUANTITY</p>
-          <p className="app-shell__game-sell-receipt-help">{helperText}</p>
-          <div className="app-shell__game-sell-receipt-quantity">
-            <button disabled={disableQuantityControls} onClick={() => onChangeQuantity(previousQuantity)} type="button">
-              -
-            </button>
-            <input
-              aria-label="매도 수량"
-              disabled={disableQuantityControls}
-              inputMode="numeric"
-              max={normalizedMaxQuantity > 0 ? toDisplayGameOrderQuantity(normalizedMaxQuantity) : undefined}
-              min={1}
-              onChange={(event) => onChangeQuantity(parseGameOrderQuantityInput(Number(event.target.value)))}
-              step="1"
-              type="number"
-              value={toDisplayGameOrderQuantity(normalizedQuantity)}
-            />
-            <button disabled={disableQuantityControls} onClick={() => onChangeQuantity(nextQuantity)} type="button">
-              +
-            </button>
-          </div>
-          {quickActions.length > 0 ? (
-            <div className="app-shell__game-sell-receipt-pcts">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  data-active={action.quantity === normalizedQuantity}
-                  disabled={disableQuantityControls}
-                  onClick={() => onChangeQuantity(action.quantity)}
-                  type="button"
-                >
-                  {action.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <p className="app-shell__game-sell-receipt-hint">
-            1개 단위로만 주문할 수 있습니다. 현재 선택: {formatGameOrderQuantity(normalizedQuantity)}
-          </p>
         </section>
 
         {isScheduledSellMode && canEditSchedule ? (
@@ -229,14 +159,13 @@ export default function SellTradeReceipt({
         {!isScheduledSellMode ? (
           <div className="app-shell__game-sell-receipt-total">
             <span>TOTAL</span>
-            <strong>{totalItem?.value ?? formatGameOrderQuantity(normalizedQuantity)}</strong>
+            <strong>{totalItem?.value ?? '--'}</strong>
           </div>
         ) : null}
 
-        {!isScheduledSellMode && (summaryNote || detailContent) ? (
+        {!isScheduledSellMode && summaryNote ? (
           <div className="app-shell__game-sell-receipt-notice">
-            {summaryNote ? <p>{summaryNote}</p> : null}
-            {detailContent}
+            <p>{summaryNote}</p>
           </div>
         ) : null}
 

@@ -156,6 +156,20 @@
   margin: 0;
 }
 
+.app-shell__game-buy-receipt-fixed-quantity {
+  align-items: center;
+  background: var(--surface-chip-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+  display: flex;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 44px;
+}
+
 .app-shell__game-buy-receipt-pcts {
   display: grid;
   gap: 6px;

@@ -147,8 +147,8 @@ export default function GameHighlightsTab({
                     <p className="app-shell__game-highlight-title">{highlight.videoTitle}</p>
                   </div>
                   <p className="app-shell__game-highlight-meta">
-                    <span className="app-shell__game-highlight-meta-label">티어 점수</span>{' '}
-                    <span className="app-shell__game-highlight-score" title="이 하이라이트로 오른 티어 점수">
+                    <span className="app-shell__game-highlight-meta-label">하이라이트 점수</span>{' '}
+                    <span className="app-shell__game-highlight-score" title="이 거래의 하이라이트 점수">
                       {formatHighlightScore(highlight.highlightScore)}
                     </span>
                     {' · '}

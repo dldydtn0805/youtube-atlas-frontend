@@ -6,7 +6,7 @@ import { formatHighlightMove, formatHighlightScore } from './seasonResultHighlig
 export default function SeasonResultHighlightMeta({ item }: { item: Item }) {
   return (
     <p className="game-season-result-highlight-card__meta">
-      <span>티어 점수</span> {formatHighlightScore(item.highlightScore)}
+      <span>하이라이트 점수</span> {formatHighlightScore(item.highlightScore)}
       {' · '}
       <span>순위</span> {formatRank(item.buyRank)}{' -> '}
       {formatRank(item.sellRank, { unavailableAsChartOut: true })}

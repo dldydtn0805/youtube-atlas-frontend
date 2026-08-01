@@ -26,7 +26,7 @@ describe('GameSelectedVideoPriceSummary', () => {
     expect(screen.getByLabelText('선택한 영상 메타데이터')).toHaveTextContent('순위 3위 · 조회수 12.5만');
   });
 
-  it('shows view count next to rank when market data is available', () => {
+  it('shows view count without adding a price badge for rank movement', () => {
     render(
       <GameSelectedVideoPriceSummary
         fallbackRankLabel="3위"
@@ -41,13 +41,10 @@ describe('GameSelectedVideoPriceSummary', () => {
           basePricePoints: 1000,
           capturedAt: '2026-04-13T00:00:00.000Z',
           channelTitle: '배도',
-          currentPricePoints: 1128,
+          currentPricePoints: 1000,
           currentRank: 3,
           currentViewCount: 125000,
           isNew: false,
-          momentumPriceDeltaPercent: 12.8,
-          momentumPriceDeltaPoints: 128,
-          momentumPriceType: 'PREMIUM',
           previousRank: 4,
           rankChange: 1,
           thumbnailUrl: 'https://example.com/thumb.jpg',
@@ -69,11 +66,12 @@ describe('GameSelectedVideoPriceSummary', () => {
     expect(screen.getByLabelText('선택한 영상 현재 가격')).toHaveTextContent(
       '순위 3위 · 조회수 12.5만 · 현재 단가',
     );
-    expect(screen.getByText('프리미엄 +12.8%')).toBeInTheDocument();
+    expect(screen.queryByText(/프리미엄/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/세일/)).not.toBeInTheDocument();
     expect(screen.queryByText('하이라이트 점수')).not.toBeInTheDocument();
   });
 
-  it('shows discount badge next to selected video metadata', () => {
+  it('shows a premium only when the current-sync buy count exceeds the sell count', () => {
     render(
       <GameSelectedVideoPriceSummary
         fallbackRankLabel="3위"
@@ -87,15 +85,17 @@ describe('GameSelectedVideoPriceSummary', () => {
           basePricePoints: 1000,
           capturedAt: '2026-04-13T00:00:00.000Z',
           channelTitle: '배도',
-          currentPricePoints: 942,
+          currentPricePoints: 1020,
           currentRank: 3,
           currentViewCount: 125000,
           isNew: false,
-          momentumPriceDeltaPercent: -5.8,
-          momentumPriceDeltaPoints: -58,
-          momentumPriceType: 'DISCOUNT',
+          demandPriceDeltaPercent: 2,
+          demandPriceDeltaPoints: 20,
+          demandPriceType: 'PREMIUM',
           previousRank: 2,
           rankChange: -1,
+          syncBuyCount: 3,
+          syncSellCount: 1,
           thumbnailUrl: 'https://example.com/thumb.jpg',
           title: '테스트 영상',
           videoId: 'video-1',
@@ -112,7 +112,52 @@ describe('GameSelectedVideoPriceSummary', () => {
       />,
     );
 
-    expect(screen.getByText('세일 -5.8%')).toBeInTheDocument();
+    expect(screen.getByText('프리미엄 +2% · 매수 3회 · 매도 1회')).toBeInTheDocument();
+  });
+
+  it('shows a current-sync sell discount with buy and sell counts', () => {
+    render(
+      <GameSelectedVideoPriceSummary
+        fallbackRankLabel="3위"
+        preferMarketSummary
+        selectedVideoCurrentChartRank={3}
+        selectedVideoId="video-1"
+        selectedVideoIsChartOut={false}
+        selectedVideoMarketEntry={{
+          buyBlockedReason: null,
+          canBuy: true,
+          capturedAt: '2026-04-13T00:00:00.000Z',
+          channelTitle: '배도',
+          currentPricePoints: 980,
+          currentRank: 3,
+          currentViewCount: 125000,
+          demandPriceDeltaPercent: -2,
+          demandPriceDeltaPoints: -20,
+          demandPriceType: 'DISCOUNT',
+          isNew: false,
+          previousRank: 3,
+          rankChange: 0,
+          syncBuyCount: 1,
+          syncBuyQuantity: 100,
+          syncSellCount: 3,
+          syncSellQuantity: 300,
+          thumbnailUrl: 'https://example.com/thumb.jpg',
+          title: '테스트 영상',
+          videoId: 'video-1',
+          viewCountDelta: 1000,
+        }}
+        selectedVideoOpenPositionCount={0}
+        selectedVideoOpenPositionSummary={{
+          evaluationPoints: 0,
+          profitPoints: 0,
+          quantity: 0,
+          stakePoints: 0,
+        }}
+        selectedVideoTrendBadges={[]}
+      />,
+    );
+
+    expect(screen.getByText('세일 -2% · 매수 1회 · 매도 3회')).toBeInTheDocument();
   });
 
   it('shows fallback trend badges when market data is unavailable', () => {

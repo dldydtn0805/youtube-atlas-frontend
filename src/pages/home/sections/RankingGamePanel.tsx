@@ -88,6 +88,7 @@ interface RankingGameSelectedVideoActionsProps {
   mainPlayerRef?: RefObject<VideoPlayerHandle | null>;
   isBuyDisabled: boolean;
   isBuySubmitting: boolean;
+  isVideoOwned?: boolean;
   isSellDisabled: boolean;
   isSellSubmitting: boolean;
   onContentClick?: () => void;
@@ -131,7 +132,6 @@ interface RankingGamePositionsTabProps {
   isLoading?: boolean;
   onCancelScheduledSellOrder?: (orderId: number) => void;
   onOpenPositionChart?: (position: GamePosition) => void;
-  onOpenBuyTradeModal?: (position: GamePosition) => void;
   onOpenSellTradeModal?: (position: GamePosition) => void;
   onOpenStrategyScheduledSellTradeModal?: (position: GamePosition, strategyType: GameStrategyType) => void;
   onSelectPosition: (position: GamePosition) => void;
@@ -191,7 +191,6 @@ function areRankingGamePositionsTabPropsEqual(
     prevProps.isLoading === nextProps.isLoading &&
     prevProps.onCancelScheduledSellOrder === nextProps.onCancelScheduledSellOrder &&
     prevProps.onOpenPositionChart === nextProps.onOpenPositionChart &&
-    prevProps.onOpenBuyTradeModal === nextProps.onOpenBuyTradeModal &&
     prevProps.onOpenSellTradeModal === nextProps.onOpenSellTradeModal &&
     prevProps.onOpenStrategyScheduledSellTradeModal === nextProps.onOpenStrategyScheduledSellTradeModal &&
     prevProps.onSelectPosition === nextProps.onSelectPosition &&
@@ -325,7 +324,7 @@ function LeaderboardHighlightList({
                 <div className="app-shell__game-leaderboard-position-copy">
                 <p className="app-shell__game-leaderboard-position-title">{highlight.videoTitle}</p>
                 <p className="app-shell__game-leaderboard-position-meta">
-                  <span className="app-shell__game-leaderboard-position-meta-label">티어 점수</span>{' '}
+                  <span className="app-shell__game-leaderboard-position-meta-label">하이라이트 점수</span>{' '}
                   <span className="app-shell__game-leaderboard-position-score">
                     +{formatHighlightScore(highlight.highlightScore)}
                   </span>
@@ -752,14 +751,14 @@ export function RankingGameTierOverview({
     return null;
   }
 
-  const highlightScoreLabel = tierProgress
-    ? `${tierProgress.highlightScore.toLocaleString('ko-KR')}점`
+  const assetPointLabel = tierProgress
+    ? `${tierProgress.totalAssetPoints.toLocaleString('ko-KR')}P`
     : '-';
 
   return (
     <section
       className="app-shell__game-dividend app-shell__game-dividend--preview"
-      aria-label="하이라이트 티어 미리보기"
+      aria-label="보유 포인트 티어 미리보기"
       data-current-tier={tierProgress?.currentTier.tierCode}
     >
       <GameTierSummary
@@ -770,10 +769,10 @@ export function RankingGameTierOverview({
       />
       <div className="app-shell__game-dividend-header">
         <div className="app-shell__game-dividend-copy">
-          <p className="app-shell__game-dividend-eyebrow">Highlight Tier</p>
+          <p className="app-shell__game-dividend-eyebrow">Asset Tier</p>
           <div className="app-shell__game-dividend-title-row">
             <h4 className="app-shell__game-dividend-title">
-              하이라이트 티어
+              보유 포인트 티어
             </h4>
             <button
               className="app-shell__game-dividend-action app-shell__game-dividend-action--compact"
@@ -786,14 +785,14 @@ export function RankingGameTierOverview({
         </div>
       </div>
       {tierProgress ? (
-        <div className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview" aria-label="하이라이트 티어 요약">
+        <div className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview" aria-label="보유 포인트 티어 요약">
           <span className="app-shell__game-dividend-metric">
             <span className="app-shell__game-dividend-metric-label">점수</span>
             <strong
               className="app-shell__game-dividend-metric-value"
-              title={highlightScoreLabel}
+              title={assetPointLabel}
             >
-              {highlightScoreLabel}
+              {assetPointLabel}
             </strong>
             <span className="app-shell__game-dividend-metric-detail" aria-hidden="true" />
           </span>
@@ -823,6 +822,7 @@ export function RankingGameSelectedVideoActions({
   mainPlayerRef,
   isBuyDisabled,
   isBuySubmitting,
+  isVideoOwned = false,
   isSellDisabled,
   isSellSubmitting,
   onContentClick,
@@ -927,7 +927,13 @@ export function RankingGameSelectedVideoActions({
         >
           <div className="app-shell__game-panel-action-item">
             <button
-              aria-label={isBuySubmitting ? '선택한 영상 매수 중' : '선택한 영상 매수'}
+              aria-label={
+                isVideoOwned
+                  ? '선택한 영상 보유 중'
+                  : isBuySubmitting
+                    ? '선택한 영상 매수 중'
+                    : '선택한 영상 매수'
+              }
               className="app-shell__game-panel-action"
               data-variant="buy"
               disabled={!canShowGameActions || isBuyDisabled}
@@ -947,7 +953,9 @@ export function RankingGameSelectedVideoActions({
                 </svg>
               </span>
             </button>
-            <span className="app-shell__game-panel-action-caption">{isBuySubmitting ? '매수 중' : '매수'}</span>
+            <span className="app-shell__game-panel-action-caption">
+              {isVideoOwned ? '보유 중' : isBuySubmitting ? '매수 중' : '매수'}
+            </span>
           </div>
           <div className="app-shell__game-panel-action-item">
             <button
@@ -1080,7 +1088,6 @@ function RankingGamePositionsTabComponent({
   isLoading = false,
   onCancelScheduledSellOrder,
   onOpenPositionChart,
-  onOpenBuyTradeModal,
   onOpenSellTradeModal,
   onOpenStrategyScheduledSellTradeModal,
   onSelectPosition,
@@ -1149,7 +1156,6 @@ function RankingGamePositionsTabComponent({
             isSelected={activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID && holding.positionId === selectedPositionId}
             onCancelScheduledSellOrder={onCancelScheduledSellOrder}
             onOpenPositionChart={onOpenPositionChart}
-            onOpenBuyTradeModal={onOpenBuyTradeModal}
             onOpenSellTradeModal={onOpenSellTradeModal}
             onOpenStrategyScheduledSellTradeModal={onOpenStrategyScheduledSellTradeModal}
             onSelectPosition={onSelectPosition}

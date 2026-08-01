@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { OpenGameHolding } from '../../gameHelpers';
 import { formatPoints, getPointTone } from '../../gameHelpers';
 import type { GameInventorySortKey } from '../../gameInventorySorting';
-import { formatSignedPercent, formatSignedScore } from './summaryFormatters';
+import { formatSignedPercent } from './summaryFormatters';
 import { buildGameInventorySummary } from './summaryMetrics';
 
 const SORT_OPTIONS: ReadonlyArray<{ id: GameInventorySortKey; label: string }> = [
@@ -39,12 +39,6 @@ export default function GameInventorySummary({
         <span className="app-shell__game-inventory-stat">
           <span>전체 수익률</span>
           <strong data-tone={profitTone}>{formatSignedPercent(summary.profitRatePercent)}</strong>
-        </span>
-        <span className="app-shell__game-inventory-stat">
-          <span>획득 티어점수</span>
-          <strong data-tone={summary.totalProjectedHighlightScore > 0 ? 'tier' : 'flat'}>
-            {formatSignedScore(summary.totalProjectedHighlightScore)}
-          </strong>
         </span>
         <span className="app-shell__game-inventory-stat">
           <span>수익 / 손실</span>

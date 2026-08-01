@@ -2,14 +2,12 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.99.2';
 import { requireCronSecret } from '../_shared/cron.ts';
 import {
-  calculatePricePoints,
+  calculateChartOutPricePoints,
+  calculateSignalPricePoints,
   type TrendSignalRow,
 } from '../_shared/game.ts';
-import {
-  corsHeaders,
-  errorResponse,
-  json,
-} from '../_shared/http.ts';
+import { loadPriceAnchors } from '../_shared/price-anchors.ts';
+import { corsHeaders, errorResponse, json } from '../_shared/http.ts';
 
 serve(async (request) => {
   if (request.method === 'OPTIONS') {
@@ -42,6 +40,7 @@ serve(async (request) => {
       .limit(100);
 
     if (ordersError) throw ordersError;
+    const priceAnchors = await loadPriceAnchors(service);
 
     let executedCount = 0;
     let failedCount = 0;
@@ -68,19 +67,26 @@ serve(async (request) => {
         .select('*')
         .eq('region_code', order.region_code)
         .eq('video_id', position.video_id)
+        .in('category_id', ['all', '0'])
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle<TrendSignalRow>();
 
       if (signalError) throw signalError;
 
+      if (
+        signal &&
+        new Date(signal.captured_at).getTime() <= new Date(position.buy_captured_at).getTime()
+      ) {
+        skippedCount += 1;
+        continue;
+      }
+
       const currentRank = signal?.current_rank ?? 200;
       const unitPricePoints = signal
-        ? calculatePricePoints(signal.current_rank, signal.rank_change)
-        : 2_900;
-      const currentPositionPoints = Math.round(
-        (unitPricePoints * order.quantity) / 100,
-      );
+        ? calculateSignalPricePoints(signal, priceAnchors)
+        : calculateChartOutPricePoints(priceAnchors);
+      const currentPositionPoints = Math.round((unitPricePoints * order.quantity) / 100);
       const orderStakePoints = Math.round(
         (position.stake_points * order.quantity) / position.quantity,
       );
@@ -106,18 +112,20 @@ serve(async (request) => {
       }
 
       const triggeredAt = new Date().toISOString();
-      const { data: sellResult, error: sellError } = await service.rpc(
-        'atlas_sell_position',
-        {
-          target_position_id: position.id,
-          target_quantity: order.quantity,
-          target_sell_rank: currentRank,
-          target_unit_price_points: unitPricePoints,
-          target_user_id: order.user_id,
-        },
-      );
+      const { data: sellResult, error: sellError } = await service.rpc('atlas_sell_position', {
+        target_position_id: position.id,
+        target_quantity: order.quantity,
+        target_sell_rank: currentRank,
+        target_unit_price_points: unitPricePoints,
+        target_user_id: order.user_id,
+      });
 
       if (sellError) {
+        if (sellError.message.includes('next_trend_sync_required')) {
+          skippedCount += 1;
+          continue;
+        }
+
         await service
           .from('game_scheduled_sell_orders')
           .update({

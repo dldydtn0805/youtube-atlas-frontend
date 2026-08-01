@@ -161,6 +161,18 @@ export default function useHomeTrendSections({
     () => favoriteStreamerVideoSection?.items.map((item) => item.id) ?? [],
     [favoriteStreamerVideoSection],
   );
+  const inlineFavoriteTrendSignalsByVideoId = useMemo(
+    () => mapInlineTrendSignalsByVideoId(
+      favoriteStreamerVideoSection,
+      selectedRegionCode,
+      ALL_VIDEO_CATEGORY_ID,
+    ),
+    [favoriteStreamerVideoSection, selectedRegionCode],
+  );
+  const favoriteTrendSignalMissingVideoIds = useMemo(
+    () => favoriteStreamerVideoIds.filter((videoId) => !inlineFavoriteTrendSignalsByVideoId[videoId]),
+    [favoriteStreamerVideoIds, inlineFavoriteTrendSignalsByVideoId],
+  );
   const inlineTrendSignalsByVideoId = useMemo(
     () => mapInlineTrendSignalsByVideoId(selectedPlaybackSection, selectedRegionCode, selectedCategoryId),
     [selectedCategoryId, selectedPlaybackSection, selectedRegionCode],
@@ -194,17 +206,24 @@ export default function useHomeTrendSections({
     isApiConfigured && shouldShowSelectedCategoryTrendSignals && selectedTrendSignalMissingVideoIds.length > 0,
   );
   const {
-    data: favoriteTrendSignalsByVideoId = {},
+    data: fetchedFavoriteTrendSignalsByVideoId = {},
     isLoading: isFavoriteTrendSignalsLoading,
     isFetching: isFavoriteTrendSignalsFetching,
     isError: isFavoriteTrendSignalsError,
   } = useVideoTrendSignals(
     selectedRegionCode,
     ALL_VIDEO_CATEGORY_ID,
-    favoriteStreamerVideoIds,
+    favoriteTrendSignalMissingVideoIds,
     shouldLoadFavorites &&
       shouldShowAllCategoryTrendSignals &&
-      favoriteStreamerVideoIds.length > 0,
+      favoriteTrendSignalMissingVideoIds.length > 0,
+  );
+  const favoriteTrendSignalsByVideoId = useMemo(
+    () => ({
+      ...fetchedFavoriteTrendSignalsByVideoId,
+      ...inlineFavoriteTrendSignalsByVideoId,
+    }),
+    [fetchedFavoriteTrendSignalsByVideoId, inlineFavoriteTrendSignalsByVideoId],
   );
   const {
     data: realtimeSurgingData,
@@ -277,8 +296,10 @@ export default function useHomeTrendSections({
   const hasResolvedFavoriteTrendSignals =
     isApiConfigured &&
     shouldShowAllCategoryTrendSignals &&
-    !isFavoriteTrendSignalsLoading &&
-    !isFavoriteTrendSignalsFetching &&
+    (
+      favoriteTrendSignalMissingVideoIds.length === 0 ||
+      (!isFavoriteTrendSignalsLoading && !isFavoriteTrendSignalsFetching)
+    ) &&
     !isFavoriteTrendSignalsError;
   const buyableVideoIdSet = useMemo(
     () => new Set(gameMarket.filter((marketVideo) => marketVideo.canBuy).map((marketVideo) => marketVideo.videoId)),

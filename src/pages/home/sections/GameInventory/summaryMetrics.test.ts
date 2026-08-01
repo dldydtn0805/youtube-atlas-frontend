@@ -6,7 +6,6 @@ function createHolding(
   positionId: number,
   profitPoints: number,
   currentPricePoints: number,
-  projectedHighlightScore = 0,
 ): OpenGameHolding {
   return {
     channelTitle: `Channel ${positionId}`,
@@ -14,7 +13,6 @@ function createHolding(
     title: `Video ${positionId}`,
     profitPoints,
     currentPricePoints,
-    projectedHighlightScore,
     stakePoints: 100,
   } as OpenGameHolding;
 }
@@ -34,14 +32,5 @@ describe('buildGameInventorySummary', () => {
     const summary = buildGameInventorySummary([createHolding(1, 10, 100)]);
 
     expect(summary.segments[0].tooltipLabel).toBe('Video 1 · Channel 1');
-  });
-
-  it('totals projected tier score from open holdings', () => {
-    const summary = buildGameInventorySummary([
-      createHolding(1, 10, 100, 1200),
-      createHolding(2, -5, 90, 3400),
-    ]);
-
-    expect(summary.totalProjectedHighlightScore).toBe(4600);
   });
 });

@@ -19,7 +19,6 @@ export function buildGameInventorySummary(holdings: OpenGameHolding[]) {
   const totalStakePoints = holdings.reduce((sum, holding) => sum + Math.max(0, getFinitePoints(holding.stakePoints)), 0);
   const totalEvaluationPoints = holdings.reduce((sum, holding) => sum + getHoldingEvaluationPoints(holding), 0);
   const totalProfitPoints = holdings.reduce((sum, holding) => sum + getFinitePoints(holding.profitPoints), 0);
-  const totalProjectedHighlightScore = holdings.reduce((sum, holding) => sum + getFinitePoints(holding.projectedHighlightScore), 0);
   const gainCount = holdings.filter((holding) => (holding.profitPoints ?? 0) > 0).length;
   const lossCount = holdings.filter((holding) => (holding.profitPoints ?? 0) < 0).length;
   const profitRatePercent = totalStakePoints > 0 ? (totalProfitPoints / totalStakePoints) * 100 : null;
@@ -52,6 +51,5 @@ export function buildGameInventorySummary(holdings: OpenGameHolding[]) {
     segments,
     totalEvaluationPoints,
     totalProfitPoints,
-    totalProjectedHighlightScore,
   };
 }

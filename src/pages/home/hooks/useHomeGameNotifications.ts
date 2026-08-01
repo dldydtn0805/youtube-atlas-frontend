@@ -186,11 +186,11 @@ export default function useHomeGameNotifications({
       }
 
       emitGameNotificationTest({
-        message: '티어 점수 상승 모달 테스트입니다.',
+        message: '하이라이트 기록 모달 테스트입니다.',
         notificationEventType: 'TIER_SCORE_GAIN',
         notificationType: 'MOONSHOT',
         showModal: false,
-        title: '티어 점수 상승',
+        title: '하이라이트 기록',
       });
     };
 

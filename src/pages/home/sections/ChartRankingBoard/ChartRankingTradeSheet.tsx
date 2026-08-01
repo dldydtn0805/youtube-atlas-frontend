@@ -131,7 +131,7 @@ export default function ChartRankingTradeSheet({
             title={actionState.buyTitle}
             type="button"
           >
-            매수
+            {actionState.buyLabel ?? '매수'}
           </button>
           <button
             aria-label={`${item.snippet.title} 매도`}

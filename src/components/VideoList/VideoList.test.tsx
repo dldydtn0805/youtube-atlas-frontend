@@ -197,8 +197,34 @@ describe('VideoList', () => {
     );
   });
 
-  it('uses item trend data when no separate trend signal map is provided', () => {
+  it('marks an already-owned video instead of offering another buy', () => {
     render(
+      <VideoList
+        getTradeActionState={() => ({
+          buyLabel: '보유 중',
+          buyTitle: '이미 보유 중인 영상입니다.',
+          canBuy: false,
+          canSell: true,
+          sellTitle: '매도 가능',
+        })}
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onOpenBuyTradeModal={vi.fn()}
+        onOpenSellTradeModal={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={baseSection}
+      />,
+    );
+
+    expect(screen.getByText('보유 중')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '테스트 영상 매수' })).toBeDisabled();
+  });
+
+  it('places item trend data immediately after the rank when no separate trend signal map is provided', () => {
+    const { container } = render(
       <VideoList
         hasNextPage={false}
         hasResolvedTrendSignals
@@ -230,6 +256,11 @@ describe('VideoList', () => {
 
     expect(screen.getByText('▲ 6')).toBeInTheDocument();
     expect(screen.queryByText('NEW')).not.toBeInTheDocument();
+    expect(container.querySelector('.video-card__meta-main')).toHaveTextContent('즐겨찾기 채널 #1▲ 6');
+    expect(container.querySelector('.video-card__meta-main > .video-card__trend-group')).toHaveAttribute(
+      'aria-label',
+      '순위 등락',
+    );
   });
 
   it('uses inline rank change badges even when the snapshot is missing current rank', () => {

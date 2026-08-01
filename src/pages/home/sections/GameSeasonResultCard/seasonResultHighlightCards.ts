@@ -16,7 +16,7 @@ export function getSeasonResultHighlightCards(h: Highlights | null | undefined) 
       card(
         highestTierScore,
         `tier-score-${highestTierScore.positionId}`,
-        '최고 티어 점수',
+        '최고 하이라이트 점수',
         formatHighlightScore(highestTierScore.highlightScore),
       ),
     tagged && card(tagged, `tagged-${tagged.positionId}`, '태그 최다', `${tagged.tagCount ?? tagged.strategyTags.length}태그`),

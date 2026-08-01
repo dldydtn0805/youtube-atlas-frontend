@@ -1,5 +1,3 @@
-import type { GameStrategyType } from '../../../../features/game/types';
-import { buildGameStrategyBadges } from '../../gameStrategyTags';
 import type { GameIntroPreviewType } from './steps';
 import './preview.css';
 
@@ -7,94 +5,73 @@ interface StepPreviewProps {
   type: GameIntroPreviewType;
 }
 
-const strategySamples: Array<{ detail: string; type: GameStrategyType }> = [
-  { type: 'SNIPE', detail: '150→100위' },
-  { type: 'MOONSHOT', detail: '100→50위' },
-  { type: 'SOLAR_SHOT', detail: '50→20위' },
-  { type: 'GALAXY_SHOT', detail: '20→5위' },
-  { type: 'ATLAS_SHOT', detail: '5→1위' },
-  { type: 'SMALL_CASHOUT', detail: '+300%↑' },
-  { type: 'BIG_CASHOUT', detail: '+1,000%↑' },
-];
-
-function TrendIcon() {
+function WalletPreview() {
   return (
-    <svg aria-hidden="true" className="app-shell__game-intro-preview-icon" fill="none" viewBox="0 0 24 24">
-      <path d="M4 17l6-6 4 4 6-8M15 7h5v5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-    </svg>
-  );
-}
-
-function TradePreview() {
-  return (
-    <div className="app-shell__game-intro-preview app-shell__game-intro-preview--trade" aria-hidden="true">
-      <div className="app-shell__game-intro-bars">
-        {[28, 18, 48, 22, 34].map((height, index) => (
-          <span key={`${height}-${index}`} data-hot={index === 2 ? 'true' : undefined} style={{ height }} />
-        ))}
+    <div className="app-shell__game-intro-preview app-shell__game-intro-preview--wallet" aria-hidden="true">
+      <div className="app-shell__game-intro-metric">
+        <span>시작 포인트</span>
+        <strong>100,000P</strong>
       </div>
-      <TrendIcon />
-      <div className="app-shell__game-intro-profit">
-        <span>수익률</span>
-        <strong>+340%</strong>
+      <div className="app-shell__game-intro-rule-chips">
+        <span>다른 영상 여러 개</span>
+        <span>같은 영상 1개</span>
       </div>
     </div>
   );
 }
 
-function HighlightsPreview() {
+function MarketPreview() {
   return (
-    <div className="app-shell__game-intro-tags" aria-hidden="true">
-      {strategySamples.map((sample) => {
-        const badge = buildGameStrategyBadges([sample.type])[0];
-
-        return (
-          <span key={sample.type} className="app-shell__game-position-trend" data-tone={badge.tone}>
-            <span>{badge.label}</span>
-            <span className="app-shell__game-intro-tag-detail">{sample.detail}</span>
-          </span>
-        );
-      })}
+    <div className="app-shell__game-intro-preview app-shell__game-intro-preview--market" aria-hidden="true">
+      <div className="app-shell__game-intro-market-row">
+        <span>순위 앵커 기본가</span>
+        <strong>500,000P</strong>
+      </div>
+      <div className="app-shell__game-intro-market-counts">
+        <span data-tone="buy">매수 3회</span>
+        <span data-tone="sell">매도 1회</span>
+        <strong>+2% 프리미엄</strong>
+      </div>
     </div>
   );
 }
 
-function LeaderboardPreview() {
-  const rows = [
-    { rank: 1, name: 'atlas_king', score: '12,400점', tier: 'MASTER', me: false },
-    { rank: 2, name: '나', score: '9,820점', tier: 'DIAMOND', me: true },
-    { rank: 3, name: 'sniper99', score: '8,310점', tier: 'PLATINUM', me: false },
-  ];
-
+function SellPreview() {
   return (
-    <div className="app-shell__game-intro-leaderboard app-shell__game-leaderboard-row" aria-hidden="true">
-      {rows.map((row) => (
-        <div
-          key={row.rank}
-          className="app-shell__game-leaderboard-item app-shell__game-intro-leaderboard-item"
-          data-me={row.me ? 'true' : 'false'}
-          data-tier-code={row.tier}
-        >
-          <span className="app-shell__game-leaderboard-rank">{row.rank}</span>
-          <span className="app-shell__game-leaderboard-avatar app-shell__game-leaderboard-avatar--fallback">
-            {row.name.slice(0, 1).toUpperCase()}
-          </span>
-          <span className="app-shell__game-leaderboard-name">{row.name}</span>
-          <span className="app-shell__game-leaderboard-total">{row.score}</span>
-        </div>
-      ))}
+    <div className="app-shell__game-intro-preview app-shell__game-intro-preview--sell" aria-hidden="true">
+      <span className="app-shell__game-intro-sync-card">이번 싱크<br /><strong>1개 매수</strong></span>
+      <span className="app-shell__game-intro-sync-arrow">→</span>
+      <span className="app-shell__game-intro-sync-card" data-active="true">다음 싱크<br /><strong>전량 매도</strong></span>
+    </div>
+  );
+}
+
+function AssetsPreview() {
+  return (
+    <div className="app-shell__game-intro-preview app-shell__game-intro-preview--assets" aria-hidden="true">
+      <div className="app-shell__game-intro-assets-formula">
+        <span>현금</span><b>+</b><span>영상 평가액</span><b>+</b><span>예약 포인트</span>
+      </div>
+      <div className="app-shell__game-intro-metric">
+        <span>티어 기준 총자산</span>
+        <strong>1,240,000P</strong>
+      </div>
     </div>
   );
 }
 
 export default function StepPreview({ type }: StepPreviewProps) {
-  if (type === 'highlights') {
-    return <HighlightsPreview />;
+  if (type === 'market') {
+    return <MarketPreview />;
   }
 
-  if (type === 'leaderboard') {
-    return <LeaderboardPreview />;
+  if (type === 'sell') {
+    return <SellPreview />;
   }
 
-  return <TradePreview />;
+  if (type === 'assets') {
+    return <AssetsPreview />;
+  }
+
+  return <WalletPreview />;
 }

@@ -427,20 +427,20 @@ function VideoList({
                   <div className="video-card__meta-row">
                     <div className="video-card__meta-main">
                       <span className="video-card__rank">{rankLabel}</span>
+                      {trendBadges.length > 0 ? (
+                        <span className="video-card__trend-group" aria-label="순위 등락">
+                          {trendBadges.map((badge) => (
+                            <span
+                              key={`${item.id}-${badge.label}`}
+                              className="video-card__trend-badge"
+                              data-tone={badge.tone}
+                            >
+                              {badge.label}
+                            </span>
+                          ))}
+                        </span>
+                      ) : null}
                     </div>
-                    {trendBadges.length > 0 ? (
-                      <span className="video-card__trend-group" aria-label="급상승 신호">
-                        {trendBadges.map((badge) => (
-                          <span
-                            key={`${item.id}-${badge.label}`}
-                            className="video-card__trend-badge"
-                            data-tone={badge.tone}
-                          >
-                            {badge.label}
-                          </span>
-                        ))}
-                      </span>
-                    ) : null}
                   </div>
                   <button
                     aria-label={`${item.snippet.title} 재생`}

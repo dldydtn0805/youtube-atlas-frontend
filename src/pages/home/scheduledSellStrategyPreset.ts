@@ -1,5 +1,4 @@
 import type { GameStrategyType, ScheduledSellTriggerType } from '../../features/game/types';
-import { GAME_ORDER_QUANTITY_STEP, normalizeGameOrderCapacity } from './gameHelpers';
 
 export interface ScheduledSellStrategyPreset {
   triggerType: ScheduledSellTriggerType;
@@ -36,17 +35,4 @@ export function getScheduledSellPresetForStrategy(
   return typeof targetProfitRatePercent === 'number'
     ? { targetProfitRatePercent, targetRank: null, triggerType: 'PROFIT_RATE' }
     : null;
-}
-
-export function getScheduledSellHalfQuantity(maxQuantity: number) {
-  const normalizedMaxQuantity = normalizeGameOrderCapacity(maxQuantity);
-
-  if (normalizedMaxQuantity <= 0) {
-    return 0;
-  }
-
-  return Math.max(
-    GAME_ORDER_QUANTITY_STEP,
-    Math.ceil(normalizedMaxQuantity * 0.5 / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
-  );
 }

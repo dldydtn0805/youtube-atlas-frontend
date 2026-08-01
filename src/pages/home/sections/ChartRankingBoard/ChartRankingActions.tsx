@@ -33,7 +33,7 @@ export default function ChartRankingActions({
         title={state.buyTitle}
         type="button"
       >
-        매수
+        {state.buyLabel ?? '매수'}
       </button>
       <button
         aria-label={sellAriaLabel}

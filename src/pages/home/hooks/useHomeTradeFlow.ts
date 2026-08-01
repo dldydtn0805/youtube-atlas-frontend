@@ -26,7 +26,6 @@ interface UseHomeTradeFlowOptions {
   accessToken: string | null;
   activeTradeModal: 'buy' | 'sell' | null;
   authStatus: AuthStatus;
-  buyQuantity: number;
   closeTradeModal: () => void;
   createScheduledSellOrder: (input: CreateScheduledSellOrderInput) => Promise<unknown>;
   currentGameSeason?: GameCurrentSeason;
@@ -37,20 +36,17 @@ interface UseHomeTradeFlowOptions {
   maxSellQuantity: number;
   mutateBuyGamePosition: UseHomeGameTradeActionsOptions['mutateBuyGamePosition'];
   mutateSellGamePositions: UseHomeGameTradeActionsOptions['mutateSellGamePositions'];
-  normalizedSellQuantity: number;
   onBuySuccess: () => Promise<void> | void;
   onSellSuccess: () => Promise<void> | void;
   onScheduledSellSuccess: () => Promise<void> | void;
   selectedOpenPositionId?: number | null;
   selectedSellPositionId: number | null;
-  selectedGameActionTitle: string;
   selectedRegionCode: string;
   selectedVideoCurrentChartRank: number | null | undefined;
   selectedVideoId?: string;
   selectedVideoMarketEntry?: GameMarketVideo;
   selectedVideoSellSummary: GameSellSummary;
   selectedVideoUnitPricePoints: number | null;
-  sellQuantity: number;
   setActiveTradeModal: Dispatch<SetStateAction<'buy' | 'sell' | null>>;
   setBuyQuantity: Dispatch<SetStateAction<number>>;
   setGameActionStatus: Dispatch<SetStateAction<string | null>>;
@@ -76,7 +72,6 @@ export default function useHomeTradeFlow({
   accessToken,
   activeTradeModal,
   authStatus,
-  buyQuantity,
   closeTradeModal,
   createScheduledSellOrder,
   currentGameSeason,
@@ -87,20 +82,17 @@ export default function useHomeTradeFlow({
   maxSellQuantity,
   mutateBuyGamePosition,
   mutateSellGamePositions,
-  normalizedSellQuantity,
   onBuySuccess,
   onSellSuccess,
   onScheduledSellSuccess,
   selectedOpenPositionId,
   selectedSellPositionId,
-  selectedGameActionTitle,
   selectedRegionCode,
   selectedVideoCurrentChartRank,
   selectedVideoId,
   selectedVideoMarketEntry,
   selectedVideoSellSummary,
   selectedVideoUnitPricePoints,
-  sellQuantity,
   setActiveTradeModal,
   setBuyQuantity,
   setGameActionStatus,
@@ -139,7 +131,8 @@ export default function useHomeTradeFlow({
   }, [selectedOpenPositionId, selectedVideoId]);
 
   const canScheduleSellCurrentSelection = selectedSellPositionId != null;
-  const debouncedSellPreviewQuantity = useDebouncedValue(normalizedSellQuantity, SELL_PREVIEW_DEBOUNCE_MS);
+  const fullSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
+  const debouncedSellPreviewQuantity = useDebouncedValue(fullSellQuantity, SELL_PREVIEW_DEBOUNCE_MS);
   const sellPreviewRequest = useMemo(
     () =>
       debouncedSellPreviewQuantity > 0
@@ -158,8 +151,8 @@ export default function useHomeTradeFlow({
     activeTradeModal === 'sell' && sellOrderMode === 'instant' && maxSellQuantity > 0,
   );
   const activeSellPreview =
-    debouncedSellPreviewQuantity === normalizedSellQuantity &&
-    sellPreviewQuery.data?.quantity === normalizedSellQuantity
+    debouncedSellPreviewQuantity === fullSellQuantity &&
+    sellPreviewQuery.data?.quantity === fullSellQuantity
       ? sellPreviewQuery.data
       : undefined;
   const [lastSuccessfulSellPreview, setLastSuccessfulSellPreview] = useState<typeof activeSellPreview>();
@@ -203,10 +196,6 @@ export default function useHomeTradeFlow({
   ]);
 
   const displaySellPreview = activeSellPreview ?? lastSuccessfulSellPreview;
-  const isSellPreviewPending =
-    debouncedSellPreviewQuantity !== normalizedSellQuantity ||
-    sellPreviewQuery.isLoading ||
-    sellPreviewQuery.isFetching;
   const resolvedSellSummary = useMemo(
     () =>
       displaySellPreview
@@ -231,7 +220,6 @@ export default function useHomeTradeFlow({
     openSellTradeModal,
   } = useHomeGameTradeActions({
     authStatus,
-    buyQuantity,
     currentGameSeason,
     currentGameSeasonError,
     gameSeasonRegionMismatch,
@@ -243,16 +231,13 @@ export default function useHomeTradeFlow({
     onBuySuccess,
     onSellSuccess,
     selectedOpenPositionId: selectedSellPositionId,
-    selectedGameActionTitle,
     selectedVideoId,
     selectedVideoMarketEntry,
     selectedRegionCode,
-    sellQuantity,
     setActiveTradeModal,
     setBuyQuantity,
     setGameActionStatus,
     setSellQuantity,
-    totalSelectedVideoBuyPoints,
   });
 
   const projectedWalletBalanceAfterBuy = useMemo(
@@ -325,7 +310,7 @@ export default function useHomeTradeFlow({
 
     const inputBase = {
       positionId: selectedSellPositionId,
-      quantity: normalizedSellQuantity,
+      quantity: fullSellQuantity,
       regionCode: currentGameSeason.regionCode,
     };
     const scheduledSellOrderInput: CreateScheduledSellOrderInput =
@@ -378,7 +363,7 @@ export default function useHomeTradeFlow({
     createScheduledSellOrder,
     currentGameSeason,
     logout,
-    normalizedSellQuantity,
+    fullSellQuantity,
     onScheduledSellSuccess,
     scheduledSellConditionError,
     scheduledSellTargetProfitRatePercent,
@@ -428,7 +413,6 @@ export default function useHomeTradeFlow({
   return {
     canScheduleSellCurrentSelection,
     closeTradeModal,
-    displaySellPreview,
     handleBuyCurrentVideo,
     handleBuyQuantityChange,
     handleCreateScheduledSellOrder,
@@ -437,7 +421,6 @@ export default function useHomeTradeFlow({
     isBuySubmitting,
     isBuyTradeModalOpen,
     isScheduledSellSubmitting,
-    isSellPreviewPending,
     isSellSubmitting,
     isSellTradeModalOpen,
     openBuyTradeModal,

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, type ReactNode } from 'react';
 import CommentSection from '../../../components/CommentSection/CommentSection';
 import VideoList, { type FeaturedVideoSection, type VideoCardTradeActionState } from '../../../components/VideoList/VideoList';
 import type { AuthStatus } from '../../../features/auth/types';
@@ -21,6 +21,7 @@ interface ChartSortOption {
 interface ChartPanelProps {
   activePlaybackQueueId?: string;
   chartErrorMessage?: string;
+  chartHeaderAction?: ReactNode;
   marketPriceByVideoId?: Record<string, GameMarketVideo['currentPricePoints']>;
   chartSortMode: ChartSortMode;
   chartSortOptions: ChartSortOption[];
@@ -112,6 +113,7 @@ interface CommunityPanelProps {
 export const ChartPanel = memo(function ChartPanel({
   activePlaybackQueueId,
   chartErrorMessage,
+  chartHeaderAction,
   marketPriceByVideoId,
   chartSortMode,
   chartSortOptions,
@@ -181,6 +183,7 @@ export const ChartPanel = memo(function ChartPanel({
             {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ''}
           </p>
           <div className="app-shell__chart-filter-actions">
+            {chartHeaderAction}
             <label className="app-shell__chart-sort-field">
               <select
                 aria-label="인기 영상 정렬"

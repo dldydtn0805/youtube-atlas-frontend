@@ -10,6 +10,7 @@ import type { GameNotification, GameRealtimeEvent } from './types';
 const GAME_TOPIC_PREFIX = '/topic/game';
 const GAME_NOTIFICATIONS_QUEUE = '/user/queue/game/notifications';
 const WALLET_UPDATED_EVENT = 'wallet-updated';
+const MARKET_UPDATED_EVENT = 'market-updated';
 
 function toRealtimeEventKey(event: GameRealtimeEvent) {
   return [
@@ -39,7 +40,11 @@ export function useGameRealtimeInvalidation(
       try {
         const event = JSON.parse(messageBody) as GameRealtimeEvent;
 
-        if (event.eventType !== WALLET_UPDATED_EVENT || event.regionCode !== regionCode) {
+        if (
+          (event.eventType !== WALLET_UPDATED_EVENT &&
+            event.eventType !== MARKET_UPDATED_EVENT) ||
+          event.regionCode !== regionCode
+        ) {
           return;
         }
 

@@ -13,7 +13,7 @@ export default function GameHighlightScoreBreakdown({
   }
 
   return (
-    <div className="game-highlight-score-breakdown" aria-label="티어 점수 산식">
+    <div className="game-highlight-score-breakdown" aria-label="하이라이트 점수 산식">
       <p className="game-highlight-score-breakdown__total">
         <span>점수 산식</span>
         <strong>{formatScorePart(breakdown.totalScore)}</strong>

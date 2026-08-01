@@ -2,11 +2,37 @@ import {
   requireAuth,
   type RequestContext,
 } from '../../_shared/context.ts';
+import { toTrendVideo, type TrendSignalRow } from '../../_shared/game.ts';
 import { ApiError, json, noContent, readJson } from '../../_shared/http.ts';
+import { exportPrivateYouTubePlaylist } from '../../_shared/youtube-playlists.ts';
+import { filterFavoriteTopSignals } from './favorite-top-signals.ts';
 import {
-  fetchPopularVideos,
-  toVideoResponse,
-} from '../../_shared/youtube.ts';
+  findUnavailableMusicVideoIds,
+  normalizeMusicPlaylistExportInput,
+} from './music-playlist-export.ts';
+
+const ALL_CATEGORY_IDS = ['0', 'all'];
+const FAVORITE_VIDEO_PAGE_SIZE = 50;
+
+async function findTopTrendSignals(context: RequestContext, regionCode: string) {
+  for (const categoryId of ALL_CATEGORY_IDS) {
+    const { data, error } = await context.service
+      .from('video_trend_signals')
+      .select('*')
+      .eq('region_code', regionCode)
+      .eq('category_id', categoryId)
+      .order('current_rank', { ascending: true })
+      .limit(250);
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      return data as TrendSignalRow[];
+    }
+  }
+
+  return [];
+}
 
 function toFavorite(row: Record<string, unknown>) {
   return {
@@ -96,7 +122,10 @@ export async function handlePersonalRoute(
   if (path === '/api/me/favorite-streamers/videos' && method === 'GET') {
     const { profile } = await requireAuth(context);
     const regionCode = context.url.searchParams.get('regionCode')?.trim().toUpperCase() || 'KR';
-    const pageToken = context.url.searchParams.get('pageToken');
+    const offset = Math.max(
+      0,
+      Number.parseInt(context.url.searchParams.get('pageToken') ?? '0', 10) || 0,
+    );
     const { data: favorites, error } = await context.service
       .from('favorite_streamers')
       .select('channel_id')
@@ -109,29 +138,59 @@ export async function handlePersonalRoute(
       return json({
         availableCategories: [],
         categoryId: 'favorite-streamers',
-        description: '전체 인기 영상 중 즐겨찾기한 채널의 영상만 모았습니다.',
+        description: '동일한 TOP 200 트렌드 싱크에서 즐겨찾기한 채널의 영상만 모았습니다.',
         items: [],
         label: '즐겨찾기 채널',
         nextPageToken: null,
       });
     }
 
-    const page = await fetchPopularVideos({
-      pageToken,
-      regionCode,
-    });
-    const items = page.items
-      .filter((video) => channelIds.has(video.snippet?.channelId ?? ''))
-      .map((video) => toVideoResponse(video));
+    const topSignals = await findTopTrendSignals(context, regionCode);
+    const favoriteSignals = filterFavoriteTopSignals(topSignals, channelIds);
+    const nextOffset = offset + FAVORITE_VIDEO_PAGE_SIZE;
+    const items = favoriteSignals
+      .slice(offset, nextOffset)
+      .map(toTrendVideo);
 
     return json({
       availableCategories: [],
       categoryId: 'favorite-streamers',
-      description: '전체 인기 영상 중 즐겨찾기한 채널의 영상만 모았습니다.',
+      description: '동일한 TOP 200 트렌드 싱크에서 즐겨찾기한 채널의 영상만 모았습니다.',
       items,
       label: '즐겨찾기 채널',
-      nextPageToken: page.nextPageToken,
+      nextPageToken: nextOffset < favoriteSignals.length ? String(nextOffset) : null,
     });
+  }
+
+  if (path === '/api/me/youtube-playlists/music-top' && method === 'POST') {
+    await requireAuth(context);
+    const googleAccessToken = context.request.headers.get('X-Google-Access-Token')?.trim();
+
+    if (!googleAccessToken) {
+      throw new ApiError(401, 'youtube_authorization_required', 'YouTube 연결이 필요합니다.');
+    }
+
+    const input = normalizeMusicPlaylistExportInput(await readJson(context.request));
+    const topSignals = await findTopTrendSignals(context, input.regionCode);
+    const unavailableVideoIds = findUnavailableMusicVideoIds(topSignals, input.videoIds);
+
+    if (unavailableVideoIds.length > 0) {
+      throw new ApiError(
+        400,
+        'music_playlist_items_changed',
+        '음악 차트가 갱신되었습니다. 최신 목록에서 다시 시도해 주세요.',
+        { details: { unavailableVideoIds } },
+      );
+    }
+
+    return json(
+      await exportPrivateYouTubePlaylist({
+        googleAccessToken,
+        title: input.title,
+        videoIds: input.videoIds,
+      }),
+      201,
+    );
   }
 
   if (path === '/api/me/playback-progress' && method === 'GET') {

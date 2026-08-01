@@ -1,23 +1,17 @@
-import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../features/game/types';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
-import {
-  GAME_ORDER_QUANTITY_STEP,
-  normalizeGameOrderCapacity,
-  normalizeGameOrderQuantity,
-} from '../gameHelpers';
+import { normalizeGameOrderCapacity } from '../gameHelpers';
 import { getFullscreenElement } from '../utils';
 import BuyTradeReceipt from './GameTradeModal/BuyTradeReceipt';
 import SellTradeReceipt from './GameTradeModal/SellTradeReceipt';
-import type { GameTradeModalSummaryItem, GameTradeQuickAction } from './GameTradeModal/types';
+import type { GameTradeModalSummaryItem } from './GameTradeModal/types';
 import './GameTradeModal.css';
 
 interface GameTradeModalProps {
   confirmLabel: string;
   currentRankLabel: string;
-  detailContent?: ReactNode;
   helperText: string;
   isOpen: boolean;
   isSubmitting: boolean;
@@ -45,55 +39,14 @@ interface GameTradeModalProps {
   unitPointsLabel: string;
 }
 
-export function getGameTradeQuickActions(maxQuantity: number): GameTradeQuickAction[] {
-  const normalizedMaxQuantity = normalizeGameOrderCapacity(maxQuantity);
-
-  if (normalizedMaxQuantity <= 0) {
-    return [];
-  }
-
-  const actionsByQuantity = new Map<number, GameTradeQuickAction>();
-
-  [
-    {
-      label: '10%',
-      quantity: Math.max(
-        GAME_ORDER_QUANTITY_STEP,
-        Math.ceil(normalizedMaxQuantity * 0.1 / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
-      ),
-    },
-    {
-      label: '25%',
-      quantity: Math.max(
-        GAME_ORDER_QUANTITY_STEP,
-        Math.ceil(normalizedMaxQuantity * 0.25 / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
-      ),
-    },
-    {
-      label: '50%',
-      quantity: Math.max(
-        GAME_ORDER_QUANTITY_STEP,
-        Math.ceil(normalizedMaxQuantity * 0.5 / GAME_ORDER_QUANTITY_STEP) * GAME_ORDER_QUANTITY_STEP,
-      ),
-    },
-    { label: '100%', quantity: normalizedMaxQuantity },
-  ].forEach((action) => {
-    actionsByQuantity.set(action.quantity, action);
-  });
-
-  return [...actionsByQuantity.values()];
-}
-
 export default function GameTradeModal({
   confirmLabel,
   currentRankLabel,
-  detailContent,
   helperText,
   isOpen,
   isSubmitting,
   maxQuantity,
   mode,
-  onChangeQuantity,
   onChangeSellOrderMode,
   onChangeScheduledSellTriggerType,
   onChangeScheduledSellTriggerDirection,
@@ -101,7 +54,6 @@ export default function GameTradeModal({
   onChangeScheduledSellTargetProfitRatePercent,
   onClose,
   onConfirm,
-  quantity,
   scheduledSellConditionError = null,
   scheduledSellTriggerType = 'RANK',
   scheduledSellTargetRank = 100,
@@ -128,13 +80,7 @@ export default function GameTradeModal({
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
   const modalTitleId = `game-trade-modal-title-${mode}`;
   const normalizedMaxQuantity = normalizeGameOrderCapacity(maxQuantity);
-  const normalizedQuantity =
-    normalizedMaxQuantity > 0
-      ? Math.min(normalizeGameOrderQuantity(quantity), normalizedMaxQuantity)
-      : normalizeGameOrderQuantity(quantity);
-  const quickActions = getGameTradeQuickActions(normalizedMaxQuantity);
   const isScheduledSellMode = mode === 'sell' && sellOrderMode === 'scheduled';
-  const disableQuantityControls = isSubmitting || normalizedMaxQuantity <= 0;
 
   if (mode === 'buy') {
     return createPortal(
@@ -157,17 +103,13 @@ export default function GameTradeModal({
             bodySwipeHandlers={bodySwipeHandlers}
             confirmLabel={confirmLabel}
             currentRankLabel={currentRankLabel}
-            disableQuantityControls={disableQuantityControls}
             headerSwipeHandlers={headerSwipeHandlers}
             helperText={helperText}
             isSubmitting={isSubmitting}
             modalTitleId={modalTitleId}
             normalizedMaxQuantity={normalizedMaxQuantity}
-            normalizedQuantity={normalizedQuantity}
-            onChangeQuantity={onChangeQuantity}
             onClose={onClose}
             onConfirm={onConfirm}
-            quickActions={quickActions}
             summaryItems={summaryItems}
             thumbnailUrl={thumbnailUrl}
             title={title}
@@ -199,16 +141,11 @@ export default function GameTradeModal({
           bodySwipeHandlers={bodySwipeHandlers}
           confirmLabel={confirmLabel}
           currentRankLabel={currentRankLabel}
-          detailContent={detailContent}
-          disableQuantityControls={disableQuantityControls}
           headerSwipeHandlers={headerSwipeHandlers}
-          helperText={helperText}
           isScheduledSellMode={isScheduledSellMode}
           isSubmitting={isSubmitting}
           modalTitleId={modalTitleId}
           normalizedMaxQuantity={normalizedMaxQuantity}
-          normalizedQuantity={normalizedQuantity}
-          onChangeQuantity={onChangeQuantity}
           onChangeSellOrderMode={onChangeSellOrderMode}
           onChangeScheduledSellTargetProfitRatePercent={onChangeScheduledSellTargetProfitRatePercent}
           onChangeScheduledSellTargetRank={onChangeScheduledSellTargetRank}
@@ -216,7 +153,6 @@ export default function GameTradeModal({
           onChangeScheduledSellTriggerType={onChangeScheduledSellTriggerType}
           onClose={onClose}
           onConfirm={onConfirm}
-          quickActions={quickActions}
           scheduledSellConditionError={scheduledSellConditionError}
           scheduledSellTargetProfitRatePercent={scheduledSellTargetProfitRatePercent}
           scheduledSellTargetRank={scheduledSellTargetRank}

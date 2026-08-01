@@ -1,8 +1,9 @@
 project_id = "zmgstrqoxpmbzgjifjje"
 
 [auth]
-site_url = "https://youtube-atlas.vercel.app"
+site_url = "https://trg.life"
 additional_redirect_urls = [
+  "https://trg.life/**",
   "https://youtube-atlas.vercel.app/**",
   "http://localhost:5173/**",
 ]

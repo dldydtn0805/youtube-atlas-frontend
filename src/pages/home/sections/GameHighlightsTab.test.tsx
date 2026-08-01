@@ -66,7 +66,7 @@ describe('GameHighlightsTab', () => {
     ]);
   });
 
-  it('sorts highlights by tier score when selected', () => {
+  it('sorts highlights by highlight score when selected', () => {
     render(
       <GameHighlightsTab
         highlights={[
@@ -79,7 +79,7 @@ describe('GameHighlightsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '티어 점수순' }));
+    fireEvent.click(screen.getByRole('button', { name: '하이라이트 점수순' }));
 
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
       expect.stringContaining('높은 점수'),
@@ -88,7 +88,7 @@ describe('GameHighlightsTab', () => {
     ]);
   });
 
-  it('renders the tier score breakdown when the backend includes it', () => {
+  it('renders the highlight score breakdown when the backend includes it', () => {
     render(
       <GameHighlightsTab
         highlights={[
@@ -122,9 +122,9 @@ describe('GameHighlightsTab', () => {
       />,
     );
 
-    expect(screen.getByLabelText('티어 점수 산식')).toHaveTextContent('스나이프');
-    expect(screen.getByLabelText('티어 점수 산식')).toHaveTextContent('기본 +5,000점');
-    expect(screen.getByLabelText('티어 점수 산식')).toHaveTextContent('순위 +160점');
+    expect(screen.getByLabelText('하이라이트 점수 산식')).toHaveTextContent('스나이프');
+    expect(screen.getByLabelText('하이라이트 점수 산식')).toHaveTextContent('기본 +5,000점');
+    expect(screen.getByLabelText('하이라이트 점수 산식')).toHaveTextContent('순위 +160점');
   });
 
   it('selects the highlight video from the thumbnail without opening the chart', () => {

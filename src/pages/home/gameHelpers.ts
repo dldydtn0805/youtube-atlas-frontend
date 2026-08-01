@@ -39,6 +39,7 @@ export interface OpenGameHolding {
   sellableQuantity: number;
   lockedQuantity: number;
   nextSellableInSeconds: number | null;
+  sellLockedUntilNextSync?: boolean;
   stakePoints: number;
   currentPricePoints: number | null;
   profitPoints: number | null;
@@ -480,13 +481,17 @@ export function buildOpenGameHoldings(
       const currentPricePoints = resolveEvaluationPoints(position);
       const profitPoints = resolveProfitPoints(position, currentPricePoints);
       const reservedForSell = position.reservedForSell === true;
+      const sellLockedUntilNextSync = position.sellLockedUntilNextSync === true;
       const scheduledSellQuantity =
         reservedForSell &&
         typeof position.scheduledSellQuantity === 'number' &&
         Number.isFinite(position.scheduledSellQuantity)
           ? Math.max(0, Math.floor(position.scheduledSellQuantity))
           : 0;
-      const sellableQuantity = remainingHoldSeconds <= 0 ? Math.max(0, quantity - scheduledSellQuantity) : 0;
+      const sellableQuantity =
+        remainingHoldSeconds <= 0 && !sellLockedUntilNextSync
+          ? Math.max(0, quantity - scheduledSellQuantity)
+          : 0;
       const lockedQuantity = Math.max(0, quantity - sellableQuantity);
 
       return {
@@ -501,7 +506,9 @@ export function buildOpenGameHoldings(
         quantity,
         sellableQuantity,
         lockedQuantity,
-        nextSellableInSeconds: lockedQuantity > 0 ? remainingHoldSeconds : null,
+        nextSellableInSeconds:
+          lockedQuantity > 0 && !sellLockedUntilNextSync ? remainingHoldSeconds : null,
+        sellLockedUntilNextSync,
         stakePoints: position.stakePoints,
         currentPricePoints,
         profitPoints,

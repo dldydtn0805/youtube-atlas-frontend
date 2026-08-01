@@ -11,7 +11,6 @@ describe('useHomeGameTradeActions', () => {
     const { result } = renderHook(() =>
       useHomeGameTradeActions({
         authStatus: 'authenticated',
-        buyQuantity: 100,
         currentGameSeason: {
           regionCode: 'KR',
           wallet: {
@@ -21,12 +20,11 @@ describe('useHomeGameTradeActions', () => {
         currentGameSeasonError: null,
         gameSeasonRegionMismatch: false,
         logout: vi.fn().mockResolvedValue(undefined),
-        maxBuyQuantity: 100,
+        maxBuyQuantity: 500,
         maxSellQuantity: 0,
         mutateBuyGamePosition,
         mutateSellGamePositions: vi.fn<(_: unknown) => Promise<SellGamePositionResponse[]>>().mockResolvedValue([]),
         onBuySuccess,
-        selectedGameActionTitle: '테스트 영상',
         selectedVideoId: 'video-1',
         selectedVideoMarketEntry: {
           buyBlockedReason: null,
@@ -35,12 +33,10 @@ describe('useHomeGameTradeActions', () => {
           currentRank: 1,
         } as GameMarketVideo,
         selectedRegionCode: 'KR',
-        sellQuantity: 100,
         setActiveTradeModal: vi.fn(),
         setBuyQuantity: vi.fn(),
         setGameActionStatus: vi.fn(),
         setSellQuantity: vi.fn(),
-        totalSelectedVideoBuyPoints: 1000,
       }),
     );
 
@@ -50,6 +46,9 @@ describe('useHomeGameTradeActions', () => {
 
     await waitFor(() => {
       expect(mutateBuyGamePosition).toHaveBeenCalledTimes(1);
+      expect(mutateBuyGamePosition).toHaveBeenCalledWith(
+        expect.objectContaining({ quantity: 100 }),
+      );
       expect(onBuySuccess).toHaveBeenCalledTimes(1);
     });
   });
@@ -61,7 +60,6 @@ describe('useHomeGameTradeActions', () => {
     const { result } = renderHook(() =>
       useHomeGameTradeActions({
         authStatus: 'authenticated',
-        buyQuantity: 100,
         currentGameSeason: {
           regionCode: 'KR',
           wallet: {
@@ -76,7 +74,6 @@ describe('useHomeGameTradeActions', () => {
         mutateBuyGamePosition: vi.fn().mockResolvedValue({}),
         mutateSellGamePositions,
         onSellSuccess,
-        selectedGameActionTitle: '테스트 영상',
         selectedOpenPositionId: 1,
         selectedVideoId: 'video-1',
         selectedVideoMarketEntry: {
@@ -86,12 +83,10 @@ describe('useHomeGameTradeActions', () => {
           currentRank: 1,
         } as GameMarketVideo,
         selectedRegionCode: 'KR',
-        sellQuantity: 100,
         setActiveTradeModal: vi.fn(),
         setBuyQuantity: vi.fn(),
         setGameActionStatus: vi.fn(),
         setSellQuantity: vi.fn(),
-        totalSelectedVideoBuyPoints: 1000,
       }),
     );
 
@@ -101,6 +96,9 @@ describe('useHomeGameTradeActions', () => {
 
     await waitFor(() => {
       expect(mutateSellGamePositions).toHaveBeenCalledTimes(1);
+      expect(mutateSellGamePositions).toHaveBeenCalledWith(
+        expect.objectContaining({ positionId: 1, quantity: 100 }),
+      );
       expect(onSellSuccess).toHaveBeenCalledTimes(1);
     });
   });
@@ -112,7 +110,6 @@ describe('useHomeGameTradeActions', () => {
     const { result } = renderHook(() =>
       useHomeGameTradeActions({
         authStatus: 'authenticated',
-        buyQuantity: 100,
         currentGameSeason: {
           regionCode: 'KR',
           wallet: {
@@ -123,10 +120,9 @@ describe('useHomeGameTradeActions', () => {
         gameSeasonRegionMismatch: false,
         logout: vi.fn().mockResolvedValue(undefined),
         maxBuyQuantity: 100,
-        maxSellQuantity: 500,
+        maxSellQuantity: 100,
         mutateBuyGamePosition: vi.fn().mockResolvedValue({}),
         mutateSellGamePositions: vi.fn<(_: unknown) => Promise<SellGamePositionResponse[]>>().mockResolvedValue([]),
-        selectedGameActionTitle: '테스트 영상',
         selectedOpenPositionId: 1,
         selectedVideoId: 'video-1',
         selectedVideoMarketEntry: {
@@ -136,12 +132,10 @@ describe('useHomeGameTradeActions', () => {
           currentRank: 1,
         } as GameMarketVideo,
         selectedRegionCode: 'KR',
-        sellQuantity: 100,
         setActiveTradeModal,
         setBuyQuantity: vi.fn(),
         setGameActionStatus: vi.fn(),
         setSellQuantity,
-        totalSelectedVideoBuyPoints: 1000,
       }),
     );
 
@@ -152,7 +146,7 @@ describe('useHomeGameTradeActions', () => {
       result.current.openSellTradeModal();
     });
 
-    expect(setSellQuantity).toHaveBeenCalledWith(500);
+    expect(setSellQuantity).toHaveBeenCalledWith(100);
     expect(setActiveTradeModal).toHaveBeenCalledWith('sell');
   });
 });

@@ -219,11 +219,11 @@ export default function useHomeChartCollections({
   const loadedSelectedVideoCount = selectedSection?.items.length ?? 0;
 
   const favoriteStreamerVideoSection =
-    favoriteStreamersCount > 0 && isAllCategorySelected
+    favoriteStreamersCount > 0
       ? mergeSections(favoriteStreamerVideosPages) ?? FAVORITE_STREAMER_VIDEO_SECTION
       : undefined;
   const favoriteChartSection =
-    authStatus === 'authenticated' && isAllCategorySelected
+    authStatus === 'authenticated'
       ? favoriteStreamerVideoSection ?? FAVORITE_STREAMER_VIDEO_SECTION
       : undefined;
   const buyableFavoriteChartSection = useMemo(() => {

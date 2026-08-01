@@ -1,4 +1,4 @@
-export type GameIntroPreviewType = 'trade' | 'highlights' | 'leaderboard';
+export type GameIntroPreviewType = 'wallet' | 'market' | 'sell' | 'assets';
 
 export interface GameIntroStep {
   body: string;
@@ -9,21 +9,27 @@ export interface GameIntroStep {
 
 export const gameIntroSteps: GameIntroStep[] = [
   {
-    stepLabel: 'STEP 1 / 3',
-    title: '사고 팔아 포인트 벌기',
-    previewType: 'trade',
-    body: '홈에서 영상 차트를 확인하고, 순위가 오를 것 같은 영상을 싸게 사보세요. 나중에 순위가 오르면 비싸게 팔아 차익을 포인트로 챙길 수 있어요!',
+    stepLabel: 'STEP 1 / 4',
+    title: '100,000P로 시작하기',
+    previewType: 'wallet',
+    body: '모든 플레이어는 100,000P로 시작합니다. 서로 다른 영상은 여러 개 보유할 수 있지만, 같은 영상은 1개만 매수할 수 있어요.',
   },
   {
-    stepLabel: 'STEP 2 / 3',
-    title: '하이라이트로 티어 올리기',
-    previewType: 'highlights',
-    body: '큰 순위 이동을 성공시키거나 수익률이 높으면 하이라이트가 기록돼요. 하이라이트 점수를 쌓아 시즌 티어를 올려보세요.',
+    stepLabel: 'STEP 2 / 4',
+    title: '순위와 거래 카운트로 가격 결정',
+    previewType: 'market',
+    body: '순위 앵커가 기본가를 정하고 1위 기본가는 1,000,000P입니다. 순위 변동 자체에는 프리미엄이 없고, 이번 싱크의 순매수는 회당 +1%, 순매도는 회당 -1%로 최대 ±30%까지 반영돼요.',
   },
   {
-    stepLabel: 'STEP 3 / 3',
-    title: '기록과 경쟁',
-    previewType: 'leaderboard',
-    body: '거래내역에서 내가 했던 선택들을 돌아보고, 리더보드에서 다른 유저들과 이번 시즌 순위를 비교해보세요.',
+    stepLabel: 'STEP 3 / 4',
+    title: '다음 싱크부터 전량 매도',
+    previewType: 'sell',
+    body: '이번 트렌드 싱크에서 매수한 영상은 다음 싱크부터 매도할 수 있습니다. 수량 선택 없이 보유한 1개를 전량 매도하며, 예약 매도도 같은 원칙이에요.',
+  },
+  {
+    stepLabel: 'STEP 4 / 4',
+    title: '총자산으로 티어 경쟁',
+    previewType: 'assets',
+    body: '현금, 보유 영상 평가액, 예약 포인트를 합친 총자산으로 티어와 리더보드 순위가 결정됩니다. 하이라이트 점수는 거래 기록과 칭호용이며 티어에는 반영되지 않아요.',
   },
 ];

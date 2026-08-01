@@ -51,7 +51,7 @@ export default function AdminUserHighlightsPanel({
           <div className="admin-page__detail-list admin-page__detail-list--compact">
             <p><span>계산 점수</span><strong>{formatNumber(summary.calculatedHighlightScore)}</strong></p>
             <p><span>수동 보정</span><strong>{formatSigned(summary.manualTierScoreAdjustment)}</strong></p>
-            <p><span>최종 티어 점수</span><strong>{formatNumber(summary.tierScore)}</strong></p>
+            <p><span>최종 하이라이트 점수</span><strong>{formatNumber(summary.tierScore)}</strong></p>
             <p><span>하이라이트 수</span><strong>{formatNumber(summary.highlightCount)}</strong></p>
           </div>
           {summary.highlights.length > 0 ? (

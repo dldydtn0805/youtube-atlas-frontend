@@ -6,9 +6,13 @@ import type {
   AdminHighlightHistoryCleanupRequest,
   AdminHighlightHistoryCleanupResponse,
   AdminPositionUpdateRequest,
+  AdminPriceAnchorList,
+  AdminPriceAnchorUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonStartingBalanceUpdateRequest,
   AdminSeasonSummary,
+  AdminTierThresholdList,
+  AdminTierThresholdUpdateRequest,
   AdminTrendSnapshotHistory,
   AdminTradeHistoryCleanupRequest,
   AdminTradeHistoryCleanupResponse,
@@ -89,6 +93,46 @@ function normalizeAdminUserDetail(userDetail: ApiAdminUserDetail): AdminUserDeta
 export async function fetchAdminDashboard(accessToken: string) {
   return fetchApi<AdminDashboard>('/api/admin/dashboard', {
     headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchAdminPriceAnchors(accessToken: string) {
+  return fetchApi<AdminPriceAnchorList>('/api/admin/game/price-anchors', {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function updateAdminPriceAnchors(
+  accessToken: string,
+  request: AdminPriceAnchorUpdateRequest,
+) {
+  return fetchApi<AdminPriceAnchorList>('/api/admin/game/price-anchors', {
+    method: 'PUT',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function fetchAdminTierThresholds(accessToken: string) {
+  return fetchApi<AdminTierThresholdList>('/api/admin/game/tiers', {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function updateAdminTierThresholds(
+  accessToken: string,
+  request: AdminTierThresholdUpdateRequest,
+) {
+  return fetchApi<AdminTierThresholdList>('/api/admin/game/tiers', {
+    method: 'PUT',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
   });
 }
 

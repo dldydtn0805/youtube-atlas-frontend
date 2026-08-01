@@ -13,7 +13,6 @@ import {
   calculateGameOrderPoints,
   DEFAULT_GAME_QUANTITY,
   formatGameQuantity,
-  formatGameOrderQuantity,
   formatHoldCountdown,
   formatPoints,
   getBuyRemainingPointsText,
@@ -314,7 +313,7 @@ export default function useSelectedVideoGameState({
     currentGameSeason && selectedVideoUnitPricePoints
       ? Math.max(
           0,
-          selectedVideoAlreadyOwned || remainingOpenPositionSlots > 0
+          !selectedVideoAlreadyOwned && remainingOpenPositionSlots > 0
             ? Math.floor((currentGameSeason.wallet.balancePoints * DEFAULT_GAME_QUANTITY) / selectedVideoUnitPricePoints)
             : 0,
         )
@@ -372,7 +371,12 @@ export default function useSelectedVideoGameState({
     () =>
       [...selectedVideoOpenPositions]
         .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
-        .filter((position) => getRemainingHoldSeconds(position) <= 0 && getGamePositionManualSellQuantity(position) > 0),
+        .filter(
+          (position) =>
+            position.sellLockedUntilNextSync !== true &&
+            getRemainingHoldSeconds(position) <= 0 &&
+            getGamePositionManualSellQuantity(position) > 0,
+        ),
     [getRemainingHoldSeconds, selectedVideoOpenPositions],
   );
   const maxSellQuantity = sellableSelectedVideoOpenPositions.reduce(
@@ -395,14 +399,18 @@ export default function useSelectedVideoGameState({
         : undefined;
   const selectedOpenHoldingLockedQuantity = selectedOpenHolding?.lockedQuantity ?? 0;
   const selectedOpenHoldingNextSellableInSeconds = selectedOpenHolding?.nextSellableInSeconds ?? null;
+  const selectedOpenHoldingSellLockedUntilNextSync =
+    selectedOpenHolding?.sellLockedUntilNextSync === true;
   const selectedOpenHoldingReservedQuantity = selectedOpenHolding?.scheduledSellQuantity ?? 0;
   const sellModalHelperText =
     maxOrderSellQuantity > 0
       ? selectedOpenHoldingReservedQuantity > 0
-        ? `지금 ${formatGameOrderQuantity(maxOrderSellQuantity)} 매도 가능하고, 나머지 ${formatGameQuantity(selectedOpenHoldingReservedQuantity)}는 예약 수량입니다.`
+        ? '이 영상은 예약 매도에 등록되어 있습니다. 예약을 취소하면 보유한 1개를 전량 매도할 수 있습니다.'
         : selectedOpenHoldingLockedQuantity > 0 && selectedOpenHoldingNextSellableInSeconds !== null
-          ? `지금 ${formatGameOrderQuantity(maxOrderSellQuantity)} 매도 가능하고, 나머지 ${formatGameQuantity(selectedOpenHoldingLockedQuantity)}는 ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 가능합니다.`
-        : `지금 매도 가능한 수량은 ${formatGameOrderQuantity(maxOrderSellQuantity)}입니다.`
+          ? `${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후 보유한 1개를 전량 매도할 수 있습니다.`
+        : '보유한 영상 1개를 전량 매도합니다.'
+      : selectedOpenHoldingSellLockedUntilNextSync
+        ? '이번 트렌드 싱크에서 매수한 영상입니다. 다음 트렌드 싱크 후 매도할 수 있습니다.'
       : selectedOpenHoldingNextSellableInSeconds !== null
         ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
         : '지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.';
@@ -429,23 +437,23 @@ export default function useSelectedVideoGameState({
     normalizedBuyQuantity,
   );
   const buyModalHelperText =
-    maxOrderBuyQuantity > 0
-      ? selectedVideoAlreadyOwned
-        ? buyModalRemainingPointsText ?? '이 영상은 보유 포인트가 허용하는 만큼 계속 추가 매수할 수 있습니다.'
-        : buyModalRemainingPointsText ??
-          `새 영상은 남은 종목 슬롯 ${remainingOpenPositionSlots}개 안에서, 보유 포인트가 허용하는 만큼 매수할 수 있습니다.`
-      : buyModalShortfallPointsText ??
-        selectedVideoMarketEntry?.buyBlockedReason ??
-        (nextInventoryTierText ? `${nextInventoryTierText}으로 늘릴 수 있습니다.` : '지금은 추가 매수할 수 없습니다.');
+    selectedVideoAlreadyOwned
+      ? '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.'
+      : maxOrderBuyQuantity > 0
+        ? buyModalRemainingPointsText ??
+          `남은 종목 슬롯 ${remainingOpenPositionSlots}개 안에서 서로 다른 영상을 보유할 수 있으며, 같은 영상은 1개만 매수할 수 있습니다.`
+        : buyModalShortfallPointsText ??
+          selectedVideoMarketEntry?.buyBlockedReason ??
+          (nextInventoryTierText
+            ? `${nextInventoryTierText}으로 늘릴 수 있습니다.`
+            : '지금은 추가 매수할 수 없습니다.');
   const currentVideoGameHelperText =
     !canShowGameActions
       ? '매수/매도는 전체 카테고리에서만 가능합니다.'
       : authStatus !== 'authenticated'
         ? '로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다.'
         : selectedVideoOpenPositionCount > 0
-          ? selectedVideoMarketEntry?.canBuy
-            ? `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중이며, 보유 포인트가 허용하는 만큼 계속 추가 매수할 수 있습니다.`
-            : `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중입니다.`
+          ? `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중입니다. 전량 매도하면 다시 매수할 수 있습니다.`
           : selectedVideoMarketEntry
             ? selectedVideoMarketEntry.canBuy
               ? buyRemainingPointsText ?? '지금 바로 매수할 수 있습니다.'
@@ -486,22 +494,25 @@ export default function useSelectedVideoGameState({
     !selectedVideoId ||
     authStatus !== 'authenticated' ||
     !canShowGameActions ||
-    selectedVideoOpenPositionCount <= 0;
+    selectedVideoOpenPositionCount <= 0 ||
+    maxOrderSellQuantity <= 0;
   const buyActionTitle =
     authStatus !== 'authenticated'
       ? '로그인 후 매수할 수 있습니다.'
-      : selectedVideoMarketEntry?.canBuy
-        ? selectedVideoOpenPositionCount > 0
-          ? '현재 영상의 추가 매수 수량을 선택합니다.'
-          : '현재 영상의 매수 수량을 선택합니다.'
-        : buyShortfallPointsText ??
-          selectedVideoMarketEntry?.buyBlockedReason ??
-          (currentGameSeason ? '현재 영상은 게임 거래 대상이 아닙니다.' : '활성 시즌이 없습니다.');
+      : selectedVideoAlreadyOwned
+        ? '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.'
+        : selectedVideoMarketEntry?.canBuy
+          ? '현재 영상을 1개 매수합니다.'
+          : buyShortfallPointsText ??
+            selectedVideoMarketEntry?.buyBlockedReason ??
+            (currentGameSeason
+              ? '현재 영상은 게임 거래 대상이 아닙니다.'
+              : '활성 시즌이 없습니다.');
   const sellActionTitle =
     !canShowGameActions
       ? '전체 카테고리에서만 매도할 수 있습니다.'
       : maxOrderSellQuantity > 0
-        ? `${formatGameOrderQuantity(maxOrderSellQuantity)}까지 수량을 선택해 매도할 수 있습니다.`
+        ? '보유한 영상 1개를 전량 매도합니다.'
         : sellModalHelperText;
   const selectedVideoTradeThumbnailUrl =
     selectedVideoMarketEntry?.thumbnailUrl ??

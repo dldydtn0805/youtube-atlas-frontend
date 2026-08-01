@@ -3,6 +3,8 @@ import {
   closeAdminSeason,
   deleteAdminUser,
   fetchAdminDashboard,
+  fetchAdminPriceAnchors,
+  fetchAdminTierThresholds,
   fetchAdminTrendSnapshots,
   fetchAdminUserDetail,
   fetchAdminUserHighlights,
@@ -12,6 +14,8 @@ import {
   purgeAdminHighlightHistory,
   purgeAdminTradeHistory,
   updateAdminSeasonSchedule,
+  updateAdminPriceAnchors,
+  updateAdminTierThresholds,
   updateAdminSeasonStartingBalance,
   updateAdminUserPosition,
   updateAdminUserWallet,
@@ -20,8 +24,10 @@ import type {
   AdminCommentCleanupRequest,
   AdminHighlightHistoryCleanupRequest,
   AdminPositionUpdateRequest,
+  AdminPriceAnchorUpdateRequest,
   AdminSeasonScheduleUpdateRequest,
   AdminSeasonStartingBalanceUpdateRequest,
+  AdminTierThresholdUpdateRequest,
   AdminTradeHistoryCleanupRequest,
   AdminWalletUpdateRequest,
 } from './types';
@@ -29,6 +35,8 @@ import type {
 export const adminQueryKeys = {
   all: (accessToken: string | null) => ['admin', accessToken] as const,
   dashboard: (accessToken: string | null) => ['admin', accessToken, 'dashboard'] as const,
+  priceAnchors: (accessToken: string | null) => ['admin', accessToken, 'priceAnchors'] as const,
+  tierThresholds: (accessToken: string | null) => ['admin', accessToken, 'tierThresholds'] as const,
   trendSnapshots: (accessToken: string | null, startAt: string | null, endAt: string | null, regionCode: string | null) =>
     ['admin', accessToken, 'trendSnapshots', startAt ?? '', endAt ?? '', regionCode ?? 'ALL'] as const,
   users: (accessToken: string | null, query: string | null) => ['admin', accessToken, 'users', query ?? ''] as const,
@@ -45,6 +53,49 @@ export function useAdminDashboard(accessToken: string | null, enabled = true) {
     queryKey: adminQueryKeys.dashboard(accessToken),
     queryFn: () => fetchAdminDashboard(accessToken as string),
     staleTime: 1000 * 30,
+  });
+}
+
+export function useAdminPriceAnchors(accessToken: string | null, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken),
+    queryKey: adminQueryKeys.priceAnchors(accessToken),
+    queryFn: () => fetchAdminPriceAnchors(accessToken as string),
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useUpdateAdminPriceAnchors(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AdminPriceAnchorUpdateRequest) =>
+      updateAdminPriceAnchors(accessToken as string, request),
+    onSuccess: (data) => {
+      queryClient.setQueryData(adminQueryKeys.priceAnchors(accessToken), data);
+    },
+  });
+}
+
+export function useAdminTierThresholds(accessToken: string | null, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken),
+    queryKey: adminQueryKeys.tierThresholds(accessToken),
+    queryFn: () => fetchAdminTierThresholds(accessToken as string),
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useUpdateAdminTierThresholds(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AdminTierThresholdUpdateRequest) =>
+      updateAdminTierThresholds(accessToken as string, request),
+    onSuccess: (data) => {
+      queryClient.setQueryData(adminQueryKeys.tierThresholds(accessToken), data);
+      void queryClient.invalidateQueries({ queryKey: ['game'] });
+    },
   });
 }
 

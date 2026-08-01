@@ -18,7 +18,6 @@ import {
 
 interface UseHomeGameTradeActionsOptions {
   authStatus: AuthStatus;
-  buyQuantity: number;
   currentGameSeason?: GameCurrentSeason;
   currentGameSeasonError: unknown;
   gameSeasonRegionMismatch: boolean;
@@ -30,16 +29,13 @@ interface UseHomeGameTradeActionsOptions {
   onBuySuccess?: () => Promise<void> | void;
   onSellSuccess?: () => Promise<void> | void;
   selectedOpenPositionId?: number | null;
-  selectedGameActionTitle: string;
   selectedVideoId?: string;
   selectedVideoMarketEntry?: GameMarketVideo;
   selectedRegionCode: string;
-  sellQuantity: number;
   setActiveTradeModal: Dispatch<SetStateAction<'buy' | 'sell' | null>>;
   setBuyQuantity: Dispatch<SetStateAction<number>>;
   setGameActionStatus: Dispatch<SetStateAction<string | null>>;
   setSellQuantity: Dispatch<SetStateAction<number>>;
-  totalSelectedVideoBuyPoints: number | null;
 }
 
 interface UseHomeGameTradeActionsResult {
@@ -53,7 +49,6 @@ interface UseHomeGameTradeActionsResult {
 
 export default function useHomeGameTradeActions({
   authStatus,
-  buyQuantity,
   currentGameSeason,
   currentGameSeasonError,
   gameSeasonRegionMismatch,
@@ -65,16 +60,13 @@ export default function useHomeGameTradeActions({
   onBuySuccess,
   onSellSuccess,
   selectedOpenPositionId,
-  selectedGameActionTitle,
   selectedVideoId,
   selectedVideoMarketEntry,
   selectedRegionCode,
-  sellQuantity,
   setActiveTradeModal,
   setBuyQuantity,
   setGameActionStatus,
   setSellQuantity,
-  totalSelectedVideoBuyPoints,
 }: UseHomeGameTradeActionsOptions): UseHomeGameTradeActionsResult {
   const [activeTradeRequest, setActiveTradeRequest] = useState<'buy' | 'sell' | null>(null);
   const tradeRequestLockRef = useRef<'buy' | 'sell' | null>(null);
@@ -127,7 +119,7 @@ export default function useHomeGameTradeActions({
       return;
     }
 
-    const clampedBuyQuantity = normalizeGameOrderQuantity(buyQuantity);
+    const clampedBuyQuantity = DEFAULT_GAME_QUANTITY;
     const maxOrderBuyQuantity = normalizeGameOrderCapacity(maxBuyQuantity);
     const buyShortfallMessage = getBuyShortfallPointsText(
       currentGameSeason,
@@ -182,7 +174,6 @@ export default function useHomeGameTradeActions({
     }
   }, [
     authStatus,
-    buyQuantity,
     currentGameSeason,
     currentGameSeasonError,
     gameSeasonRegionMismatch,
@@ -195,7 +186,6 @@ export default function useHomeGameTradeActions({
     setActiveTradeModal,
     setBuyQuantity,
     setGameActionStatus,
-    totalSelectedVideoBuyPoints,
   ]);
 
   const handleSellCurrentVideo = useCallback(async () => {
@@ -208,15 +198,10 @@ export default function useHomeGameTradeActions({
       return;
     }
 
-    const clampedSellQuantity = normalizeGameOrderQuantity(sellQuantity);
     const maxOrderSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
 
-    if (maxOrderSellQuantity <= 0 || clampedSellQuantity > maxOrderSellQuantity) {
-      setGameActionStatus(
-        maxOrderSellQuantity > 0
-          ? `지금은 최대 ${formatGameOrderQuantity(maxOrderSellQuantity)}까지 매도할 수 있습니다.`
-          : '지금 바로 매도 가능한 포지션이 없습니다.',
-      );
+    if (maxOrderSellQuantity <= 0) {
+      setGameActionStatus('지금 바로 매도 가능한 포지션이 없습니다.');
       return;
     }
 
@@ -225,7 +210,7 @@ export default function useHomeGameTradeActions({
       setActiveTradeRequest('sell');
       await mutateSellGamePositions({
         positionId: selectedOpenPositionId ?? undefined,
-        quantity: clampedSellQuantity,
+        quantity: maxOrderSellQuantity,
         regionCode: selectedRegionCode,
         videoId: selectedOpenPositionId == null ? selectedVideoId : undefined,
       });
@@ -255,25 +240,17 @@ export default function useHomeGameTradeActions({
     mutateSellGamePositions,
     onSellSuccess,
     selectedOpenPositionId,
-    selectedGameActionTitle,
     selectedRegionCode,
     selectedVideoId,
-    sellQuantity,
     setActiveTradeModal,
     setGameActionStatus,
     setSellQuantity,
   ]);
 
   const openBuyTradeModal = useCallback(() => {
-    setBuyQuantity((currentQuantity) => {
-      if (maxBuyQuantity <= 0) {
-        return DEFAULT_GAME_QUANTITY;
-      }
-
-      return Math.min(normalizeGameOrderQuantity(currentQuantity), normalizeGameOrderCapacity(maxBuyQuantity));
-    });
+    setBuyQuantity(DEFAULT_GAME_QUANTITY);
     setActiveTradeModal('buy');
-  }, [maxBuyQuantity, setActiveTradeModal, setBuyQuantity]);
+  }, [setActiveTradeModal, setBuyQuantity]);
 
   const openSellTradeModal = useCallback(() => {
     const normalizedMaxSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);

@@ -7,12 +7,14 @@ export interface AuthContextValue {
   authError: string | null;
   clearAuthError: () => void;
   googleClientId: string;
+  googleProviderAccessToken: string | null;
   isGoogleAuthAvailable: boolean;
   isGoogleAuthLoading: boolean;
   isLoggingIn: boolean;
   isLoggingOut: boolean;
   loginWithGoogleAuthorizationCode: (code: string, redirectUri: string) => Promise<void>;
   logout: () => Promise<void>;
+  requestYouTubePlaylistAccess: (redirectUri: string) => Promise<void>;
   refreshCurrentUser: () => Promise<void>;
   status: AuthStatus;
   user: AuthUser | null;

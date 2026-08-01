@@ -3,7 +3,7 @@ import { useEffect, useRef, type PointerEvent } from 'react';
 import type { GameTierProgress } from '../../../features/game/types';
 
 function formatScore(score: number) {
-  return `${score.toLocaleString('ko-KR')}점`;
+  return `${score.toLocaleString('ko-KR')}P`;
 }
 
 interface GameTierSummaryProps {
@@ -24,7 +24,7 @@ function getTierProgressPercent(progress: GameTierProgress) {
   const currentFloor = progress.currentTier.minScore;
   const nextFloor = progress.nextTier.minScore;
   const range = Math.max(nextFloor - currentFloor, 1);
-  const progressed = Math.max(progress.highlightScore - currentFloor, 0);
+  const progressed = Math.max(progress.totalAssetPoints - currentFloor, 0);
 
   return Math.max(0, Math.min(100, (progressed / range) * 100));
 }
@@ -35,7 +35,7 @@ function getTierCardNumber(progress: GameTierProgress) {
   const nextFloor = progress.nextTier
     ? String(progress.nextTier.minScore).padEnd(4, '0').slice(0, 4)
     : '9999';
-  const score = String(progress.highlightScore).padStart(4, '0').slice(-4);
+  const score = String(progress.totalAssetPoints).padStart(4, '0').slice(-4);
 
   return `YTAT ${tierCode} ${currentFloor} ${nextFloor} ${score}`;
 }
@@ -262,14 +262,14 @@ export default function GameTierSummary({
 
   const progressPercent = getTierProgressPercent(progress);
   const remainingToNextTier = progress.nextTier
-    ? Math.max(progress.nextTier.minScore - progress.highlightScore, 0)
+    ? Math.max(progress.nextTier.minScore - progress.totalAssetPoints, 0)
     : 0;
   const tierCardNumber = getTierCardNumber(progress);
   const progressLabel = `${Math.round(progressPercent)}%`;
 
   return (
     <section
-      aria-label="하이라이트 티어 진행도"
+      aria-label="보유 포인트 티어 진행도"
       className="app-shell__game-tier"
       data-current-tier={progress.currentTier.tierCode}
       data-surface-variant={surfaceVariant}
@@ -304,7 +304,7 @@ export default function GameTierSummary({
         >
           <div className="app-shell__game-tier-card-top">
             <span className="app-shell__game-tier-issuer">YOUTUBE ATLAS</span>
-            <span className="app-shell__game-tier-network">Highlight Tier</span>
+            <span className="app-shell__game-tier-network">Asset Tier</span>
           </div>
 
           <div className="app-shell__game-tier-card-tech" aria-hidden="true">
@@ -321,8 +321,8 @@ export default function GameTierSummary({
               {progress.currentTier.displayName}
             </span>
             <span className="app-shell__game-tier-coin-side">
-              <strong className="app-shell__game-tier-balance" title={formatScore(progress.highlightScore)}>
-                {formatScore(progress.highlightScore)}
+              <strong className="app-shell__game-tier-balance" title={formatScore(progress.totalAssetPoints)}>
+                {formatScore(progress.totalAssetPoints)}
               </strong>
             </span>
           </div>
@@ -355,7 +355,7 @@ export default function GameTierSummary({
         <ul className="app-shell__game-tier-ladder">
           {progress.tiers.map((tier) => {
             const isCurrent = tier.tierCode === progress.currentTier.tierCode;
-            const isReached = progress.highlightScore >= tier.minScore;
+            const isReached = progress.totalAssetPoints >= tier.minScore;
 
             return (
               <li

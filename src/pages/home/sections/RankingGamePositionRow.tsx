@@ -4,7 +4,6 @@ import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/Thumb
 import type { GamePosition, GameScheduledSellOrder, GameStrategyType } from '../../../features/game/types';
 import {
   calculateGameUnitPricePoints,
-  formatGameQuantity,
   formatHoldCountdown,
   formatMaybePoints,
   formatRank,
@@ -23,20 +22,11 @@ interface RankingGamePositionRowProps {
   isSelected: boolean;
   onCancelScheduledSellOrder?: (orderId: number) => void;
   onOpenPositionChart?: (position: GamePosition) => void;
-  onOpenBuyTradeModal?: (position: GamePosition) => void;
   onOpenSellTradeModal?: (position: GamePosition) => void;
   onOpenStrategyScheduledSellTradeModal?: (position: GamePosition, strategyType: GameStrategyType) => void;
   onSelectPosition: (position: GamePosition) => void;
   scheduledSellOrderCancelingId?: number | null;
   scheduledSellOrders?: GameScheduledSellOrder[];
-}
-
-function formatHighlightScore(score?: number | null) {
-  if (typeof score !== 'number' || !Number.isFinite(score)) {
-    return '0점';
-  }
-
-  return `${score.toLocaleString('ko-KR')}점`;
 }
 
 function getHoldingRankDiffBadge(holding: Pick<OpenGameHolding, 'buyRank' | 'currentRank' | 'chartOut'>) {
@@ -107,6 +97,7 @@ function mapHoldingToGamePosition(holding: OpenGameHolding): GamePosition {
     scheduledSellTargetProfitRatePercent: holding.scheduledSellTargetProfitRatePercent,
     scheduledSellTriggerDirection: holding.scheduledSellTriggerDirection,
     scheduledSellQuantity: holding.scheduledSellQuantity,
+    sellLockedUntilNextSync: holding.sellLockedUntilNextSync,
   };
 }
 
@@ -116,7 +107,6 @@ function RankingGamePositionRowComponent({
   isSelected,
   onCancelScheduledSellOrder,
   onOpenPositionChart,
-  onOpenBuyTradeModal,
   onOpenSellTradeModal,
   onOpenStrategyScheduledSellTradeModal,
   onSelectPosition,
@@ -137,17 +127,17 @@ function RankingGamePositionRowComponent({
   const positionStatusBadge = holding.chartOut ? '차트 아웃' : null;
   const sellableStatusBadge = !canShowGameActions
     ? '전체 카테고리에서 매도 가능'
+    : holding.sellLockedUntilNextSync
+      ? '다음 트렌드 싱크 후 매도 가능'
     : holding.sellableQuantity > 0
-      ? `${formatGameQuantity(holding.sellableQuantity)} 매도 가능`
+      ? '전량 매도 가능'
       : typeof holding.nextSellableInSeconds === 'number' && holding.nextSellableInSeconds > 0
         ? `매도 대기 · ${formatHoldCountdown(holding.nextSellableInSeconds)}`
-        : '매도 가능 수량 없음';
+        : '현재 매도 불가';
   const hasDetailBadges = Boolean(
     strategyBadges.length || holdingRankTrendBadge || positionStatusBadge || holding.reservedForSell || sellableStatusBadge,
   );
-  const projectedHighlightScoreValue = formatHighlightScore(holding.projectedHighlightScore);
   const position = mapHoldingToGamePosition(holding);
-  const canOpenBuyTrade = canShowGameActions && Boolean(onOpenBuyTradeModal);
   const canOpenSellTrade = canShowGameActions && holding.sellableQuantity > 0 && Boolean(onOpenSellTradeModal);
   const canOpenStrategyScheduledSellTrade =
     canShowGameActions && holding.sellableQuantity > 0 && Boolean(onOpenStrategyScheduledSellTradeModal);
@@ -209,11 +199,6 @@ function RankingGamePositionRowComponent({
             <p className="app-shell__game-position-channel">{holding.channelTitle}</p>
             <div className="app-shell__game-position-body">
               <p className="app-shell__game-position-meta">
-                <span className="app-shell__game-position-meta-label">예상 티어 점수</span>{' '}
-                <span className="app-shell__game-position-score">
-                  {holding.projectedHighlightScore > 0 ? `+${projectedHighlightScoreValue}` : projectedHighlightScoreValue}
-                </span>
-                {' · '}
                 <span className="app-shell__game-position-meta-label">순위</span>{' '}
                 <span className="app-shell__game-position-rank">{formatRank(holding.buyRank)}</span>
                 {' → '}
@@ -254,7 +239,7 @@ function RankingGamePositionRowComponent({
                               onOpenStrategyScheduledSellTradeModal?.(position, badge.type);
                             }}
                             onKeyDown={(event) => event.stopPropagation()}
-                            title={`${badge.label} 목표로 50% 예약 매도`}
+                            title={`${badge.label} 목표로 전량 예약 매도`}
                             type="button"
                           >
                             {badge.label}
@@ -304,22 +289,6 @@ function RankingGamePositionRowComponent({
       <div className="app-shell__game-position-side">
         <div className="app-shell__game-position-actions" aria-label={`${holding.title} 거래`}>
           <button
-            aria-label={`${holding.title} 추가 매수`}
-            className="app-shell__game-position-action"
-            data-variant="buy"
-            disabled={!canOpenBuyTrade}
-            onClick={() => onOpenBuyTradeModal?.(position)}
-            title={!canShowGameActions ? '전체 카테고리에서만 매수할 수 있습니다.' : '추가 매수'}
-            type="button"
-          >
-            <span className="app-shell__game-position-action-icon" aria-hidden="true">
-              <svg fill="none" viewBox="0 0 24 24">
-                <path d="M12 19V5M12 5l-5 5M12 5l5 5" />
-              </svg>
-            </span>
-            <span className="app-shell__game-position-action-label">매수</span>
-          </button>
-          <button
             aria-label={`${holding.title} 매도`}
             className="app-shell__game-position-action"
             data-variant="sell"
@@ -332,7 +301,7 @@ function RankingGamePositionRowComponent({
                   ? '매도'
                   : holding.reservedForSell
                     ? '예약 취소 후 매도할 수 있습니다.'
-                    : '아직 매도 가능한 수량이 없습니다.'
+                    : '아직 매도할 수 없는 보유 영상입니다.'
             }
             type="button"
           >
@@ -359,7 +328,6 @@ function areRankingGamePositionRowPropsEqual(
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.onCancelScheduledSellOrder === nextProps.onCancelScheduledSellOrder &&
     prevProps.onOpenPositionChart === nextProps.onOpenPositionChart &&
-    prevProps.onOpenBuyTradeModal === nextProps.onOpenBuyTradeModal &&
     prevProps.onOpenSellTradeModal === nextProps.onOpenSellTradeModal &&
     prevProps.onOpenStrategyScheduledSellTradeModal === nextProps.onOpenStrategyScheduledSellTradeModal &&
     prevProps.onSelectPosition === nextProps.onSelectPosition &&

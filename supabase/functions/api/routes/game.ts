@@ -1,18 +1,18 @@
+import { getOptionalAuth, requireAuth, type RequestContext } from '../../_shared/context.ts';
 import {
-  getOptionalAuth,
-  requireAuth,
-  type RequestContext,
-} from '../../_shared/context.ts';
-import {
+  calculateChartOutPricePoints,
   calculatePositionPoints,
-  calculatePricePoints,
+  calculateSignalPricePoints,
   calculateSellValues,
+  GAME_QUANTITY_SCALE,
   resolveTier,
-  TIER_DEFINITIONS,
   toMarketVideo,
   toTrendVideo,
+  type PriceAnchor,
   type TrendSignalRow,
 } from '../../_shared/game.ts';
+import { loadSeasonTiers } from '../../_shared/game-tiers.ts';
+import { loadPriceAnchors } from '../../_shared/price-anchors.ts';
 import {
   ApiError,
   json,
@@ -24,10 +24,10 @@ import {
 import {
   ensureActiveSeason,
   ensureWallet,
-  getHighlightScore,
   getPendingOrders,
   getPositionRows,
   getSignalsForRegion,
+  isPositionSellLockedUntilNextSync,
   serializePosition,
   signalMap,
   tierProgressResponse,
@@ -62,6 +62,13 @@ interface ScheduledOrderBody {
   triggerType?: string;
 }
 
+const VIDEO_ALREADY_OWNED_MESSAGE =
+  '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.';
+const NEXT_TREND_SYNC_REQUIRED_MESSAGE =
+  '이번 트렌드 싱크에서 매수한 영상입니다. 다음 트렌드 싱크 후 매도할 수 있습니다.';
+const FULL_POSITION_SELL_REQUIRED_MESSAGE =
+  '보유 영상은 수량을 나눌 수 없으며 1개 전량만 매도할 수 있습니다.';
+
 function getSignalForPosition(
   signalsByVideoId: Map<string, TrendSignalRow>,
   position: GamePositionRow,
@@ -79,7 +86,7 @@ async function listSerializedPositions(
     userId: number;
   },
 ) {
-  const [positions, signals, orders] = await Promise.all([
+  const [positions, signals, orders, priceAnchors] = await Promise.all([
     getPositionRows(context.service, {
       limit: options.limit,
       seasonId: options.seasonId,
@@ -88,6 +95,7 @@ async function listSerializedPositions(
     }),
     getSignalsForRegion(context.service, options.regionCode),
     getPendingOrders(context.service, options.seasonId, options.userId),
+    loadPriceAnchors(context.service),
   ]);
   const signalsByVideoId = signalMap(signals);
   const ordersByPositionId = new Map(orders.map((order) => [order.position_id, order]));
@@ -97,6 +105,7 @@ async function listSerializedPositions(
       position,
       getSignalForPosition(signalsByVideoId, position),
       ordersByPositionId.get(position.id),
+      priceAnchors,
     ),
   );
 }
@@ -104,28 +113,33 @@ async function listSerializedPositions(
 async function currentGameContext(context: RequestContext, regionCode: string, userId: number) {
   const season = await ensureActiveSeason(context.service, regionCode);
   const wallet = await ensureWallet(context.service, season, userId);
-  const [positions, signals] = await Promise.all([
+  const [positions, signals, priceAnchors, tiers] = await Promise.all([
     getPositionRows(context.service, {
       seasonId: season.id,
       userId,
     }),
     getSignalsForRegion(context.service, regionCode),
+    loadPriceAnchors(context.service),
+    loadSeasonTiers(context.service, season.id),
   ]);
   const signalsByVideoId = signalMap(signals);
-  const score = await getHighlightScore(
-    context.service,
-    season.id,
-    userId,
-    wallet.manual_tier_score_adjustment,
+  const walletSummary = walletResponse(
+    wallet,
+    positions,
+    signalsByVideoId,
+    priceAnchors,
   );
 
   return {
     positions,
-    score,
+    priceAnchors,
     season,
     signals,
     signalsByVideoId,
+    tiers,
+    totalAssetPoints: walletSummary.totalAssetPoints,
     wallet,
+    walletSummary,
   };
 }
 
@@ -165,11 +179,7 @@ function scheduledOrderResponse(
   };
 }
 
-async function listScheduledOrders(
-  context: RequestContext,
-  userId: number,
-  regionCode: string,
-) {
+async function listScheduledOrders(context: RequestContext, userId: number, regionCode: string) {
   const season = await ensureActiveSeason(context.service, regionCode);
   const { data: orders, error } = await context.service
     .from('game_scheduled_sell_orders')
@@ -184,10 +194,7 @@ async function listScheduledOrders(
   const { data: positions, error: positionError } =
     positionIds.length === 0
       ? { data: [], error: null }
-      : await context.service
-          .from('game_positions')
-          .select('*')
-          .in('id', positionIds);
+      : await context.service.from('game_positions').select('*').in('id', positionIds);
 
   if (positionError) throw positionError;
 
@@ -246,6 +253,7 @@ async function previewSell(
   context: RequestContext,
   userId: number,
   body: SellBody,
+  providedPriceAnchors?: ReadonlyArray<PriceAnchor>,
 ) {
   const regionCode = body.regionCode?.trim().toUpperCase();
   const quantity = Math.floor(body.quantity ?? 0);
@@ -254,8 +262,24 @@ async function previewSell(
     throw new ApiError(400, 'validation_error', '지역과 매도 수량이 필요합니다.');
   }
 
-  const season = await ensureActiveSeason(context.service, regionCode);
+  const [season, priceAnchors] = await Promise.all([
+    ensureActiveSeason(context.service, regionCode),
+    providedPriceAnchors ?? loadPriceAnchors(context.service),
+  ]);
   const positions = await findSellPositions(context, userId, season.id, body);
+  const fullPositionQuantity = positions.reduce(
+    (total, position) => total + position.quantity,
+    0,
+  );
+
+  if (quantity !== fullPositionQuantity) {
+    throw new ApiError(
+      400,
+      'partial_position_sell_disabled',
+      FULL_POSITION_SELL_REQUIRED_MESSAGE,
+    );
+  }
+
   const signalsByVideoId = signalMap(await getSignalsForRegion(context.service, regionCode));
   let remainingQuantity = quantity;
   const items = [];
@@ -264,14 +288,21 @@ async function previewSell(
     if (remainingQuantity <= 0) break;
 
     const soldQuantity = Math.min(position.quantity, remainingQuantity);
-    const soldStakePoints = Math.round(
-      (position.stake_points * soldQuantity) / position.quantity,
-    );
+    const soldStakePoints = Math.round((position.stake_points * soldQuantity) / position.quantity);
     const signal = signalsByVideoId.get(position.video_id);
+
+    if (isPositionSellLockedUntilNextSync(position, signal)) {
+      throw new ApiError(
+        409,
+        'next_trend_sync_required',
+        NEXT_TREND_SYNC_REQUIRED_MESSAGE,
+      );
+    }
+
     const sellRank = signal?.current_rank ?? 200;
     const unitPricePoints = signal
-      ? calculatePricePoints(signal.current_rank, signal.rank_change)
-      : 2_900;
+      ? calculateSignalPricePoints(signal, priceAnchors)
+      : calculateChartOutPricePoints(priceAnchors);
     const values = calculateSellValues(soldStakePoints, soldQuantity, unitPricePoints);
     const projectedHighlightScore = Math.max(0, (position.buy_rank - sellRank) * 100);
 
@@ -292,7 +323,7 @@ async function previewSell(
   }
 
   if (remainingQuantity > 0) {
-    throw new ApiError(400, 'insufficient_position_quantity', '보유 수량이 부족합니다.');
+    throw new ApiError(400, 'insufficient_position_quantity', '매도할 보유 영상이 없습니다.');
   }
 
   const totals = items.reduce(
@@ -316,24 +347,17 @@ async function previewSell(
       0,
     ),
     items,
-    projectedHighlightScore: items.reduce(
-      (total, item) => total + item.projectedHighlightScore,
-      0,
-    ),
+    projectedHighlightScore: items.reduce((total, item) => total + item.projectedHighlightScore, 0),
     quantity,
     recordEligibleCount: items.filter((item) => item.willUpdateRecord).length,
-    sellRank:
-      signalsByVideoId.get(positions[0].video_id)?.current_rank ?? 200,
+    sellRank: signalsByVideoId.get(positions[0].video_id)?.current_rank ?? 200,
     ...totals,
   };
 }
 
-async function executeSell(
-  context: RequestContext,
-  userId: number,
-  body: SellBody,
-) {
-  const preview = await previewSell(context, userId, body);
+async function executeSell(context: RequestContext, userId: number, body: SellBody) {
+  const priceAnchors = await loadPriceAnchors(context.service);
+  const preview = await previewSell(context, userId, body, priceAnchors);
   const regionCode = body.regionCode?.trim().toUpperCase() ?? '';
   const signalsByVideoId = signalMap(await getSignalsForRegion(context.service, regionCode));
   const responses = [];
@@ -350,8 +374,8 @@ async function executeSell(
     const signal = signalsByVideoId.get(position.video_id);
     const sellRank = signal?.current_rank ?? 200;
     const unitPricePoints = signal
-      ? calculatePricePoints(signal.current_rank, signal.rank_change)
-      : 2_900;
+      ? calculateSignalPricePoints(signal, priceAnchors)
+      : calculateChartOutPricePoints(priceAnchors);
     const { data, error } = await context.service.rpc('atlas_sell_position', {
       target_position_id: position.id,
       target_quantity: item.quantity,
@@ -360,7 +384,23 @@ async function executeSell(
       target_user_id: userId,
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.message.includes('next_trend_sync_required')) {
+        throw new ApiError(
+          409,
+          'next_trend_sync_required',
+          NEXT_TREND_SYNC_REQUIRED_MESSAGE,
+        );
+      }
+      if (error.message.includes('partial_position_sell_disabled')) {
+        throw new ApiError(
+          400,
+          'partial_position_sell_disabled',
+          FULL_POSITION_SELL_REQUIRED_MESSAGE,
+        );
+      }
+      throw error;
+    }
     responses.push(data);
 
     if ((data?.highlightScore ?? 0) > 0) {
@@ -385,10 +425,7 @@ async function executeSell(
   return responses;
 }
 
-async function positionHistory(
-  context: RequestContext,
-  position: GamePositionRow,
-) {
+async function positionHistory(context: RequestContext, position: GamePositionRow) {
   const { data: runs, error: runError } = await context.service
     .from('video_trend_runs')
     .select('id, captured_at')
@@ -480,9 +517,7 @@ async function achievementTitleCollection(context: RequestContext, userId: numbe
   if (titleError) throw titleError;
   if (settingError) throw settingError;
 
-  const earnedByCode = new Map(
-    (earnedRows ?? []).map((row) => [row.title_code, row.earned_at]),
-  );
+  const earnedByCode = new Map((earnedRows ?? []).map((row) => [row.title_code, row.earned_at]));
   if (!earnedByCode.has('bronze-investor')) {
     earnedByCode.set('bronze-investor', new Date().toISOString());
   }
@@ -513,48 +548,70 @@ async function achievementTitleCollection(context: RequestContext, userId: numbe
   };
 }
 
-export async function handleGameRoute(
-  context: RequestContext,
-  method: string,
-  path: string,
-) {
+export async function handleGameRoute(context: RequestContext, method: string, path: string) {
   if (path === '/api/game/market' && method === 'GET') {
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const auth = await getOptionalAuth(context);
-    const signals = await getSignalsForRegion(context.service, regionCode);
+    const [signals, priceAnchors] = await Promise.all([
+      getSignalsForRegion(context.service, regionCode),
+      loadPriceAnchors(context.service),
+    ]);
     let blockedReason: string | null = null;
+    const ownedVideoIds = new Set<string>();
 
     if (auth) {
       const game = await currentGameContext(context, regionCode, auth.profile.id);
-      const openPositionCount = game.positions.filter((position) => position.status === 'OPEN').length;
+      const openPositions = game.positions.filter((position) => position.status === 'OPEN');
+      openPositions.forEach((position) => ownedVideoIds.add(position.video_id));
+      const openPositionCount = ownedVideoIds.size;
       if (openPositionCount >= game.season.max_open_positions) blockedReason = 'inventory_full';
     }
 
     return json(
-      signals.map((signal) =>
-        toMarketVideo(signal, blockedReason === null, blockedReason),
-      ),
+      signals.map((signal) => {
+        const signalBlockedReason = ownedVideoIds.has(signal.video_id)
+          ? VIDEO_ALREADY_OWNED_MESSAGE
+          : blockedReason;
+        return toMarketVideo(
+          signal,
+          signalBlockedReason === null,
+          signalBlockedReason,
+          priceAnchors,
+        );
+      }),
     );
   }
 
   if (path === '/api/game/market/buyable-chart' && method === 'GET') {
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    await currentGameContext(context, regionCode, profile.id);
-    const signals = await getSignalsForRegion(context.service, regionCode);
+    const game = await currentGameContext(context, regionCode, profile.id);
+    const openPositions = game.positions.filter((position) => position.status === 'OPEN');
+    const ownedVideoIds = new Set(openPositions.map((position) => position.video_id));
+    const buyableSignals =
+      ownedVideoIds.size >= game.season.max_open_positions
+        ? []
+        : game.signals.filter((signal) => {
+            if (ownedVideoIds.has(signal.video_id)) {
+              return false;
+            }
+
+            const unitPricePoints = calculateSignalPricePoints(signal, game.priceAnchors);
+            return calculatePositionPoints(unitPricePoints, GAME_QUANTITY_SCALE) <= game.wallet.balance_points;
+          });
     const offset = Math.max(
       0,
       Number.parseInt(context.url.searchParams.get('pageToken') ?? '0', 10) || 0,
     );
-    const items = signals.slice(offset, offset + 50).map(toTrendVideo);
+    const items = buyableSignals.slice(offset, offset + 50).map(toTrendVideo);
 
     return json({
       availableCategories: [],
-      categoryId: 'all',
-      description: '현재 게임에서 매수할 수 있는 YouTube 인기 차트입니다.',
+      categoryId: 'buyable-market',
+      description: '현재 지갑과 보유 상태 기준으로 바로 매수 가능한 영상만 모았습니다.',
       items,
-      label: '매수 가능 차트',
-      nextPageToken: offset + 50 < signals.length ? String(offset + 50) : null,
+      label: '매수 가능',
+      nextPageToken: offset + 50 < buyableSignals.length ? String(offset + 50) : null,
     });
   }
 
@@ -562,17 +619,19 @@ export async function handleGameRoute(
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const game = await currentGameContext(context, regionCode, profile.id);
-    const currentTier = resolveTier(game.score);
+    const currentTier = resolveTier(game.totalAssetPoints, game.tiers);
+    const nextTier = game.tiers.find(
+      (tier) => game.totalAssetPoints < tier.minScore,
+    ) ?? null;
 
     return json({
       endAt: game.season.end_at,
       inventorySlots: {
         baseSlots: game.season.max_open_positions,
         currentTier: tierResponse(currentTier),
-        maxSlots: TIER_DEFINITIONS.at(-1)?.inventorySlots ?? currentTier.inventorySlots,
-        nextTier:
-          TIER_DEFINITIONS.find((tier) => game.score < tier.minScore) ?? null,
-        tiers: TIER_DEFINITIONS.map(tierResponse),
+        maxSlots: game.tiers.at(-1)?.inventorySlots ?? currentTier.inventorySlots,
+        nextTier: nextTier ? tierResponse(nextTier) : null,
+        tiers: game.tiers.map(tierResponse),
         totalSlots: currentTier.inventorySlots,
       },
       maxOpenPositions: currentTier.inventorySlots,
@@ -585,7 +644,7 @@ export async function handleGameRoute(
       startAt: game.season.start_at,
       startingBalancePoints: game.season.starting_balance_points,
       status: game.season.status,
-      wallet: walletResponse(game.wallet, game.positions, game.signalsByVideoId),
+      wallet: game.walletSummary,
     });
   }
 
@@ -593,23 +652,19 @@ export async function handleGameRoute(
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const game = await currentGameContext(context, regionCode, profile.id);
-    return json(walletResponse(game.wallet, game.positions, game.signalsByVideoId));
+    return json(game.walletSummary);
   }
 
   if (path === '/api/game/inventory-slots' && method === 'GET') {
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const game = await currentGameContext(context, regionCode, profile.id);
-    const progress = tierProgressResponse(
-      game.season,
-      game.score,
-      game.wallet.manual_tier_score_adjustment,
-    );
+    const progress = tierProgressResponse(game.season, game.totalAssetPoints, game.tiers);
 
     return json({
       baseSlots: game.season.max_open_positions,
       currentTier: progress.currentTier,
-      maxSlots: TIER_DEFINITIONS.at(-1)?.inventorySlots ?? game.season.max_open_positions,
+      maxSlots: game.tiers.at(-1)?.inventorySlots ?? game.season.max_open_positions,
       nextTier: progress.nextTier,
       tiers: progress.tiers,
       totalSlots: progress.currentTier.inventorySlots,
@@ -620,13 +675,7 @@ export async function handleGameRoute(
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const game = await currentGameContext(context, regionCode, profile.id);
-    return json(
-      tierProgressResponse(
-        game.season,
-        game.score,
-        game.wallet.manual_tier_score_adjustment,
-      ),
-    );
+    return json(tierProgressResponse(game.season, game.totalAssetPoints, game.tiers));
   }
 
   if (path === '/api/game/positions/me' && method === 'GET') {
@@ -652,23 +701,38 @@ export async function handleGameRoute(
     const regionCode = body.regionCode?.trim().toUpperCase();
     const categoryId = body.categoryId?.trim() || 'all';
     const videoId = body.videoId?.trim();
-    const quantity = Math.floor(body.quantity ?? 0);
+    const requestedQuantity = Math.floor(body.quantity ?? GAME_QUANTITY_SCALE);
+    const quantity = GAME_QUANTITY_SCALE;
 
-    if (!regionCode || !videoId || quantity <= 0) {
+    if (!regionCode || !videoId) {
       throw new ApiError(400, 'validation_error', '매수 정보가 올바르지 않습니다.');
     }
 
+    if (requestedQuantity !== GAME_QUANTITY_SCALE) {
+      throw new ApiError(
+        400,
+        'invalid_buy_quantity',
+        '영상은 한 번에 1개만 매수할 수 있습니다.',
+      );
+    }
+
     const game = await currentGameContext(context, regionCode, profile.id);
+    const alreadyOwned = game.positions.some(
+      (position) =>
+        position.status === 'OPEN' && position.video_id === videoId,
+    );
+
+    if (alreadyOwned) {
+      throw new ApiError(409, 'video_already_owned', VIDEO_ALREADY_OWNED_MESSAGE);
+    }
+
     const signal = game.signals.find((item) => item.video_id === videoId);
 
     if (!signal) {
       throw new ApiError(404, 'market_video_not_found', '현재 차트에서 영상을 찾을 수 없습니다.');
     }
 
-    const currentPricePoints = calculatePricePoints(
-      signal.current_rank,
-      signal.rank_change,
-    );
+    const currentPricePoints = calculateSignalPricePoints(signal, game.priceAnchors);
     const stakePoints = calculatePositionPoints(currentPricePoints, quantity);
 
     if (stakePoints <= 0) {
@@ -690,7 +754,12 @@ export async function handleGameRoute(
       target_video_id: videoId,
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.message.includes('video_already_owned')) {
+        throw new ApiError(409, 'video_already_owned', VIDEO_ALREADY_OWNED_MESSAGE);
+      }
+      throw error;
+    }
 
     return json(
       await listSerializedPositions(context, {
@@ -778,10 +847,7 @@ export async function handleGameRoute(
       throw new ApiError(400, 'validation_error', '목표 순위는 1에서 200 사이여야 합니다.');
     }
 
-    if (
-      triggerType === 'PROFIT_RATE' &&
-      typeof body.targetProfitRatePercent !== 'number'
-    ) {
+    if (triggerType === 'PROFIT_RATE' && typeof body.targetProfitRatePercent !== 'number') {
       throw new ApiError(400, 'validation_error', '목표 수익률이 필요합니다.');
     }
 
@@ -794,8 +860,24 @@ export async function handleGameRoute(
       .single<GamePositionRow>();
 
     if (positionError) throw positionError;
-    if (quantity > position.quantity) {
-      throw new ApiError(400, 'invalid_trade_quantity', '예약 수량이 보유 수량보다 많습니다.');
+    if (quantity !== position.quantity) {
+      throw new ApiError(
+        400,
+        'partial_position_sell_disabled',
+        FULL_POSITION_SELL_REQUIRED_MESSAGE,
+      );
+    }
+
+    const currentSignal = signalMap(
+      await getSignalsForRegion(context.service, regionCode),
+    ).get(position.video_id);
+
+    if (isPositionSellLockedUntilNextSync(position, currentSignal)) {
+      throw new ApiError(
+        409,
+        'next_trend_sync_required',
+        NEXT_TREND_SYNC_REQUIRED_MESSAGE,
+      );
     }
 
     const { data: order, error } = await context.service
@@ -1004,18 +1086,16 @@ export async function handleGameRoute(
       }
     }
 
-    const { error } = await context.service
-      .from('user_achievement_title_settings')
-      .upsert(
-        {
-          selected_title_code: titleCode,
-          updated_at: new Date().toISOString(),
-          user_id: profile.id,
-        },
-        {
-          onConflict: 'user_id',
-        },
-      );
+    const { error } = await context.service.from('user_achievement_title_settings').upsert(
+      {
+        selected_title_code: titleCode,
+        updated_at: new Date().toISOString(),
+        user_id: profile.id,
+      },
+      {
+        onConflict: 'user_id',
+      },
+    );
 
     if (error) throw error;
     return json(await achievementTitleCollection(context, profile.id));
@@ -1025,13 +1105,15 @@ export async function handleGameRoute(
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const season = await ensureActiveSeason(context.service, regionCode);
-    const [walletResult, positionsResult, profilesResult, highlightsResult, signals] =
+    const [walletResult, positionsResult, profilesResult, highlightsResult, signals, priceAnchors, tiers] =
       await Promise.all([
         context.service.from('game_wallets').select('*').eq('season_id', season.id),
         context.service.from('game_positions').select('*').eq('season_id', season.id),
         context.service.from('profiles').select('*'),
         context.service.from('game_highlights').select('*').eq('season_id', season.id),
         getSignalsForRegion(context.service, regionCode),
+        loadPriceAnchors(context.service),
+        loadSeasonTiers(context.service, season.id),
       ]);
 
     if (walletResult.error) throw walletResult.error;
@@ -1039,9 +1121,7 @@ export async function handleGameRoute(
     if (profilesResult.error) throw profilesResult.error;
     if (highlightsResult.error) throw highlightsResult.error;
 
-    const profilesById = new Map(
-      (profilesResult.data ?? []).map((item) => [item.id, item]),
-    );
+    const profilesById = new Map((profilesResult.data ?? []).map((item) => [item.id, item]));
     const signalsByVideoId = signalMap(signals);
     const rows = (walletResult.data ?? []).map((wallet) => {
       const positions = ((positionsResult.data ?? []) as GamePositionRow[]).filter(
@@ -1055,8 +1135,8 @@ export async function handleGameRoute(
       const totalEvaluationPoints = openPositions.reduce((total, position) => {
         const signal = signalsByVideoId.get(position.video_id);
         const unitPrice = signal
-          ? calculatePricePoints(signal.current_rank, signal.rank_change)
-          : 2_900;
+          ? calculateSignalPricePoints(signal, priceAnchors)
+          : calculateChartOutPricePoints(priceAnchors);
         return total + calculatePositionPoints(unitPrice, position.quantity);
       }, 0);
       const highlightRows = (highlightsResult.data ?? []).filter(
@@ -1073,7 +1153,7 @@ export async function handleGameRoute(
 
       return {
         balancePoints: wallet.balance_points,
-        currentTier: tierResponse(resolveTier(highlightScore)),
+        currentTier: tierResponse(resolveTier(totalAssetPoints, tiers)),
         displayName: profileRow?.display_name ?? '사용자',
         highlightCount: highlightRows.length,
         highlightScore,
@@ -1102,9 +1182,7 @@ export async function handleGameRoute(
     return json(rows.map((row, index) => ({ ...row, rank: index + 1 })));
   }
 
-  const leaderboardPositionsMatch = path.match(
-    /^\/api\/game\/leaderboard\/(\d+)\/positions$/,
-  );
+  const leaderboardPositionsMatch = path.match(/^\/api\/game\/leaderboard\/(\d+)\/positions$/);
   if (leaderboardPositionsMatch && method === 'GET') {
     await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
@@ -1119,9 +1197,7 @@ export async function handleGameRoute(
     );
   }
 
-  const leaderboardHighlightsMatch = path.match(
-    /^\/api\/game\/leaderboard\/(\d+)\/highlights$/,
-  );
+  const leaderboardHighlightsMatch = path.match(/^\/api\/game\/leaderboard\/(\d+)\/highlights$/);
   if (leaderboardHighlightsMatch && method === 'GET') {
     await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
@@ -1204,8 +1280,7 @@ export async function handleGameRoute(
         bestPositionChannelTitle: result.summary?.bestPositionChannelTitle ?? null,
         bestPositionId: result.summary?.bestPositionId ?? null,
         bestPositionProfitPoints: result.summary?.bestPositionProfitPoints ?? null,
-        bestPositionProfitRatePercent:
-          result.summary?.bestPositionProfitRatePercent ?? null,
+        bestPositionProfitRatePercent: result.summary?.bestPositionProfitRatePercent ?? null,
         bestPositionRankDiff: result.summary?.bestPositionRankDiff ?? null,
         bestPositionSellRank: result.summary?.bestPositionSellRank ?? null,
         bestPositionThumbnailUrl: result.summary?.bestPositionThumbnailUrl ?? null,
@@ -1225,8 +1300,7 @@ export async function handleGameRoute(
         positionCount: result.position_count,
         profitRatePercent:
           result.game_seasons?.starting_balance_points > 0
-            ? ((result.final_asset_points - result.game_seasons.starting_balance_points) *
-                100) /
+            ? ((result.final_asset_points - result.game_seasons.starting_balance_points) * 100) /
               result.game_seasons.starting_balance_points
             : null,
         realizedPnlPoints: result.realized_pnl_points,

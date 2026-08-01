@@ -1,37 +1,28 @@
 import './GameTierGuide.css';
 import BoldNumberText from './BoldNumberText';
-import { profitBonusCopy, strategyBaseScoreCopy, strategyTagCriteriaCopy } from './gameTierGuideContent';
 import type { GameTier } from '../../../features/game/types';
 
 const tierGuideItems = [
   {
-    title: '하이라이트 점수로 티어가 정해집니다',
-    copy: '시즌 티어는 하이라이트 점수 총합으로 결정됩니다. 한 플레이에 여러 전략 태그가 붙으면 태그별 점수가 전부 합산됩니다.',
+    title: '총자산으로 티어가 정해집니다',
+    copy: '현금 포인트, 보유 영상의 현재 평가액, 예약 포인트를 모두 합친 총자산으로 시즌 티어가 결정됩니다.',
   },
   {
-    title: '전략 태그 기준은 이렇습니다',
-    copy: strategyTagCriteriaCopy,
+    title: '영상을 사도 총자산이 사라지지 않습니다',
+    copy: '매수에 사용한 현금은 보유 영상 평가액으로 전환되므로 가격 변동 전에는 총자산이 그대로 유지됩니다.',
   },
   {
-    title: '분할 매도는 최고 기록만 반영됩니다',
-    copy: '같은 포지션을 여러 번 나눠 매도하면 매도마다 하이라이트 점수가 계산되지만, 티어에는 기존 최고 하이라이트 점수를 넘긴 기록만 반영됩니다.',
+    title: '영상 가격 변동이 티어에도 반영됩니다',
+    copy: '보유 영상의 현재 가격이 오르면 총자산과 티어 진행도가 함께 오르고, 가격이 내려가면 함께 내려갑니다.',
   },
   {
-    title: '캐시아웃은 수익률 하이라이트입니다',
-    copy: '스몰 캐시아웃은 수익률 300% 이상, 빅 캐시아웃은 1,000% 이상일 때 기록됩니다. 순위 상승 폭이 작아도 수익률이 크면 캐시아웃으로 티어 점수를 올릴 수 있습니다.',
-  },
-  {
-    title: '점수 계산은 태그별 기본점수 + 보너스입니다',
-    copy: strategyBaseScoreCopy,
-  },
-  {
-    title: '큰 수익은 추가 보너스가 붙습니다',
-    copy: profitBonusCopy,
+    title: '하이라이트 점수는 티어와 별개입니다',
+    copy: '하이라이트 점수는 좋은 거래를 남기는 기록과 칭호용이며, 티어와 리더보드 순위에는 반영되지 않습니다.',
   },
 ];
 
 function formatScore(score: number) {
-  return `${score.toLocaleString('ko-KR')}점`;
+  return `${score.toLocaleString('ko-KR')}P`;
 }
 
 function getTierThresholdCopy(tiers: GameTier[]) {
@@ -51,14 +42,14 @@ export default function GameTierGuide({ tiers = [] }: GameTierGuideProps) {
     ? [
       ...tierGuideItems,
       {
-        title: '티어별 점수 기준은 이렇습니다',
-        copy: `기준은 ${getTierThresholdCopy(tiers)}입니다. 레전드는 마스터 이상 유저 중 상위 10% 기준이라 시즌 점수 분포에 따라 기준 점수가 달라질 수 있습니다. 단, 마스터 달성자가 10명 미만일 경우 최고 점수 달성자가 레전드로 선정됩니다.`,
+        title: '티어별 총자산 기준은 이렇습니다',
+        copy: `현재 기준은 ${getTierThresholdCopy(tiers)}입니다. 기준값은 운영 설정에 따라 변경될 수 있습니다.`,
       },
     ]
     : tierGuideItems;
 
   return (
-    <div className="app-shell__tier-guide" aria-label="하이라이트 티어 설명">
+    <div className="app-shell__tier-guide" aria-label="총자산 티어 설명">
       <ol className="app-shell__tier-guide-list">
         {guideItems.map((item) => (
           <li key={item.title} className="app-shell__tier-guide-item">

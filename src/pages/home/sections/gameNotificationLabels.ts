@@ -15,7 +15,7 @@ export function getGameNotificationLabel(notification: GameNotification) {
   const detail = buildGameStrategyBadges(notification.strategyTags, notification.notificationType)
     .map((badge) => badge.label)
     .join(', ');
-  const prefix = isProjectedHighlightNotification(notification) ? '하이라이트 포착' : '티어 점수 상승';
+  const prefix = isProjectedHighlightNotification(notification) ? '하이라이트 포착' : '하이라이트 기록';
 
   if (detail) {
     return `${prefix} : ${detail}`;

@@ -9,7 +9,7 @@ const baseNotification: GameNotification = {
   id: 'notice-1',
   notificationEventType: 'TIER_SCORE_GAIN',
   notificationType: 'MOONSHOT',
-  title: '티어 점수 상승',
+  title: '하이라이트 기록',
   message: '테스트 알림',
   positionId: 1,
   videoId: 'video-1',
