@@ -30,7 +30,6 @@ interface UseHomeTradeFlowOptions {
   createScheduledSellOrder: (input: CreateScheduledSellOrderInput) => Promise<unknown>;
   currentGameSeason?: GameCurrentSeason;
   currentGameSeasonError: unknown;
-  gameSeasonRegionMismatch: boolean;
   logout: () => Promise<void>;
   maxBuyQuantity: number;
   maxSellQuantity: number;
@@ -76,7 +75,6 @@ export default function useHomeTradeFlow({
   createScheduledSellOrder,
   currentGameSeason,
   currentGameSeasonError,
-  gameSeasonRegionMismatch,
   logout,
   maxBuyQuantity,
   maxSellQuantity,
@@ -222,7 +220,6 @@ export default function useHomeTradeFlow({
     authStatus,
     currentGameSeason,
     currentGameSeasonError,
-    gameSeasonRegionMismatch,
     logout,
     maxBuyQuantity,
     maxSellQuantity,
@@ -311,7 +308,7 @@ export default function useHomeTradeFlow({
     const inputBase = {
       positionId: selectedSellPositionId,
       quantity: fullSellQuantity,
-      regionCode: currentGameSeason.regionCode,
+      regionCode: selectedRegionCode,
     };
     const scheduledSellOrderInput: CreateScheduledSellOrderInput =
       scheduledSellTriggerType === 'PROFIT_RATE'
@@ -371,6 +368,7 @@ export default function useHomeTradeFlow({
     scheduledSellTriggerDirection,
     scheduledSellTriggerType,
     selectedSellPositionId,
+    selectedRegionCode,
     setActiveTradeModal,
     setGameActionStatus,
   ]);

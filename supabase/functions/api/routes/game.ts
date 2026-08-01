@@ -26,6 +26,7 @@ import {
   ensureWallet,
   getPendingOrders,
   getPositionRows,
+  getSignalsForPositions,
   getSignalsForRegion,
   isPositionSellLockedUntilNextSync,
   serializePosition,
@@ -36,6 +37,10 @@ import {
   type GamePositionRow,
   type ScheduledOrderRow,
 } from './game-helpers.ts';
+import {
+  gamePositionSignalMap,
+  getGamePositionSignal,
+} from './game-position-signals.ts';
 
 interface BuyBody {
   categoryId?: string;
@@ -69,64 +74,58 @@ const NEXT_TREND_SYNC_REQUIRED_MESSAGE =
 const FULL_POSITION_SELL_REQUIRED_MESSAGE =
   '보유 영상은 수량을 나눌 수 없으며 1개 전량만 매도할 수 있습니다.';
 
-function getSignalForPosition(
-  signalsByVideoId: Map<string, TrendSignalRow>,
-  position: GamePositionRow,
-) {
-  return signalsByVideoId.get(position.video_id);
-}
-
 async function listSerializedPositions(
   context: RequestContext,
   options: {
     limit?: number;
-    regionCode: string;
     seasonId: number;
     status?: string | null;
     userId: number;
   },
 ) {
-  const [positions, signals, orders, priceAnchors] = await Promise.all([
-    getPositionRows(context.service, {
-      limit: options.limit,
-      seasonId: options.seasonId,
-      status: options.status,
-      userId: options.userId,
-    }),
-    getSignalsForRegion(context.service, options.regionCode),
+  const positions = await getPositionRows(context.service, {
+    limit: options.limit,
+    seasonId: options.seasonId,
+    status: options.status,
+    userId: options.userId,
+  });
+  const [signals, orders, priceAnchors] = await Promise.all([
+    getSignalsForPositions(context.service, positions),
     getPendingOrders(context.service, options.seasonId, options.userId),
     loadPriceAnchors(context.service),
   ]);
-  const signalsByVideoId = signalMap(signals);
+  const signalsByPosition = gamePositionSignalMap(signals);
   const ordersByPositionId = new Map(orders.map((order) => [order.position_id, order]));
 
   return positions.map((position) =>
     serializePosition(
       position,
-      getSignalForPosition(signalsByVideoId, position),
+      getGamePositionSignal(signalsByPosition, position),
       ordersByPositionId.get(position.id),
       priceAnchors,
     ),
   );
 }
 
-async function currentGameContext(context: RequestContext, regionCode: string, userId: number) {
-  const season = await ensureActiveSeason(context.service, regionCode);
+async function currentGameContext(context: RequestContext, marketRegionCode: string, userId: number) {
+  const season = await ensureActiveSeason(context.service);
   const wallet = await ensureWallet(context.service, season, userId);
-  const [positions, signals, priceAnchors, tiers] = await Promise.all([
-    getPositionRows(context.service, {
-      seasonId: season.id,
-      userId,
-    }),
-    getSignalsForRegion(context.service, regionCode),
+  const positions = await getPositionRows(context.service, {
+    seasonId: season.id,
+    userId,
+  });
+  const [signals, positionSignals, priceAnchors, tiers] = await Promise.all([
+    getSignalsForRegion(context.service, marketRegionCode),
+    getSignalsForPositions(context.service, positions),
     loadPriceAnchors(context.service),
     loadSeasonTiers(context.service, season.id),
   ]);
   const signalsByVideoId = signalMap(signals);
+  const signalsByPosition = gamePositionSignalMap(positionSignals);
   const walletSummary = walletResponse(
     wallet,
     positions,
-    signalsByVideoId,
+    (position) => getGamePositionSignal(signalsByPosition, position),
     priceAnchors,
   );
 
@@ -179,8 +178,8 @@ function scheduledOrderResponse(
   };
 }
 
-async function listScheduledOrders(context: RequestContext, userId: number, regionCode: string) {
-  const season = await ensureActiveSeason(context.service, regionCode);
+async function listScheduledOrders(context: RequestContext, userId: number) {
+  const season = await ensureActiveSeason(context.service);
   const { data: orders, error } = await context.service
     .from('game_scheduled_sell_orders')
     .select('*')
@@ -198,9 +197,12 @@ async function listScheduledOrders(context: RequestContext, userId: number, regi
 
   if (positionError) throw positionError;
 
-  const signalsByVideoId = signalMap(await getSignalsForRegion(context.service, regionCode));
+  const positionRows = (positions ?? []) as GamePositionRow[];
+  const signalsByPosition = gamePositionSignalMap(
+    await getSignalsForPositions(context.service, positionRows),
+  );
   const positionsById = new Map(
-    ((positions ?? []) as GamePositionRow[]).map((position) => [position.id, position]),
+    positionRows.map((position) => [position.id, position]),
   );
 
   return (orders ?? [])
@@ -210,7 +212,7 @@ async function listScheduledOrders(context: RequestContext, userId: number, regi
         ? scheduledOrderResponse(
             order as ScheduledOrderRow,
             position,
-            signalsByVideoId.get(position.video_id),
+            getGamePositionSignal(signalsByPosition, position),
           )
         : null;
     })
@@ -255,15 +257,14 @@ async function previewSell(
   body: SellBody,
   providedPriceAnchors?: ReadonlyArray<PriceAnchor>,
 ) {
-  const regionCode = body.regionCode?.trim().toUpperCase();
   const quantity = Math.floor(body.quantity ?? 0);
 
-  if (!regionCode || quantity <= 0) {
-    throw new ApiError(400, 'validation_error', '지역과 매도 수량이 필요합니다.');
+  if (quantity <= 0) {
+    throw new ApiError(400, 'validation_error', '매도 수량이 필요합니다.');
   }
 
   const [season, priceAnchors] = await Promise.all([
-    ensureActiveSeason(context.service, regionCode),
+    ensureActiveSeason(context.service),
     providedPriceAnchors ?? loadPriceAnchors(context.service),
   ]);
   const positions = await findSellPositions(context, userId, season.id, body);
@@ -280,7 +281,9 @@ async function previewSell(
     );
   }
 
-  const signalsByVideoId = signalMap(await getSignalsForRegion(context.service, regionCode));
+  const signalsByPosition = gamePositionSignalMap(
+    await getSignalsForPositions(context.service, positions),
+  );
   let remainingQuantity = quantity;
   const items = [];
 
@@ -289,7 +292,7 @@ async function previewSell(
 
     const soldQuantity = Math.min(position.quantity, remainingQuantity);
     const soldStakePoints = Math.round((position.stake_points * soldQuantity) / position.quantity);
-    const signal = signalsByVideoId.get(position.video_id);
+    const signal = getGamePositionSignal(signalsByPosition, position);
 
     if (isPositionSellLockedUntilNextSync(position, signal)) {
       throw new ApiError(
@@ -350,7 +353,7 @@ async function previewSell(
     projectedHighlightScore: items.reduce((total, item) => total + item.projectedHighlightScore, 0),
     quantity,
     recordEligibleCount: items.filter((item) => item.willUpdateRecord).length,
-    sellRank: signalsByVideoId.get(positions[0].video_id)?.current_rank ?? 200,
+    sellRank: getGamePositionSignal(signalsByPosition, positions[0])?.current_rank ?? 200,
     ...totals,
   };
 }
@@ -358,8 +361,6 @@ async function previewSell(
 async function executeSell(context: RequestContext, userId: number, body: SellBody) {
   const priceAnchors = await loadPriceAnchors(context.service);
   const preview = await previewSell(context, userId, body, priceAnchors);
-  const regionCode = body.regionCode?.trim().toUpperCase() ?? '';
-  const signalsByVideoId = signalMap(await getSignalsForRegion(context.service, regionCode));
   const responses = [];
 
   for (const item of preview.items) {
@@ -371,7 +372,9 @@ async function executeSell(context: RequestContext, userId: number, body: SellBo
 
     if (positionError) throw positionError;
 
-    const signal = signalsByVideoId.get(position.video_id);
+    const signal = signalMap(
+      await getSignalsForRegion(context.service, position.region_code),
+    ).get(position.video_id);
     const sellRank = signal?.current_rank ?? 200;
     const unitPricePoints = signal
       ? calculateSignalPricePoints(signal, priceAnchors)
@@ -680,14 +683,12 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/positions/me' && method === 'GET') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    const season = await ensureActiveSeason(context.service, regionCode);
+    const season = await ensureActiveSeason(context.service);
     return json(
       await listSerializedPositions(context, {
         limit: context.url.searchParams.has('limit')
           ? parsePositiveInteger(context.url.searchParams.get('limit'))
           : undefined,
-        regionCode,
         seasonId: season.id,
         status: context.url.searchParams.get('status'),
         userId: profile.id,
@@ -763,7 +764,6 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
     return json(
       await listSerializedPositions(context, {
-        regionCode,
         seasonId: game.season.id,
         status: 'OPEN',
         userId: profile.id,
@@ -798,7 +798,6 @@ export async function handleGameRoute(context: RequestContext, method: string, p
     const responses = await executeSell(context, profile.id, {
       positionId,
       quantity: position.quantity,
-      regionCode: position.region_code,
     });
     return json(responses[0]);
   }
@@ -819,13 +818,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/scheduled-sell-orders' && method === 'GET') {
     const { profile } = await requireAuth(context);
-    return json(
-      await listScheduledOrders(
-        context,
-        profile.id,
-        requiredSearchParam(context.url, 'regionCode').toUpperCase(),
-      ),
-    );
+    return json(await listScheduledOrders(context, profile.id));
   }
 
   if (path === '/api/game/scheduled-sell-orders' && method === 'POST') {
@@ -833,10 +826,9 @@ export async function handleGameRoute(context: RequestContext, method: string, p
     const body = await readJson<ScheduledOrderBody>(context.request);
     const positionId = Math.floor(body.positionId ?? 0);
     const quantity = Math.floor(body.quantity ?? 0);
-    const regionCode = body.regionCode?.trim().toUpperCase();
     const triggerType = body.triggerType ?? 'RANK';
 
-    if (!regionCode || positionId <= 0 || quantity <= 0) {
+    if (positionId <= 0 || quantity <= 0) {
       throw new ApiError(400, 'validation_error', '예약 매도 정보가 올바르지 않습니다.');
     }
 
@@ -869,7 +861,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
     }
 
     const currentSignal = signalMap(
-      await getSignalsForRegion(context.service, regionCode),
+      await getSignalsForRegion(context.service, position.region_code),
     ).get(position.video_id);
 
     if (isPositionSellLockedUntilNextSync(position, currentSignal)) {
@@ -885,7 +877,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       .insert({
         position_id: position.id,
         quantity,
-        region_code: regionCode,
+        region_code: position.region_code,
         season_id: position.season_id,
         target_profit_rate_percent: body.targetProfitRatePercent ?? null,
         target_rank: body.targetRank ?? null,
@@ -898,9 +890,9 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
     if (error) throw error;
 
-    const signal = signalMap(await getSignalsForRegion(context.service, regionCode)).get(
-      position.video_id,
-    );
+    const signal = signalMap(
+      await getSignalsForRegion(context.service, position.region_code),
+    ).get(position.video_id);
     return json(scheduledOrderResponse(order, position, signal), 201);
   }
 
@@ -944,8 +936,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/highlights' && method === 'GET') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    const season = await ensureActiveSeason(context.service, regionCode);
+    const season = await ensureActiveSeason(context.service);
     const { data, error } = await context.service
       .from('game_highlights')
       .select('*, game_positions(*)')
@@ -988,12 +979,12 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/notifications' && method === 'GET') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
+    const season = await ensureActiveSeason(context.service);
     const { data, error } = await context.service
       .from('game_notifications')
       .select('*')
       .eq('user_id', profile.id)
-      .eq('region_code', regionCode)
+      .eq('season_id', season.id)
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -1025,12 +1016,12 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/notifications/read' && method === 'PATCH') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
+    const season = await ensureActiveSeason(context.service);
     const { error } = await context.service
       .from('game_notifications')
       .update({ read_at: new Date().toISOString() })
       .eq('user_id', profile.id)
-      .eq('region_code', regionCode)
+      .eq('season_id', season.id)
       .is('read_at', null);
 
     if (error) throw error;
@@ -1039,12 +1030,12 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/notifications' && method === 'DELETE') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
+    const season = await ensureActiveSeason(context.service);
     const { error } = await context.service
       .from('game_notifications')
       .delete()
       .eq('user_id', profile.id)
-      .eq('region_code', regionCode);
+      .eq('season_id', season.id);
 
     if (error) throw error;
     return noContent();
@@ -1103,28 +1094,33 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/leaderboard' && method === 'GET') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    const season = await ensureActiveSeason(context.service, regionCode);
-    const [walletResult, positionsResult, profilesResult, highlightsResult, signals, priceAnchors, tiers] =
+    const season = await ensureActiveSeason(context.service);
+    const positionsResult = await context.service
+      .from('game_positions')
+      .select('*')
+      .eq('season_id', season.id);
+
+    if (positionsResult.error) throw positionsResult.error;
+
+    const allPositions = (positionsResult.data ?? []) as GamePositionRow[];
+    const [walletResult, profilesResult, highlightsResult, signals, priceAnchors, tiers] =
       await Promise.all([
         context.service.from('game_wallets').select('*').eq('season_id', season.id),
-        context.service.from('game_positions').select('*').eq('season_id', season.id),
         context.service.from('profiles').select('*'),
         context.service.from('game_highlights').select('*').eq('season_id', season.id),
-        getSignalsForRegion(context.service, regionCode),
+        getSignalsForPositions(context.service, allPositions),
         loadPriceAnchors(context.service),
         loadSeasonTiers(context.service, season.id),
       ]);
 
     if (walletResult.error) throw walletResult.error;
-    if (positionsResult.error) throw positionsResult.error;
     if (profilesResult.error) throw profilesResult.error;
     if (highlightsResult.error) throw highlightsResult.error;
 
     const profilesById = new Map((profilesResult.data ?? []).map((item) => [item.id, item]));
-    const signalsByVideoId = signalMap(signals);
+    const signalsByPosition = gamePositionSignalMap(signals);
     const rows = (walletResult.data ?? []).map((wallet) => {
-      const positions = ((positionsResult.data ?? []) as GamePositionRow[]).filter(
+      const positions = allPositions.filter(
         (position) => position.user_id === wallet.user_id,
       );
       const openPositions = positions.filter((position) => position.status === 'OPEN');
@@ -1133,7 +1129,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
         0,
       );
       const totalEvaluationPoints = openPositions.reduce((total, position) => {
-        const signal = signalsByVideoId.get(position.video_id);
+        const signal = getGamePositionSignal(signalsByPosition, position);
         const unitPrice = signal
           ? calculateSignalPricePoints(signal, priceAnchors)
           : calculateChartOutPricePoints(priceAnchors);
@@ -1185,11 +1181,9 @@ export async function handleGameRoute(context: RequestContext, method: string, p
   const leaderboardPositionsMatch = path.match(/^\/api\/game\/leaderboard\/(\d+)\/positions$/);
   if (leaderboardPositionsMatch && method === 'GET') {
     await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    const season = await ensureActiveSeason(context.service, regionCode);
+    const season = await ensureActiveSeason(context.service);
     return json(
       await listSerializedPositions(context, {
-        regionCode,
         seasonId: season.id,
         status: 'OPEN',
         userId: Number(leaderboardPositionsMatch[1]),
@@ -1200,8 +1194,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
   const leaderboardHighlightsMatch = path.match(/^\/api\/game\/leaderboard\/(\d+)\/highlights$/);
   if (leaderboardHighlightsMatch && method === 'GET') {
     await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    const season = await ensureActiveSeason(context.service, regionCode);
+    const season = await ensureActiveSeason(context.service);
     const { data, error } = await context.service
       .from('game_highlights')
       .select('*, game_positions(*)')
@@ -1246,13 +1239,11 @@ export async function handleGameRoute(context: RequestContext, method: string, p
   );
   if (leaderboardHistoryMatch && method === 'GET') {
     await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const { data: position, error } = await context.service
       .from('game_positions')
       .select('*')
       .eq('id', Number(leaderboardHistoryMatch[2]))
       .eq('user_id', Number(leaderboardHistoryMatch[1]))
-      .eq('region_code', regionCode)
       .single<GamePositionRow>();
 
     if (error) throw error;
@@ -1261,7 +1252,6 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/season-results/me' && method === 'GET') {
     const { profile } = await requireAuth(context);
-    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const limit = context.url.searchParams.has('limit')
       ? parsePositiveInteger(context.url.searchParams.get('limit'))
       : 10;
@@ -1269,7 +1259,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       .from('game_season_results')
       .select('*, game_seasons(*)')
       .eq('user_id', profile.id)
-      .eq('game_seasons.region_code', regionCode)
+      .eq('game_seasons.region_code', 'GLOBAL')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -1304,7 +1294,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
               result.game_seasons.starting_balance_points
             : null,
         realizedPnlPoints: result.realized_pnl_points,
-        regionCode,
+        regionCode: 'GLOBAL',
         seasonEndAt: result.game_seasons?.end_at,
         seasonId: result.season_id,
         seasonName: result.game_seasons?.name ?? '',

@@ -20,7 +20,6 @@ interface UseHomeGameTradeActionsOptions {
   authStatus: AuthStatus;
   currentGameSeason?: GameCurrentSeason;
   currentGameSeasonError: unknown;
-  gameSeasonRegionMismatch: boolean;
   logout: () => Promise<void>;
   maxBuyQuantity: number;
   maxSellQuantity: number;
@@ -51,7 +50,6 @@ export default function useHomeGameTradeActions({
   authStatus,
   currentGameSeason,
   currentGameSeasonError,
-  gameSeasonRegionMismatch,
   logout,
   maxBuyQuantity,
   maxSellQuantity,
@@ -111,11 +109,7 @@ export default function useHomeGameTradeActions({
     }
 
     if (!selectedVideoMarketEntry) {
-      setGameActionStatus(
-        gameSeasonRegionMismatch
-          ? `현재 게임은 ${currentGameSeason.regionCode} 시즌 기준으로 진행 중입니다.`
-          : '현재 영상은 아직 게임 거래 대상이 아닙니다.',
-      );
+      setGameActionStatus('현재 영상은 아직 게임 거래 대상이 아닙니다.');
       return;
     }
 
@@ -149,7 +143,7 @@ export default function useHomeGameTradeActions({
       await mutateBuyGamePosition({
         categoryId: '0',
         quantity: clampedBuyQuantity,
-        regionCode: currentGameSeason.regionCode,
+        regionCode: selectedRegionCode,
         stakePoints: selectedVideoMarketEntry.currentPricePoints,
         videoId: selectedVideoId,
       });
@@ -176,13 +170,13 @@ export default function useHomeGameTradeActions({
     authStatus,
     currentGameSeason,
     currentGameSeasonError,
-    gameSeasonRegionMismatch,
     logout,
     maxBuyQuantity,
     mutateBuyGamePosition,
     onBuySuccess,
     selectedVideoId,
     selectedVideoMarketEntry,
+    selectedRegionCode,
     setActiveTradeModal,
     setBuyQuantity,
     setGameActionStatus,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { VIDEO_FILTER_REGION_CODES } from '../../constants/videoCategories';
 import {
   subscribeToAuthenticatedRealtimeTopic,
   subscribeToRealtimeTopic,
@@ -36,38 +37,40 @@ export function useGameRealtimeInvalidation(
       return;
     }
 
-    const unsubscribe = subscribeToRealtimeTopic(`${GAME_TOPIC_PREFIX}/${regionCode}`, (messageBody) => {
-      try {
-        const event = JSON.parse(messageBody) as GameRealtimeEvent;
+    const unsubscribes = VIDEO_FILTER_REGION_CODES.map((gameRegionCode) =>
+      subscribeToRealtimeTopic(`${GAME_TOPIC_PREFIX}/${gameRegionCode}`, (messageBody) => {
+        try {
+          const event = JSON.parse(messageBody) as GameRealtimeEvent;
 
-        if (
-          (event.eventType !== WALLET_UPDATED_EVENT &&
-            event.eventType !== MARKET_UPDATED_EVENT) ||
-          event.regionCode !== regionCode
-        ) {
-          return;
+          if (
+            (event.eventType !== WALLET_UPDATED_EVENT &&
+              event.eventType !== MARKET_UPDATED_EVENT) ||
+            event.regionCode !== gameRegionCode
+          ) {
+            return;
+          }
+
+          const nextEventKey = toRealtimeEventKey(event);
+
+          if (handledEventKeyRef.current === nextEventKey) {
+            return;
+          }
+
+          handledEventKeyRef.current = nextEventKey;
+
+          void invalidateGameQueries(queryClient, {
+            accessToken,
+            includeLeaderboardPositions: true,
+            regionCode: gameRegionCode,
+          });
+        } catch {
+          // Ignore malformed realtime messages so game queries keep working.
         }
-
-        const nextEventKey = toRealtimeEventKey(event);
-
-        if (handledEventKeyRef.current === nextEventKey) {
-          return;
-        }
-
-        handledEventKeyRef.current = nextEventKey;
-
-        void invalidateGameQueries(queryClient, {
-          accessToken,
-          includeLeaderboardPositions: true,
-          regionCode,
-        });
-      } catch {
-        // Ignore malformed realtime messages so game queries keep working.
-      }
-    });
+      }),
+    );
 
     return () => {
-      unsubscribe();
+      unsubscribes.forEach((unsubscribe) => unsubscribe());
     };
   }, [accessToken, enabled, queryClient, regionCode]);
 }

@@ -12,6 +12,9 @@ import {
   type TrendSignalRow,
 } from '../../_shared/game.ts';
 import { getCalendarGameSeason } from './calendar-season.ts';
+import { getGamePositionRegionCodes } from './game-position-signals.ts';
+
+export const GAME_SCOPE_REGION_CODE = 'GLOBAL';
 
 export interface GameSeasonRow {
   created_at: string;
@@ -81,12 +84,11 @@ export interface ScheduledOrderRow {
   user_id: number;
 }
 
-export async function ensureActiveSeason(service: SupabaseClient, regionCode: string) {
-  const normalizedRegionCode = regionCode.toUpperCase();
+export async function ensureActiveSeason(service: SupabaseClient) {
   const { data: existingSeason, error: existingError } = await service
     .from('game_seasons')
     .select('*')
-    .eq('region_code', normalizedRegionCode)
+    .eq('region_code', GAME_SCOPE_REGION_CODE)
     .eq('status', 'ACTIVE')
     .maybeSingle<GameSeasonRow>();
 
@@ -104,7 +106,7 @@ export async function ensureActiveSeason(service: SupabaseClient, regionCode: st
     .insert({
       end_at: calendarSeason.endAt,
       name: calendarSeason.name,
-      region_code: normalizedRegionCode,
+      region_code: GAME_SCOPE_REGION_CODE,
       start_at: calendarSeason.startAt,
     })
     .select('*')
@@ -114,7 +116,7 @@ export async function ensureActiveSeason(service: SupabaseClient, regionCode: st
     const { data: racedSeason, error: racedError } = await service
       .from('game_seasons')
       .select('*')
-      .eq('region_code', normalizedRegionCode)
+      .eq('region_code', GAME_SCOPE_REGION_CODE)
       .eq('status', 'ACTIVE')
       .single<GameSeasonRow>();
 
@@ -175,6 +177,19 @@ export async function getSignalsForRegion(service: SupabaseClient, regionCode: s
 
   if (fallbackError) throw fallbackError;
   return (fallback ?? []) as TrendSignalRow[];
+}
+
+export async function getSignalsForPositions(
+  service: SupabaseClient,
+  positions: ReadonlyArray<GamePositionRow>,
+) {
+  const signalGroups = await Promise.all(
+    getGamePositionRegionCodes(positions).map((regionCode) =>
+      getSignalsForRegion(service, regionCode),
+    ),
+  );
+
+  return signalGroups.flat();
 }
 
 export function signalMap(signals: TrendSignalRow[]) {
@@ -290,6 +305,7 @@ export function serializePosition(
     profitPoints,
     projectedHighlightScore: Math.max(0, (position.buy_rank - (currentRank ?? 200)) * 100),
     quantity: position.quantity,
+    regionCode: position.region_code,
     rankDiff: currentRank === null ? null : position.buy_rank - currentRank,
     reservedForSell: Boolean(order),
     scheduledSellOrderId: order?.id ?? null,
@@ -312,13 +328,13 @@ export function serializePosition(
 export function walletResponse(
   wallet: GameWalletRow,
   positions: GamePositionRow[],
-  signalsByVideoId: Map<string, TrendSignalRow>,
+  getSignal: (position: GamePositionRow) => TrendSignalRow | undefined,
   priceAnchors?: ReadonlyArray<PriceAnchor>,
 ) {
   const totalEvaluationPoints = positions
     .filter((position) => position.status === 'OPEN')
     .reduce((total, position) => {
-      const signal = signalsByVideoId.get(position.video_id);
+      const signal = getSignal(position);
       const unitPricePoints = signal
         ? calculateSignalPricePoints(signal, priceAnchors)
         : calculateChartOutPricePoints(priceAnchors);

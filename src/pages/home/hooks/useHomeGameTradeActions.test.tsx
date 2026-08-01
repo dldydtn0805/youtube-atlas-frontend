@@ -12,13 +12,12 @@ describe('useHomeGameTradeActions', () => {
       useHomeGameTradeActions({
         authStatus: 'authenticated',
         currentGameSeason: {
-          regionCode: 'KR',
+          regionCode: 'GLOBAL',
           wallet: {
             balancePoints: 100000,
           },
         } as GameCurrentSeason,
         currentGameSeasonError: null,
-        gameSeasonRegionMismatch: false,
         logout: vi.fn().mockResolvedValue(undefined),
         maxBuyQuantity: 500,
         maxSellQuantity: 0,
@@ -47,7 +46,7 @@ describe('useHomeGameTradeActions', () => {
     await waitFor(() => {
       expect(mutateBuyGamePosition).toHaveBeenCalledTimes(1);
       expect(mutateBuyGamePosition).toHaveBeenCalledWith(
-        expect.objectContaining({ quantity: 100 }),
+        expect.objectContaining({ quantity: 100, regionCode: 'KR' }),
       );
       expect(onBuySuccess).toHaveBeenCalledTimes(1);
     });
@@ -67,7 +66,6 @@ describe('useHomeGameTradeActions', () => {
           },
         } as GameCurrentSeason,
         currentGameSeasonError: null,
-        gameSeasonRegionMismatch: false,
         logout: vi.fn().mockResolvedValue(undefined),
         maxBuyQuantity: 100,
         maxSellQuantity: 100,
@@ -117,7 +115,6 @@ describe('useHomeGameTradeActions', () => {
           },
         } as GameCurrentSeason,
         currentGameSeasonError: null,
-        gameSeasonRegionMismatch: false,
         logout: vi.fn().mockResolvedValue(undefined),
         maxBuyQuantity: 100,
         maxSellQuantity: 100,

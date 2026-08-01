@@ -9,11 +9,14 @@ import {
 import {
   ensureWallet,
   getPositionRows,
-  getSignalsForRegion,
-  signalMap,
+  getSignalsForPositions,
   walletResponse,
   type GamePositionRow,
 } from "./game-helpers.ts";
+import {
+  gamePositionSignalMap,
+  getGamePositionSignal,
+} from "./game-position-signals.ts";
 import { resolveNextTier, resolveTier } from "../../_shared/game.ts";
 import { loadSeasonTiers } from "../../_shared/game-tiers.ts";
 import { loadPriceAnchors } from "../../_shared/price-anchors.ts";
@@ -297,19 +300,20 @@ async function buildUserDetail(context: RequestContext, userId: number) {
   const activeSeasonGames = [];
   for (const season of seasons ?? []) {
     const wallet = await ensureWallet(context.service, season, userId);
-    const [positions, signals, priceAnchors, tiers] = await Promise.all([
-      getPositionRows(context.service, {
-        seasonId: season.id,
-        userId,
-      }),
-      getSignalsForRegion(context.service, season.region_code),
+    const positions = await getPositionRows(context.service, {
+      seasonId: season.id,
+      userId,
+    });
+    const [signals, priceAnchors, tiers] = await Promise.all([
+      getSignalsForPositions(context.service, positions),
       loadPriceAnchors(context.service),
       loadSeasonTiers(context.service, season.id),
     ]);
+    const signalsByPosition = gamePositionSignalMap(signals);
     const walletSummary = walletResponse(
       wallet,
       positions,
-      signalMap(signals),
+      (position) => getGamePositionSignal(signalsByPosition, position),
       priceAnchors,
     );
     const currentTier = resolveTier(walletSummary.totalAssetPoints, tiers);

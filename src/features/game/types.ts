@@ -264,6 +264,7 @@ export interface GameHighlight {
 
 export interface GamePosition {
   id: number;
+  regionCode?: string;
   videoId: string;
   title: string;
   channelTitle: string;

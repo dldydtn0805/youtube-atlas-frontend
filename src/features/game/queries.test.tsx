@@ -169,6 +169,26 @@ function createScheduledOrder(overrides: Partial<GameScheduledSellOrder> = {}): 
   };
 }
 
+describe('game query scope', () => {
+  it('shares season and portfolio caches across countries', () => {
+    expect(gameQueryKeys.currentSeason('token', 'KR')).toEqual(
+      gameQueryKeys.currentSeason('token', 'US'),
+    );
+    expect(gameQueryKeys.positions('token', 'KR')).toEqual(
+      gameQueryKeys.positions('token', 'JP'),
+    );
+    expect(gameQueryKeys.leaderboard('token', 'US')).toEqual(
+      gameQueryKeys.leaderboard('token', 'KR'),
+    );
+  });
+
+  it('keeps each country market cache separate', () => {
+    expect(gameQueryKeys.market('token', 'KR')).not.toEqual(
+      gameQueryKeys.market('token', 'US'),
+    );
+  });
+});
+
 describe('game queries optimistic mutations', () => {
   afterEach(() => {
     sellGamePositionsMock.mockReset();

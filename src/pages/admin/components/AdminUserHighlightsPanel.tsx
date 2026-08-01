@@ -27,6 +27,10 @@ function formatRank(value: number | null | undefined) {
   return typeof value === 'number' ? `#${formatNumber(value)}` : '-';
 }
 
+function formatSeasonRegion(regionCode: string) {
+  return regionCode === 'GLOBAL' ? '글로벌' : regionCode;
+}
+
 export default function AdminUserHighlightsPanel({
   error,
   isLoading,
@@ -41,7 +45,7 @@ export default function AdminUserHighlightsPanel({
       <div className="admin-page__section-header">
         <h3 className="admin-page__section-title">하이라이트 점수 내역</h3>
         <span className="admin-page__section-caption">
-          {summary ? `${summary.regionCode} · ${summary.seasonName}` : '선택 시즌'}
+          {summary ? `${formatSeasonRegion(summary.regionCode)} · ${summary.seasonName}` : '선택 시즌'}
         </span>
       </div>
       {isLoading ? <p className="admin-page__muted">하이라이트를 불러오는 중입니다.</p> : null}

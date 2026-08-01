@@ -12,6 +12,10 @@ interface AdminTierThresholdsPanelProps {
   seasons: AdminSeasonTierThresholds[];
 }
 
+function formatSeasonRegion(regionCode: string) {
+  return regionCode === 'GLOBAL' ? '글로벌' : regionCode;
+}
+
 export default function AdminTierThresholdsPanel({
   isLoading,
   isSaving,
@@ -68,7 +72,7 @@ export default function AdminTierThresholdsPanel({
         })),
       );
       const confirmed = window.confirm(
-        `${selectedSeason.regionCode} 시즌 티어 기준을 저장하면 모든 유저의 현재 티어에 즉시 반영됩니다. 저장할까요?`,
+        `${formatSeasonRegion(selectedSeason.regionCode)} 시즌 티어 기준을 저장하면 모든 유저의 현재 티어에 즉시 반영됩니다. 저장할까요?`,
       );
 
       if (!confirmed) return;
@@ -100,7 +104,7 @@ export default function AdminTierThresholdsPanel({
             >
               {seasons.map((season) => (
                 <option key={season.seasonId} value={season.seasonId}>
-                  {season.regionCode} · {season.seasonName}
+                  {formatSeasonRegion(season.regionCode)} · {season.seasonName}
                 </option>
               ))}
             </select>

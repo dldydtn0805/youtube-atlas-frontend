@@ -184,6 +184,10 @@ function formatRegionLabel(regionCode: string | null | undefined) {
     return "국가 미선택";
   }
 
+  if (regionCode === "GLOBAL") {
+    return "글로벌";
+  }
+
   const country = countryCodes.find((item) => item.code === regionCode);
   return country ? `${country.name} (${country.code})` : regionCode;
 }
@@ -595,7 +599,7 @@ function UserDetailPanel({
           <h3 className="admin-page__section-title">활성 시즌 지갑 수정</h3>
           <span className="admin-page__section-caption">
             {selectedSeasonGame
-              ? `${selectedSeasonGame.regionCode} · ${selectedSeasonGame.seasonName}`
+              ? `${formatRegionLabel(selectedSeasonGame.regionCode)} · ${selectedSeasonGame.seasonName}`
               : "활성 시즌 없음"}
           </span>
         </div>
@@ -615,7 +619,7 @@ function UserDetailPanel({
                 role="tab"
                 type="button"
               >
-                <strong>{seasonGame.regionCode}</strong>
+                <strong>{formatRegionLabel(seasonGame.regionCode)}</strong>
                 <span>{seasonGame.seasonName}</span>
               </button>
             ))}
@@ -626,7 +630,7 @@ function UserDetailPanel({
             <div className="admin-page__detail-list admin-page__detail-list--compact">
               <p>
                 <span>지역</span>
-                <strong>{selectedSeasonGame.regionCode}</strong>
+                <strong>{formatRegionLabel(selectedSeasonGame.regionCode)}</strong>
               </p>
               <p>
                 <span>참여 여부</span>
@@ -753,7 +757,7 @@ function UserDetailPanel({
           <h3 className="admin-page__section-title">보유 포지션 조정</h3>
           <span className="admin-page__section-caption">
             {selectedSeasonGame
-              ? `${selectedSeasonGame.regionCode} · OPEN ${formatNumber(positions.length)}건`
+              ? `${formatRegionLabel(selectedSeasonGame.regionCode)} · OPEN ${formatNumber(positions.length)}건`
               : "활성 시즌 없음"}
           </span>
         </div>
@@ -1274,7 +1278,7 @@ export default function AdminPage() {
         {
           onSuccess: () => {
             setActionMessage(
-              `${season.regionCode} 시즌 시간이 저장되었습니다.`,
+              `${formatRegionLabel(season.regionCode)} 시즌 시간이 저장되었습니다.`,
             );
             setSeasonActionState(null);
           },
@@ -1297,7 +1301,7 @@ export default function AdminPage() {
 
   const handleSeasonClose = (season: AdminSeasonSummary) => {
     const confirmed = window.confirm(
-      `${season.regionCode} · ${season.name} 시즌을 지금 종료할까요? 오픈 포지션 정산과 시즌 종료 처리가 바로 실행됩니다.`,
+      `${formatRegionLabel(season.regionCode)} · ${season.name} 시즌을 지금 종료할까요? 오픈 포지션 정산과 시즌 종료 처리가 바로 실행됩니다.`,
     );
 
     if (!confirmed) {
@@ -1308,7 +1312,7 @@ export default function AdminPage() {
     setSeasonActionState({ seasonId: season.id, type: "close" });
     closeSeasonMutation.mutate(season.id, {
       onSuccess: () => {
-        setActionMessage(`${season.regionCode} 시즌을 종료했습니다.`);
+        setActionMessage(`${formatRegionLabel(season.regionCode)} 시즌을 종료했습니다.`);
         setSeasonActionState(null);
       },
       onError: (error) => {
@@ -1338,7 +1342,7 @@ export default function AdminPage() {
         {
           onSuccess: () => {
             setActionMessage(
-              `${season.regionCode} 시즌 시작 자금이 저장되었습니다. 이미 생성된 유저 지갑은 변경하지 않습니다.`,
+              `${formatRegionLabel(season.regionCode)} 시즌 시작 자금이 저장되었습니다. 이미 생성된 유저 지갑은 변경하지 않습니다.`,
             );
             setSeasonActionState(null);
           },
@@ -1872,7 +1876,7 @@ export default function AdminPage() {
                         key={season.id}
                       >
                         <div className="admin-page__section-header">
-                          <strong>{season.regionCode}</strong>
+                          <strong>{formatRegionLabel(season.regionCode)}</strong>
                           <span className="admin-page__pill">
                             {season.status}
                           </span>
@@ -2238,7 +2242,7 @@ export default function AdminPage() {
                         <div className="admin-page__section-header">
                           <div>
                             <h3 className="admin-page__section-title">
-                              {season.regionCode} 시즌
+                              {formatRegionLabel(season.regionCode)} 시즌
                             </h3>
                             <p className="admin-page__section-caption">
                               {season.name}

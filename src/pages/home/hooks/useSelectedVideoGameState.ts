@@ -38,6 +38,7 @@ import {
   formatSelectedVideoRankLabel,
   formatVideoViewCount,
   getVideoThumbnailUrl,
+  sortedCountryCodes,
 } from "../utils";
 
 interface UseSelectedVideoGameStateOptions {
@@ -69,7 +70,6 @@ interface UseSelectedVideoGameStateResult {
   buyModalHelperText: string;
   buyShortfallPointsText: string | null;
   currentVideoGameHelperText: string;
-  gameSeasonRegionMismatch: boolean;
   isCurrentVideoGameHelperWarning: boolean;
   isSelectedVideoBuyDisabled: boolean;
   isSelectedVideoSellDisabled: boolean;
@@ -110,7 +110,6 @@ export function buildSelectedVideoTrendBadgeSource(options: {
   selectedVideoTrendSignal?: VideoTrendSignal;
 }) {
   const {
-    currentGameSeason,
     selectedCategoryId,
     selectedCategoryLabel,
     selectedRegionCode,
@@ -129,7 +128,7 @@ export function buildSelectedVideoTrendBadgeSource(options: {
       previousRank: selectedVideoMarketEntry.previousRank,
       previousViewCount: null,
       rankChange: selectedVideoMarketEntry.rankChange,
-      regionCode: currentGameSeason?.regionCode ?? selectedRegionCode,
+      regionCode: selectedRegionCode,
       title: selectedVideoMarketEntry.title,
       channelTitle: selectedVideoMarketEntry.channelTitle,
       thumbnailUrl: selectedVideoMarketEntry.thumbnailUrl,
@@ -358,16 +357,23 @@ export default function useSelectedVideoGameState({
         )
       : null;
   const selectedVideoCurrentChartRank =
+    selectedVideoOpenPosition?.currentRank ??
     selectedVideoMarketEntry?.currentRank ??
     selectedVideoTrendSignal?.currentRank ??
-    selectedVideoOpenPosition?.currentRank;
+    undefined;
   const selectedVideoIsChartOut =
-    selectedVideoMarketEntry || selectedVideoTrendSignal
-      ? false
-      : selectedVideoOpenPositions.some((position) => position.chartOut) ||
-        (selectedHistoricalPosition?.chartOut ?? false);
+    selectedVideoOpenPosition
+      ? selectedVideoOpenPosition.chartOut
+      : selectedVideoMarketEntry || selectedVideoTrendSignal
+        ? false
+        : (selectedHistoricalPosition?.chartOut ?? false);
+  const selectedVideoRankCountryName = selectedVideoOpenPosition?.regionCode
+    ? (sortedCountryCodes.find(
+        (country) => country.code === selectedVideoOpenPosition.regionCode,
+      )?.name ?? selectedVideoOpenPosition.regionCode)
+    : selectedCountryName;
   const selectedVideoRankLabel = formatSelectedVideoRankLabel(
-    selectedCountryName,
+    selectedVideoRankCountryName,
     selectedVideoCurrentChartRank,
     {
       chartOut: selectedVideoIsChartOut,
@@ -382,10 +388,6 @@ export default function useSelectedVideoGameState({
       selectedVideoTrendSignal?.currentViewCount?.toString() ??
       selectedVideoMarketEntry?.currentViewCount?.toString(),
   );
-  const gameSeasonRegionMismatch =
-    Boolean(currentGameSeason?.regionCode) &&
-    selectedRegionCode.toUpperCase() !==
-      currentGameSeason?.regionCode.toUpperCase();
   const sellableSelectedVideoOpenPositions = useMemo(
     () =>
       [...selectedVideoOpenPositions]
@@ -496,9 +498,7 @@ export default function useSelectedVideoGameState({
               selectedVideoMarketEntry.buyBlockedReason ??
               "지금은 매수할 수 없습니다.")
           : currentGameSeason
-            ? gameSeasonRegionMismatch
-              ? `게임 시즌은 ${currentGameSeason.regionCode} 기준으로 진행 중입니다.`
-              : "현재 영상은 아직 게임 거래 대상이 아닙니다."
+            ? "현재 영상은 아직 게임 거래 대상이 아닙니다."
             : isCurrentGameSeasonLoading
               ? "게임 시즌을 불러오는 중입니다."
               : currentGameSeasonError instanceof Error
@@ -570,7 +570,6 @@ export default function useSelectedVideoGameState({
     buyModalHelperText,
     buyShortfallPointsText,
     currentVideoGameHelperText,
-    gameSeasonRegionMismatch,
     isChartActionDisabled,
     isCurrentVideoGameHelperWarning,
     isSelectedVideoBuyDisabled,

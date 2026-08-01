@@ -15,7 +15,8 @@ export default function SeasonResultHeader({ label, onOpenRecords, recordCount =
         <p className="game-season-result__eyebrow">ANALYST REPORT</p>
         <h4 className="game-season-result__title">{result.seasonName}</h4>
         <p className="game-season-result__season-meta">
-          {label} · {result.regionCode} · {formatSeasonDateTime(result.seasonEndAt)} 종료
+          {label} · {result.regionCode === 'GLOBAL' ? '' : `${result.regionCode} · `}
+          {formatSeasonDateTime(result.seasonEndAt)} 종료
         </p>
       </div>
       <div className="game-season-result__head-actions">

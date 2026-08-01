@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { GameCurrentSeason } from '../../../features/game/types';
 import { buildSelectedVideoTrendBadgeSource } from './useSelectedVideoGameState';
 
 describe('buildSelectedVideoTrendBadgeSource', () => {
   it('prefers the latest market entry over a stale selected trend signal', () => {
     const source = buildSelectedVideoTrendBadgeSource({
+      currentGameSeason: { regionCode: 'GLOBAL' } as GameCurrentSeason,
       selectedCategoryId: '0',
       selectedCategoryLabel: '전체',
       selectedRegionCode: 'KR',
@@ -42,5 +44,6 @@ describe('buildSelectedVideoTrendBadgeSource', () => {
     expect(source?.currentRank).toBe(15);
     expect(source?.previousRank).toBe(9);
     expect(source?.rankChange).toBe(-6);
+    expect(source?.regionCode).toBe('KR');
   });
 });

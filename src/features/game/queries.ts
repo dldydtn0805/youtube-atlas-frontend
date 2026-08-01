@@ -40,37 +40,52 @@ import type {
   SellGamePositionsInput,
 } from './types';
 
+export const GAME_SCOPE_QUERY_KEY = 'GLOBAL';
+
+function getGameScopeQueryKey(regionCode: string | null) {
+  void regionCode;
+  return GAME_SCOPE_QUERY_KEY;
+}
+
 export const gameQueryKeys = {
   buyableMarketChart: (accessToken: string | null, regionCode: string | null) =>
     ['game', 'buyableMarketChart', accessToken, regionCode] as const,
   currentSeason: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'currentSeason', accessToken, regionCode] as const,
+    ['game', 'currentSeason', accessToken, getGameScopeQueryKey(regionCode)] as const,
   seasonResults: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'seasonResults', accessToken, regionCode] as const,
+    ['game', 'seasonResults', accessToken, getGameScopeQueryKey(regionCode)] as const,
   tierProgress: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'tierProgress', accessToken, regionCode] as const,
+    ['game', 'tierProgress', accessToken, getGameScopeQueryKey(regionCode)] as const,
   leaderboard: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'leaderboard', accessToken, regionCode] as const,
+    ['game', 'leaderboard', accessToken, getGameScopeQueryKey(regionCode)] as const,
   highlights: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'highlights', accessToken, regionCode] as const,
+    ['game', 'highlights', accessToken, getGameScopeQueryKey(regionCode)] as const,
   notifications: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'notifications', accessToken, regionCode] as const,
+    ['game', 'notifications', accessToken, getGameScopeQueryKey(regionCode)] as const,
   leaderboardPositions: (accessToken: string | null, userId: number | null, regionCode: string | null) =>
-    ['game', 'leaderboardPositions', accessToken, userId, regionCode] as const,
+    ['game', 'leaderboardPositions', accessToken, userId, getGameScopeQueryKey(regionCode)] as const,
   leaderboardHighlights: (accessToken: string | null, userId: number | null, regionCode: string | null) =>
-    ['game', 'leaderboardHighlights', accessToken, userId, regionCode] as const,
+    ['game', 'leaderboardHighlights', accessToken, userId, getGameScopeQueryKey(regionCode)] as const,
   leaderboardPositionRankHistory: (
     accessToken: string | null,
     userId: number | null,
     positionId: number | null,
     regionCode: string | null,
-  ) => ['game', 'leaderboardPositionRankHistory', accessToken, userId, positionId, regionCode] as const,
+  ) =>
+    [
+      'game',
+      'leaderboardPositionRankHistory',
+      accessToken,
+      userId,
+      positionId,
+      getGameScopeQueryKey(regionCode),
+    ] as const,
   market: (accessToken: string | null, regionCode: string | null) =>
     ['game', 'market', accessToken, regionCode] as const,
   positions: (accessToken: string | null, regionCode: string | null, status = 'OPEN') =>
-    ['game', 'positions', accessToken, regionCode, status] as const,
+    ['game', 'positions', accessToken, getGameScopeQueryKey(regionCode), status] as const,
   scheduledSellOrders: (accessToken: string | null, regionCode: string | null) =>
-    ['game', 'scheduledSellOrders', accessToken, regionCode] as const,
+    ['game', 'scheduledSellOrders', accessToken, getGameScopeQueryKey(regionCode)] as const,
   positionRankHistory: (accessToken: string | null, positionId: number | null) =>
     ['game', 'positionRankHistory', accessToken, positionId] as const,
   sellPreview: (
@@ -111,8 +126,9 @@ function getGamePositionsQueryData(
   regionCode: string,
   status: string,
 ) {
+  void regionCode;
   return queryClient.getQueriesData<GamePosition[]>({
-    queryKey: ['game', 'positions', accessToken, regionCode, status],
+    queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, status],
   }) as GamePositionsQuerySnapshot[];
 }
 
@@ -366,7 +382,7 @@ export async function invalidateGameQueries(
         refetchType: 'active',
       }),
       queryClient.invalidateQueries({
-        queryKey: ['game', 'positions', accessToken, regionCode],
+        queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY],
         refetchType: 'active',
       }),
       queryClient.invalidateQueries({
@@ -943,8 +959,8 @@ export function useSellGamePositions(accessToken: string | null) {
       return sellGamePositions(accessToken, input);
     },
     onMutate: async (input) => {
-      const openPositionsKey = ['game', 'positions', accessToken, input.regionCode, 'OPEN'] as const;
-      const historyPositionsKey = ['game', 'positions', accessToken, input.regionCode, ''] as const;
+      const openPositionsKey = ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, 'OPEN'] as const;
+      const historyPositionsKey = ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, ''] as const;
 
       await Promise.all([
         queryClient.cancelQueries({ queryKey: openPositionsKey }),
@@ -1011,7 +1027,7 @@ export function useCreateScheduledSellOrder(accessToken: string | null) {
     },
     onMutate: async (input) => {
       const scheduledOrdersKey = gameQueryKeys.scheduledSellOrders(accessToken, input.regionCode);
-      const positionsKey = ['game', 'positions', accessToken, input.regionCode, 'OPEN'] as const;
+      const positionsKey = ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, 'OPEN'] as const;
 
       await Promise.all([
         queryClient.cancelQueries({ queryKey: scheduledOrdersKey }),
@@ -1068,7 +1084,7 @@ export function useCreateScheduledSellOrder(accessToken: string | null) {
 export function useCancelScheduledSellOrder(accessToken: string | null, regionCode: string) {
   const queryClient = useQueryClient();
   const scheduledOrdersKey = gameQueryKeys.scheduledSellOrders(accessToken, regionCode);
-  const positionsKey = ['game', 'positions', accessToken, regionCode] as const;
+  const positionsKey = ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY] as const;
 
   return useMutation({
     mutationFn: async (orderId: number) => {

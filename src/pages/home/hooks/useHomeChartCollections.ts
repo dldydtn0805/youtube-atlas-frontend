@@ -148,7 +148,7 @@ export default function useHomeChartCollections({
             previousRank: marketVideo.previousRank,
             previousViewCount: null,
             rankChange: marketVideo.rankChange,
-            regionCode: currentGameSeason?.regionCode ?? selectedRegionCode,
+            regionCode: selectedRegionCode,
             thumbnailUrl: marketVideo.thumbnailUrl,
             title: marketVideo.title,
             videoId: marketVideo.videoId,
@@ -156,7 +156,7 @@ export default function useHomeChartCollections({
           } satisfies VideoTrendSignal,
         ]),
       ),
-    [currentGameSeason?.regionCode, gameMarket, selectedRegionCode],
+    [gameMarket, selectedRegionCode],
   );
 
   const selectedSection = useMemo(

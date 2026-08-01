@@ -22,12 +22,13 @@ function parseDate(value: string) {
 
 export function getSeasonResultOptionLabel(result: GameSeasonResult) {
   const startDate = parseDate(result.seasonStartAt);
+  const regionLabel = result.regionCode === 'GLOBAL' ? '' : ` · ${result.regionCode}`;
 
   if (!startDate) {
-    return `${result.regionCode} · ${result.seasonName}`;
+    return `${result.seasonName}${regionLabel}`;
   }
 
   const weekOfMonth = Math.floor((startDate.getDate() - 1) / 7) + 1;
 
-  return `${monthFormatter.format(startDate)}, ${getOrdinal(weekOfMonth)} season · ${result.regionCode} · ${startDate.getFullYear()}`;
+  return `${monthFormatter.format(startDate)}, ${getOrdinal(weekOfMonth)} season${regionLabel} · ${startDate.getFullYear()}`;
 }

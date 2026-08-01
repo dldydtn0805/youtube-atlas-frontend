@@ -97,7 +97,6 @@ import {
   ALL_VIDEO_CATEGORY_ID,
   sortVideoCategories,
   supportsVideoTrendSignals,
-  VIDEO_GAME_REGION_CODE,
 } from "../../constants/videoCategories";
 import { useAuth } from "../../features/auth/useAuth";
 import {
@@ -1521,7 +1520,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const {
     buyActionTitle,
     buyModalHelperText,
-    gameSeasonRegionMismatch,
     isChartActionDisabled,
     isSelectedVideoBuyDisabled,
     isSelectedVideoSellDisabled,
@@ -1598,9 +1596,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const tradeBuyModalHelperText = isTradeTargetActive
     ? tradeTargetGameState.buyModalHelperText
     : buyModalHelperText;
-  const tradeGameSeasonRegionMismatch = isTradeTargetActive
-    ? tradeTargetGameState.gameSeasonRegionMismatch
-    : gameSeasonRegionMismatch;
   const tradeMaxBuyQuantity = isTradeTargetActive
     ? tradeTargetGameState.maxBuyQuantity
     : maxBuyQuantity;
@@ -1797,7 +1792,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     createScheduledSellOrder: createScheduledSellOrderMutation.mutateAsync,
     currentGameSeason,
     currentGameSeasonError,
-    gameSeasonRegionMismatch: tradeGameSeasonRegionMismatch,
     logout,
     maxBuyQuantity: tradeMaxBuyQuantity,
     maxSellQuantity: tradeMaxSellQuantity,
@@ -2496,7 +2490,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     openRankHistoryModal,
     removeModalGameNotification,
     selectedRankHistoryPosition,
-    selectedRegionCode: currentGameSeason?.regionCode ?? VIDEO_GAME_REGION_CODE,
+    selectedRegionCode,
     selectedVideoHistoryTargetPosition,
     selectedVideoId,
     selectedVideoRankHistoryVideoId,

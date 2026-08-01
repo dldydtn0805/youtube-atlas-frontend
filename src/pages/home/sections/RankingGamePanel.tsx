@@ -686,7 +686,7 @@ export function RankingGamePanelShell({
           <div className="app-shell__game-panel-title-row">
             <h3 className="app-shell__game-panel-title">
               {season
-                ? `${season.regionCode} · ${season.seasonName}`
+                ? season.seasonName
                 : "시즌 준비 중"}
             </h3>
             <button
