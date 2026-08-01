@@ -2,6 +2,9 @@
 
 ## 2026-08-01
 
+- Replaced the ambiguous numbered game-season label with spring, summer, autumn, and winter seasons using fixed three-month calendar windows.
+- Renamed and extended the active season to its current calendar-season boundary, and made newly created seasons use the same boundaries.
+- Tripled each tier's required asset gain above the 100,000P starting baseline for the longer season: Silver 160,000P, Gold 250,000P, Platinum 400,000P, Diamond 700,000P, Master 1,300,000P, and Legend 2,800,000P.
 - Added a selected-video 좋아요 action that reads and toggles the signed-in user's real YouTube account rating instead of storing an app-only favorite.
 - Reused contextual YouTube OAuth, kept the short-lived Google token out of persisted app state, and automatically resumes a pending like after the permission redirect.
 - Added Edge API error mapping and focused tests for rating reads, writes, OAuth recovery, button states, and the responsive action layout.

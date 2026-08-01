@@ -130,7 +130,7 @@ const GameTierModal = lazy(() => import('./sections/GameTierModal'));
 const GameWalletModal = lazy(() => import('./sections/GameWalletModal'));
 
 const COLLAPSED_HOME_SECTIONS_STORAGE_KEY = 'youtube-atlas-collapsed-home-sections';
-const GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY = 'youtube-atlas-game-intro-rules-v2-dismissed';
+const GAME_INTRO_MODAL_DISMISSED_STORAGE_KEY = 'youtube-atlas-game-intro-rules-v3-dismissed';
 const RANKING_GAME_SECTION_ID = 'ranking-game';
 const FULL_CHART_PREFETCH_SORT_MODES = new Set<ChartSortMode>([
   'popular-asc',

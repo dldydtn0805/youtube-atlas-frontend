@@ -621,7 +621,9 @@ export function RankingGamePanelShell({
         <div className="app-shell__game-panel-copy">
           <p className="app-shell__game-panel-eyebrow">Ranking Game</p>
           <div className="app-shell__game-panel-title-row">
-            <h3 className="app-shell__game-panel-title">{season ? `${season.regionCode} 시즌` : '시즌 준비 중'}</h3>
+            <h3 className="app-shell__game-panel-title">
+              {season ? `${season.regionCode} · ${season.seasonName}` : '시즌 준비 중'}
+            </h3>
             <button
               aria-expanded={!isCollapsed}
               aria-label={isCollapsed ? '랭킹 게임 펼치기' : '랭킹 게임 숨기기'}

@@ -3,20 +3,20 @@ import { describe, expect, it, vi } from 'vitest';
 import GamePanelModal from './GamePanelModal';
 
 describe('GamePanelModal', () => {
-  it('shows the current season number next to the modal title', () => {
+  it('shows the current calendar season next to the modal title', () => {
     render(
       <GamePanelModal
         isOpen
         onClose={() => undefined}
-        seasonEndAt="2099-08-01T00:00:00.000Z"
-        seasonStartAt="2099-04-01T00:00:00.000Z"
+        seasonEndAt="2099-09-01T00:00:00.000Z"
+        seasonStartAt="2099-06-01T00:00:00.000Z"
       >
         <div>인벤토리 목록</div>
       </GamePanelModal>,
     );
 
     expect(screen.getByRole('heading', { name: '내 게임' })).toBeInTheDocument();
-    expect(screen.getByText('3rd 시즌')).toBeInTheDocument();
+    expect(screen.getByText('여름 시즌')).toBeInTheDocument();
     expect(screen.getByText(/남음$/)).toBeInTheDocument();
   });
 

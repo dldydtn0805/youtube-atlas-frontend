@@ -11,6 +11,7 @@ import {
   type PriceAnchor,
   type TrendSignalRow,
 } from '../../_shared/game.ts';
+import { getCalendarGameSeason } from './calendar-season.ts';
 
 export interface GameSeasonRow {
   created_at: string;
@@ -97,17 +98,14 @@ export async function ensureActiveSeason(service: SupabaseClient, regionCode: st
     return existingSeason;
   }
 
-  const now = new Date();
-  const endAt = new Date(now);
-  endAt.setUTCDate(endAt.getUTCDate() + 7);
-  const seasonName = `${normalizedRegionCode} 시즌 ${now.toISOString().slice(0, 10)}`;
+  const calendarSeason = getCalendarGameSeason();
   const { data: createdSeason, error: createError } = await service
     .from('game_seasons')
     .insert({
-      end_at: endAt.toISOString(),
-      name: seasonName,
+      end_at: calendarSeason.endAt,
+      name: calendarSeason.name,
       region_code: normalizedRegionCode,
-      start_at: now.toISOString(),
+      start_at: calendarSeason.startAt,
     })
     .select('*')
     .single<GameSeasonRow>();

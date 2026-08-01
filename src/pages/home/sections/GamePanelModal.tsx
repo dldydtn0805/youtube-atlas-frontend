@@ -34,7 +34,7 @@ export default function GamePanelModal({
 
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
-  const seasonOrdinalLabel = formatSeasonDurationLabel(seasonStartAt, seasonEndAt);
+  const calendarSeasonLabel = formatSeasonDurationLabel(seasonStartAt, seasonEndAt);
 
   return createPortal(
     <div
@@ -58,8 +58,8 @@ export default function GamePanelModal({
               <h2 className="app-shell__section-title" id="game-panel-modal-title">
                 내 게임
               </h2>
-              {seasonOrdinalLabel ? (
-                <span className="app-shell__game-season-duration">{seasonOrdinalLabel} 시즌</span>
+              {calendarSeasonLabel ? (
+                <span className="app-shell__game-season-duration">{calendarSeasonLabel} 시즌</span>
               ) : null}
               {seasonEndAt ? <GameSeasonCountdown endAt={seasonEndAt} startAt={seasonStartAt} /> : null}
             </div>

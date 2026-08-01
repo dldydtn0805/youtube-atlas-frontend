@@ -7,10 +7,11 @@ import {
 } from '../../../supabase/functions/_shared/game';
 
 describe('asset point tier thresholds', () => {
-  it('keeps a new 100,000P wallet in Bronze until it reaches 120,000P', () => {
+  it('triples the progression gap for a three-month season', () => {
     expect(resolveTier(100_000).tierCode).toBe('BRONZE');
-    expect(resolveNextTier(100_000)?.minScore).toBe(120_000);
-    expect(resolveTier(120_000).tierCode).toBe('SILVER');
+    expect(resolveNextTier(100_000)?.minScore).toBe(160_000);
+    expect(resolveTier(159_999).tierCode).toBe('BRONZE');
+    expect(resolveTier(160_000).tierCode).toBe('SILVER');
   });
 
   it('keeps the production defaults in sync with the tier migration', () => {
@@ -18,12 +19,12 @@ describe('asset point tier thresholds', () => {
       Object.fromEntries(TIER_DEFINITIONS.map((tier) => [tier.tierCode, tier.minScore])),
     ).toEqual({
       BRONZE: 0,
-      DIAMOND: 300_000,
-      GOLD: 150_000,
-      LEGEND: 1_000_000,
-      MASTER: 500_000,
-      PLATINUM: 200_000,
-      SILVER: 120_000,
+      DIAMOND: 700_000,
+      GOLD: 250_000,
+      LEGEND: 2_800_000,
+      MASTER: 1_300_000,
+      PLATINUM: 400_000,
+      SILVER: 160_000,
     });
   });
 

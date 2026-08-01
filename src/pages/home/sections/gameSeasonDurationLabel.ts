@@ -8,26 +8,32 @@ function parseDate(value: string | null | undefined) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function formatSeasonOrdinal(endDate: Date) {
-  const month = endDate.getUTCMonth();
+function formatCalendarSeason(date: Date) {
+  const month = date.getUTCMonth();
 
-  if (month < 3) {
-    return '1st';
+  if (month >= 2 && month < 5) {
+    return '봄';
   }
 
-  if (month < 7) {
-    return '2nd';
+  if (month >= 5 && month < 8) {
+    return '여름';
   }
 
-  return '3rd';
+  if (month >= 8 && month < 11) {
+    return '가을';
+  }
+
+  return '겨울';
 }
 
-export function formatSeasonDurationLabel(_startAt?: string | null, endAt?: string | null) {
+export function formatSeasonDurationLabel(startAt?: string | null, endAt?: string | null) {
+  const startDate = parseDate(startAt);
   const endDate = parseDate(endAt);
+  const seasonDate = startDate ?? (endDate ? new Date(endDate.getTime() - 1) : null);
 
-  if (!endDate) {
+  if (!seasonDate) {
     return null;
   }
 
-  return formatSeasonOrdinal(endDate);
+  return formatCalendarSeason(seasonDate);
 }

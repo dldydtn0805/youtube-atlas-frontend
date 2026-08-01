@@ -4,7 +4,7 @@ const SECOND_MS = 1_000;
 const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
 
-export function formatSeasonTimeLeft(endAt: string, nowMs = Date.now(), startAt = endAt) {
+export function formatSeasonTimeLeft(endAt: string, nowMs = Date.now(), startAt?: string | null) {
   const endDate = new Date(endAt);
   const endMs = endDate.getTime();
 
