@@ -3,6 +3,8 @@ import type {
   AdminCommentCleanupRequest,
   AdminCommentCleanupResponse,
   AdminDashboard,
+  AdminGameSettings,
+  AdminGameSettingsUpdateRequest,
   AdminHighlightHistoryCleanupRequest,
   AdminHighlightHistoryCleanupResponse,
   AdminPositionUpdateRequest,
@@ -99,6 +101,26 @@ export async function fetchAdminDashboard(accessToken: string) {
 export async function fetchAdminPriceAnchors(accessToken: string) {
   return fetchApi<AdminPriceAnchorList>('/api/admin/game/price-anchors', {
     headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function fetchAdminGameSettings(accessToken: string) {
+  return fetchApi<AdminGameSettings>('/api/admin/game/settings', {
+    headers: createAuthorizationHeader(accessToken),
+  });
+}
+
+export async function updateAdminGameSettings(
+  accessToken: string,
+  request: AdminGameSettingsUpdateRequest,
+) {
+  return fetchApi<AdminGameSettings>('/api/admin/game/settings', {
+    method: 'PUT',
+    headers: {
+      ...createAuthorizationHeader(accessToken),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
   });
 }
 

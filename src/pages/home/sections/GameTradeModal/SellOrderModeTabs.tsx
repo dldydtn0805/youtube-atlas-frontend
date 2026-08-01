@@ -2,12 +2,14 @@ import './SellOrderModeTabs.css';
 
 interface SellOrderModeTabsProps {
   isScheduledSellMode: boolean;
+  isInstantSellDisabled: boolean;
   isSubmitting: boolean;
   onChangeSellOrderMode?: (mode: 'instant' | 'scheduled') => void;
 }
 
 export default function SellOrderModeTabs({
   isScheduledSellMode,
+  isInstantSellDisabled,
   isSubmitting,
   onChangeSellOrderMode,
 }: SellOrderModeTabsProps) {
@@ -16,7 +18,7 @@ export default function SellOrderModeTabs({
       <button
         aria-pressed={!isScheduledSellMode}
         data-active={!isScheduledSellMode}
-        disabled={isSubmitting}
+        disabled={isSubmitting || isInstantSellDisabled}
         onClick={() => onChangeSellOrderMode?.('instant')}
         type="button"
       >

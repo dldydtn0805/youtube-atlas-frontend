@@ -508,6 +508,11 @@
   min-width: 0;
 }
 
+.admin-page__game-setting-field {
+  margin-bottom: 14px;
+  max-width: 320px;
+}
+
 .admin-page__price-input-wrap {
   display: flex;
   align-items: center;

@@ -3,6 +3,7 @@ import {
   closeAdminSeason,
   deleteAdminUser,
   fetchAdminDashboard,
+  fetchAdminGameSettings,
   fetchAdminPriceAnchors,
   fetchAdminTierThresholds,
   fetchAdminTrendSnapshots,
@@ -13,6 +14,7 @@ import {
   purgeAdminComments,
   purgeAdminHighlightHistory,
   purgeAdminTradeHistory,
+  updateAdminGameSettings,
   updateAdminSeasonSchedule,
   updateAdminPriceAnchors,
   updateAdminTierThresholds,
@@ -22,6 +24,7 @@ import {
 } from './api';
 import type {
   AdminCommentCleanupRequest,
+  AdminGameSettingsUpdateRequest,
   AdminHighlightHistoryCleanupRequest,
   AdminPositionUpdateRequest,
   AdminPriceAnchorUpdateRequest,
@@ -35,6 +38,7 @@ import type {
 export const adminQueryKeys = {
   all: (accessToken: string | null) => ['admin', accessToken] as const,
   dashboard: (accessToken: string | null) => ['admin', accessToken, 'dashboard'] as const,
+  gameSettings: (accessToken: string | null) => ['admin', accessToken, 'gameSettings'] as const,
   priceAnchors: (accessToken: string | null) => ['admin', accessToken, 'priceAnchors'] as const,
   tierThresholds: (accessToken: string | null) => ['admin', accessToken, 'tierThresholds'] as const,
   trendSnapshots: (accessToken: string | null, startAt: string | null, endAt: string | null, regionCode: string | null) =>
@@ -62,6 +66,28 @@ export function useAdminPriceAnchors(accessToken: string | null, enabled = true)
     queryKey: adminQueryKeys.priceAnchors(accessToken),
     queryFn: () => fetchAdminPriceAnchors(accessToken as string),
     staleTime: 1000 * 30,
+  });
+}
+
+export function useAdminGameSettings(accessToken: string | null, enabled = true) {
+  return useQuery({
+    enabled: enabled && Boolean(accessToken),
+    queryKey: adminQueryKeys.gameSettings(accessToken),
+    queryFn: () => fetchAdminGameSettings(accessToken as string),
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useUpdateAdminGameSettings(accessToken: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: AdminGameSettingsUpdateRequest) =>
+      updateAdminGameSettings(accessToken as string, request),
+    onSuccess: (data) => {
+      queryClient.setQueryData(adminQueryKeys.gameSettings(accessToken), data);
+      void queryClient.invalidateQueries({ queryKey: ['game', 'currentSeason'] });
+    },
   });
 }
 

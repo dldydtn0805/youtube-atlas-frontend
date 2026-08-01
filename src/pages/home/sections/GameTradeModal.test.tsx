@@ -213,6 +213,40 @@ describe('GameTradeModal', () => {
     expect(onChangeSellOrderMode).toHaveBeenCalledWith('instant');
   });
 
+  it('disables instant sell mode while the holding is locked after purchase', () => {
+    const onChangeSellOrderMode = vi.fn();
+
+    render(
+      <GameTradeModal
+        confirmLabel="예약 매도"
+        currentRankLabel="3위"
+        helperText="다음 순위 갱신부터 즉시 매도할 수 있습니다."
+        isInstantSellDisabled
+        isOpen
+        isSubmitting={false}
+        maxQuantity={100}
+        mode="sell"
+        onChangeQuantity={vi.fn()}
+        onChangeSellOrderMode={onChangeSellOrderMode}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        quantity={100}
+        sellOrderMode="scheduled"
+        summaryItems={[{ label: '처리 방식', value: '조건 도달 시 자동 매도' }]}
+        thumbnailUrl={null}
+        title="테스트 영상"
+        unitPointsLabel="1,000P"
+      />,
+    );
+
+    const instantSellTab = screen.getByRole('button', { name: '즉시 매도' });
+
+    expect(instantSellTab).toBeDisabled();
+    fireEvent.click(instantSellTab);
+    expect(onChangeSellOrderMode).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('button', { name: '예약 매도' })[0]).toBeEnabled();
+  });
+
   it('includes 5th place in scheduled sell quick rank actions', () => {
     const onChangeScheduledSellTargetRank = vi.fn();
 

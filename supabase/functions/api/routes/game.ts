@@ -12,6 +12,7 @@ import {
   type TrendSignalRow,
 } from '../../_shared/game.ts';
 import { loadSeasonTiers } from '../../_shared/game-tiers.ts';
+import { loadGameSettings } from '../../_shared/game-settings.ts';
 import { loadPriceAnchors } from '../../_shared/price-anchors.ts';
 import {
   ApiError,
@@ -621,7 +622,10 @@ export async function handleGameRoute(context: RequestContext, method: string, p
   if (path === '/api/game/seasons/current' && method === 'GET') {
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
-    const game = await currentGameContext(context, regionCode, profile.id);
+    const [game, gameSettings] = await Promise.all([
+      currentGameContext(context, regionCode, profile.id),
+      loadGameSettings(context.service),
+    ]);
     const currentTier = resolveTier(game.totalAssetPoints, game.tiers);
     const nextTier = game.tiers.find(
       (tier) => game.totalAssetPoints < tier.minScore,
@@ -644,6 +648,8 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       regionCode: game.season.region_code,
       seasonId: game.season.id,
       seasonName: game.season.name,
+      scheduledSellDefaultProfitRatePercent:
+        gameSettings.scheduledSellDefaultProfitRatePercent,
       startAt: game.season.start_at,
       startingBalancePoints: game.season.starting_balance_points,
       status: game.season.status,

@@ -86,6 +86,16 @@ export interface AdminPriceAnchorUpdateRequest {
   anchors: AdminPriceAnchorUpdate[];
 }
 
+export interface AdminGameSettings {
+  scheduledSellDefaultProfitRatePercent: number;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+export interface AdminGameSettingsUpdateRequest {
+  scheduledSellDefaultProfitRatePercent: number;
+}
+
 export interface AdminTierThreshold {
   displayName: string;
   inventorySlots: number;

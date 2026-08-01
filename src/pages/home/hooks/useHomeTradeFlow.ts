@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { AuthStatus } from '../../../features/auth/types';
+import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from '../../../features/game/constants';
 import type {
   CreateScheduledSellOrderInput,
   GameCurrentSeason,
@@ -41,6 +42,7 @@ interface UseHomeTradeFlowOptions {
   onSellSuccess: () => Promise<void> | void;
   onScheduledSellSuccess: () => Promise<void> | void;
   selectedOpenPositionId?: number | null;
+  scheduledSellDefaultProfitRatePercent?: number | null;
   selectedSellPositionId: number | null;
   selectedRegionCode: string;
   selectedVideoCurrentChartRank: number | null | undefined;
@@ -69,6 +71,12 @@ function getProjectedWalletBalance(currentBalancePoints?: number | null, deltaPo
   return currentBalancePoints + deltaPoints;
 }
 
+function normalizeScheduledSellDefaultProfitRatePercent(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT;
+}
+
 export default function useHomeTradeFlow({
   accessToken,
   activeTradeModal,
@@ -87,6 +95,7 @@ export default function useHomeTradeFlow({
   onSellSuccess,
   onScheduledSellSuccess,
   selectedOpenPositionId,
+  scheduledSellDefaultProfitRatePercent,
   selectedSellPositionId,
   selectedRegionCode,
   selectedVideoCurrentChartRank,
@@ -100,6 +109,8 @@ export default function useHomeTradeFlow({
   setSellQuantity,
   totalSelectedVideoBuyPoints,
 }: UseHomeTradeFlowOptions) {
+  const normalizedScheduledSellDefaultProfitRatePercent =
+    normalizeScheduledSellDefaultProfitRatePercent(scheduledSellDefaultProfitRatePercent);
   const [isScheduledSellSubmitting, setIsScheduledSellSubmitting] = useState(false);
   const lastInstantSellDefaultKeyRef = useRef<string | null>(null);
   const lastSellModalSelectionKeyRef = useRef<string | null>(null);
@@ -108,7 +119,11 @@ export default function useHomeTradeFlow({
     useState<ScheduledSellTriggerType>('RANK');
   const [scheduledSellTargetRank, setScheduledSellTargetRank] = useState<number | null>(100);
   const [scheduledSellTargetProfitRatePercent, setScheduledSellTargetProfitRatePercent] =
-    useState<number | null>(300);
+    useState<number | null>(normalizedScheduledSellDefaultProfitRatePercent);
+  const scheduledSellDefaultProfitRatePercentRef = useRef(
+    normalizedScheduledSellDefaultProfitRatePercent,
+  );
+  scheduledSellDefaultProfitRatePercentRef.current = normalizedScheduledSellDefaultProfitRatePercent;
   const [scheduledSellTriggerDirection, setScheduledSellTriggerDirection] =
     useState<ScheduledSellTriggerDirection>('RANK_IMPROVES_TO');
 
@@ -120,14 +135,22 @@ export default function useHomeTradeFlow({
     setSellOrderMode('instant');
     setScheduledSellTriggerType('RANK');
     setScheduledSellTargetRank(100);
-    setScheduledSellTargetProfitRatePercent(300);
+    setScheduledSellTargetProfitRatePercent(normalizedScheduledSellDefaultProfitRatePercent);
     setScheduledSellTriggerDirection('RANK_IMPROVES_TO');
-  }, [authStatus]);
+  }, [authStatus, normalizedScheduledSellDefaultProfitRatePercent]);
+
+  useEffect(() => {
+    if (activeTradeModal === 'sell') {
+      return;
+    }
+
+    setScheduledSellTargetProfitRatePercent(normalizedScheduledSellDefaultProfitRatePercent);
+  }, [activeTradeModal, normalizedScheduledSellDefaultProfitRatePercent]);
 
   useEffect(() => {
     setScheduledSellTriggerType('RANK');
     setScheduledSellTargetRank(100);
-    setScheduledSellTargetProfitRatePercent(300);
+    setScheduledSellTargetProfitRatePercent(scheduledSellDefaultProfitRatePercentRef.current);
     setScheduledSellTriggerDirection('RANK_IMPROVES_TO');
   }, [selectedOpenPositionId, selectedVideoId]);
 
@@ -377,7 +400,7 @@ export default function useHomeTradeFlow({
       setSellOrderMode('instant');
       setScheduledSellTriggerType('RANK');
       setScheduledSellTargetRank(100);
-      setScheduledSellTargetProfitRatePercent(300);
+      setScheduledSellTargetProfitRatePercent(normalizedScheduledSellDefaultProfitRatePercent);
       setScheduledSellTriggerDirection('RANK_IMPROVES_TO');
       void onScheduledSellSuccess?.();
     } catch (error) {
@@ -401,6 +424,7 @@ export default function useHomeTradeFlow({
     logout,
     fullScheduledSellQuantity,
     onScheduledSellSuccess,
+    normalizedScheduledSellDefaultProfitRatePercent,
     scheduledSellConditionError,
     scheduledSellTargetProfitRatePercent,
     scheduledSellTargetRank,

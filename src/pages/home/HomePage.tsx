@@ -1811,6 +1811,8 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     onBuySuccess: refetchGameDataAfterBuy,
     onSellSuccess: refetchGameTradePanels,
     onScheduledSellSuccess: refetchGameTradePanels,
+    scheduledSellDefaultProfitRatePercent:
+      currentGameSeason?.scheduledSellDefaultProfitRatePercent,
     selectedOpenPositionId: tradeSelectedSellPositionId,
     selectedSellPositionId: tradeSelectedSellPositionId,
     selectedRegionCode,
@@ -3180,6 +3182,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         helperText={tradeSellModalHelperText}
         isOpen={isSellTradeModalOpen}
         isSubmitting={isSellSubmitting || isScheduledSellSubmitting}
+        isInstantSellDisabled={tradeMaxSellQuantity <= 0}
         maxQuantity={
           sellOrderMode === "scheduled"
             ? tradeMaxScheduledSellQuantity

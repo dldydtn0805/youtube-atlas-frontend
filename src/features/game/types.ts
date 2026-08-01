@@ -47,6 +47,7 @@ export interface GameCurrentSeason {
   startAt: string;
   endAt: string;
   startingBalancePoints: number;
+  scheduledSellDefaultProfitRatePercent: number;
   minHoldSeconds: number;
   maxOpenPositions: number;
   rankPointMultiplier: number;

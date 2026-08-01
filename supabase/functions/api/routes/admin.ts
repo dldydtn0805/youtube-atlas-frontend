@@ -19,6 +19,7 @@ import {
 } from "./game-position-signals.ts";
 import { resolveNextTier, resolveTier } from "../../_shared/game.ts";
 import { loadSeasonTiers } from "../../_shared/game-tiers.ts";
+import { loadGameSettings } from "../../_shared/game-settings.ts";
 import { loadPriceAnchors } from "../../_shared/price-anchors.ts";
 
 interface AdminPriceAnchorInput {
@@ -29,6 +30,22 @@ interface AdminPriceAnchorInput {
 interface AdminTierThresholdInput {
   minPoints?: number;
   tierCode?: string;
+}
+
+interface AdminGameSettingsInput {
+  scheduledSellDefaultProfitRatePercent?: number;
+}
+
+function validateScheduledSellDefaultProfitRatePercent(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new ApiError(
+      400,
+      "validation_error",
+      "예약 매도 기본 수익률은 0 이상의 숫자여야 합니다.",
+    );
+  }
+
+  return value;
 }
 
 function toAdminTierThreshold(
@@ -375,6 +392,32 @@ export async function handleAdminRoute(
 
   if (path === "/api/admin/game/price-anchors" && method === "GET") {
     return json(await getAdminPriceAnchors(context));
+  }
+
+  if (path === "/api/admin/game/settings" && method === "GET") {
+    return json(await loadGameSettings(context.service));
+  }
+
+  if (path === "/api/admin/game/settings" && method === "PUT") {
+    const body = await readJson<AdminGameSettingsInput>(context.request);
+    const scheduledSellDefaultProfitRatePercent =
+      validateScheduledSellDefaultProfitRatePercent(
+        body.scheduledSellDefaultProfitRatePercent,
+      );
+    const updatedAt = new Date().toISOString();
+    const { error } = await context.service.from("game_settings").upsert(
+      {
+        id: 1,
+        scheduled_sell_default_profit_rate_percent:
+          scheduledSellDefaultProfitRatePercent,
+        updated_at: updatedAt,
+        updated_by: adminProfile.email,
+      },
+      { onConflict: "id" },
+    );
+
+    if (error) throw error;
+    return json(await loadGameSettings(context.service));
   }
 
   if (path === "/api/admin/game/price-anchors" && method === "PUT") {

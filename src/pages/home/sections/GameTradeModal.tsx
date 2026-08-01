@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../features/game/types';
+import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from '../../../features/game/constants';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { normalizeGameOrderCapacity } from '../gameHelpers';
@@ -14,6 +15,7 @@ interface GameTradeModalProps {
   currentRankLabel: string;
   helperText: string;
   isOpen: boolean;
+  isInstantSellDisabled?: boolean;
   isSubmitting: boolean;
   maxQuantity: number;
   mode: 'buy' | 'sell';
@@ -44,6 +46,7 @@ export default function GameTradeModal({
   currentRankLabel,
   helperText,
   isOpen,
+  isInstantSellDisabled = false,
   isSubmitting,
   maxQuantity,
   mode,
@@ -57,7 +60,7 @@ export default function GameTradeModal({
   scheduledSellConditionError = null,
   scheduledSellTriggerType = 'RANK',
   scheduledSellTargetRank = 100,
-  scheduledSellTargetProfitRatePercent = 300,
+  scheduledSellTargetProfitRatePercent = FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
   scheduledSellTriggerDirection = 'RANK_IMPROVES_TO',
   sellOrderMode = 'instant',
   summaryItems,
@@ -143,6 +146,7 @@ export default function GameTradeModal({
           currentRankLabel={currentRankLabel}
           headerSwipeHandlers={headerSwipeHandlers}
           isScheduledSellMode={isScheduledSellMode}
+          isInstantSellDisabled={isInstantSellDisabled}
           isSubmitting={isSubmitting}
           modalTitleId={modalTitleId}
           normalizedMaxQuantity={normalizedMaxQuantity}

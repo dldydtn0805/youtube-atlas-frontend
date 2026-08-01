@@ -1,6 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import ThumbnailPlayOverlay from '../../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../../features/game/types';
+import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from '../../../../features/game/constants';
 import ScheduledSellReceiptFields from './ScheduledSellReceiptFields';
 import SellOrderModeTabs from './SellOrderModeTabs';
 import type { GameTradeModalSummaryItem } from './types';
@@ -12,6 +13,7 @@ interface SellTradeReceiptProps {
   currentRankLabel: string;
   headerSwipeHandlers: HTMLAttributes<HTMLDivElement>;
   isScheduledSellMode: boolean;
+  isInstantSellDisabled: boolean;
   isSubmitting: boolean;
   modalTitleId: string;
   normalizedMaxQuantity: number;
@@ -52,6 +54,7 @@ export default function SellTradeReceipt({
   currentRankLabel,
   headerSwipeHandlers,
   isScheduledSellMode,
+  isInstantSellDisabled,
   isSubmitting,
   modalTitleId,
   normalizedMaxQuantity,
@@ -63,7 +66,7 @@ export default function SellTradeReceipt({
   onClose,
   onConfirm,
   scheduledSellConditionError = null,
-  scheduledSellTargetProfitRatePercent = 300,
+  scheduledSellTargetProfitRatePercent = FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
   scheduledSellTargetRank = 100,
   scheduledSellTriggerDirection = 'RANK_IMPROVES_TO',
   scheduledSellTriggerType = 'RANK',
@@ -92,6 +95,7 @@ export default function SellTradeReceipt({
         <p className="app-shell__game-sell-receipt-meta">YOUTUBE ATLAS | GAME POINT ORDER</p>
         <SellOrderModeTabs
           isScheduledSellMode={isScheduledSellMode}
+          isInstantSellDisabled={isInstantSellDisabled}
           isSubmitting={isSubmitting}
           onChangeSellOrderMode={onChangeSellOrderMode}
         />

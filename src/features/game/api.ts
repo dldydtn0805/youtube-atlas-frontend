@@ -19,6 +19,7 @@ import type {
   SellGamePositionResponse,
 } from './types';
 import type { YouTubeCategorySection } from '../youtube/types';
+import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from './constants';
 
 type ApiGameTier = Omit<GameTier, 'minScore' | 'inventorySlots'> & {
   minScore?: number | null;
@@ -46,8 +47,12 @@ type ApiGameLeaderboardEntry = Omit<GameLeaderboardEntry, 'currentTier'> & {
   selectedAchievementTitle?: GameLeaderboardEntry['selectedAchievementTitle'];
 };
 
-type ApiGameCurrentSeason = Omit<GameCurrentSeason, 'wallet' | 'inventorySlots'> & {
+type ApiGameCurrentSeason = Omit<
+  GameCurrentSeason,
+  'wallet' | 'inventorySlots' | 'scheduledSellDefaultProfitRatePercent'
+> & {
   inventorySlots?: ApiGameInventorySlots | null;
+  scheduledSellDefaultProfitRatePercent?: number | null;
   wallet: GameCurrentSeason['wallet'];
 };
 
@@ -97,6 +102,12 @@ function normalizeGameCurrentSeason(season: ApiGameCurrentSeason): GameCurrentSe
 
   return {
     ...season,
+    scheduledSellDefaultProfitRatePercent:
+      typeof season.scheduledSellDefaultProfitRatePercent === 'number' &&
+      Number.isFinite(season.scheduledSellDefaultProfitRatePercent) &&
+      season.scheduledSellDefaultProfitRatePercent >= 0
+        ? season.scheduledSellDefaultProfitRatePercent
+        : FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
     inventorySlots: {
       baseSlots: inventorySlots?.baseSlots ?? fallbackSlots,
       totalSlots: inventorySlots?.totalSlots ?? fallbackSlots,

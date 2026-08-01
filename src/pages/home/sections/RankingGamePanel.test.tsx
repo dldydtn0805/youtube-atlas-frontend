@@ -54,6 +54,7 @@ function createCurrentSeason(
     regionCode: "KR",
     seasonId: 1,
     seasonName: "테스트 시즌",
+    scheduledSellDefaultProfitRatePercent: 300,
     startingBalancePoints: 1000,
     startAt: "2026-04-01T00:00:00.000Z",
     status: "ACTIVE",

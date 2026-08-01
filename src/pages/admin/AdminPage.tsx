@@ -5,6 +5,7 @@ import { useAuth } from "../../features/auth/useAuth";
 import {
   useCloseAdminSeason,
   useAdminDashboard,
+  useAdminGameSettings,
   useAdminPriceAnchors,
   useAdminTierThresholds,
   useAdminTrendSnapshots,
@@ -17,6 +18,7 @@ import {
   usePurgeAdminHighlightHistory,
   usePurgeAdminTradeHistory,
   useUpdateAdminUserPosition,
+  useUpdateAdminGameSettings,
   useUpdateAdminPriceAnchors,
   useUpdateAdminTierThresholds,
   useUpdateAdminSeasonSchedule,
@@ -40,6 +42,7 @@ import useLogoutOnUnauthorized from "../home/hooks/useLogoutOnUnauthorized";
 import { ApiRequestError, isApiConfigured } from "../../lib/api";
 import countryCodes from "../../constants/countryCodes";
 import AdminUserHighlightsPanel from "./components/AdminUserHighlightsPanel";
+import AdminGameSettingsPanel from "./components/AdminGameSettingsPanel";
 import AdminPriceAnchorsPanel from "./components/AdminPriceAnchorsPanel";
 import AdminTierThresholdsPanel from "./components/AdminTierThresholdsPanel";
 import "./AdminPage.css";
@@ -969,6 +972,10 @@ export default function AdminPage() {
     accessToken,
     status === "authenticated",
   );
+  const gameSettingsQuery = useAdminGameSettings(
+    accessToken,
+    status === "authenticated",
+  );
   const priceAnchorsQuery = useAdminPriceAnchors(
     accessToken,
     status === "authenticated",
@@ -1007,6 +1014,7 @@ export default function AdminPage() {
     status === "authenticated",
   );
   const updateSeasonMutation = useUpdateAdminSeasonSchedule(accessToken);
+  const updateGameSettingsMutation = useUpdateAdminGameSettings(accessToken);
   const updatePriceAnchorsMutation = useUpdateAdminPriceAnchors(accessToken);
   const updateTierThresholdsMutation =
     useUpdateAdminTierThresholds(accessToken);
@@ -1022,6 +1030,7 @@ export default function AdminPage() {
   const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
+  useLogoutOnUnauthorized(gameSettingsQuery.error, logout);
   useLogoutOnUnauthorized(priceAnchorsQuery.error, logout);
   useLogoutOnUnauthorized(tierThresholdsQuery.error, logout);
   useLogoutOnUnauthorized(trendSnapshotsQuery.error, logout);
@@ -1187,8 +1196,10 @@ export default function AdminPage() {
   const errorMessage =
     dashboardQuery.error instanceof ApiRequestError
       ? dashboardQuery.error.message
-      : priceAnchorsQuery.error instanceof ApiRequestError
-        ? priceAnchorsQuery.error.message
+      : gameSettingsQuery.error instanceof ApiRequestError
+        ? gameSettingsQuery.error.message
+        : priceAnchorsQuery.error instanceof ApiRequestError
+          ? priceAnchorsQuery.error.message
         : tierThresholdsQuery.error instanceof ApiRequestError
           ? tierThresholdsQuery.error.message
           : usersQuery.error instanceof ApiRequestError
@@ -1691,6 +1702,29 @@ export default function AdminPage() {
     );
   };
 
+  const handleGameSettingsSave = (
+    scheduledSellDefaultProfitRatePercent: number,
+  ) => {
+    setActionMessage(null);
+    updateGameSettingsMutation.mutate(
+      { scheduledSellDefaultProfitRatePercent },
+      {
+        onSuccess: () => {
+          setActionMessage(
+            "예약 매도 목표 수익률 기본값이 저장되었습니다.",
+          );
+        },
+        onError: (error) => {
+          setActionMessage(
+            error instanceof Error
+              ? error.message
+              : "예약 매도 기본 설정 저장에 실패했습니다.",
+          );
+        },
+      },
+    );
+  };
+
   const handleTierThresholdsSave = (
     seasonId: number,
     tiers: AdminTierThresholdUpdate[],
@@ -1794,6 +1828,7 @@ export default function AdminPage() {
       </section>
 
       {dashboardQuery.isLoading ||
+      gameSettingsQuery.isLoading ||
       priceAnchorsQuery.isLoading ||
       tierThresholdsQuery.isLoading ||
       usersQuery.isLoading ? (
@@ -1803,6 +1838,7 @@ export default function AdminPage() {
       ) : null}
 
       {dashboardQuery.isError ||
+      gameSettingsQuery.isError ||
       priceAnchorsQuery.isError ||
       tierThresholdsQuery.isError ||
       trendSnapshotsQuery.isError ||
@@ -1855,6 +1891,13 @@ export default function AdminPage() {
             isLoading={priceAnchorsQuery.isLoading}
             isSaving={updatePriceAnchorsMutation.isPending}
             onSave={handlePriceAnchorsSave}
+          />
+
+          <AdminGameSettingsPanel
+            isLoading={gameSettingsQuery.isLoading}
+            isSaving={updateGameSettingsMutation.isPending}
+            onSave={handleGameSettingsSave}
+            settings={gameSettingsQuery.data}
           />
 
           <AdminTierThresholdsPanel
