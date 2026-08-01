@@ -5,6 +5,11 @@ import {
 import { toTrendVideo, type TrendSignalRow } from '../../_shared/game.ts';
 import { ApiError, json, noContent, readJson } from '../../_shared/http.ts';
 import { exportPrivateYouTubePlaylist } from '../../_shared/youtube-playlists.ts';
+import {
+  getYouTubeVideoRating,
+  setYouTubeVideoRating,
+  type YouTubeVideoRating,
+} from '../../_shared/youtube-ratings.ts';
 import { filterFavoriteTopSignals } from './favorite-top-signals.ts';
 import {
   findUnavailableMusicVideoIds,
@@ -13,6 +18,33 @@ import {
 
 const ALL_CATEGORY_IDS = ['0', 'all'];
 const FAVORITE_VIDEO_PAGE_SIZE = 50;
+const YOUTUBE_VIDEO_ID_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+
+function requireGoogleAccessToken(context: RequestContext) {
+  const googleAccessToken = context.request.headers.get('X-Google-Access-Token')?.trim();
+
+  if (!googleAccessToken) {
+    throw new ApiError(401, 'youtube_authorization_required', 'YouTube 연결이 필요합니다.');
+  }
+
+  return googleAccessToken;
+}
+
+function parseYouTubeVideoId(rawVideoId: string) {
+  let videoId = '';
+
+  try {
+    videoId = decodeURIComponent(rawVideoId).trim();
+  } catch {
+    throw new ApiError(400, 'validation_error', '올바른 YouTube 영상 ID가 필요합니다.');
+  }
+
+  if (!YOUTUBE_VIDEO_ID_PATTERN.test(videoId)) {
+    throw new ApiError(400, 'validation_error', '올바른 YouTube 영상 ID가 필요합니다.');
+  }
+
+  return videoId;
+}
 
 async function findTopTrendSignals(context: RequestContext, regionCode: string) {
   for (const categoryId of ALL_CATEGORY_IDS) {
@@ -164,11 +196,7 @@ export async function handlePersonalRoute(
 
   if (path === '/api/me/youtube-playlists/music-top' && method === 'POST') {
     await requireAuth(context);
-    const googleAccessToken = context.request.headers.get('X-Google-Access-Token')?.trim();
-
-    if (!googleAccessToken) {
-      throw new ApiError(401, 'youtube_authorization_required', 'YouTube 연결이 필요합니다.');
-    }
+    const googleAccessToken = requireGoogleAccessToken(context);
 
     const input = normalizeMusicPlaylistExportInput(await readJson(context.request));
     const topSignals = await findTopTrendSignals(context, input.regionCode);
@@ -191,6 +219,28 @@ export async function handlePersonalRoute(
       }),
       201,
     );
+  }
+
+  const youtubeRatingMatch = path.match(/^\/api\/me\/youtube-ratings\/([^/]+)$/);
+  if (youtubeRatingMatch && (method === 'GET' || method === 'PUT')) {
+    await requireAuth(context);
+    const googleAccessToken = requireGoogleAccessToken(context);
+    const videoId = parseYouTubeVideoId(youtubeRatingMatch[1]);
+
+    if (method === 'GET') {
+      return json({
+        rating: await getYouTubeVideoRating(googleAccessToken, videoId),
+        videoId,
+      });
+    }
+
+    const body = await readJson<{ rating?: YouTubeVideoRating }>(context.request);
+    if (body.rating !== 'like' && body.rating !== 'none') {
+      throw new ApiError(400, 'validation_error', 'rating은 like 또는 none이어야 합니다.');
+    }
+
+    await setYouTubeVideoRating(googleAccessToken, videoId, body.rating);
+    return json({ rating: body.rating, videoId });
   }
 
   if (path === '/api/me/playback-progress' && method === 'GET') {

@@ -35,6 +35,7 @@ The existing database was deleted, so this migration starts with a fresh applica
 | P1 | Current rule guides and sync-ranked favorites | Done: the initial popup and manual guide share the current rules, while favorite videos come from the synced TOP 200 with their original ranks |
 | P1 | Video-list rank movement placement | Done: every video card places its rank-change badge immediately after the rank on desktop and mobile layouts |
 | P1 | YouTube music playlist export | Done: users can grant contextual YouTube access and export the current music TOP 20 to a new private playlist with partial-failure reporting |
+| P1 | YouTube account like action | Done: the selected-video action reads and toggles the signed-in account's real YouTube rating, requests contextual permission only when needed, resumes after OAuth without persisting the Google token, and is deployed to production |
 | P2 | Historical season highlights and advanced settlement parity | Long-term game history matches the legacy Spring behavior |
 
 ## Compatibility strategy
@@ -77,3 +78,4 @@ Authentication and realtime are the two deliberate exceptions:
 18. Deployed API v16 so music and every detail category filter the synced TOP 200 by YouTube category while preserving the original trend-sync rank; verified the live KR category results against all synced chart rows.
 19. Deployed API v17, settlement v10, and Vercel deployment `dpl_Bm5zrWtXUvgARohsFCgVrDM14mwk` for net buy/sell count pricing and the quantity-free, highlight-explanation-free sell order sheet; verified every live KR market row against the formula.
 20. Deployed API v18 and Vercel deployment `dpl_9iYRPF6h67o3gQGv9tayQ1pgbdxC` for the shared four-step current-rule guide and sync-ranked favorite videos; verified 402 tests, the production build, the live popup layout and console, and a targeted 142nd-rank signal lookup.
+21. Deployed the YouTube account-like slice with `videos.getRating`/`videos.rate`, contextual OAuth recovery, API v20, and Vercel deployment `dpl_Hp6DbiedjDpERMpHrKbzFkpxSc2K`; verified 428 tests, the production build, Deno checks, the protected live route, real async TOP 200 rendering, anonymous button state, desktop/mobile layout, a clean browser console, and the Google account-chooser redirect. A real signed-in rating mutation was intentionally not executed during deployment verification.

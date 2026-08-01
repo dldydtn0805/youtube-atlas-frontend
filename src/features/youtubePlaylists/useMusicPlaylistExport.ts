@@ -66,7 +66,7 @@ export default function useMusicPlaylistExport(onRestoreMusicView: () => void) {
   const {
     accessToken,
     googleProviderAccessToken,
-    requestYouTubePlaylistAccess,
+    requestYouTubeAccess,
     status: authStatus,
   } = useAuth();
   const oauthRedirectInFlightRef = useRef(false);
@@ -179,7 +179,7 @@ export default function useMusicPlaylistExport(onRestoreMusicView: () => void) {
       });
 
       try {
-        await requestYouTubePlaylistAccess(window.location.origin);
+        await requestYouTubeAccess(window.location.origin);
       } catch (error) {
         oauthRedirectInFlightRef.current = false;
         clearPendingMusicPlaylistExport();
@@ -191,7 +191,7 @@ export default function useMusicPlaylistExport(onRestoreMusicView: () => void) {
         });
       }
     },
-    [requestYouTubePlaylistAccess],
+    [requestYouTubeAccess],
   );
 
   return {

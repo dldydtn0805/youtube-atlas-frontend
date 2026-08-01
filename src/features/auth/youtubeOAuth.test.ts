@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  createYouTubePlaylistOAuthRequest,
-  YOUTUBE_PLAYLIST_SCOPE,
+  createYouTubeOAuthRequest,
+  YOUTUBE_WRITE_SCOPE,
 } from './youtubeOAuth';
 
-describe('YouTube playlist OAuth request', () => {
-  it('requests playlist write access contextually without a stored refresh token', () => {
-    expect(createYouTubePlaylistOAuthRequest('https://youtube-atlas.vercel.app')).toEqual({
+describe('YouTube OAuth request', () => {
+  it('requests YouTube write access contextually without a stored refresh token', () => {
+    expect(createYouTubeOAuthRequest('https://youtube-atlas.vercel.app')).toEqual({
       options: {
         queryParams: {
           access_type: 'online',
@@ -14,7 +14,7 @@ describe('YouTube playlist OAuth request', () => {
           prompt: 'consent',
         },
         redirectTo: 'https://youtube-atlas.vercel.app',
-        scopes: `openid email profile ${YOUTUBE_PLAYLIST_SCOPE}`,
+        scopes: `openid email profile ${YOUTUBE_WRITE_SCOPE}`,
       },
       provider: 'google',
     });

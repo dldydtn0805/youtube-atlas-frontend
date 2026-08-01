@@ -1250,6 +1250,14 @@
   text-align: right;
 }
 
+.app-shell__stage-status[data-tone='error'] {
+  color: var(--danger, #dc2626);
+}
+
+.app-shell__stage-status[data-tone='success'] {
+  color: #15803d;
+}
+
 .app-shell__stage-status[data-visible='false'] {
   visibility: hidden;
 }
@@ -1643,6 +1651,7 @@
     justify-self: end;
     margin-left: 0;
     margin-top: 4px;
+    max-width: min(50vw, 200px);
     min-width: 0;
     width: fit-content;
   }
@@ -1753,9 +1762,10 @@
 
   .app-shell__stage-status {
     margin-top: 6px;
-    max-width: none;
+    max-width: min(50vw, 200px);
     min-height: 0;
-    text-align: left;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
 
   .app-shell__stage-status[data-visible='false'] {

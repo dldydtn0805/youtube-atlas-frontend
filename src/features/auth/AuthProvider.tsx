@@ -18,7 +18,7 @@ import {
 import { AuthContext } from './context';
 import { authQueryKeys } from './queries';
 import type { AuthSession, AuthStatus, AuthUser } from './types';
-import { createYouTubePlaylistOAuthRequest } from './youtubeOAuth';
+import { createYouTubeOAuthRequest } from './youtubeOAuth';
 
 function toAuthSession(session: Session, user: AuthUser): AuthSession {
   const expiresAt = new Date(
@@ -208,7 +208,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [],
   );
 
-  const requestYouTubePlaylistAccess = useCallback(async (redirectUri: string) => {
+  const requestYouTubeAccess = useCallback(async (redirectUri: string) => {
     if (!supabase) {
       const error = new Error('Supabase 연결 설정이 필요합니다.');
       setAuthError(error.message);
@@ -219,7 +219,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setAuthError(null);
 
     const { error } = await supabase.auth.signInWithOAuth(
-      createYouTubePlaylistOAuthRequest(redirectUri),
+      createYouTubeOAuthRequest(redirectUri),
     );
 
     if (error) {
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoggingOut,
       loginWithGoogleAuthorizationCode: loginWithGoogleCode,
       logout,
-      requestYouTubePlaylistAccess,
+      requestYouTubeAccess,
       refreshCurrentUser,
       status,
       user: session?.user ?? null,
@@ -277,7 +277,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isLoggingOut,
       loginWithGoogleCode,
       logout,
-      requestYouTubePlaylistAccess,
+      requestYouTubeAccess,
       refreshCurrentUser,
       session,
       status,

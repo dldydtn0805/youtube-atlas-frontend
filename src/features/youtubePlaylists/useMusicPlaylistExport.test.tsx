@@ -27,11 +27,11 @@ describe('useMusicPlaylistExport', () => {
   });
 
   it('stores at most 20 unique videos before requesting contextual YouTube access', async () => {
-    const requestYouTubePlaylistAccess = vi.fn().mockResolvedValue(undefined);
+    const requestYouTubeAccess = vi.fn().mockResolvedValue(undefined);
     useAuthMock.mockReturnValue({
       accessToken: 'app-token',
       googleProviderAccessToken: 'identity-only-token',
-      requestYouTubePlaylistAccess,
+      requestYouTubeAccess,
       status: 'authenticated',
     });
     const { result } = renderHook(() => useMusicPlaylistExport(vi.fn()));
@@ -43,7 +43,7 @@ describe('useMusicPlaylistExport', () => {
       );
     });
 
-    expect(requestYouTubePlaylistAccess).toHaveBeenCalledWith(window.location.origin);
+    expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.origin);
     const pending = JSON.parse(window.sessionStorage.getItem('youtube-atlas-pending-music-playlist-export') ?? '{}');
     expect(pending.videoIds).toHaveLength(20);
     expect(new Set(pending.videoIds).size).toBe(20);
@@ -60,7 +60,7 @@ describe('useMusicPlaylistExport', () => {
     useAuthMock.mockReturnValue({
       accessToken: 'app-token',
       googleProviderAccessToken: 'youtube-token',
-      requestYouTubePlaylistAccess: vi.fn(),
+      requestYouTubeAccess: vi.fn(),
       status: 'authenticated',
     });
     exportMusicPlaylistMock.mockResolvedValue({

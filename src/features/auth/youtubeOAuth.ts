@@ -1,6 +1,6 @@
-export const YOUTUBE_PLAYLIST_SCOPE = 'https://www.googleapis.com/auth/youtube';
+export const YOUTUBE_WRITE_SCOPE = 'https://www.googleapis.com/auth/youtube';
 
-export function createYouTubePlaylistOAuthRequest(redirectTo: string) {
+export function createYouTubeOAuthRequest(redirectTo: string) {
   return {
     options: {
       queryParams: {
@@ -9,7 +9,7 @@ export function createYouTubePlaylistOAuthRequest(redirectTo: string) {
         prompt: 'consent',
       },
       redirectTo,
-      scopes: `openid email profile ${YOUTUBE_PLAYLIST_SCOPE}`,
+      scopes: `openid email profile ${YOUTUBE_WRITE_SCOPE}`,
     },
     provider: 'google' as const,
   };

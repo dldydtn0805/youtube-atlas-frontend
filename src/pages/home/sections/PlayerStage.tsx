@@ -84,6 +84,8 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   selectedVideoTitle?: string;
   showManualPlaybackSave?: boolean;
   stageActionContent?: ReactNode;
+  stageActionStatus?: string;
+  stageActionStatusTone?: 'error' | 'success';
   stageMetadataContent?: ReactNode;
   supplementalContent?: ReactNode;
   topContent?: ReactNode;
@@ -321,6 +323,8 @@ function PlayerStage({
   videoPlayerDockStyle,
   isVideoPlayerDocked = false,
   stageActionContent,
+  stageActionStatus,
+  stageActionStatusTone,
   stageMetadataContent,
   supplementalContent,
   topContent,
@@ -453,13 +457,14 @@ function PlayerStage({
           ) : null}
         </div>
         <p
-          aria-hidden={!manualPlaybackSaveStatus}
+          aria-hidden={!stageActionStatus && !manualPlaybackSaveStatus}
           aria-live="polite"
           className="app-shell__stage-status"
-          data-visible={Boolean(manualPlaybackSaveStatus)}
+          data-tone={stageActionStatusTone}
+          data-visible={Boolean(stageActionStatus || manualPlaybackSaveStatus)}
           role="status"
         >
-          {manualPlaybackSaveStatus ?? ' '}
+          {stageActionStatus ?? manualPlaybackSaveStatus ?? ' '}
         </p>
       </div>
     </div>

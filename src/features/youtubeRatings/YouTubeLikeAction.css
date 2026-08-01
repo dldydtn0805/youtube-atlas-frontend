@@ -1,0 +1,32 @@
+.app-shell__stage-action-button--youtube-like {
+  background: linear-gradient(180deg, rgba(255, 0, 51, 0.2), rgba(220, 38, 38, 0.1));
+  border-color: rgba(255, 0, 51, 0.2);
+  color: #b91c1c;
+}
+
+.app-shell__stage-action-button--youtube-like:hover,
+.app-shell__stage-action-button--youtube-like:focus-visible,
+.app-shell__stage-action-button--youtube-like[data-active='true'] {
+  background: linear-gradient(180deg, rgba(255, 0, 51, 0.34), rgba(220, 38, 38, 0.2));
+  border-color: rgba(255, 0, 51, 0.34);
+  color: #dc2626;
+}
+
+.youtube-like-action__spinner {
+  animation: youtube-like-action-spin 0.7s linear infinite;
+  border: 2px solid rgba(185, 28, 28, 0.24);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  height: 13px;
+  width: 13px;
+}
+
+:root[data-theme='dark'] .app-shell__stage-action-button--youtube-like {
+  color: #fda4af;
+}
+
+@keyframes youtube-like-action-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

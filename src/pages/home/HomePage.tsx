@@ -121,6 +121,8 @@ import { useMusicTopVideos, usePopularVideosByCategory, useVideoCategories } fro
 import type { YouTubeVideoItem } from '../../features/youtube/types';
 import { ApiRequestError, isApiConfigured } from '../../lib/api';
 import MusicPlaylistExportAction from '../../features/youtubePlaylists/MusicPlaylistExportAction';
+import YouTubeLikeAction from '../../features/youtubeRatings/YouTubeLikeAction';
+import useYouTubeLike from '../../features/youtubeRatings/useYouTubeLike';
 import '../../styles/app.css';
 
 const GameSeasonResultsModal = lazy(() => import('./sections/GameSeasonResultsModal/GameSeasonResultsModal'));
@@ -853,6 +855,7 @@ function HomePage() {
     user,
     videoPlayerRef,
   });
+  const youtubeLike = useYouTubeLike(selectedVideoId);
   useNowPlayingDocumentTitle(resolvedSelectedVideo?.snippet.title);
   const selectedPlaybackCategoryLabel = useMemo(
     () =>
@@ -2155,30 +2158,40 @@ function HomePage() {
     [handleSelectVideoWithPreview, scrollToPlayerStage],
   );
   const gameActionContent = (
-    <SelectedVideoGameActionsBundle
-      buyActionTitle={buyActionTitle}
-      canShowGameActions={canShowGameActions}
-      fallbackRankLabel={selectedVideoRankLabel}
-      fallbackViewCountLabel={selectedVideoStatLabel}
-      isBuySubmitting={isBuySubmitting}
-      isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
-      isSelectedVideoSellDisabled={isSelectedVideoSellDisabled}
-      isSellSubmitting={isSellSubmitting}
-      mode="stage"
-      onOpenBuyTradeModal={openBuyTradeModal}
-      onOpenRankHistory={handleOpenSelectedVideoRankHistory}
-      onOpenSellTradeModal={openSellTradeModal}
-      selectedGameActionChannelTitle={selectedGameActionChannelTitle}
-      selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
-      selectedVideoHistoricalPosition={selectedVideoHistoricalPosition}
-      selectedVideoId={selectedVideoId}
-      selectedVideoIsChartOut={selectedVideoIsChartOut}
-      selectedVideoMarketEntry={selectedVideoMarketEntry}
-      selectedVideoOpenPositionCount={selectedVideoOpenPositionCount}
-      selectedVideoOpenPositionSummary={selectedVideoOpenPositionSummary}
-      selectedVideoTrendBadges={selectedVideoTrendBadges}
-      sellActionTitle={sellActionTitle}
-    />
+    <>
+      <SelectedVideoGameActionsBundle
+        buyActionTitle={buyActionTitle}
+        canShowGameActions={canShowGameActions}
+        fallbackRankLabel={selectedVideoRankLabel}
+        fallbackViewCountLabel={selectedVideoStatLabel}
+        isBuySubmitting={isBuySubmitting}
+        isSelectedVideoBuyDisabled={isSelectedVideoBuyDisabled}
+        isSelectedVideoSellDisabled={isSelectedVideoSellDisabled}
+        isSellSubmitting={isSellSubmitting}
+        mode="stage"
+        onOpenBuyTradeModal={openBuyTradeModal}
+        onOpenRankHistory={handleOpenSelectedVideoRankHistory}
+        onOpenSellTradeModal={openSellTradeModal}
+        selectedGameActionChannelTitle={selectedGameActionChannelTitle}
+        selectedVideoCurrentChartRank={selectedVideoCurrentChartRank}
+        selectedVideoHistoricalPosition={selectedVideoHistoricalPosition}
+        selectedVideoId={selectedVideoId}
+        selectedVideoIsChartOut={selectedVideoIsChartOut}
+        selectedVideoMarketEntry={selectedVideoMarketEntry}
+        selectedVideoOpenPositionCount={selectedVideoOpenPositionCount}
+        selectedVideoOpenPositionSummary={selectedVideoOpenPositionSummary}
+        selectedVideoTrendBadges={selectedVideoTrendBadges}
+        sellActionTitle={sellActionTitle}
+      />
+      {selectedVideoId ? (
+        <YouTubeLikeAction
+          authStatus={youtubeLike.authStatus}
+          isLiked={youtubeLike.isLiked}
+          isPending={youtubeLike.isPending}
+          onToggle={youtubeLike.toggleLike}
+        />
+      ) : null}
+    </>
   );
   const stageMetadataContent = (
     <GameSelectedVideoPriceSummary
@@ -2523,6 +2536,13 @@ function HomePage() {
             selectedVideoTitle: resolvedSelectedVideo?.snippet.title,
             showManualPlaybackSave: false,
             stageActionContent: gameActionContent,
+            stageActionStatus: youtubeLike.message ?? undefined,
+            stageActionStatusTone:
+              youtubeLike.phase === 'error'
+                ? 'error'
+                : youtubeLike.phase === 'success'
+                  ? 'success'
+                  : undefined,
             stageMetadataContent,
             supplementalContent: undefined,
             toggleFavoriteStreamerPending: toggleFavoriteStreamerMutation.isPending,
