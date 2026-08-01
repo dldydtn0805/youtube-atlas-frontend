@@ -318,32 +318,29 @@ function AppHeader({
           to="/"
           aria-label="The Rank Game 메인 페이지로 이동"
         >
-          <span className="app-shell__title-mark" aria-hidden="true">
-            <svg className="app-shell__title-mark-icon" fill="none" viewBox="0 0 36 36">
-              <rect fill="currentColor" height="8" rx="1.6" width="7" x="4" y="23" />
-              <rect fill="currentColor" height="15" rx="1.6" width="7" x="14.5" y="16" />
-              <rect fill="currentColor" height="11" rx="1.6" width="7" x="25" y="20" />
+          <span className="app-shell__title-logo-art" aria-hidden="true">
+            <svg className="app-shell__title-logo-art-icon" shapeRendering="crispEdges" viewBox="0 0 116 36">
+              <defs>
+                <linearGradient id="app-header-title-ink" x1="0" x2="0" y1="0" y2="1">
+                  <stop className="app-shell__title-logo-ink-top" offset="0" />
+                  <stop className="app-shell__title-logo-ink-bottom" offset="1" />
+                </linearGradient>
+                <linearGradient id="app-header-title-metal" x1="0" x2="0" y1="0" y2="1">
+                  <stop stopColor="#d9d9d9" offset="0" />
+                  <stop stopColor="#8c8c8c" offset="1" />
+                </linearGradient>
+              </defs>
               <path
-                d="M6.5 17.5 14 10l6 3 9-8"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.6"
+                d="M0 13h60v5H0V13Zm6-5h13v5H6V8Zm22-4h32v9H28V4Zm26-3h6v3h-6V1ZM0 18h60v6H0v-6Zm0 6h9v10H0V24Zm18 0h14v4H18v-4Zm3 4h4v6h-4v-6Zm7 0h7v6h-7v-3h4v-3h-4Z"
+                fill="url(#app-header-title-ink)"
               />
-              <path
-                d="M24.5 5H29v4.5"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.6"
-              />
+              <rect fill="url(#app-header-title-metal)" height="6" width="49" x="60" y="18" />
+              <rect fill="url(#app-header-title-ink)" height="12" width="7" x="109" y="15" />
             </svg>
           </span>
           <h1 className="app-shell__title" aria-label="The Rank Game">
-            <span className="app-shell__title-eyebrow" aria-hidden="true">
-              The
-            </span>
             <span className="app-shell__title-main" aria-hidden="true">
+              <span className="app-shell__title-the">The</span>
               <span className="app-shell__title-rank">Rank</span>
               <span className="app-shell__title-game">Game</span>
             </span>
