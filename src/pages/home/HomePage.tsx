@@ -12,6 +12,12 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
+import {
+  clearPendingHomeChartView,
+  getHomePath,
+  type HomeChartRouteView,
+} from "../../app/homeRoute";
 import type { VideoPlayerHandle } from "../../components/VideoPlayer/VideoPlayer";
 import AchievementTitleToast from "./sections/AchievementTitleToast";
 import GameActionToast from "./sections/GameActionToast";
@@ -135,9 +141,7 @@ import type { YouTubeVideoItem } from "../../features/youtube/types";
 import { ApiRequestError, isApiConfigured } from "../../lib/api";
 import YouTubeLikeAction from "../../features/youtubeRatings/YouTubeLikeAction";
 import useYouTubeLike from "../../features/youtubeRatings/useYouTubeLike";
-import YouTubeLikedVideosConnectAction, {
-  PENDING_LIKED_VIDEOS_VIEW_KEY,
-} from "../../features/youtubeLikedVideos/YouTubeLikedVideosConnectAction";
+import YouTubeLikedVideosConnectAction from "../../features/youtubeLikedVideos/YouTubeLikedVideosConnectAction";
 import { useYouTubeLikedVideos } from "../../features/youtubeLikedVideos/queries";
 import "../../styles/app.css";
 
@@ -314,22 +318,6 @@ function persistCollapsedHomeSectionIds(sectionIds: string[]) {
   );
 }
 
-function getInitialChartView(): ChartViewMode {
-  if (typeof window === "undefined") {
-    return "popular";
-  }
-
-  const shouldRestoreLikedVideos =
-    window.sessionStorage.getItem(PENDING_LIKED_VIDEOS_VIEW_KEY) === "true";
-
-  if (shouldRestoreLikedVideos) {
-    window.sessionStorage.removeItem(PENDING_LIKED_VIDEOS_VIEW_KEY);
-    return "liked";
-  }
-
-  return "popular";
-}
-
 function requiresYouTubeReconnect(error: unknown) {
   return (
     error instanceof ApiRequestError &&
@@ -339,8 +327,27 @@ function requiresYouTubeReconnect(error: unknown) {
   );
 }
 
-function HomePage() {
+interface HomePageProps {
+  selectedChartView: HomeChartRouteView;
+  selectedRegionCode: RegionCode;
+}
+
+function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const navigateToChartView = useCallback(
+    (chartView: ChartViewMode) => {
+      const routeChartView = chartView === "all" ? "popular" : chartView;
+
+      navigate(getHomePath(selectedRegionCode, routeChartView));
+    },
+    [navigate, selectedRegionCode],
+  );
+  useEffect(() => {
+    if (selectedChartView === "liked") {
+      clearPendingHomeChartView();
+    }
+  }, [selectedChartView]);
   const {
     accessToken,
     applyCurrentUser,
@@ -400,8 +407,6 @@ function HomePage() {
   const [pendingRegionTopVideoSelection, setPendingRegionTopVideoSelection] =
     useState<string | null>(null);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
-  const [selectedChartView, setSelectedChartView] =
-    useState<ChartViewMode>(getInitialChartView);
   const [chartSortMode, setChartSortMode] =
     useState<ChartSortMode>("popular-desc");
   const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(
@@ -427,12 +432,11 @@ function HomePage() {
     isCinematicModeActive,
     isDarkMode,
     isMobileLayout,
-    selectedRegionCode,
     themeToggleLabel,
-    updateRegionCode,
   } = useAppPreferences({
     playerSectionRef,
     playerStageRef,
+    selectedRegionCode,
   });
 
   useEffect(() => {
@@ -895,8 +899,29 @@ function HomePage() {
     onLoadMoreMusicChart: fetchNextMusicChartPage,
     selectedChartView,
     setCollapsedHomeSectionIds,
-    setSelectedChartView,
+    setSelectedChartView: navigateToChartView,
   });
+  useEffect(() => {
+    if (
+      authStatus === "loading" ||
+      effectiveChartView === selectedChartView
+    ) {
+      return;
+    }
+
+    const routeChartView =
+      effectiveChartView === "all" ? "popular" : effectiveChartView;
+
+    navigate(getHomePath(selectedRegionCode, routeChartView), {
+      replace: true,
+    });
+  }, [
+    authStatus,
+    effectiveChartView,
+    navigate,
+    selectedChartView,
+    selectedRegionCode,
+  ]);
   const handleChangeChartSortMode = useCallback(
     (sortMode: ChartSortMode) => {
       setChartSortMode(sortMode);
@@ -1023,6 +1048,21 @@ function HomePage() {
     user,
     videoPlayerRef,
   });
+  const previousRegionCodeRef = useRef(selectedRegionCode);
+  const resetForRegionChangeRef = useRef(resetForRegionChange);
+  resetForRegionChangeRef.current = resetForRegionChange;
+
+  useEffect(() => {
+    if (previousRegionCodeRef.current === selectedRegionCode) {
+      return;
+    }
+
+    previousRegionCodeRef.current = selectedRegionCode;
+    resetForRegionChangeRef.current();
+    setSelectedCategoryId(DEFAULT_CATEGORY_ID);
+    setPendingRegionTopVideoSelection(selectedRegionCode);
+  }, [selectedRegionCode]);
+
   const isSelectedVideoKnownLiked = useMemo(
     () =>
       Boolean(
@@ -1313,11 +1353,8 @@ function HomePage() {
   }, [fetchNextMusicChartPage, shouldAutoPrefetchBuyableMusicVideos]);
 
   function handleSelectRegion(regionCode: RegionCode) {
-    resetForRegionChange();
-    setSelectedCategoryId(DEFAULT_CATEGORY_ID);
-    setPendingRegionTopVideoSelection(regionCode);
-    updateRegionCode(regionCode);
     setIsRegionModalOpen(false);
+    navigate(getHomePath(regionCode, selectedChartView));
   }
 
   const openGameHoldings = useMemo(

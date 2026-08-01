@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useEffect,
   useMemo,
   type Dispatch,
   type SetStateAction,
@@ -65,7 +64,7 @@ interface UseHomeChartViewStateOptions {
   onLoadMoreMusicChart: () => Promise<unknown>;
   selectedChartView: ChartViewMode;
   setCollapsedHomeSectionIds: Dispatch<SetStateAction<string[]>>;
-  setSelectedChartView: Dispatch<SetStateAction<ChartViewMode>>;
+  setSelectedChartView: (chartView: ChartViewMode) => void;
 }
 
 interface HomeChartViewState {
@@ -191,33 +190,6 @@ export default function useHomeChartViewState({
       ] satisfies ChartViewOption[],
     [authStatus, isTrendRegionSelected, musicChartSection],
   );
-
-  useEffect(() => {
-    if (
-      (selectedChartView === "liked" || selectedChartView === "buyable") &&
-      authStatus !== "authenticated"
-    ) {
-      setSelectedChartView("all");
-      return;
-    }
-
-    if (
-      isTrendRegionSelected ||
-      selectedChartView === "liked" ||
-      selectedChartView === "buyable" ||
-      selectedChartView === "popular" ||
-      selectedChartView === "music"
-    ) {
-      return;
-    }
-
-    setSelectedChartView("popular");
-  }, [
-    authStatus,
-    isTrendRegionSelected,
-    selectedChartView,
-    setSelectedChartView,
-  ]);
 
   const effectiveChartView: ChartViewMode =
     !isTrendRegionSelected &&

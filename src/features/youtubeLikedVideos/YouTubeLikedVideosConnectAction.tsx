@@ -1,9 +1,7 @@
 import { useState } from "react";
+import { PENDING_LIKED_VIDEOS_VIEW_KEY } from "../../app/homeRoute";
 import { useAuth } from "../auth/useAuth";
 import "./YouTubeLikedVideosConnectAction.css";
-
-export const PENDING_LIKED_VIDEOS_VIEW_KEY =
-  "youtube-atlas-pending-liked-videos-view";
 
 interface YouTubeLikedVideosConnectActionProps {
   isVisible: boolean;

@@ -20,10 +20,17 @@ import {
 interface UseAppPreferencesOptions {
   playerSectionRef: RefObject<HTMLElement | null>;
   playerStageRef: RefObject<HTMLDivElement | null>;
+  selectedRegionCode?: RegionCode;
 }
 
-function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferencesOptions) {
-  const [selectedRegionCode, setSelectedRegionCode] = useState(getInitialRegionCode);
+function useAppPreferences({
+  playerSectionRef,
+  playerStageRef,
+  selectedRegionCode: controlledRegionCode,
+}: UseAppPreferencesOptions) {
+  const [uncontrolledRegionCode, setUncontrolledRegionCode] =
+    useState(getInitialRegionCode);
+  const selectedRegionCode = controlledRegionCode ?? uncontrolledRegionCode;
   const [isCinematicMode, setIsCinematicMode] = useState(getInitialCinematicMode);
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
   const [isMobileLayout, setIsMobileLayout] = useState(getInitialIsMobileLayout);
@@ -144,7 +151,7 @@ function useAppPreferences({ playerSectionRef, playerStageRef }: UseAppPreferenc
   }
 
   function updateRegionCode(regionCode: RegionCode) {
-    setSelectedRegionCode(regionCode);
+    setUncontrolledRegionCode(regionCode);
   }
 
   return {

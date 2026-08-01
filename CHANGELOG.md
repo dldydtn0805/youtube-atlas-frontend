@@ -2,6 +2,7 @@
 
 ## 2026-08-01
 
+- Added URL-addressable nation and chart routes such as `/kr/top`, `/us/music`, and `/jp/surging`; country and category controls now update browser history, back navigation restores both selections, root and invalid paths resolve to the stored country's TOP route, and pending YouTube liked-view OAuth returns resolve to the liked route. Verified with 453 tests, a production build, ESLint with no errors, and browser checks for country/category navigation and back-state restoration.
 - Replaced manual pathname state with React Router routes for `/` and `/admin/*`, converted internal home links to client-side navigation, and added an unknown-route redirect to the home page; verified with 445 tests, a production build, ESLint with no errors, and browser checks for direct admin loading, internal navigation, back navigation, and unknown routes.
 - Removed the YouTube playlist creation action from the music video list; verified with 442 tests, a production build, and ESLint with no errors.
 - Added one-tap `한국`, `미국`, and `일본` country buttons directly to the video-list filter, replacing the extra modal step for normal chart switching; verified with 442 tests, a production build, ESLint with no errors, desktop/mobile browser checks, and live asynchronous TOP 200 data for all three countries.

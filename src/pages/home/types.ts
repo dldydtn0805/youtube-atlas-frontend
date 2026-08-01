@@ -1,11 +1,6 @@
-export type ChartViewMode =
-  | "all"
-  | "buyable"
-  | "realtime-surging"
-  | "new-chart-entries"
-  | "liked"
-  | "popular"
-  | "music";
+import type { HomeChartRouteView } from '../../app/homeRoute';
+
+export type ChartViewMode = HomeChartRouteView | 'all';
 
 export type ChartSortMode =
   | "popular-desc"

@@ -1,8 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import YouTubeLikedVideosConnectAction, {
-  PENDING_LIKED_VIDEOS_VIEW_KEY,
-} from "./YouTubeLikedVideosConnectAction";
+import { PENDING_LIKED_VIDEOS_VIEW_KEY } from "../../app/homeRoute";
+import YouTubeLikedVideosConnectAction from "./YouTubeLikedVideosConnectAction";
 
 const authState = vi.hoisted(() => ({
   googleProviderAccessToken: null as string | null,
