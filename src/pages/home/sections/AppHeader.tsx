@@ -313,9 +313,40 @@ function AppHeader({
   return (
     <header className="app-shell__header">
       <div className="app-shell__header-top">
-        <Link className="app-shell__title-link" to="/" aria-label="The Rank Game 메인 페이지로 이동">
-          <h1 className="app-shell__title">
-            <span className="app-shell__title-main">The Rank Game</span>
+        <Link
+          className="app-shell__title-link"
+          to="/"
+          aria-label="The Rank Game 메인 페이지로 이동"
+        >
+          <span className="app-shell__title-mark" aria-hidden="true">
+            <svg className="app-shell__title-mark-icon" fill="none" viewBox="0 0 36 36">
+              <rect fill="currentColor" height="8" rx="1.6" width="7" x="4" y="23" />
+              <rect fill="currentColor" height="15" rx="1.6" width="7" x="14.5" y="16" />
+              <rect fill="currentColor" height="11" rx="1.6" width="7" x="25" y="20" />
+              <path
+                d="M6.5 17.5 14 10l6 3 9-8"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.6"
+              />
+              <path
+                d="M24.5 5H29v4.5"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2.6"
+              />
+            </svg>
+          </span>
+          <h1 className="app-shell__title" aria-label="The Rank Game">
+            <span className="app-shell__title-eyebrow" aria-hidden="true">
+              The
+            </span>
+            <span className="app-shell__title-main" aria-hidden="true">
+              <span className="app-shell__title-rank">Rank</span>
+              <span className="app-shell__title-game">Game</span>
+            </span>
           </h1>
         </Link>
         <div className="app-shell__header-actions">

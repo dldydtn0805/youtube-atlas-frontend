@@ -25,11 +25,17 @@
 }
 
 .app-shell__title-link {
-  border-radius: 8px;
+  align-items: center;
+  border-radius: 16px;
   color: inherit;
   display: flex;
+  gap: 11px;
   min-width: 0;
+  padding: 4px 8px 4px 4px;
   text-decoration: none;
+  transition:
+    background 0.22s ease,
+    transform 0.22s ease;
 }
 
 .app-shell__title-link:focus-visible {
@@ -37,20 +43,107 @@
   outline-offset: 4px;
 }
 
+.app-shell__title-link:hover {
+  background: color-mix(in srgb, #f59e0b 7%, transparent);
+  transform: translateY(-1px);
+}
+
+.app-shell__title-mark {
+  align-items: center;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.34), transparent 45%),
+    linear-gradient(135deg, #facc15 0%, #f97316 58%, #ec4899 120%);
+  border: 1px solid color-mix(in srgb, #fbbf24 68%, white 32%);
+  border-radius: 14px;
+  box-shadow:
+    0 10px 24px rgba(249, 115, 22, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(120, 53, 15, 0.16);
+  color: #241307;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  transform: rotate(-2deg);
+  transition:
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+  width: 44px;
+}
+
+.app-shell__title-mark::after {
+  background: linear-gradient(
+    120deg,
+    transparent 15%,
+    rgba(255, 255, 255, 0.42) 50%,
+    transparent 85%
+  );
+  content: '';
+  height: 120%;
+  position: absolute;
+  right: -14px;
+  top: -24px;
+  transform: rotate(18deg);
+  width: 16px;
+}
+
+.app-shell__title-link:hover .app-shell__title-mark {
+  box-shadow:
+    0 13px 28px rgba(249, 115, 22, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.54),
+    inset 0 -1px 0 rgba(120, 53, 15, 0.18);
+  transform: rotate(0deg) scale(1.03);
+}
+
+.app-shell__title-mark-icon {
+  height: 31px;
+  width: 31px;
+}
+
 .app-shell__title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   margin: 0;
   min-width: 0;
 }
 
-.app-shell__title-main {
-  color: var(--text);
-  display: block;
-  font-family: var(--font-display);
-  font-size: 2.15rem;
+.app-shell__title-eyebrow {
+  color: color-mix(in srgb, var(--text-muted) 80%, #f59e0b 20%);
+  font-family: var(--font-body);
+  font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0;
+  letter-spacing: 0.34em;
   line-height: 1;
+  margin-bottom: 4px;
+  padding-left: 2px;
+  text-transform: uppercase;
+}
+
+.app-shell__title-main {
+  align-items: center;
+  display: flex;
+  font-family: var(--font-display);
+  font-size: 1.84rem;
+  font-weight: 900;
+  gap: 0.32em;
+  letter-spacing: -0.025em;
+  line-height: 0.92;
   white-space: nowrap;
+}
+
+.app-shell__title-rank {
+  background: linear-gradient(110deg, #facc15 0%, #f59e0b 42%, #f97316 100%);
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.18));
+  -webkit-background-clip: text;
+}
+
+.app-shell__title-game {
+  color: var(--text);
 }
 
 .app-shell__theme-toggle {
@@ -675,8 +768,31 @@
     min-width: 0;
   }
 
+  :root[data-mobile-layout='true'] .app-shell__title-link {
+    gap: 8px;
+    padding: 3px 5px 3px 3px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-mark {
+    border-radius: 11px;
+    height: 36px;
+    width: 36px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-mark-icon {
+    height: 25px;
+    width: 25px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-eyebrow {
+    font-size: 0.48rem;
+    letter-spacing: 0.28em;
+    margin-bottom: 3px;
+  }
+
   :root[data-mobile-layout='true'] .app-shell__title-main {
-    font-size: 1.55rem;
+    font-size: 1.28rem;
+    gap: 0.28em;
   }
 
   :root[data-mobile-layout='true'] .app-shell__auth-panel,
@@ -716,8 +832,42 @@
 }
 
 @media (max-width: 480px) {
-  :root[data-mobile-layout='true'] .app-shell__title-main {
-    font-size: 1.38rem;
+  :root[data-mobile-layout='true'] .app-shell__title-link {
+    gap: 7px;
   }
 
+  :root[data-mobile-layout='true'] .app-shell__title-mark {
+    border-radius: 10px;
+    height: 32px;
+    width: 32px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-mark-icon {
+    height: 22px;
+    width: 22px;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-eyebrow {
+    font-size: 0.43rem;
+    letter-spacing: 0.22em;
+  }
+
+  :root[data-mobile-layout='true'] .app-shell__title-main {
+    font-size: 1.08rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell__title-link,
+  .app-shell__title-mark {
+    transition: none;
+  }
+
+  .app-shell__title-link:hover {
+    transform: none;
+  }
+
+  .app-shell__title-link:hover .app-shell__title-mark {
+    transform: rotate(-2deg);
+  }
 }

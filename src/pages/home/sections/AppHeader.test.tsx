@@ -22,8 +22,16 @@ describe('AppHeader', () => {
       </MemoryRouter>,
     );
 
+    const brandLink = screen.getByRole('link', {
+      name: 'The Rank Game 메인 페이지로 이동',
+    });
+
     expect(screen.getByRole('heading', { name: 'The Rank Game' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'The Rank Game 메인 페이지로 이동' })).toHaveAttribute('href', '/');
+    expect(brandLink).toHaveAttribute('href', '/');
+    expect(brandLink.querySelector('.app-shell__title-mark')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
     expect(screen.queryByText('YouTube Atlas')).not.toBeInTheDocument();
   });
 });
