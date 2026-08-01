@@ -183,7 +183,7 @@ export async function fetchYouTubeLikedVideos(
     items: (body?.items ?? [])
       .filter((video) => Boolean(video.id?.trim()))
       .map(toLikedVideo),
-    label: "좋아요한 영상",
+    label: "좋아요",
     nextPageToken: body?.nextPageToken ?? null,
   };
 }

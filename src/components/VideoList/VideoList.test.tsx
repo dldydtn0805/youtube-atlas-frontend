@@ -10,7 +10,7 @@ import VideoList from "./VideoList";
 
 const baseSection = {
   categoryId: "youtube-liked-videos",
-  description: "좋아요한 영상",
+  description: "좋아요",
   items: [
     {
       contentDetails: {
@@ -45,7 +45,7 @@ const baseSection = {
       },
     },
   ],
-  label: "좋아요한 영상",
+  label: "좋아요",
 };
 
 function buildSection(itemCount: number) {
@@ -283,7 +283,7 @@ describe("VideoList", () => {
     expect(screen.getByText("▲ 6")).toBeInTheDocument();
     expect(screen.queryByText("NEW")).not.toBeInTheDocument();
     expect(container.querySelector(".video-card__meta-main")).toHaveTextContent(
-      "좋아요한 영상 #1▲ 6",
+      "좋아요 #1▲ 6",
     );
     expect(
       container.querySelector(
@@ -481,7 +481,7 @@ describe("VideoList", () => {
 
     expect(container.querySelectorAll(".video-card")).toHaveLength(20);
     const pagination = screen.getByRole("navigation", {
-      name: "좋아요한 영상 페이지 이동",
+      name: "좋아요 페이지 이동",
     });
 
     expect(
@@ -512,7 +512,7 @@ describe("VideoList", () => {
       );
 
       expect(
-        screen.getByRole("navigation", { name: "좋아요한 영상 페이지 이동" }),
+        screen.getByRole("navigation", { name: "좋아요 페이지 이동" }),
       ).toHaveTextContent("/10");
 
       fireEvent.click(screen.getByRole("button", { name: "다음" }));

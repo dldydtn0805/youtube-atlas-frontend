@@ -2,6 +2,9 @@
 
 ## 2026-08-01
 
+- Fixed liked videos outside the synced TOP 200 so they display `차트 아웃` instead of inheriting their row position as a false rank, including removal of top-three styling from chart-out rows.
+- Renamed the personal chart UI from `좋아요 영상` to `좋아요`, and made successful YouTube like/unlike status messages clear automatically after one second.
+- Verified the chart-out, label, and status-timer changes with 439 tests, a production build, ESLint with no errors, and Deno checks for the Edge API.
 - Replaced channel favorites with the signed-in YouTube account's real liked-video list, including pagination, contextual OAuth recovery, and live list invalidation after a like or unlike.
 - Removed the channel star action, favorite-streamer API and frontend feature, favorite admin metrics, and the `favorite_streamers` table through migration `20260801020000`.
 - Verified the liked-video change with 438 tests, a production build, ESLint with no errors, and Deno checks for the Supabase Edge API.

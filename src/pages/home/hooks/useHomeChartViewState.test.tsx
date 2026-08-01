@@ -1,6 +1,9 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { YouTubeCategorySection } from "../../../features/youtube/types";
+import type {
+  YouTubeCategorySection,
+  YouTubeVideoItem,
+} from "../../../features/youtube/types";
 import useHomeChartViewState from "./useHomeChartViewState";
 
 type HookOptions = Parameters<typeof useHomeChartViewState>[0];
@@ -16,7 +19,7 @@ const likedVideoSection: YouTubeCategorySection = {
   categoryId: "youtube-liked-videos",
   description: "좋아요한 영상",
   items: [],
-  label: "좋아요한 영상",
+  label: "좋아요",
 };
 
 function createOptions(overrides: Partial<HookOptions>): HookOptions {
@@ -103,6 +106,16 @@ describe("useHomeChartViewState", () => {
     );
     expect(result.current.activeChartIsLoading).toBe(false);
     expect(result.current.activeChartIsError).toBe(false);
+    expect(result.current.selectedChartViewOption.label).toBe("좋아요");
+    expect(
+      result.current.activeChartRankLabel?.(
+        {
+          id: "chart-out-video",
+          snippet: { title: "차트 아웃 영상" },
+        } as YouTubeVideoItem,
+        0,
+      ),
+    ).toBe("차트 아웃");
   });
 
   it("guides the user to connect YouTube before the liked video list is available", () => {

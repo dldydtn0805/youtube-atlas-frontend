@@ -166,7 +166,7 @@ export default function useHomeChartViewState({
         {
           id: "liked",
           disabled: authStatus !== "authenticated",
-          label: "좋아요 영상",
+          label: "좋아요",
           tone: "like",
         },
         {
@@ -265,7 +265,7 @@ export default function useHomeChartViewState({
       (buyableLikedVideoChartSection?.items.length ?? 0) > 0
         ? {
             section: buyableLikedVideoChartSection as YouTubeCategorySection,
-            eyebrow: "Liked Videos",
+            eyebrow: "Likes",
             getRankLabel: likedVideoChartGetRankLabel,
           }
         : undefined,
@@ -298,7 +298,7 @@ export default function useHomeChartViewState({
         : effectiveChartView === "buyable"
           ? "Buyable Market"
           : effectiveChartView === "liked"
-            ? "Liked Videos"
+            ? "Likes"
             : effectiveChartView === "music"
               ? "Music Chart"
               : effectiveChartView === "popular"

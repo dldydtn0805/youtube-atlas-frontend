@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import ChartRankingBoard from '.';
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import ChartRankingBoard from ".";
 
 class MockIntersectionObserver {
   static instances: MockIntersectionObserver[] = [];
@@ -26,7 +26,7 @@ class MockIntersectionObserver {
       isIntersecting,
       isVisible: isIntersecting,
       rootBounds: null,
-      target: document.createElement('div'),
+      target: document.createElement("div"),
       time: 0,
     } as unknown as IntersectionObserverEntry;
 
@@ -35,20 +35,28 @@ class MockIntersectionObserver {
 }
 
 const baseItem = {
-  contentDetails: { duration: 'PT1M' },
-  id: 'video-1',
+  contentDetails: { duration: "PT1M" },
+  id: "video-1",
   snippet: {
-    categoryId: '0',
-    channelId: 'channel-1',
-    channelTitle: '테스트 채널',
+    categoryId: "0",
+    channelId: "channel-1",
+    channelTitle: "테스트 채널",
     thumbnails: {
-      default: { height: 90, url: 'https://example.com/default.jpg', width: 120 },
-      high: { height: 360, url: 'https://example.com/high.jpg', width: 480 },
-      medium: { height: 180, url: 'https://example.com/medium.jpg', width: 320 },
+      default: {
+        height: 90,
+        url: "https://example.com/default.jpg",
+        width: 120,
+      },
+      high: { height: 360, url: "https://example.com/high.jpg", width: 480 },
+      medium: {
+        height: 180,
+        url: "https://example.com/medium.jpg",
+        width: 320,
+      },
     },
-    title: '테스트 영상',
+    title: "테스트 영상",
   },
-  statistics: { viewCount: '1500' },
+  statistics: { viewCount: "1500" },
   trend: {
     currentRank: 2,
     currentViewCount: 1500,
@@ -59,13 +67,13 @@ const baseItem = {
 };
 
 const baseSection = {
-  categoryId: 'popular',
-  description: '인기 영상',
+  categoryId: "popular",
+  description: "인기 영상",
   items: [baseItem],
-  label: '인기 영상',
+  label: "인기 영상",
 };
 
-function makeItem(position: number, idPrefix = 'video') {
+function makeItem(position: number, idPrefix = "video") {
   return {
     ...baseItem,
     id: `${idPrefix}-${position}`,
@@ -82,15 +90,17 @@ function makeItem(position: number, idPrefix = 'video') {
   };
 }
 
-function makeSection(itemCount: number, idPrefix = 'video') {
+function makeSection(itemCount: number, idPrefix = "video") {
   return {
     ...baseSection,
-    items: Array.from({ length: itemCount }, (_, index) => makeItem(index + 1, idPrefix)),
+    items: Array.from({ length: itemCount }, (_, index) =>
+      makeItem(index + 1, idPrefix),
+    ),
   };
 }
 
-describe('ChartRankingBoard', () => {
-  it('plays from thumbnail and title, then opens the chart from rank change', () => {
+describe("ChartRankingBoard", () => {
+  it("plays from thumbnail and title, then opens the chart from rank change", () => {
     const onOpenChart = vi.fn();
     const onSelectVideo = vi.fn();
 
@@ -107,46 +117,60 @@ describe('ChartRankingBoard', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 재생하기' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 등락 차트 보기' }));
+    fireEvent.click(screen.getByRole("button", { name: "테스트 영상 재생" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "테스트 영상 재생하기" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "테스트 영상 등락 차트 보기" }),
+    );
 
-    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
-      '순위',
-      '등락',
-      '영상',
-      '현재가',
-      '조회수',
-      '거래',
-    ]);
-    expect(screen.getAllByRole('cell').slice(0, 3).map((cell) => cell.textContent)).toEqual([
-      '2위',
-      '▲6',
-      '테스트 영상테스트 채널',
-    ]);
+    expect(
+      screen.getAllByRole("columnheader").map((header) => header.textContent),
+    ).toEqual(["순위", "등락", "영상", "현재가", "조회수", "거래"]);
+    expect(
+      screen
+        .getAllByRole("cell")
+        .slice(0, 3)
+        .map((cell) => cell.textContent),
+    ).toEqual(["2위", "▲6", "테스트 영상테스트 채널"]);
     expect(onSelectVideo).toHaveBeenCalledTimes(2);
-    expect(onSelectVideo).toHaveBeenNthCalledWith(1, 'video-1', 'popular', expect.any(HTMLButtonElement));
-    expect(onSelectVideo).toHaveBeenNthCalledWith(2, 'video-1', 'popular', expect.any(HTMLButtonElement));
-    expect(onOpenChart).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
+    expect(onSelectVideo).toHaveBeenNthCalledWith(
+      1,
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
+    expect(onSelectVideo).toHaveBeenNthCalledWith(
+      2,
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
+    expect(onOpenChart).toHaveBeenCalledWith(
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
   });
 
-  it('opens buy and sell flows from table action buttons', () => {
+  it("opens buy and sell flows from table action buttons", () => {
     const onOpenBuyTradeModal = vi.fn();
     const onOpenSellTradeModal = vi.fn();
 
     render(
       <ChartRankingBoard
         getTradeActionState={() => ({
-          buyTitle: '매수 가능',
+          buyTitle: "매수 가능",
           canBuy: true,
           canSell: true,
-          sellTitle: '매도 가능',
+          sellTitle: "매도 가능",
         })}
         hasNextPage={false}
         isError={false}
         isFetchingNextPage={false}
         isLoading={false}
-        marketPriceByVideoId={{ 'video-1': 12345 }}
+        marketPriceByVideoId={{ "video-1": 12345 }}
         onLoadMore={vi.fn()}
         onOpenBuyTradeModal={onOpenBuyTradeModal}
         onOpenSellTradeModal={onOpenSellTradeModal}
@@ -155,21 +179,29 @@ describe('ChartRankingBoard', () => {
       />,
     );
 
-    expect(screen.getByText('12,345P')).toBeInTheDocument();
-    expect(screen.getByText('1.5천')).toBeInTheDocument();
-    expect(screen.getAllByText('▲6')).toHaveLength(1);
+    expect(screen.getByText("12,345P")).toBeInTheDocument();
+    expect(screen.getByText("1.5천")).toBeInTheDocument();
+    expect(screen.getAllByText("▲6")).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 매수' }));
-    fireEvent.click(screen.getByRole('button', { name: '테스트 영상 매도' }));
+    fireEvent.click(screen.getByRole("button", { name: "테스트 영상 매수" }));
+    fireEvent.click(screen.getByRole("button", { name: "테스트 영상 매도" }));
 
-    expect(onOpenBuyTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
-    expect(onOpenSellTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
+    expect(onOpenBuyTradeModal).toHaveBeenCalledWith(
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
+    expect(onOpenSellTradeModal).toHaveBeenCalledWith(
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
   });
 
-  it('uses inline current rank instead of pending rank copy', () => {
+  it("uses inline current rank instead of pending rank copy", () => {
     render(
       <ChartRankingBoard
-        getRankLabel={() => '현재 순위 확인 중'}
+        getRankLabel={() => "현재 순위 확인 중"}
         hasNextPage={false}
         isError={false}
         isFetchingNextPage={false}
@@ -191,14 +223,14 @@ describe('ChartRankingBoard', () => {
       />,
     );
 
-    expect(screen.getByText('152위')).toBeInTheDocument();
-    expect(screen.queryByText('현재 순위 확인 중')).not.toBeInTheDocument();
+    expect(screen.getByText("152위")).toBeInTheDocument();
+    expect(screen.queryByText("현재 순위 확인 중")).not.toBeInTheDocument();
   });
 
-  it('falls back to row position when rank data is pending', () => {
+  it("falls back to row position when rank data is pending", () => {
     render(
       <ChartRankingBoard
-        getRankLabel={() => '현재 순위 미집계'}
+        getRankLabel={() => "현재 순위 미집계"}
         hasNextPage={false}
         isError={false}
         isFetchingNextPage={false}
@@ -220,11 +252,43 @@ describe('ChartRankingBoard', () => {
       />,
     );
 
-    expect(screen.getByText('1위')).toBeInTheDocument();
-    expect(screen.queryByText('현재 순위 미집계')).not.toBeInTheDocument();
+    expect(screen.getByText("1위")).toBeInTheDocument();
+    expect(screen.queryByText("현재 순위 미집계")).not.toBeInTheDocument();
   });
 
-  it('opens mobile trade actions from a ranking row sheet', () => {
+  it("shows a resolved missing rank as chart out without top-rank styling", () => {
+    render(
+      <ChartRankingBoard
+        getRankLabel={() => "차트 아웃"}
+        hasNextPage={false}
+        isError={false}
+        isFetchingNextPage={false}
+        isLoading={false}
+        onLoadMore={vi.fn()}
+        onSelectVideo={vi.fn()}
+        section={{
+          ...baseSection,
+          items: [
+            {
+              ...baseItem,
+              trend: {
+                ...baseItem.trend,
+                currentRank: null,
+              },
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("차트 아웃")).not.toHaveAttribute(
+      "data-tone",
+      "top",
+    );
+    expect(screen.queryByText("1위")).not.toBeInTheDocument();
+  });
+
+  it("opens mobile trade actions from a ranking row sheet", () => {
     const onOpenBuyTradeModal = vi.fn();
     const onOpenSellTradeModal = vi.fn();
 
@@ -232,16 +296,16 @@ describe('ChartRankingBoard', () => {
       <ChartRankingBoard
         enableMobileTradeSheet
         getTradeActionState={() => ({
-          buyTitle: '매수 가능',
+          buyTitle: "매수 가능",
           canBuy: true,
           canSell: true,
-          sellTitle: '매도 가능',
+          sellTitle: "매도 가능",
         })}
         hasNextPage={false}
         isError={false}
         isFetchingNextPage={false}
         isLoading={false}
-        marketPriceByVideoId={{ 'video-1': 12345 }}
+        marketPriceByVideoId={{ "video-1": 12345 }}
         onLoadMore={vi.fn()}
         onOpenBuyTradeModal={onOpenBuyTradeModal}
         onOpenSellTradeModal={onOpenSellTradeModal}
@@ -250,30 +314,45 @@ describe('ChartRankingBoard', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('테스트 영상').closest('tr')!);
+    fireEvent.click(screen.getByText("테스트 영상").closest("tr")!);
 
-    const sheet = screen.getByRole('dialog', { name: '테스트 영상' });
+    const sheet = screen.getByRole("dialog", { name: "테스트 영상" });
 
-    expect(within(sheet).getByText('12,345P')).toBeInTheDocument();
-    expect(within(sheet).getByText('1.5천')).toBeInTheDocument();
-    expect(within(sheet).getByText('▲6')).toBeInTheDocument();
+    expect(within(sheet).getByText("12,345P")).toBeInTheDocument();
+    expect(within(sheet).getByText("1.5천")).toBeInTheDocument();
+    expect(within(sheet).getByText("▲6")).toBeInTheDocument();
 
-    fireEvent.click(within(sheet).getByRole('button', { name: '테스트 영상 매수' }));
+    fireEvent.click(
+      within(sheet).getByRole("button", { name: "테스트 영상 매수" }),
+    );
 
-    expect(onOpenBuyTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
+    expect(onOpenBuyTradeModal).toHaveBeenCalledWith(
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
 
-    fireEvent.click(screen.getByText('테스트 영상').closest('tr')!);
-    fireEvent.click(within(screen.getByRole('dialog', { name: '테스트 영상' })).getByRole('button', { name: '테스트 영상 매도' }));
+    fireEvent.click(screen.getByText("테스트 영상").closest("tr")!);
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "테스트 영상" })).getByRole(
+        "button",
+        { name: "테스트 영상 매도" },
+      ),
+    );
 
-    expect(onOpenSellTradeModal).toHaveBeenCalledWith('video-1', 'popular', expect.any(HTMLButtonElement));
+    expect(onOpenSellTradeModal).toHaveBeenCalledWith(
+      "video-1",
+      "popular",
+      expect.any(HTMLButtonElement),
+    );
   });
 
-  it('loads more items when the scroll anchor enters the viewport', () => {
+  it("loads more items when the scroll anchor enters the viewport", () => {
     const onLoadMore = vi.fn();
     const originalIntersectionObserver = globalThis.IntersectionObserver;
 
     MockIntersectionObserver.instances = [];
-    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver as never);
+    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver as never);
 
     try {
       render(
@@ -284,7 +363,7 @@ describe('ChartRankingBoard', () => {
           isLoading={false}
           onLoadMore={onLoadMore}
           onSelectVideo={vi.fn()}
-          section={makeSection(20, 'initial-video')}
+          section={makeSection(20, "initial-video")}
         />,
       );
 
@@ -293,7 +372,7 @@ describe('ChartRankingBoard', () => {
 
       expect(onLoadMore).toHaveBeenCalledTimes(1);
     } finally {
-      vi.stubGlobal('IntersectionObserver', originalIntersectionObserver);
+      vi.stubGlobal("IntersectionObserver", originalIntersectionObserver);
     }
   });
 });

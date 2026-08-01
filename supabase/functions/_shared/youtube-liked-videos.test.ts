@@ -59,6 +59,7 @@ describe("YouTube liked videos", () => {
     expect(result).toMatchObject({
       categoryId: "youtube-liked-videos",
       items: [{ id: "video-1", statistics: { viewCount: "123" } }],
+      label: "좋아요",
       nextPageToken: "next-page",
     });
   });

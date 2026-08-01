@@ -27,7 +27,7 @@ describe("YouTube liked videos api", () => {
         categoryId: "youtube-liked-videos",
         description: "liked videos",
         items: [],
-        label: "좋아요한 영상",
+        label: "좋아요",
         nextPageToken: "next-page",
       }),
     );

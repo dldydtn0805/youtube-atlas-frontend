@@ -185,6 +185,19 @@ export default function useYouTubeLike(videoId?: string) {
   );
 
   useEffect(() => {
+    if (phase !== "success" || !message) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setMessage(null);
+      setPhase("idle");
+    }, 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [message, phase]);
+
+  useEffect(() => {
     const pendingRating = readPendingYouTubeRating();
 
     if (!pendingRating) {

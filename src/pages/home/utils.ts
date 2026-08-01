@@ -56,7 +56,7 @@ export const LIKED_VIDEO_SECTION: YouTubeCategorySection = {
   categoryId: "youtube-liked-videos",
   description: "내 YouTube 계정에서 좋아요 표시한 동영상을 모았습니다.",
   items: [],
-  label: "좋아요한 영상",
+  label: "좋아요",
 };
 export const BUYABLE_ONLY_PREFETCH_LIMIT = 50;
 export const HISTORY_PLAYBACK_QUEUE_ID = "history-playback";
@@ -361,7 +361,7 @@ export function formatTrendRankLabel(
     return `${signal.currentRank}위`;
   }
 
-  return hasResolvedTrendSignals ? "현재 순위 미집계" : "현재 순위 확인 중";
+  return hasResolvedTrendSignals ? "차트 아웃" : "현재 순위 확인 중";
 }
 
 export function shouldPrefetchBuyableVideos(options: {
