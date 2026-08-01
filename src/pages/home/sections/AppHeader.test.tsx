@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import AppHeader from './AppHeader';
 
@@ -9,14 +10,16 @@ vi.mock('../../../components/GoogleLoginButton/GoogleLoginButton', () => ({
 describe('AppHeader', () => {
   it('shows The Rank Game as the single home brand', () => {
     render(
-      <AppHeader
-        authStatus="anonymous"
-        isDarkMode={false}
-        isLoggingOut={false}
-        onLogout={() => undefined}
-        onToggleThemeMode={() => undefined}
-        themeToggleLabel="다크 모드"
-      />,
+      <MemoryRouter>
+        <AppHeader
+          authStatus="anonymous"
+          isDarkMode={false}
+          isLoggingOut={false}
+          onLogout={() => undefined}
+          onToggleThemeMode={() => undefined}
+          themeToggleLabel="다크 모드"
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('heading', { name: 'The Rank Game' })).toBeInTheDocument();

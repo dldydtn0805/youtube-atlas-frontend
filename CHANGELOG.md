@@ -2,6 +2,7 @@
 
 ## 2026-08-01
 
+- Replaced manual pathname state with React Router routes for `/` and `/admin/*`, converted internal home links to client-side navigation, and added an unknown-route redirect to the home page; verified with 445 tests, a production build, ESLint with no errors, and browser checks for direct admin loading, internal navigation, back navigation, and unknown routes.
 - Removed the YouTube playlist creation action from the music video list; verified with 442 tests, a production build, and ESLint with no errors.
 - Added one-tap `한국`, `미국`, and `일본` country buttons directly to the video-list filter, replacing the extra modal step for normal chart switching; verified with 442 tests, a production build, ESLint with no errors, desktop/mobile browser checks, and live asynchronous TOP 200 data for all three countries.
 - Made videos already present in the loaded YouTube liked list render with an active like action immediately, so the first click cancels the YouTube like without waiting for a duplicate rating lookup.

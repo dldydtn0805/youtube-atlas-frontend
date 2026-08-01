@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import GoogleLoginButton from "../../components/GoogleLoginButton/GoogleLoginButton";
 import { useAuth } from "../../features/auth/useAuth";
 import {
@@ -1748,9 +1749,9 @@ export default function AdminPage() {
           <div className="admin-page__login-panel">
             <GoogleLoginButton />
           </div>
-          <a className="admin-page__link" href="/">
+          <Link className="admin-page__link" to="/">
             홈으로 이동
-          </a>
+          </Link>
         </section>
       </main>
     );
@@ -1772,9 +1773,9 @@ export default function AdminPage() {
             <span className="admin-page__user-label">Signed in as</span>
             <strong>{user?.email}</strong>
           </div>
-          <a className="admin-page__button admin-page__button--ghost" href="/">
+          <Link className="admin-page__button admin-page__button--ghost" to="/">
             홈으로
-          </a>
+          </Link>
           <button
             className="admin-page__button"
             disabled={isLoggingOut}

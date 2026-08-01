@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import GoogleLoginButton from '../../../components/GoogleLoginButton/GoogleLoginButton';
 import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { AuthStatus, AuthUser } from '../../../features/auth/types';
@@ -312,11 +313,11 @@ function AppHeader({
   return (
     <header className="app-shell__header">
       <div className="app-shell__header-top">
-        <a className="app-shell__title-link" href="/" aria-label="The Rank Game 메인 페이지로 이동">
+        <Link className="app-shell__title-link" to="/" aria-label="The Rank Game 메인 페이지로 이동">
           <h1 className="app-shell__title">
             <span className="app-shell__title-main">The Rank Game</span>
           </h1>
-        </a>
+        </Link>
         <div className="app-shell__header-actions">
           {authStatus === 'authenticated' && user ? (
             <div className="app-shell__auth-summary" aria-label="내 지갑 및 티어">
