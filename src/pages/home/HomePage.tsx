@@ -133,7 +133,6 @@ import {
 } from "../../features/youtube/queries";
 import type { YouTubeVideoItem } from "../../features/youtube/types";
 import { ApiRequestError, isApiConfigured } from "../../lib/api";
-import MusicPlaylistExportAction from "../../features/youtubePlaylists/MusicPlaylistExportAction";
 import YouTubeLikeAction from "../../features/youtubeRatings/YouTubeLikeAction";
 import useYouTubeLike from "../../features/youtubeRatings/useYouTubeLike";
 import YouTubeLikedVideosConnectAction, {
@@ -403,10 +402,6 @@ function HomePage() {
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [selectedChartView, setSelectedChartView] =
     useState<ChartViewMode>(getInitialChartView);
-  const restoreMusicChartView = useCallback(
-    () => setSelectedChartView("music"),
-    [],
-  );
   const [chartSortMode, setChartSortMode] =
     useState<ChartSortMode>("popular-desc");
   const [sortPrefetchStatus, setSortPrefetchStatus] = useState<string | null>(
@@ -2833,18 +2828,10 @@ function HomePage() {
           chartPanelProps={{
             chartErrorMessage: activeChartErrorMessage,
             chartHeaderAction: (
-              <>
-                <YouTubeLikedVideosConnectAction
-                  isVisible={effectiveChartView === "liked"}
-                  requiresReconnect={requiresYouTubeReconnect(likedVideosError)}
-                />
-                <MusicPlaylistExportAction
-                  isVisible={effectiveChartView === "music"}
-                  items={sortedFilteredMusicChartSection?.items ?? []}
-                  onRestoreMusicView={restoreMusicChartView}
-                  regionCode={selectedRegionCode}
-                />
-              </>
+              <YouTubeLikedVideosConnectAction
+                isVisible={effectiveChartView === "liked"}
+                requiresReconnect={requiresYouTubeReconnect(likedVideosError)}
+              />
             ),
             marketPriceByVideoId,
             chartSortMode,
