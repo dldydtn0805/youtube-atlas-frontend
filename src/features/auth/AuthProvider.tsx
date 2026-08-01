@@ -18,7 +18,10 @@ import {
 import { AuthContext } from './context';
 import { authQueryKeys } from './queries';
 import type { AuthSession, AuthStatus, AuthUser } from './types';
-import { createYouTubeOAuthRequest } from './youtubeOAuth';
+import {
+  createGoogleLoginOAuthRequest,
+  createYouTubeOAuthRequest,
+} from './youtubeOAuth';
 
 function toAuthSession(session: Session, user: AuthUser): AuthSession {
   const expiresAt = new Date(
@@ -191,13 +194,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setIsLoggingIn(true);
       setAuthError(null);
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        options: {
-          redirectTo: redirectUri,
-          scopes: 'openid email profile',
-        },
-        provider: 'google',
-      });
+      const { error } = await supabase.auth.signInWithOAuth(
+        createGoogleLoginOAuthRequest(redirectUri),
+      );
 
       if (error) {
         setIsLoggingIn(false);

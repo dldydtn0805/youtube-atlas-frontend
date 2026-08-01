@@ -1,6 +1,6 @@
 export const YOUTUBE_WRITE_SCOPE = 'https://www.googleapis.com/auth/youtube';
 
-export function createYouTubeOAuthRequest(redirectTo: string) {
+function createGoogleOAuthRequest(redirectTo: string, youtubeScope: string) {
   return {
     options: {
       queryParams: {
@@ -9,8 +9,16 @@ export function createYouTubeOAuthRequest(redirectTo: string) {
         prompt: 'consent',
       },
       redirectTo,
-      scopes: `openid email profile ${YOUTUBE_WRITE_SCOPE}`,
+      scopes: `openid email profile ${youtubeScope}`,
     },
     provider: 'google' as const,
   };
+}
+
+export function createGoogleLoginOAuthRequest(redirectTo: string) {
+  return createGoogleOAuthRequest(redirectTo, YOUTUBE_WRITE_SCOPE);
+}
+
+export function createYouTubeOAuthRequest(redirectTo: string) {
+  return createGoogleOAuthRequest(redirectTo, YOUTUBE_WRITE_SCOPE);
 }
