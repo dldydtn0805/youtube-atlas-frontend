@@ -18,13 +18,15 @@ describe('GameIntroModal', () => {
     expect(screen.getByText('구매 3회')).toBeInTheDocument();
     expect(screen.getByText('판매 1회')).toBeInTheDocument();
     expect(screen.getByText('가격 +2%')).toBeInTheDocument();
+    expect(screen.queryByText(/프리미엄|순매수|순매도|거래 카운트|순위 앵커/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByText('다음 순위 갱신 후 전량 매도')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     expect(screen.getByText('총자산으로 티어 경쟁')).toBeInTheDocument();
-    expect(screen.getByText(/하이라이트 점수는 거래 기록과 칭호용/)).toBeInTheDocument();
+    expect(screen.getByText(/티어 기준은 3개월 성장 폭에 맞춰 설정됩니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/하이라이트/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '시작하기' }));
     expect(onClose).toHaveBeenCalledWith(false);

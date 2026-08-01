@@ -91,7 +91,7 @@ describe('GameTierModal', () => {
       )),
     ).toBe(true);
     expect(screen.getAllByText('총자산으로 티어가 정해집니다').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('하이라이트 점수는 티어와 별개입니다').length).toBeGreaterThan(0);
+    expect(screen.queryByText('하이라이트 점수는 티어와 별개입니다')).not.toBeInTheDocument();
   });
 
   it('shows the highlights tab when highlight content is provided', () => {
