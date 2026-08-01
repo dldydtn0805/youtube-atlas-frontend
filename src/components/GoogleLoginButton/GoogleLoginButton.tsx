@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { useAuth } from '../../features/auth/useAuth';
+import { getCurrentOAuthRedirectUrl } from '../../features/auth/youtubeOAuth';
 import './GoogleLoginButton.css';
 
 export default function GoogleLoginButton() {
@@ -44,7 +45,10 @@ export default function GoogleLoginButton() {
 
     setButtonError(null);
     clearAuthError();
-    void loginWithGoogleAuthorizationCode('', window.location.origin).catch((error) => {
+    void loginWithGoogleAuthorizationCode(
+      '',
+      getCurrentOAuthRedirectUrl(),
+    ).catch((error) => {
       setButtonError(
         error instanceof Error ? error.message : '로그인에 실패했습니다.',
       );

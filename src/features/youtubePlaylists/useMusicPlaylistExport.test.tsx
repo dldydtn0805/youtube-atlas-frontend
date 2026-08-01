@@ -21,6 +21,7 @@ function createItem(id: string) {
 
 describe('useMusicPlaylistExport', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/kr/music');
     window.sessionStorage.clear();
     useAuthMock.mockReset();
     exportMusicPlaylistMock.mockReset();
@@ -43,7 +44,7 @@ describe('useMusicPlaylistExport', () => {
       );
     });
 
-    expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.origin);
+    expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.href);
     const pending = JSON.parse(window.sessionStorage.getItem('youtube-atlas-pending-music-playlist-export') ?? '{}');
     expect(pending.videoIds).toHaveLength(20);
     expect(new Set(pending.videoIds).size).toBe(20);

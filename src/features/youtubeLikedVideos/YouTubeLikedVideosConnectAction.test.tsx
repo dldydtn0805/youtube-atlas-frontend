@@ -15,6 +15,7 @@ vi.mock("../auth/useAuth", () => ({
 
 describe("YouTubeLikedVideosConnectAction", () => {
   beforeEach(() => {
+    window.history.replaceState({}, "", "/kr/liked");
     authState.googleProviderAccessToken = null;
     authState.isLoggingIn = false;
     authState.requestYouTubeAccess.mockReset().mockResolvedValue(undefined);
@@ -32,7 +33,7 @@ describe("YouTubeLikedVideosConnectAction", () => {
 
     await waitFor(() => {
       expect(authState.requestYouTubeAccess).toHaveBeenCalledWith(
-        window.location.origin,
+        window.location.href,
       );
     });
     expect(window.sessionStorage.getItem(PENDING_LIKED_VIDEOS_VIEW_KEY)).toBe(

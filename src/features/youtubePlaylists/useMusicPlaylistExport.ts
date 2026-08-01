@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { YouTubeVideoItem } from '../youtube/types';
 import { useAuth } from '../auth/useAuth';
+import { getCurrentOAuthRedirectUrl } from '../auth/youtubeOAuth';
 import { ApiRequestError } from '../../lib/api';
 import { exportMusicPlaylist } from './api';
 import {
@@ -179,7 +180,7 @@ export default function useMusicPlaylistExport(onRestoreMusicView: () => void) {
       });
 
       try {
-        await requestYouTubeAccess(window.location.origin);
+        await requestYouTubeAccess(getCurrentOAuthRedirectUrl());
       } catch (error) {
         oauthRedirectInFlightRef.current = false;
         clearPendingMusicPlaylistExport();

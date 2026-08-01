@@ -2,10 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   createGoogleLoginOAuthRequest,
   createYouTubeOAuthRequest,
+  getCurrentOAuthRedirectUrl,
   YOUTUBE_WRITE_SCOPE,
 } from './youtubeOAuth';
 
 describe('YouTube OAuth request', () => {
+  it('returns to the current page without carrying an existing URL hash', () => {
+    expect(
+      getCurrentOAuthRedirectUrl(
+        'https://trg.life/kr/top?sort=rank#access_token=stale-token',
+      ),
+    ).toBe('https://trg.life/kr/top?sort=rank');
+  });
+
   it('requests complete YouTube access during the initial Google login', () => {
     expect(createGoogleLoginOAuthRequest('https://trg.life')).toEqual({
       options: {

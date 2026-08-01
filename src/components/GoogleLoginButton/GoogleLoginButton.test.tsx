@@ -14,6 +14,7 @@ vi.mock('../../features/auth/useAuth', () => ({
 
 describe('GoogleLoginButton', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/');
     useAuthMock.mockReturnValue({
       authError: null,
       clearAuthError: vi.fn(),
@@ -35,8 +36,9 @@ describe('GoogleLoginButton', () => {
     expect(screen.getByRole('button', { name: 'Google로 로그인' })).toBeEnabled();
   });
 
-  it('starts Supabase Google OAuth with the current origin', () => {
+  it('starts Supabase Google OAuth with the current canonical page', () => {
     const loginWithGoogleAuthorizationCode = vi.fn().mockResolvedValue(undefined);
+    window.history.replaceState({}, '', '/kr/top');
     useAuthMock.mockReturnValue({
       authError: null,
       clearAuthError: vi.fn(),
@@ -50,7 +52,10 @@ describe('GoogleLoginButton', () => {
     render(<GoogleLoginButton />);
     fireEvent.click(screen.getByRole('button', { name: 'Google로 로그인' }));
 
-    expect(loginWithGoogleAuthorizationCode).toHaveBeenCalledWith('', window.location.origin);
+    expect(loginWithGoogleAuthorizationCode).toHaveBeenCalledWith(
+      '',
+      window.location.href,
+    );
   });
 
   it('does not render when the user is authenticated', () => {

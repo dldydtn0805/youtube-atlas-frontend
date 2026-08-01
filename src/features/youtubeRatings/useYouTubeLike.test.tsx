@@ -37,6 +37,7 @@ function createWrapper() {
 
 describe("useYouTubeLike", () => {
   beforeEach(() => {
+    window.history.replaceState({}, "", "/kr/top");
     window.sessionStorage.clear();
     useAuthMock.mockReset();
     fetchYouTubeVideoRatingMock.mockReset();
@@ -128,7 +129,7 @@ describe("useYouTubeLike", () => {
 
     act(() => result.current.toggleLike());
     await waitFor(() =>
-      expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.origin),
+      expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.href),
     );
 
     expect(
@@ -167,7 +168,7 @@ describe("useYouTubeLike", () => {
     await waitFor(() => expect(fetchYouTubeVideoRatingMock).toHaveBeenCalled());
     act(() => result.current.toggleLike());
     await waitFor(() =>
-      expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.origin),
+      expect(requestYouTubeAccess).toHaveBeenCalledWith(window.location.href),
     );
 
     expect(

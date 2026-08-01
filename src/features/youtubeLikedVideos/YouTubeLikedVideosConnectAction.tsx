@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PENDING_LIKED_VIDEOS_VIEW_KEY } from "../../app/homeRoute";
 import { useAuth } from "../auth/useAuth";
+import { getCurrentOAuthRedirectUrl } from "../auth/youtubeOAuth";
 import "./YouTubeLikedVideosConnectAction.css";
 
 interface YouTubeLikedVideosConnectActionProps {
@@ -26,7 +27,7 @@ export default function YouTubeLikedVideosConnectAction({
     window.sessionStorage.setItem(PENDING_LIKED_VIDEOS_VIEW_KEY, "true");
 
     try {
-      await requestYouTubeAccess(window.location.origin);
+      await requestYouTubeAccess(getCurrentOAuthRedirectUrl());
     } catch (error) {
       window.sessionStorage.removeItem(PENDING_LIKED_VIDEOS_VIEW_KEY);
       setErrorMessage(

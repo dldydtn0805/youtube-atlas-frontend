@@ -1,5 +1,15 @@
 export const YOUTUBE_WRITE_SCOPE = 'https://www.googleapis.com/auth/youtube';
 
+export function getCurrentOAuthRedirectUrl(
+  locationHref = window.location.href,
+) {
+  const redirectUrl = new URL(locationHref);
+
+  redirectUrl.hash = '';
+
+  return redirectUrl.toString();
+}
+
 function createGoogleOAuthRequest(redirectTo: string, youtubeScope: string) {
   return {
     options: {

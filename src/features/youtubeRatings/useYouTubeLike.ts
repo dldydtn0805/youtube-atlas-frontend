@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
+import { getCurrentOAuthRedirectUrl } from "../auth/youtubeOAuth";
 import { ApiRequestError } from "../../lib/api";
 import { fetchYouTubeVideoRating, updateYouTubeVideoRating } from "./api";
 import {
@@ -168,7 +169,7 @@ export default function useYouTubeLike(videoId?: string, isKnownLiked = false) {
           setMessage("YouTube 좋아요 권한을 요청하고 있습니다.");
 
           try {
-            await requestYouTubeAccess(window.location.origin);
+            await requestYouTubeAccess(getCurrentOAuthRedirectUrl());
           } catch (oauthError) {
             oauthRedirectInFlightRef.current = false;
             clearPendingYouTubeRating();
