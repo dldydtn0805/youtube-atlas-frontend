@@ -1,17 +1,21 @@
-import { memo, useState, type ReactNode } from 'react';
-import CommentSection from '../../../components/CommentSection/CommentSection';
-import VideoList, { type FeaturedVideoSection, type VideoCardTradeActionState } from '../../../components/VideoList/VideoList';
-import type { AuthStatus } from '../../../features/auth/types';
-import type { FavoriteStreamer } from '../../../features/favorites/types';
-import type { GameMarketVideo } from '../../../features/game/types';
-import type { VideoTrendSignal } from '../../../features/trending/types';
-import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
-import type { ChartSortMode } from '../types';
-import ChartRankingBoard from './ChartRankingBoard';
-import QuickViewButtons from './QuickViewButtons';
-import type { ViewOption } from './filterPanelTypes';
-import './ContentPanels.css';
-import './ContentPanelsMobileChart.css';
+import { memo, useState, type ReactNode } from "react";
+import CommentSection from "../../../components/CommentSection/CommentSection";
+import type {
+  FeaturedVideoSection,
+  VideoCardTradeActionState,
+} from "../../../components/VideoList/VideoList";
+import type { GameMarketVideo } from "../../../features/game/types";
+import type { VideoTrendSignal } from "../../../features/trending/types";
+import type {
+  YouTubeCategorySection,
+  YouTubeVideoItem,
+} from "../../../features/youtube/types";
+import type { ChartSortMode } from "../types";
+import ChartRankingBoard from "./ChartRankingBoard";
+import QuickViewButtons from "./QuickViewButtons";
+import type { ViewOption } from "./filterPanelTypes";
+import "./ContentPanels.css";
+import "./ContentPanelsMobileChart.css";
 
 interface ChartSortOption {
   id: ChartSortMode;
@@ -22,7 +26,7 @@ interface ChartPanelProps {
   activePlaybackQueueId?: string;
   chartErrorMessage?: string;
   chartHeaderAction?: ReactNode;
-  marketPriceByVideoId?: Record<string, GameMarketVideo['currentPricePoints']>;
+  marketPriceByVideoId?: Record<string, GameMarketVideo["currentPricePoints"]>;
   chartSortMode: ChartSortMode;
   chartSortOptions: ChartSortOption[];
   className?: string;
@@ -31,7 +35,9 @@ interface ChartPanelProps {
   enableMobileTradeSheet?: boolean;
   featuredSections?: FeaturedVideoSection[];
   getRankLabel?: (item: YouTubeVideoItem, index: number) => string;
-  getTradeActionState?: (item: YouTubeVideoItem) => VideoCardTradeActionState | undefined;
+  getTradeActionState?: (
+    item: YouTubeVideoItem,
+  ) => VideoCardTradeActionState | undefined;
   hasNextPage: boolean;
   hasResolvedTrendSignals: boolean;
   isChartError: boolean;
@@ -72,35 +78,6 @@ interface ChartPanelProps {
   selectedVideoId?: string;
   trendSignalsByVideoId: Record<string, VideoTrendSignal>;
   viewOptions: ViewOption[];
-}
-
-interface FavoriteVideosPanelProps {
-  activePlaybackQueueId?: string;
-  authStatus: AuthStatus;
-  favoriteStreamerCount: number;
-  favoriteStreamerVideoErrorMessage: string;
-  favoriteStreamerVideoSection?: YouTubeCategorySection;
-  favoriteStreamers: FavoriteStreamer[];
-  favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
-  hasNextPage: boolean;
-  hasResolvedTrendSignals: boolean;
-  isCollapsed: boolean;
-  isCinematicModeActive: boolean;
-  isFavoriteStreamerVideosError: boolean;
-  isFavoriteStreamerVideosLoading: boolean;
-  isFavoriteStreamersError: boolean;
-  isFavoriteStreamersLoading: boolean;
-  isFetchingNextPage: boolean;
-  onLoadMore: () => void;
-  onSelectVideo: (
-    videoId: string,
-    playbackQueueId: string,
-    triggerElement?: HTMLButtonElement,
-  ) => void;
-  onToggleCollapse: () => void;
-  selectedCountryName: string;
-  selectedVideoId?: string;
-  trendSignalsByVideoId: Record<string, VideoTrendSignal>;
 }
 
 interface CommunityPanelProps {
@@ -151,7 +128,7 @@ export const ChartPanel = memo(function ChartPanel({
 }: ChartPanelProps) {
   const panelClassName = className
     ? `app-shell__panel app-shell__panel--chart app-shell__panel--ranking-chart ${className}`
-    : 'app-shell__panel app-shell__panel--chart app-shell__panel--ranking-chart';
+    : "app-shell__panel app-shell__panel--chart app-shell__panel--ranking-chart";
 
   return (
     <section className={panelClassName}>
@@ -159,17 +136,28 @@ export const ChartPanel = memo(function ChartPanel({
         <div className="app-shell__chart-explore-copy">
           <p className="app-shell__section-eyebrow">Explore</p>
           <h3 className="app-shell__chart-explore-title">
-            <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
+            <button
+              className="app-shell__section-title-button"
+              onClick={onOpenRegionModal}
+              type="button"
+            >
               {selectedCountryName}
-            </button>{' '}
+            </button>{" "}
             탐색 필터
           </h3>
           <p className="app-shell__chart-explore-helper">
             국가명을 클릭하면 다른 국가 차트로 바꿀 수 있어요.
           </p>
         </div>
-        <div className="app-shell__quick-category-group" aria-label="탐색 필터 선택">
-          <QuickViewButtons onSelectView={onSelectView} options={viewOptions} selectedViewId={selectedViewId} />
+        <div
+          className="app-shell__quick-category-group"
+          aria-label="탐색 필터 선택"
+        >
+          <QuickViewButtons
+            onSelectView={onSelectView}
+            options={viewOptions}
+            selectedViewId={selectedViewId}
+          />
         </div>
       </div>
       <div className="app-shell__section-heading app-shell__section-heading--chart">
@@ -180,7 +168,7 @@ export const ChartPanel = memo(function ChartPanel({
         <div className="app-shell__chart-controls">
           <p className="app-shell__chart-context">
             {selectedCountryName}
-            {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ''}
+            {selectedCategoryLabel ? ` · ${selectedCategoryLabel}` : ""}
           </p>
           <div className="app-shell__chart-filter-actions">
             {chartHeaderAction}
@@ -188,7 +176,9 @@ export const ChartPanel = memo(function ChartPanel({
               <select
                 aria-label="인기 영상 정렬"
                 className="app-shell__chart-sort-select"
-                onChange={(event) => onChangeChartSortMode(event.target.value as ChartSortMode)}
+                onChange={(event) =>
+                  onChangeChartSortMode(event.target.value as ChartSortMode)
+                }
                 value={chartSortMode}
               >
                 {chartSortOptions.map((option) => (
@@ -234,101 +224,6 @@ export const ChartPanel = memo(function ChartPanel({
   );
 });
 
-export const FavoriteVideosPanel = memo(function FavoriteVideosPanel({
-  activePlaybackQueueId,
-  authStatus,
-  favoriteStreamerCount,
-  favoriteStreamerVideoErrorMessage,
-  favoriteStreamerVideoSection,
-  favoriteStreamers,
-  favoriteTrendSignalsByVideoId,
-  hasNextPage,
-  hasResolvedTrendSignals,
-  isCollapsed,
-  isCinematicModeActive,
-  isFavoriteStreamerVideosError,
-  isFavoriteStreamerVideosLoading,
-  isFavoriteStreamersError,
-  isFavoriteStreamersLoading,
-  isFetchingNextPage,
-  onLoadMore,
-  onSelectVideo,
-  onToggleCollapse,
-  selectedCountryName,
-  selectedVideoId,
-  trendSignalsByVideoId,
-}: FavoriteVideosPanelProps) {
-  const panelClassName = isCinematicModeActive
-    ? 'app-shell__panel app-shell__panel--favorites app-shell__panel--chart-cinematic'
-    : 'app-shell__panel app-shell__panel--favorites app-shell__panel--chart';
-
-  return (
-    <section className={panelClassName}>
-      <div className="app-shell__section-heading app-shell__section-heading--chart">
-        <div className="app-shell__section-heading-copy">
-          <p className="app-shell__section-eyebrow">Favorite Videos</p>
-          <div className="app-shell__section-title-row">
-            <h2 className="app-shell__section-title">{selectedCountryName} 기준 즐겨찾기 채널</h2>
-            <button
-              aria-expanded={!isCollapsed}
-              aria-label={isCollapsed ? '즐겨찾기 채널 펼치기' : '즐겨찾기 채널 숨기기'}
-              className="app-shell__collapse-toggle"
-              data-active={isCollapsed}
-              onClick={onToggleCollapse}
-              type="button"
-            >
-              <span className="app-shell__collapse-toggle-icon" aria-hidden="true">
-                ▾
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-      {isCollapsed ? null : authStatus !== 'authenticated' ? (
-        <p className="app-shell__favorites-status">
-          로그인하면 저장한 채널의 인기 영상을 여기에서 모아 볼 수 있습니다.
-        </p>
-      ) : isFavoriteStreamersLoading ? (
-        <p className="app-shell__favorites-status">
-          즐겨찾기 채널을 확인한 뒤 영상 목록을 준비하고 있습니다.
-        </p>
-      ) : isFavoriteStreamersError ? (
-        <p className="app-shell__favorites-status">
-          즐겨찾기 채널을 불러오지 못해 영상 목록을 준비하지 못했습니다.
-        </p>
-      ) : favoriteStreamerCount === 0 || favoriteStreamers.length === 0 ? (
-        <p className="app-shell__favorites-status">
-          저장한 채널이 생기면 해당 채널의 인기 영상을 여기에서 바로 볼 수 있습니다.
-        </p>
-      ) : (
-        <VideoList
-          activePlaybackQueueId={activePlaybackQueueId}
-          errorMessage={favoriteStreamerVideoErrorMessage}
-          getRankLabel={(item) => {
-            const signal = favoriteTrendSignalsByVideoId[item.id];
-
-            if (signal?.currentRank) {
-              return `현재 ${signal.currentRank}위`;
-            }
-
-            return hasResolvedTrendSignals ? '현재 순위 미집계' : '현재 순위 확인 중';
-          }}
-          hasNextPage={hasNextPage}
-          hasResolvedTrendSignals={hasResolvedTrendSignals}
-          isError={isFavoriteStreamerVideosError}
-          isFetchingNextPage={isFetchingNextPage}
-          isLoading={isFavoriteStreamerVideosLoading}
-          onLoadMore={onLoadMore}
-          onSelectVideo={onSelectVideo}
-          section={favoriteStreamerVideoSection}
-          selectedVideoId={selectedVideoId}
-          trendSignalsByVideoId={trendSignalsByVideoId}
-        />
-      )}
-    </section>
-  );
-});
-
 export const CommunityPanel = memo(function CommunityPanel({
   currentTierCode,
   regionCode,
@@ -346,13 +241,18 @@ export const CommunityPanel = memo(function CommunityPanel({
             <h2 className="app-shell__section-title">실시간 채팅</h2>
             <button
               aria-expanded={!isCollapsed}
-              aria-label={isCollapsed ? '실시간 채팅 펼치기' : '실시간 채팅 숨기기'}
+              aria-label={
+                isCollapsed ? "실시간 채팅 펼치기" : "실시간 채팅 숨기기"
+              }
               className="app-shell__collapse-toggle"
               data-active={isCollapsed}
               onClick={() => setIsCollapsed((current) => !current)}
               type="button"
             >
-              <span className="app-shell__collapse-toggle-icon" aria-hidden="true">
+              <span
+                className="app-shell__collapse-toggle-icon"
+                aria-hidden="true"
+              >
                 ▾
               </span>
             </button>

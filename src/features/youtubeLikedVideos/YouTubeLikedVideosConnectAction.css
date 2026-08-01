@@ -1,0 +1,37 @@
+.youtube-liked-videos-connect {
+  align-items: flex-end;
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.youtube-liked-videos-connect__button {
+  align-items: center;
+  background: color-mix(in srgb, #ff0033 12%, var(--surface-control));
+  border: 1px solid color-mix(in srgb, #ff0033 38%, var(--border));
+  border-radius: 999px;
+  color: #c8102e;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+}
+
+.youtube-liked-videos-connect__button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.youtube-liked-videos-connect__error {
+  color: #dc2626;
+  font-size: 0.76rem;
+  margin: 0;
+}
+
+:root[data-theme="dark"] .youtube-liked-videos-connect__button {
+  color: #ff8099;
+}

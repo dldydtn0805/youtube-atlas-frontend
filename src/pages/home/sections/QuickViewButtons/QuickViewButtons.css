@@ -23,7 +23,11 @@
   gap: 5px;
   min-height: 32px;
   padding: 0 13px;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s ease;
   user-select: none;
   white-space: nowrap;
 }
@@ -67,60 +71,65 @@
   width: 6px;
 }
 
-.app-shell__quick-category[data-active='true'][data-tone='top200'] {
+.app-shell__quick-category[data-active="true"][data-tone="top200"] {
   border-color: var(--border-strong);
   border-width: 1.5px;
   color: var(--text);
 }
 
-.app-shell__quick-category[data-active='true'][data-tone='buy'] {
+.app-shell__quick-category[data-active="true"][data-tone="buy"] {
   background: color-mix(in srgb, #16a34a 14%, var(--surface-control));
   border-color: color-mix(in srgb, #16a34a 42%, var(--border));
   color: #15803d;
 }
 
-.app-shell__quick-category[data-active='true'][data-tone='fav'] {
-  background: color-mix(in srgb, #f59e0b 18%, var(--surface-control));
-  border-color: color-mix(in srgb, #f59e0b 46%, var(--border));
-  color: #b45309;
+.app-shell__quick-category[data-active="true"][data-tone="like"] {
+  background: color-mix(in srgb, #ff0033 14%, var(--surface-control));
+  border-color: color-mix(in srgb, #ff0033 42%, var(--border));
+  color: #c8102e;
 }
 
-.app-shell__quick-category[data-active='true'][data-tone='surge'] {
+.app-shell__quick-category[data-active="true"][data-tone="surge"] {
   background: color-mix(in srgb, #dc2626 14%, var(--surface-control));
   border-color: color-mix(in srgb, #dc2626 46%, var(--border));
   color: #b91c1c;
 }
 
-.app-shell__quick-category[data-active='true'][data-tone='new'] {
+.app-shell__quick-category[data-active="true"][data-tone="new"] {
   background: color-mix(in srgb, #0284c7 13%, var(--surface-control));
   border-color: color-mix(in srgb, #0284c7 42%, var(--border));
   color: #0369a1;
 }
 
-.app-shell__quick-category[data-active='true'][data-tone='music'] {
+.app-shell__quick-category[data-active="true"][data-tone="music"] {
   background: var(--surface-chip-muted);
   border-color: var(--border-strong);
   color: var(--text);
 }
 
-:root[data-theme='dark'] .app-shell__quick-category[data-active='true'][data-tone='buy'] {
+:root[data-theme="dark"]
+  .app-shell__quick-category[data-active="true"][data-tone="buy"] {
   color: #86efac;
 }
 
-:root[data-theme='dark'] .app-shell__quick-category[data-active='true'][data-tone='fav'] {
-  color: #facc15;
+:root[data-theme="dark"]
+  .app-shell__quick-category[data-active="true"][data-tone="like"] {
+  color: #ff8099;
 }
 
-:root[data-theme='dark'] .app-shell__quick-category[data-active='true'][data-tone='surge'] {
+:root[data-theme="dark"]
+  .app-shell__quick-category[data-active="true"][data-tone="surge"] {
   color: #fca5a5;
 }
 
-:root[data-theme='dark'] .app-shell__quick-category[data-active='true'][data-tone='new'] {
+:root[data-theme="dark"]
+  .app-shell__quick-category[data-active="true"][data-tone="new"] {
   color: #7dd3fc;
 }
 
 @keyframes app-shell-live-dot-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
 

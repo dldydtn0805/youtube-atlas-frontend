@@ -1,16 +1,27 @@
-import countryCodes from '../../constants/countryCodes';
-import { ALL_VIDEO_CATEGORY_ID, TREND_SNAPSHOT_REGION_CODES } from '../../constants/videoCategories';
-import type { GameHighlight, GamePosition, GameScheduledSellOrder, GameSeasonResultHighlightItem } from '../../features/game/types';
-import type { PlaybackProgress } from '../../features/playback/types';
-import { formatCompactCount } from '../../features/trending/presentation';
+import countryCodes from "../../constants/countryCodes";
+import {
+  ALL_VIDEO_CATEGORY_ID,
+  TREND_SNAPSHOT_REGION_CODES,
+} from "../../constants/videoCategories";
+import type {
+  GameHighlight,
+  GamePosition,
+  GameScheduledSellOrder,
+  GameSeasonResultHighlightItem,
+} from "../../features/game/types";
+import type { PlaybackProgress } from "../../features/playback/types";
+import { formatCompactCount } from "../../features/trending/presentation";
 import type {
   NewChartEntriesResponse,
   RealtimeSurgingResponse,
   TopRankRisersResponse,
   VideoTrendSignal,
-} from '../../features/trending/types';
-import type { YouTubeCategorySection, YouTubeVideoItem } from '../../features/youtube/types';
-import type { ChartSortMode } from './types';
+} from "../../features/trending/types";
+import type {
+  YouTubeCategorySection,
+  YouTubeVideoItem,
+} from "../../features/youtube/types";
+import type { ChartSortMode } from "./types";
 
 export {
   MOBILE_BREAKPOINT,
@@ -19,38 +30,39 @@ export {
   MOBILE_LAYOUT_MEDIA_QUERY,
   MOBILE_MIN_HEIGHT,
   getInitialIsMobileLayout,
-} from './viewport';
+} from "./viewport";
 
-export const DEFAULT_REGION_CODE = 'US';
+export const DEFAULT_REGION_CODE = "US";
 export const DEFAULT_CATEGORY_ID = ALL_VIDEO_CATEGORY_ID;
-export const GAME_PORTFOLIO_QUEUE_ID = 'game-portfolio';
-export const GAME_HIGHLIGHTS_QUEUE_ID = 'game-highlights';
-export const GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID = 'game-leaderboard-highlights';
-export const SCHEDULED_SELL_ORDERS_QUEUE_ID = 'scheduled-sell-orders';
-export const NEW_CHART_ENTRIES_QUEUE_ID = 'new-chart-entries';
-export const REALTIME_SURGING_QUEUE_ID = 'realtime-surging';
-export const TOP_RANK_RISERS_QUEUE_ID = 'top-rank-risers';
-export const RESTORED_PLAYBACK_QUEUE_ID = 'last-playback-progress';
-const STORAGE_KEY = 'youtube-atlas-region-code';
-const CINEMATIC_MODE_STORAGE_KEY = 'youtube-atlas-cinematic-mode';
-const THEME_MODE_STORAGE_KEY = 'youtube-atlas-theme-mode';
+export const GAME_PORTFOLIO_QUEUE_ID = "game-portfolio";
+export const GAME_HIGHLIGHTS_QUEUE_ID = "game-highlights";
+export const GAME_LEADERBOARD_HIGHLIGHTS_QUEUE_ID =
+  "game-leaderboard-highlights";
+export const SCHEDULED_SELL_ORDERS_QUEUE_ID = "scheduled-sell-orders";
+export const NEW_CHART_ENTRIES_QUEUE_ID = "new-chart-entries";
+export const REALTIME_SURGING_QUEUE_ID = "realtime-surging";
+export const TOP_RANK_RISERS_QUEUE_ID = "top-rank-risers";
+export const RESTORED_PLAYBACK_QUEUE_ID = "last-playback-progress";
+const STORAGE_KEY = "youtube-atlas-region-code";
+const CINEMATIC_MODE_STORAGE_KEY = "youtube-atlas-cinematic-mode";
+const THEME_MODE_STORAGE_KEY = "youtube-atlas-theme-mode";
 const SELL_FEE_NUMERATOR = 3;
 const SELL_FEE_DENOMINATOR = 1000;
-const profitRateFormatter = new Intl.NumberFormat('ko-KR', {
+const profitRateFormatter = new Intl.NumberFormat("ko-KR", {
   maximumFractionDigits: 1,
 });
 
-export const FAVORITE_STREAMER_VIDEO_SECTION: YouTubeCategorySection = {
-  categoryId: 'favorite-streamers',
-  description: '전체 인기 영상 중 즐겨찾기한 채널의 영상만 모았습니다.',
+export const LIKED_VIDEO_SECTION: YouTubeCategorySection = {
+  categoryId: "youtube-liked-videos",
+  description: "내 YouTube 계정에서 좋아요 표시한 동영상을 모았습니다.",
   items: [],
-  label: '즐겨찾기 채널',
+  label: "좋아요한 영상",
 };
 export const BUYABLE_ONLY_PREFETCH_LIMIT = 50;
-export const HISTORY_PLAYBACK_QUEUE_ID = 'history-playback';
+export const HISTORY_PLAYBACK_QUEUE_ID = "history-playback";
 
-export type RegionCode = (typeof countryCodes)[number]['code'];
-export type ThemeMode = 'light' | 'dark';
+export type RegionCode = (typeof countryCodes)[number]["code"];
+export type ThemeMode = "light" | "dark";
 export interface PendingPlaybackRestore {
   restoreId: number;
   videoId: string;
@@ -61,14 +73,16 @@ const SUPPORTED_REGION_CODES = new Set<string>(TREND_SNAPSHOT_REGION_CODES);
 
 export const sortedCountryCodes = countryCodes
   .filter((country) => SUPPORTED_REGION_CODES.has(country.code))
-  .sort((left, right) => left.name.localeCompare(right.name, 'ko'));
+  .sort((left, right) => left.name.localeCompare(right.name, "ko"));
 
-export function isSupportedRegionCode(regionCode: string): regionCode is RegionCode {
+export function isSupportedRegionCode(
+  regionCode: string,
+): regionCode is RegionCode {
   return SUPPORTED_REGION_CODES.has(regionCode);
 }
 
 export function getInitialRegionCode(): RegionCode {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return DEFAULT_REGION_CODE;
   }
 
@@ -78,10 +92,13 @@ export function getInitialRegionCode(): RegionCode {
     return storedRegionCode;
   }
 
-  const languageCandidates = [window.navigator.language, ...(window.navigator.languages ?? [])];
+  const languageCandidates = [
+    window.navigator.language,
+    ...(window.navigator.languages ?? []),
+  ];
 
   for (const language of languageCandidates) {
-    const regionCode = language.split('-')[1]?.toUpperCase();
+    const regionCode = language.split("-")[1]?.toUpperCase();
 
     if (regionCode && isSupportedRegionCode(regionCode)) {
       return regionCode;
@@ -92,25 +109,27 @@ export function getInitialRegionCode(): RegionCode {
 }
 
 export function getInitialCinematicMode() {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return false;
   }
 
-  return window.localStorage.getItem(CINEMATIC_MODE_STORAGE_KEY) === 'true';
+  return window.localStorage.getItem(CINEMATIC_MODE_STORAGE_KEY) === "true";
 }
 
 export function getInitialThemeMode(): ThemeMode {
-  if (typeof window === 'undefined') {
-    return 'light';
+  if (typeof window === "undefined") {
+    return "light";
   }
 
   const storedThemeMode = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
 
-  if (storedThemeMode === 'light' || storedThemeMode === 'dark') {
+  if (storedThemeMode === "light" || storedThemeMode === "dark") {
     return storedThemeMode;
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 type FullscreenCapableElement = HTMLElement & {
@@ -125,18 +144,22 @@ type FullscreenCapableDocument = Document & {
 export function getFullscreenElement() {
   const fullscreenDocument = document as FullscreenCapableDocument;
 
-  return document.fullscreenElement ?? fullscreenDocument.webkitFullscreenElement ?? null;
+  return (
+    document.fullscreenElement ??
+    fullscreenDocument.webkitFullscreenElement ??
+    null
+  );
 }
 
 export async function requestElementFullscreen(element: HTMLElement) {
   const fullscreenElement = element as FullscreenCapableElement;
 
-  if (typeof fullscreenElement.requestFullscreen === 'function') {
+  if (typeof fullscreenElement.requestFullscreen === "function") {
     await fullscreenElement.requestFullscreen();
     return true;
   }
 
-  if (typeof fullscreenElement.webkitRequestFullscreen === 'function') {
+  if (typeof fullscreenElement.webkitRequestFullscreen === "function") {
     await fullscreenElement.webkitRequestFullscreen();
     return true;
   }
@@ -147,12 +170,12 @@ export async function requestElementFullscreen(element: HTMLElement) {
 export async function exitElementFullscreen() {
   const fullscreenDocument = document as FullscreenCapableDocument;
 
-  if (typeof document.exitFullscreen === 'function') {
+  if (typeof document.exitFullscreen === "function") {
     await document.exitFullscreen();
     return true;
   }
 
-  if (typeof fullscreenDocument.webkitExitFullscreen === 'function') {
+  if (typeof fullscreenDocument.webkitExitFullscreen === "function") {
     await fullscreenDocument.webkitExitFullscreen();
     return true;
   }
@@ -163,11 +186,12 @@ export async function exitElementFullscreen() {
 export function scrollElementToViewportCenter(element: HTMLElement) {
   const rect = element.getBoundingClientRect();
   const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-  const centeredTop = window.scrollY + rect.top - Math.max((viewportHeight - rect.height) / 2, 0);
+  const centeredTop =
+    window.scrollY + rect.top - Math.max((viewportHeight - rect.height) / 2, 0);
 
   window.scrollTo({
     top: Math.max(centeredTop, 0),
-    behavior: 'smooth',
+    behavior: "smooth",
   });
 }
 
@@ -218,13 +242,15 @@ export function relabelVideoSection(
 }
 
 function getVideoViewCount(item: YouTubeVideoItem) {
-  if (typeof item.trend?.currentViewCount === 'number') {
+  if (typeof item.trend?.currentViewCount === "number") {
     return item.trend.currentViewCount;
   }
 
   const parsedViewCount = Number(item.statistics?.viewCount);
 
-  return Number.isFinite(parsedViewCount) && parsedViewCount >= 0 ? parsedViewCount : null;
+  return Number.isFinite(parsedViewCount) && parsedViewCount >= 0
+    ? parsedViewCount
+    : null;
 }
 
 function getChartSortValue(
@@ -234,20 +260,20 @@ function getChartSortValue(
     shouldFallbackToRankRiseMagnitude?: boolean;
   } = {},
 ) {
-  if (sortMode === 'views-desc' || sortMode === 'views-asc') {
+  if (sortMode === "views-desc" || sortMode === "views-asc") {
     return getVideoViewCount(item);
   }
 
-  if (sortMode === 'rank-up') {
+  if (sortMode === "rank-up") {
     const rankChange = item.trend?.rankChange;
 
-    return typeof rankChange === 'number' && rankChange > 0 ? rankChange : null;
+    return typeof rankChange === "number" && rankChange > 0 ? rankChange : null;
   }
 
-  if (sortMode === 'rank-down') {
+  if (sortMode === "rank-down") {
     const rankChange = item.trend?.rankChange;
 
-    if (typeof rankChange !== 'number') {
+    if (typeof rankChange !== "number") {
       return null;
     }
 
@@ -255,7 +281,9 @@ function getChartSortValue(
       return Math.abs(rankChange);
     }
 
-    return options.shouldFallbackToRankRiseMagnitude && rankChange > 0 ? rankChange : null;
+    return options.shouldFallbackToRankRiseMagnitude && rankChange > 0
+      ? rankChange
+      : null;
   }
 
   return null;
@@ -269,20 +297,22 @@ export function sortVideoSection(
     return section;
   }
 
-  if (sortMode === 'popular-desc') {
+  if (sortMode === "popular-desc") {
     return section;
   }
 
-  if (sortMode === 'popular-asc') {
+  if (sortMode === "popular-asc") {
     return {
       ...section,
       items: [...section.items].reverse(),
     };
   }
 
-  const hasRankDrop = sortMode === 'rank-down' && section.items.some((item) => (item.trend?.rankChange ?? 0) < 0);
+  const hasRankDrop =
+    sortMode === "rank-down" &&
+    section.items.some((item) => (item.trend?.rankChange ?? 0) < 0);
   const shouldFallbackToRankRiseMagnitude =
-    sortMode === 'rank-down' &&
+    sortMode === "rank-down" &&
     !hasRankDrop &&
     section.items.some((item) => (item.trend?.rankChange ?? 0) > 0);
   const sortedItems = section.items
@@ -295,20 +325,23 @@ export function sortVideoSection(
         shouldFallbackToRankRiseMagnitude,
       });
 
-      if (typeof leftValue !== 'number' && typeof rightValue !== 'number') {
+      if (typeof leftValue !== "number" && typeof rightValue !== "number") {
         return left.index - right.index;
       }
 
-      if (typeof leftValue !== 'number') {
+      if (typeof leftValue !== "number") {
         return 1;
       }
 
-      if (typeof rightValue !== 'number') {
+      if (typeof rightValue !== "number") {
         return -1;
       }
 
-      const shouldSortAscending = sortMode === 'views-asc' || shouldFallbackToRankRiseMagnitude;
-      const valueOrder = shouldSortAscending ? leftValue - rightValue : rightValue - leftValue;
+      const shouldSortAscending =
+        sortMode === "views-asc" || shouldFallbackToRankRiseMagnitude;
+      const valueOrder = shouldSortAscending
+        ? leftValue - rightValue
+        : rightValue - leftValue;
 
       return valueOrder || left.index - right.index;
     })
@@ -324,11 +357,11 @@ export function formatTrendRankLabel(
   signal: VideoTrendSignal | null | undefined,
   hasResolvedTrendSignals: boolean,
 ) {
-  if (typeof signal?.currentRank === 'number') {
+  if (typeof signal?.currentRank === "number") {
     return `${signal.currentRank}위`;
   }
 
-  return hasResolvedTrendSignals ? '현재 순위 미집계' : '현재 순위 확인 중';
+  return hasResolvedTrendSignals ? "현재 순위 미집계" : "현재 순위 확인 중";
 }
 
 export function shouldPrefetchBuyableVideos(options: {
@@ -390,50 +423,56 @@ function createFallbackThumbnails(url: string) {
   };
 }
 
-export function mapPlaybackProgressToVideoItem(playbackProgress: PlaybackProgress): YouTubeVideoItem {
+export function mapPlaybackProgressToVideoItem(
+  playbackProgress: PlaybackProgress,
+): YouTubeVideoItem {
   return {
     id: playbackProgress.videoId,
     contentDetails: {
-      duration: '',
+      duration: "",
     },
     snippet: {
-      title: playbackProgress.videoTitle ?? '',
-      channelTitle: playbackProgress.channelTitle ?? '',
-      channelId: '',
+      title: playbackProgress.videoTitle ?? "",
+      channelTitle: playbackProgress.channelTitle ?? "",
+      channelId: "",
       categoryId: RESTORED_PLAYBACK_QUEUE_ID,
-      thumbnails: createFallbackThumbnails(playbackProgress.thumbnailUrl ?? ''),
+      thumbnails: createFallbackThumbnails(playbackProgress.thumbnailUrl ?? ""),
     },
   };
 }
 
-export function mapGamePositionToVideoItem(position: GamePosition): YouTubeVideoItem {
+export function mapGamePositionToVideoItem(
+  position: GamePosition,
+): YouTubeVideoItem {
   return {
     id: position.videoId,
     contentDetails: {
-      duration: '',
+      duration: "",
     },
     snippet: {
       title: position.title,
       channelTitle: position.channelTitle,
-      channelId: '',
+      channelId: "",
       categoryId: GAME_PORTFOLIO_QUEUE_ID,
-      thumbnails: createFallbackThumbnails(position.thumbnailUrl ?? ''),
+      thumbnails: createFallbackThumbnails(position.thumbnailUrl ?? ""),
     },
   };
 }
 
-export function mapGameScheduledSellOrderToVideoItem(order: GameScheduledSellOrder): YouTubeVideoItem {
+export function mapGameScheduledSellOrderToVideoItem(
+  order: GameScheduledSellOrder,
+): YouTubeVideoItem {
   return {
     id: order.videoId,
     contentDetails: {
-      duration: '',
+      duration: "",
     },
     snippet: {
       title: order.videoTitle,
       channelTitle: order.channelTitle,
-      channelId: '',
+      channelId: "",
       categoryId: SCHEDULED_SELL_ORDERS_QUEUE_ID,
-      thumbnails: createFallbackThumbnails(order.thumbnailUrl ?? ''),
+      thumbnails: createFallbackThumbnails(order.thumbnailUrl ?? ""),
     },
   };
 }
@@ -445,30 +484,32 @@ export function mapGameHighlightToVideoItem(
   return {
     id: highlight.videoId,
     contentDetails: {
-      duration: '',
+      duration: "",
     },
     snippet: {
       title: highlight.videoTitle,
       channelTitle: highlight.channelTitle,
-      channelId: '',
+      channelId: "",
       categoryId,
-      thumbnails: createFallbackThumbnails(highlight.thumbnailUrl ?? ''),
+      thumbnails: createFallbackThumbnails(highlight.thumbnailUrl ?? ""),
     },
   };
 }
 
-export function mapSeasonResultHighlightToVideoItem(highlight: GameSeasonResultHighlightItem): YouTubeVideoItem {
+export function mapSeasonResultHighlightToVideoItem(
+  highlight: GameSeasonResultHighlightItem,
+): YouTubeVideoItem {
   return {
     id: highlight.videoId,
     contentDetails: {
-      duration: '',
+      duration: "",
     },
     snippet: {
       title: highlight.title,
       channelTitle: highlight.channelTitle,
-      channelId: '',
+      channelId: "",
       categoryId: HISTORY_PLAYBACK_QUEUE_ID,
-      thumbnails: createFallbackThumbnails(highlight.thumbnailUrl ?? ''),
+      thumbnails: createFallbackThumbnails(highlight.thumbnailUrl ?? ""),
     },
   };
 }
@@ -486,7 +527,12 @@ export function getAdjacentGamePosition(
     return undefined;
   }
 
-  const { currentPositionId, currentVideoId, skipSameVideoId = false, step } = options;
+  const {
+    currentPositionId,
+    currentVideoId,
+    skipSameVideoId = false,
+    step,
+  } = options;
   const currentIndex =
     currentPositionId != null
       ? positions.findIndex((position) => position.id === currentPositionId)
@@ -495,17 +541,23 @@ export function getAdjacentGamePosition(
         : -1;
   const fallbackIndex = step >= 0 ? 0 : positions.length - 1;
   const startIndex = currentIndex >= 0 ? currentIndex : fallbackIndex - step;
-  const selectedVideoId = currentIndex >= 0 ? positions[currentIndex]?.videoId : currentVideoId;
+  const selectedVideoId =
+    currentIndex >= 0 ? positions[currentIndex]?.videoId : currentVideoId;
 
   for (let offset = 1; offset <= positions.length; offset += 1) {
-    const nextIndex = (startIndex + (step * offset) + positions.length) % positions.length;
+    const nextIndex =
+      (startIndex + step * offset + positions.length) % positions.length;
     const nextPosition = positions[nextIndex];
 
     if (!nextPosition) {
       continue;
     }
 
-    if (skipSameVideoId && selectedVideoId && nextPosition.videoId === selectedVideoId) {
+    if (
+      skipSameVideoId &&
+      selectedVideoId &&
+      nextPosition.videoId === selectedVideoId
+    ) {
       continue;
     }
 
@@ -552,19 +604,24 @@ export function getVideoThumbnailUrl(video: YouTubeVideoItem) {
   );
 }
 
-export function mapTrendSignalToVideoItem(signal: VideoTrendSignal): YouTubeVideoItem {
+export function mapTrendSignalToVideoItem(
+  signal: VideoTrendSignal,
+): YouTubeVideoItem {
   return {
     id: signal.videoId,
     contentDetails: {
-      duration: '',
+      duration: "",
     },
-    statistics: signal.currentViewCount === null ? undefined : { viewCount: String(signal.currentViewCount) },
+    statistics:
+      signal.currentViewCount === null
+        ? undefined
+        : { viewCount: String(signal.currentViewCount) },
     snippet: {
-      title: signal.title ?? '',
-      channelTitle: signal.channelTitle ?? '',
-      channelId: signal.channelId ?? '',
+      title: signal.title ?? "",
+      channelTitle: signal.channelTitle ?? "",
+      channelId: signal.channelId ?? "",
       categoryId: signal.categoryId,
-      thumbnails: createFallbackThumbnails(signal.thumbnailUrl ?? ''),
+      thumbnails: createFallbackThumbnails(signal.thumbnailUrl ?? ""),
     },
     trend: {
       categoryLabel: signal.categoryLabel,
@@ -597,7 +654,7 @@ export function buildRealtimeSurgingSection(
 
   return {
     categoryId: REALTIME_SURGING_QUEUE_ID,
-    label: '실시간 급상승',
+    label: "실시간 급상승",
     description: `전체 차트에서 직전 집계 대비 순위가 ${realtimeSurgingData.rankChangeThreshold}계단 이상 오른 영상을 모았습니다.`,
     items: realtimeSurgingData.items.map(mapTrendSignalToVideoItem),
   };
@@ -613,8 +670,8 @@ export function buildNewChartEntriesSection(
 
   return {
     categoryId: NEW_CHART_ENTRIES_QUEUE_ID,
-    label: '신규 진입',
-    description: '전체 차트에 이번 집계에서 새로 진입한 영상을 모았습니다.',
+    label: "신규 진입",
+    description: "전체 차트에 이번 집계에서 새로 진입한 영상을 모았습니다.",
     items: newChartEntriesData.items.map(mapTrendSignalToVideoItem),
   };
 }
@@ -629,13 +686,16 @@ export function buildTopRankRisersSection(
 
   return {
     categoryId: TOP_RANK_RISERS_QUEUE_ID,
-    label: '상승 Top 10',
-    description: 'TOP 200 안에서 직전 집계 대비 가장 많이 상승한 영상을 모았습니다.',
+    label: "상승 Top 10",
+    description:
+      "TOP 200 안에서 직전 집계 대비 가장 많이 상승한 영상을 모았습니다.",
     items: topRankRisersData.items.map(mapTrendSignalToVideoItem),
   };
 }
 
-export function mergeUniqueVideoItems(...groups: Array<YouTubeVideoItem[] | undefined>) {
+export function mergeUniqueVideoItems(
+  ...groups: Array<YouTubeVideoItem[] | undefined>
+) {
   const mergedItems: YouTubeVideoItem[] = [];
   const seenVideoIds = new Set<string>();
 
@@ -661,7 +721,7 @@ export function getPlaybackQueueItems(
   queueId: string | undefined,
   {
     extraSections,
-    favoriteStreamerVideoSection,
+    likedVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
     newChartEntriesSection,
@@ -670,7 +730,7 @@ export function getPlaybackQueueItems(
     selectedSection,
   }: {
     extraSections?: YouTubeCategorySection[];
-    favoriteStreamerVideoSection?: YouTubeCategorySection;
+    likedVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
     newChartEntriesSection?: YouTubeCategorySection;
@@ -691,8 +751,8 @@ export function getPlaybackQueueItems(
     return newChartEntriesSection.items;
   }
 
-  if (queueId && favoriteStreamerVideoSection?.categoryId === queueId) {
-    return favoriteStreamerVideoSection.items;
+  if (queueId && likedVideoSection?.categoryId === queueId) {
+    return likedVideoSection.items;
   }
 
   if (queueId && gamePortfolioSection?.categoryId === queueId) {
@@ -703,7 +763,9 @@ export function getPlaybackQueueItems(
     return historyPlaybackSection.items;
   }
 
-  const matchedExtraSection = extraSections?.find((section) => section.categoryId === queueId);
+  const matchedExtraSection = extraSections?.find(
+    (section) => section.categoryId === queueId,
+  );
 
   if (matchedExtraSection) {
     return matchedExtraSection.items;
@@ -720,7 +782,7 @@ export function findPlaybackQueueIdForVideo(
   videoId: string | undefined,
   {
     extraSections,
-    favoriteStreamerVideoSection,
+    likedVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
     newChartEntriesSection,
@@ -728,7 +790,7 @@ export function findPlaybackQueueIdForVideo(
     selectedSection,
   }: {
     extraSections?: YouTubeCategorySection[];
-    favoriteStreamerVideoSection?: YouTubeCategorySection;
+    likedVideoSection?: YouTubeCategorySection;
     gamePortfolioSection?: YouTubeCategorySection;
     historyPlaybackSection?: YouTubeCategorySection;
     newChartEntriesSection?: YouTubeCategorySection;
@@ -748,8 +810,8 @@ export function findPlaybackQueueIdForVideo(
     return newChartEntriesSection.categoryId;
   }
 
-  if (favoriteStreamerVideoSection?.items.some((item) => item.id === videoId)) {
-    return favoriteStreamerVideoSection.categoryId;
+  if (likedVideoSection?.items.some((item) => item.id === videoId)) {
+    return likedVideoSection.categoryId;
   }
 
   if (gamePortfolioSection?.items.some((item) => item.id === videoId)) {
@@ -760,7 +822,9 @@ export function findPlaybackQueueIdForVideo(
     return historyPlaybackSection.categoryId;
   }
 
-  const matchedExtraSection = extraSections?.find((section) => section.items.some((item) => item.id === videoId));
+  const matchedExtraSection = extraSections?.find((section) =>
+    section.items.some((item) => item.id === videoId),
+  );
 
   if (matchedExtraSection) {
     return matchedExtraSection.categoryId;
@@ -773,7 +837,10 @@ export function findPlaybackQueueIdForVideo(
   return undefined;
 }
 
-function sectionIncludesVideo(section: YouTubeCategorySection | undefined, videoId: string | undefined) {
+function sectionIncludesVideo(
+  section: YouTubeCategorySection | undefined,
+  videoId: string | undefined,
+) {
   return Boolean(videoId && section?.items.some((item) => item.id === videoId));
 }
 
@@ -787,7 +854,7 @@ function getSectionLabelForQueueId(
 export function resolvePlaybackCategoryLabel({
   activePlaybackQueueId,
   fallbackLabel,
-  favoriteStreamerVideoSection,
+  likedVideoSection,
   extraPlaybackSections,
   newChartEntriesSection,
   realtimeSurgingSection,
@@ -796,7 +863,7 @@ export function resolvePlaybackCategoryLabel({
 }: {
   activePlaybackQueueId?: string;
   fallbackLabel?: string;
-  favoriteStreamerVideoSection?: YouTubeCategorySection;
+  likedVideoSection?: YouTubeCategorySection;
   extraPlaybackSections?: YouTubeCategorySection[];
   newChartEntriesSection?: YouTubeCategorySection;
   realtimeSurgingSection?: YouTubeCategorySection;
@@ -804,21 +871,24 @@ export function resolvePlaybackCategoryLabel({
   selectedVideoId?: string;
 }) {
   if (activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID) {
-    return '내 포지션';
+    return "내 포지션";
   }
 
   if (activePlaybackQueueId === HISTORY_PLAYBACK_QUEUE_ID) {
-    return '거래내역';
+    return "거래내역";
   }
 
   const playableChartSections = [
     realtimeSurgingSection,
     newChartEntriesSection,
-    favoriteStreamerVideoSection,
+    likedVideoSection,
     ...(extraPlaybackSections ?? []),
     selectedPlaybackSection,
   ];
-  const activeQueueLabel = getSectionLabelForQueueId(activePlaybackQueueId, playableChartSections);
+  const activeQueueLabel = getSectionLabelForQueueId(
+    activePlaybackQueueId,
+    playableChartSections,
+  );
 
   if (activeQueueLabel) {
     return activeQueueLabel;
@@ -829,7 +899,7 @@ export function resolvePlaybackCategoryLabel({
     newChartEntriesSection,
     ...(extraPlaybackSections ?? []),
     selectedPlaybackSection,
-    favoriteStreamerVideoSection,
+    likedVideoSection,
   ].find((section) => sectionIncludesVideo(section, selectedVideoId));
 
   return matchingVideoSection?.label ?? fallbackLabel;
@@ -855,10 +925,10 @@ export function formatSelectedVideoRankLabel(
   options?: { chartOut?: boolean },
 ) {
   if (options?.chartOut) {
-    return '차트 아웃';
+    return "차트 아웃";
   }
 
-  if (typeof rank !== 'number') {
+  if (typeof rank !== "number") {
     return undefined;
   }
 
@@ -870,11 +940,11 @@ export function formatSignedProfitRate(
   stakePoints?: number | null,
   options?: { unavailableText?: string },
 ) {
-  const unavailableText = options?.unavailableText ?? '집계 중';
+  const unavailableText = options?.unavailableText ?? "집계 중";
 
   if (
-    typeof profitPoints !== 'number' ||
-    typeof stakePoints !== 'number' ||
+    typeof profitPoints !== "number" ||
+    typeof stakePoints !== "number" ||
     !Number.isFinite(profitPoints) ||
     !Number.isFinite(stakePoints) ||
     stakePoints <= 0
@@ -882,7 +952,8 @@ export function formatSignedProfitRate(
     return unavailableText;
   }
 
-  const roundedProfitRate = Math.round((profitPoints / stakePoints) * 1000) / 10;
+  const roundedProfitRate =
+    Math.round((profitPoints / stakePoints) * 1000) / 10;
 
   if (roundedProfitRate > 0) {
     return `+${profitRateFormatter.format(roundedProfitRate)}%`;
@@ -892,19 +963,28 @@ export function formatSignedProfitRate(
     return `-${profitRateFormatter.format(Math.abs(roundedProfitRate))}%`;
   }
 
-  return '0%';
+  return "0%";
 }
 
 export function calculateSellFeePoints(grossSellPoints?: number | null) {
-  if (typeof grossSellPoints !== 'number' || !Number.isFinite(grossSellPoints) || grossSellPoints <= 0) {
+  if (
+    typeof grossSellPoints !== "number" ||
+    !Number.isFinite(grossSellPoints) ||
+    grossSellPoints <= 0
+  ) {
     return 0;
   }
 
-  return Math.floor((grossSellPoints * SELL_FEE_NUMERATOR) / SELL_FEE_DENOMINATOR);
+  return Math.floor(
+    (grossSellPoints * SELL_FEE_NUMERATOR) / SELL_FEE_DENOMINATOR,
+  );
 }
 
 export function calculateSettledSellPoints(grossSellPoints?: number | null) {
-  if (typeof grossSellPoints !== 'number' || !Number.isFinite(grossSellPoints)) {
+  if (
+    typeof grossSellPoints !== "number" ||
+    !Number.isFinite(grossSellPoints)
+  ) {
     return 0;
   }
 
@@ -916,7 +996,10 @@ export function persistRegionCode(regionCode: RegionCode) {
 }
 
 export function persistCinematicMode(isCinematicMode: boolean) {
-  window.localStorage.setItem(CINEMATIC_MODE_STORAGE_KEY, String(isCinematicMode));
+  window.localStorage.setItem(
+    CINEMATIC_MODE_STORAGE_KEY,
+    String(isCinematicMode),
+  );
 }
 
 export function persistThemeMode(themeMode: ThemeMode) {

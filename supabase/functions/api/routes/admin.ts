@@ -1,14 +1,11 @@
-import {
-  requireAdmin,
-  type RequestContext,
-} from '../../_shared/context.ts';
+import { requireAdmin, type RequestContext } from "../../_shared/context.ts";
 import {
   ApiError,
   json,
   noContent,
   parsePositiveInteger,
   readJson,
-} from '../../_shared/http.ts';
+} from "../../_shared/http.ts";
 import {
   ensureWallet,
   getPositionRows,
@@ -16,13 +13,10 @@ import {
   signalMap,
   walletResponse,
   type GamePositionRow,
-} from './game-helpers.ts';
-import {
-  resolveNextTier,
-  resolveTier,
-} from '../../_shared/game.ts';
-import { loadSeasonTiers } from '../../_shared/game-tiers.ts';
-import { loadPriceAnchors } from '../../_shared/price-anchors.ts';
+} from "./game-helpers.ts";
+import { resolveNextTier, resolveTier } from "../../_shared/game.ts";
+import { loadSeasonTiers } from "../../_shared/game-tiers.ts";
+import { loadPriceAnchors } from "../../_shared/price-anchors.ts";
 
 interface AdminPriceAnchorInput {
   pricePoints?: number;
@@ -34,7 +28,9 @@ interface AdminTierThresholdInput {
   tierCode?: string;
 }
 
-function toAdminTierThreshold(tier: Awaited<ReturnType<typeof loadSeasonTiers>>[number]) {
+function toAdminTierThreshold(
+  tier: Awaited<ReturnType<typeof loadSeasonTiers>>[number],
+) {
   return {
     displayName: tier.displayName,
     inventorySlots: tier.inventorySlots,
@@ -45,10 +41,10 @@ function toAdminTierThreshold(tier: Awaited<ReturnType<typeof loadSeasonTiers>>[
 
 async function getAdminTierThresholds(context: RequestContext) {
   const { data: seasons, error } = await context.service
-    .from('game_seasons')
-    .select('*')
-    .eq('status', 'ACTIVE')
-    .order('region_code', { ascending: true });
+    .from("game_seasons")
+    .select("*")
+    .eq("status", "ACTIVE")
+    .order("region_code", { ascending: true });
 
   if (error) throw error;
 
@@ -71,10 +67,16 @@ function validateTierThresholds(
   currentTiers: Awaited<ReturnType<typeof loadSeasonTiers>>,
 ) {
   if (!Array.isArray(inputs) || inputs.length !== currentTiers.length) {
-    throw new ApiError(400, 'validation_error', '모든 티어의 기준 포인트가 필요합니다.');
+    throw new ApiError(
+      400,
+      "validation_error",
+      "모든 티어의 기준 포인트가 필요합니다.",
+    );
   }
 
-  const inputByCode = new Map(inputs.map((input) => [input.tierCode?.trim().toUpperCase(), input]));
+  const inputByCode = new Map(
+    inputs.map((input) => [input.tierCode?.trim().toUpperCase(), input]),
+  );
   const thresholds = currentTiers.map((tier) => ({
     ...tier,
     minScore: inputByCode.get(tier.tierCode)?.minPoints,
@@ -82,31 +84,52 @@ function validateTierThresholds(
 
   if (
     inputByCode.size !== currentTiers.length ||
-    thresholds.some((tier) => !Number.isSafeInteger(tier.minScore) || Number(tier.minScore) < 0)
+    thresholds.some(
+      (tier) =>
+        !Number.isSafeInteger(tier.minScore) || Number(tier.minScore) < 0,
+    )
   ) {
-    throw new ApiError(400, 'validation_error', '티어 기준은 0 이상의 정수여야 합니다.');
+    throw new ApiError(
+      400,
+      "validation_error",
+      "티어 기준은 0 이상의 정수여야 합니다.",
+    );
   }
 
   if (Number(thresholds[0]?.minScore) !== 0) {
-    throw new ApiError(400, 'validation_error', '첫 번째 티어 기준은 0P여야 합니다.');
+    throw new ApiError(
+      400,
+      "validation_error",
+      "첫 번째 티어 기준은 0P여야 합니다.",
+    );
   }
 
   for (let index = 1; index < thresholds.length; index += 1) {
-    if (Number(thresholds[index].minScore) <= Number(thresholds[index - 1].minScore)) {
+    if (
+      Number(thresholds[index].minScore) <=
+      Number(thresholds[index - 1].minScore)
+    ) {
       throw new ApiError(
         400,
-        'validation_error',
-        '상위 티어 기준 포인트는 이전 티어보다 커야 합니다.',
+        "validation_error",
+        "상위 티어 기준 포인트는 이전 티어보다 커야 합니다.",
       );
     }
   }
 
-  return thresholds.map((tier) => ({ ...tier, minScore: Number(tier.minScore) }));
+  return thresholds.map((tier) => ({
+    ...tier,
+    minScore: Number(tier.minScore),
+  }));
 }
 
 function validatePriceAnchors(inputs: AdminPriceAnchorInput[] | undefined) {
   if (!Array.isArray(inputs) || inputs.length < 2) {
-    throw new ApiError(400, 'validation_error', '가격 앵커가 두 개 이상 필요합니다.');
+    throw new ApiError(
+      400,
+      "validation_error",
+      "가격 앵커가 두 개 이상 필요합니다.",
+    );
   }
 
   const anchors = inputs
@@ -117,30 +140,56 @@ function validatePriceAnchors(inputs: AdminPriceAnchorInput[] | undefined) {
     .sort((left, right) => Number(left.rank) - Number(right.rank));
 
   for (const anchor of anchors) {
-    if (!Number.isInteger(anchor.rank) || Number(anchor.rank) < 1 || Number(anchor.rank) > 200) {
-      throw new ApiError(400, 'validation_error', '앵커 순위는 1에서 200 사이의 정수여야 합니다.');
+    if (
+      !Number.isInteger(anchor.rank) ||
+      Number(anchor.rank) < 1 ||
+      Number(anchor.rank) > 200
+    ) {
+      throw new ApiError(
+        400,
+        "validation_error",
+        "앵커 순위는 1에서 200 사이의 정수여야 합니다.",
+      );
     }
 
-    if (!Number.isSafeInteger(anchor.pricePoints) || Number(anchor.pricePoints) <= 0) {
-      throw new ApiError(400, 'validation_error', '앵커 가격은 1 이상의 안전한 정수여야 합니다.');
+    if (
+      !Number.isSafeInteger(anchor.pricePoints) ||
+      Number(anchor.pricePoints) <= 0
+    ) {
+      throw new ApiError(
+        400,
+        "validation_error",
+        "앵커 가격은 1 이상의 안전한 정수여야 합니다.",
+      );
     }
   }
 
   const ranks = anchors.map((anchor) => Number(anchor.rank));
   if (new Set(ranks).size !== ranks.length) {
-    throw new ApiError(400, 'validation_error', '같은 순위의 가격 앵커를 중복할 수 없습니다.');
+    throw new ApiError(
+      400,
+      "validation_error",
+      "같은 순위의 가격 앵커를 중복할 수 없습니다.",
+    );
   }
 
   if (ranks[0] !== 1 || ranks.at(-1) !== 200) {
-    throw new ApiError(400, 'validation_error', '1위와 200위 가격 앵커가 반드시 필요합니다.');
+    throw new ApiError(
+      400,
+      "validation_error",
+      "1위와 200위 가격 앵커가 반드시 필요합니다.",
+    );
   }
 
   for (let index = 1; index < anchors.length; index += 1) {
-    if (Number(anchors[index].pricePoints) > Number(anchors[index - 1].pricePoints)) {
+    if (
+      Number(anchors[index].pricePoints) >
+      Number(anchors[index - 1].pricePoints)
+    ) {
       throw new ApiError(
         400,
-        'validation_error',
-        '순위가 낮아질수록 가격이 높아질 수 없습니다.',
+        "validation_error",
+        "순위가 낮아질수록 가격이 높아질 수 없습니다.",
       );
     }
   }
@@ -153,9 +202,9 @@ function validatePriceAnchors(inputs: AdminPriceAnchorInput[] | undefined) {
 
 async function getAdminPriceAnchors(context: RequestContext) {
   const { data, error } = await context.service
-    .from('game_price_anchors')
-    .select('rank, price_points, updated_at, updated_by')
-    .order('rank', { ascending: true });
+    .from("game_price_anchors")
+    .select("rank, price_points, updated_at, updated_by")
+    .order("rank", { ascending: true });
 
   if (error) throw error;
 
@@ -169,7 +218,8 @@ async function getAdminPriceAnchors(context: RequestContext) {
   return {
     anchors,
     updatedAt: anchors.reduce<string | null>(
-      (latest, anchor) => (!latest || anchor.updatedAt > latest ? anchor.updatedAt : latest),
+      (latest, anchor) =>
+        !latest || anchor.updatedAt > latest ? anchor.updatedAt : latest,
       null,
     ),
   };
@@ -223,31 +273,26 @@ function toAdminPosition(position: GamePositionRow, seasonName: string) {
 
 async function buildUserDetail(context: RequestContext, userId: number) {
   const { data: profile, error: profileError } = await context.service
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
     .single();
 
   if (profileError) throw profileError;
 
-  const [{ count: favoriteCount }, { data: playbackRows }, { data: seasons }] =
-    await Promise.all([
-      context.service
-        .from('favorite_streamers')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      context.service
-        .from('playback_progress')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1),
-      context.service
-        .from('game_seasons')
-        .select('*')
-        .eq('status', 'ACTIVE')
-        .order('region_code', { ascending: true }),
-    ]);
+  const [{ data: playbackRows }, { data: seasons }] = await Promise.all([
+    context.service
+      .from("playback_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(1),
+    context.service
+      .from("game_seasons")
+      .select("*")
+      .eq("status", "ACTIVE")
+      .order("region_code", { ascending: true }),
+  ]);
 
   const activeSeasonGames = [];
   for (const season of seasons ?? []) {
@@ -273,18 +318,22 @@ async function buildUserDetail(context: RequestContext, userId: number) {
     activeSeasonGames.push({
       balancePoints: wallet.balance_points,
       calculatedTierScore: walletSummary.totalAssetPoints,
-      closedPositionCount: positions.filter((position) => position.status === 'CLOSED').length,
+      closedPositionCount: positions.filter(
+        (position) => position.status === "CLOSED",
+      ).length,
       currentTier: { ...currentTier },
       manualTierScoreAdjustment: wallet.manual_tier_score_adjustment,
       nextTier: nextTier ? { ...nextTier } : null,
-      openPositionCount: positions.filter((position) => position.status === 'OPEN').length,
+      openPositionCount: positions.filter(
+        (position) => position.status === "OPEN",
+      ).length,
       participating: true,
       realizedPnlPoints: wallet.realized_pnl_points,
       regionCode: season.region_code,
       reservedPoints: wallet.reserved_points,
       seasonId: season.id,
       seasonName: season.name,
-      tierBasis: 'TOTAL_ASSET_POINTS',
+      tierBasis: "TOTAL_ASSET_POINTS",
       tierScore: walletSummary.totalAssetPoints,
       totalAssetPoints: walletSummary.totalAssetPoints,
     });
@@ -296,7 +345,6 @@ async function buildUserDetail(context: RequestContext, userId: number) {
     ...toUserSummary(profile),
     activeSeasonGame: activeSeasonGames[0] ?? null,
     activeSeasonGames,
-    favoriteCount: favoriteCount ?? 0,
     lastPlaybackProgress: playback
       ? {
           channelTitle: playback.channel_title,
@@ -315,23 +363,25 @@ export async function handleAdminRoute(
   method: string,
   path: string,
 ) {
-  if (!path.startsWith('/api/admin')) {
+  if (!path.startsWith("/api/admin")) {
     return null;
   }
 
   const { profile: adminProfile } = await requireAdmin(context);
 
-  if (path === '/api/admin/game/price-anchors' && method === 'GET') {
+  if (path === "/api/admin/game/price-anchors" && method === "GET") {
     return json(await getAdminPriceAnchors(context));
   }
 
-  if (path === '/api/admin/game/price-anchors' && method === 'PUT') {
-    const body = await readJson<{ anchors?: AdminPriceAnchorInput[] }>(context.request);
+  if (path === "/api/admin/game/price-anchors" && method === "PUT") {
+    const body = await readJson<{ anchors?: AdminPriceAnchorInput[] }>(
+      context.request,
+    );
     const anchors = validatePriceAnchors(body.anchors);
     const { data: existing, error: existingError } = await context.service
-      .from('game_price_anchors')
-      .select('rank')
-      .order('rank', { ascending: true });
+      .from("game_price_anchors")
+      .select("rank")
+      .order("rank", { ascending: true });
 
     if (existingError) throw existingError;
 
@@ -342,31 +392,31 @@ export async function handleAdminRoute(
     ) {
       throw new ApiError(
         400,
-        'validation_error',
-        '기존 가격 앵커의 순위 구성은 변경할 수 없습니다.',
+        "validation_error",
+        "기존 가격 앵커의 순위 구성은 변경할 수 없습니다.",
       );
     }
 
     const updatedAt = new Date().toISOString();
-    const { error } = await context.service.from('game_price_anchors').upsert(
+    const { error } = await context.service.from("game_price_anchors").upsert(
       anchors.map((anchor) => ({
         price_points: anchor.pricePoints,
         rank: anchor.rank,
         updated_at: updatedAt,
         updated_by: adminProfile.email,
       })),
-      { onConflict: 'rank' },
+      { onConflict: "rank" },
     );
 
     if (error) throw error;
     return json(await getAdminPriceAnchors(context));
   }
 
-  if (path === '/api/admin/game/tiers' && method === 'GET') {
+  if (path === "/api/admin/game/tiers" && method === "GET") {
     return json(await getAdminTierThresholds(context));
   }
 
-  if (path === '/api/admin/game/tiers' && method === 'PUT') {
+  if (path === "/api/admin/game/tiers" && method === "PUT") {
     const body = await readJson<{
       seasonId?: number;
       tiers?: AdminTierThresholdInput[];
@@ -374,24 +424,28 @@ export async function handleAdminRoute(
     const seasonId = Math.floor(body.seasonId ?? 0);
 
     if (seasonId <= 0) {
-      throw new ApiError(400, 'validation_error', '수정할 시즌이 필요합니다.');
+      throw new ApiError(400, "validation_error", "수정할 시즌이 필요합니다.");
     }
 
     const { data: season, error: seasonError } = await context.service
-      .from('game_seasons')
-      .select('id')
-      .eq('id', seasonId)
-      .eq('status', 'ACTIVE')
+      .from("game_seasons")
+      .select("id")
+      .eq("id", seasonId)
+      .eq("status", "ACTIVE")
       .maybeSingle();
 
     if (seasonError) throw seasonError;
     if (!season) {
-      throw new ApiError(404, 'season_not_found', '활성 시즌을 찾을 수 없습니다.');
+      throw new ApiError(
+        404,
+        "season_not_found",
+        "활성 시즌을 찾을 수 없습니다.",
+      );
     }
 
     const currentTiers = await loadSeasonTiers(context.service, seasonId);
     const tiers = validateTierThresholds(body.tiers, currentTiers);
-    const { error } = await context.service.from('game_season_tiers').upsert(
+    const { error } = await context.service.from("game_season_tiers").upsert(
       tiers.map((tier, index) => ({
         badge_code: tier.badgeCode,
         display_name: tier.displayName,
@@ -403,66 +457,66 @@ export async function handleAdminRoute(
         tier_code: tier.tierCode,
         title_code: tier.titleCode,
       })),
-      { onConflict: 'season_id,tier_code' },
+      { onConflict: "season_id,tier_code" },
     );
 
     if (error) throw error;
     return json(await getAdminTierThresholds(context));
   }
 
-  if (path === '/api/admin/dashboard' && method === 'GET') {
+  if (path === "/api/admin/dashboard" && method === "GET") {
     const [
       userCount,
       commentCount,
-      favoriteCount,
       trendRunCount,
       tradeCount,
       seasonsResult,
       latestRunResult,
       recentUsersResult,
       recentCommentsResult,
-      recentFavoritesResult,
     ] = await Promise.all([
-      context.service.from('profiles').select('id', { count: 'exact', head: true }),
-      context.service.from('comments').select('id', { count: 'exact', head: true }),
-      context.service.from('favorite_streamers').select('id', { count: 'exact', head: true }),
-      context.service.from('video_trend_runs').select('id', { count: 'exact', head: true }),
-      context.service.from('game_ledger').select('id', { count: 'exact', head: true }),
       context.service
-        .from('game_seasons')
-        .select('*')
-        .eq('status', 'ACTIVE')
-        .order('region_code', { ascending: true }),
+        .from("profiles")
+        .select("id", { count: "exact", head: true }),
       context.service
-        .from('video_trend_runs')
-        .select('*')
-        .order('captured_at', { ascending: false })
+        .from("comments")
+        .select("id", { count: "exact", head: true }),
+      context.service
+        .from("video_trend_runs")
+        .select("id", { count: "exact", head: true }),
+      context.service
+        .from("game_ledger")
+        .select("id", { count: "exact", head: true }),
+      context.service
+        .from("game_seasons")
+        .select("*")
+        .eq("status", "ACTIVE")
+        .order("region_code", { ascending: true }),
+      context.service
+        .from("video_trend_runs")
+        .select("*")
+        .order("captured_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
       context.service
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(10),
       context.service
-        .from('comments')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10),
-      context.service
-        .from('favorite_streamers')
-        .select('*, profiles(email)')
-        .order('created_at', { ascending: false })
+        .from("comments")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(10),
     ]);
 
     const latestRun = latestRunResult.data;
     const { data: latestSnapshots, error: snapshotError } = latestRun
       ? await context.service
-          .from('video_trend_snapshots')
-          .select('*')
-          .eq('run_id', latestRun.id)
-          .order('rank', { ascending: true })
+          .from("video_trend_snapshots")
+          .select("*")
+          .eq("run_id", latestRun.id)
+          .order("rank", { ascending: true })
           .limit(10)
       : { data: [], error: null };
 
@@ -493,7 +547,6 @@ export async function handleAdminRoute(
         : null,
       metrics: {
         totalComments: commentCount.count ?? 0,
-        totalFavorites: favoriteCount.count ?? 0,
         totalTradeHistories: tradeCount.count ?? 0,
         totalTrendRuns: trendRunCount.count ?? 0,
         totalUsers: userCount.count ?? 0,
@@ -506,38 +559,36 @@ export async function handleAdminRoute(
         id: comment.id,
         videoId: comment.video_id,
       })),
-      recentFavorites: (recentFavoritesResult.data ?? []).map((favorite) => ({
-        channelId: favorite.channel_id,
-        channelTitle: favorite.channel_title,
-        createdAt: favorite.created_at,
-        id: favorite.id,
-        thumbnailUrl: favorite.thumbnail_url,
-        userEmail: favorite.profiles?.email ?? '',
-        userId: favorite.user_id,
-      })),
       recentUsers: (recentUsersResult.data ?? []).map(toUserSummary),
     });
   }
 
-  if (path === '/api/admin/trend-snapshots' && method === 'GET') {
-    const startAt = context.url.searchParams.get('startAt');
-    const endAt = context.url.searchParams.get('endAt');
-    const regionCode = context.url.searchParams.get('regionCode')?.trim().toUpperCase();
+  if (path === "/api/admin/trend-snapshots" && method === "GET") {
+    const startAt = context.url.searchParams.get("startAt");
+    const endAt = context.url.searchParams.get("endAt");
+    const regionCode = context.url.searchParams
+      .get("regionCode")
+      ?.trim()
+      .toUpperCase();
 
     if (!startAt || !endAt) {
-      throw new ApiError(400, 'validation_error', '조회 시작일과 종료일이 필요합니다.');
+      throw new ApiError(
+        400,
+        "validation_error",
+        "조회 시작일과 종료일이 필요합니다.",
+      );
     }
 
     let query = context.service
-      .from('video_trend_snapshots')
-      .select('*, video_trend_runs!inner(*)')
-      .gte('created_at', startAt)
-      .lte('created_at', endAt)
-      .order('created_at', { ascending: false })
+      .from("video_trend_snapshots")
+      .select("*, video_trend_runs!inner(*)")
+      .gte("created_at", startAt)
+      .lte("created_at", endAt)
+      .order("created_at", { ascending: false })
       .limit(5000);
 
     if (regionCode) {
-      query = query.eq('region_code', regionCode);
+      query = query.eq("region_code", regionCode);
     }
 
     const { data, error } = await query;
@@ -570,14 +621,19 @@ export async function handleAdminRoute(
     });
   }
 
-  if (path === '/api/admin/comments/purge' && method === 'POST') {
-    const body = await readJson<{ deleteBefore?: string; userId?: number }>(context.request);
+  if (path === "/api/admin/comments/purge" && method === "POST") {
+    const body = await readJson<{ deleteBefore?: string; userId?: number }>(
+      context.request,
+    );
     if (!body.deleteBefore) {
-      throw new ApiError(400, 'validation_error', '삭제 기준일이 필요합니다.');
+      throw new ApiError(400, "validation_error", "삭제 기준일이 필요합니다.");
     }
 
-    let query = context.service.from('comments').delete({ count: 'exact' }).lt('created_at', body.deleteBefore);
-    if (body.userId) query = query.eq('user_id', body.userId);
+    let query = context.service
+      .from("comments")
+      .delete({ count: "exact" })
+      .lt("created_at", body.deleteBefore);
+    if (body.userId) query = query.eq("user_id", body.userId);
     const { count, error } = await query;
     if (error) throw error;
     return json({
@@ -587,11 +643,17 @@ export async function handleAdminRoute(
     });
   }
 
-  if (path === '/api/admin/highlights/purge' && method === 'POST') {
-    const body = await readJson<{ deleteBefore?: string; userId?: number }>(context.request);
-    if (!body.deleteBefore) throw new ApiError(400, 'validation_error', '삭제 기준일이 필요합니다.');
-    let query = context.service.from('game_highlights').delete({ count: 'exact' }).lt('created_at', body.deleteBefore);
-    if (body.userId) query = query.eq('user_id', body.userId);
+  if (path === "/api/admin/highlights/purge" && method === "POST") {
+    const body = await readJson<{ deleteBefore?: string; userId?: number }>(
+      context.request,
+    );
+    if (!body.deleteBefore)
+      throw new ApiError(400, "validation_error", "삭제 기준일이 필요합니다.");
+    let query = context.service
+      .from("game_highlights")
+      .delete({ count: "exact" })
+      .lt("created_at", body.deleteBefore);
+    if (body.userId) query = query.eq("user_id", body.userId);
     const { count, error } = await query;
     if (error) throw error;
     return json({
@@ -601,16 +663,19 @@ export async function handleAdminRoute(
     });
   }
 
-  if (path === '/api/admin/trade-history/purge' && method === 'POST') {
-    const body = await readJson<{ deleteBefore?: string; userId?: number }>(context.request);
-    if (!body.deleteBefore) throw new ApiError(400, 'validation_error', '삭제 기준일이 필요합니다.');
+  if (path === "/api/admin/trade-history/purge" && method === "POST") {
+    const body = await readJson<{ deleteBefore?: string; userId?: number }>(
+      context.request,
+    );
+    if (!body.deleteBefore)
+      throw new ApiError(400, "validation_error", "삭제 기준일이 필요합니다.");
 
     let positionsQuery = context.service
-      .from('game_positions')
-      .delete({ count: 'exact' })
-      .eq('status', 'CLOSED')
-      .lt('closed_at', body.deleteBefore);
-    if (body.userId) positionsQuery = positionsQuery.eq('user_id', body.userId);
+      .from("game_positions")
+      .delete({ count: "exact" })
+      .eq("status", "CLOSED")
+      .lt("closed_at", body.deleteBefore);
+    if (body.userId) positionsQuery = positionsQuery.eq("user_id", body.userId);
     const positionsResult = await positionsQuery;
     if (positionsResult.error) throw positionsResult.error;
 
@@ -625,16 +690,18 @@ export async function handleAdminRoute(
   }
 
   const seasonMatch = path.match(/^\/api\/admin\/seasons\/(\d+)$/);
-  if (seasonMatch && method === 'PATCH') {
-    const body = await readJson<{ endAt?: string; startAt?: string }>(context.request);
+  if (seasonMatch && method === "PATCH") {
+    const body = await readJson<{ endAt?: string; startAt?: string }>(
+      context.request,
+    );
     const { data, error } = await context.service
-      .from('game_seasons')
+      .from("game_seasons")
       .update({
         ...(body.endAt ? { end_at: body.endAt } : {}),
         ...(body.startAt ? { start_at: body.startAt } : {}),
       })
-      .eq('id', Number(seasonMatch[1]))
-      .select('*')
+      .eq("id", Number(seasonMatch[1]))
+      .select("*")
       .single();
     if (error) throw error;
     return json(toSeasonSummary(data));
@@ -643,45 +710,57 @@ export async function handleAdminRoute(
   const startingBalanceMatch = path.match(
     /^\/api\/admin\/seasons\/(\d+)\/starting-balance$/,
   );
-  if (startingBalanceMatch && method === 'PATCH') {
-    const body = await readJson<{ startingBalancePoints?: number }>(context.request);
+  if (startingBalanceMatch && method === "PATCH") {
+    const body = await readJson<{ startingBalancePoints?: number }>(
+      context.request,
+    );
     const points = Math.floor(body.startingBalancePoints ?? -1);
-    if (points < 0) throw new ApiError(400, 'validation_error', '시작 자산이 올바르지 않습니다.');
+    if (points < 0)
+      throw new ApiError(
+        400,
+        "validation_error",
+        "시작 자산이 올바르지 않습니다.",
+      );
     const { data, error } = await context.service
-      .from('game_seasons')
+      .from("game_seasons")
       .update({ starting_balance_points: points })
-      .eq('id', Number(startingBalanceMatch[1]))
-      .select('*')
+      .eq("id", Number(startingBalanceMatch[1]))
+      .select("*")
       .single();
     if (error) throw error;
     return json(toSeasonSummary(data));
   }
 
   const closeSeasonMatch = path.match(/^\/api\/admin\/seasons\/(\d+)\/close$/);
-  if (closeSeasonMatch && method === 'POST') {
+  if (closeSeasonMatch && method === "POST") {
     const { error } = await context.service
-      .from('game_seasons')
+      .from("game_seasons")
       .update({
         end_at: new Date().toISOString(),
-        status: 'CLOSED',
+        status: "CLOSED",
       })
-      .eq('id', Number(closeSeasonMatch[1]));
+      .eq("id", Number(closeSeasonMatch[1]));
     if (error) throw error;
     return noContent();
   }
 
-  if (path === '/api/admin/users' && method === 'GET') {
-    const limit = context.url.searchParams.has('limit')
-      ? Math.min(100, parsePositiveInteger(context.url.searchParams.get('limit')))
+  if (path === "/api/admin/users" && method === "GET") {
+    const limit = context.url.searchParams.has("limit")
+      ? Math.min(
+          100,
+          parsePositiveInteger(context.url.searchParams.get("limit")),
+        )
       : 40;
-    const queryText = context.url.searchParams.get('q')?.trim();
+    const queryText = context.url.searchParams.get("q")?.trim();
     let query = context.service
-      .from('profiles')
-      .select('*')
-      .order('last_login_at', { ascending: false })
+      .from("profiles")
+      .select("*")
+      .order("last_login_at", { ascending: false })
       .limit(limit);
     if (queryText) {
-      query = query.or(`email.ilike.%${queryText}%,display_name.ilike.%${queryText}%`);
+      query = query.or(
+        `email.ilike.%${queryText}%,display_name.ilike.%${queryText}%`,
+      );
     }
     const { data, error } = await query;
     if (error) throw error;
@@ -693,28 +772,32 @@ export async function handleAdminRoute(
     });
   }
 
-  const userHighlightsMatch = path.match(/^\/api\/admin\/users\/(\d+)\/highlights$/);
-  if (userHighlightsMatch && method === 'GET') {
+  const userHighlightsMatch = path.match(
+    /^\/api\/admin\/users\/(\d+)\/highlights$/,
+  );
+  if (userHighlightsMatch && method === "GET") {
     const userId = Number(userHighlightsMatch[1]);
-    const seasonId = parsePositiveInteger(context.url.searchParams.get('seasonId'));
+    const seasonId = parsePositiveInteger(
+      context.url.searchParams.get("seasonId"),
+    );
     const { data: season, error: seasonError } = await context.service
-      .from('game_seasons')
-      .select('*')
-      .eq('id', seasonId)
+      .from("game_seasons")
+      .select("*")
+      .eq("id", seasonId)
       .single();
     if (seasonError) throw seasonError;
     const { data: wallet } = await context.service
-      .from('game_wallets')
-      .select('*')
-      .eq('season_id', seasonId)
-      .eq('user_id', userId)
+      .from("game_wallets")
+      .select("*")
+      .eq("season_id", seasonId)
+      .eq("user_id", userId)
       .maybeSingle();
     const { data: highlights, error } = await context.service
-      .from('game_highlights')
-      .select('*, game_positions(*)')
-      .eq('season_id', seasonId)
-      .eq('user_id', userId)
-      .order('highlight_score', { ascending: false });
+      .from("game_highlights")
+      .select("*, game_positions(*)")
+      .eq("season_id", seasonId)
+      .eq("user_id", userId)
+      .order("highlight_score", { ascending: false });
     if (error) throw error;
     const calculatedHighlightScore = (highlights ?? []).reduce(
       (total, highlight) => total + Number(highlight.highlight_score ?? 0),
@@ -744,7 +827,7 @@ export async function handleAdminRoute(
           stakePoints: position.stake_points,
           status: highlight.status,
           strategyTags: highlight.strategy_tags ?? [],
-          thumbnailUrl: position.thumbnail_url ?? '',
+          thumbnailUrl: position.thumbnail_url ?? "",
           title: highlight.title,
           videoId: position.video_id,
           videoTitle: position.title,
@@ -754,31 +837,38 @@ export async function handleAdminRoute(
       regionCode: season.region_code,
       seasonId,
       seasonName: season.name,
-      tierScore: calculatedHighlightScore + (wallet?.manual_tier_score_adjustment ?? 0),
+      tierScore:
+        calculatedHighlightScore + (wallet?.manual_tier_score_adjustment ?? 0),
       userId,
     });
   }
 
-  const userPositionsMatch = path.match(/^\/api\/admin\/users\/(\d+)\/positions$/);
-  if (userPositionsMatch && method === 'GET') {
+  const userPositionsMatch = path.match(
+    /^\/api\/admin\/users\/(\d+)\/positions$/,
+  );
+  if (userPositionsMatch && method === "GET") {
     const userId = Number(userPositionsMatch[1]);
-    const seasonId = parsePositiveInteger(context.url.searchParams.get('seasonId'));
+    const seasonId = parsePositiveInteger(
+      context.url.searchParams.get("seasonId"),
+    );
     const { data: season, error: seasonError } = await context.service
-      .from('game_seasons')
-      .select('name')
-      .eq('id', seasonId)
+      .from("game_seasons")
+      .select("name")
+      .eq("id", seasonId)
       .single();
     if (seasonError) throw seasonError;
     const positions = await getPositionRows(context.service, {
       seasonId,
-      status: 'OPEN',
+      status: "OPEN",
       userId,
     });
-    return json(positions.map((position) => toAdminPosition(position, season.name)));
+    return json(
+      positions.map((position) => toAdminPosition(position, season.name)),
+    );
   }
 
   const walletMatch = path.match(/^\/api\/admin\/users\/(\d+)\/wallet$/);
-  if (walletMatch && method === 'PATCH') {
+  if (walletMatch && method === "PATCH") {
     const userId = Number(walletMatch[1]);
     const body = await readJson<{
       balancePoints?: number;
@@ -787,18 +877,21 @@ export async function handleAdminRoute(
       reservedPoints?: number;
       seasonId?: number;
     }>(context.request);
-    if (!body.seasonId) throw new ApiError(400, 'validation_error', 'seasonId가 필요합니다.');
+    if (!body.seasonId)
+      throw new ApiError(400, "validation_error", "seasonId가 필요합니다.");
     const { error } = await context.service
-      .from('game_wallets')
+      .from("game_wallets")
       .update({
         balance_points: Math.floor(body.balancePoints ?? 0),
-        manual_tier_score_adjustment: Math.floor(body.manualTierScoreAdjustment ?? 0),
+        manual_tier_score_adjustment: Math.floor(
+          body.manualTierScoreAdjustment ?? 0,
+        ),
         realized_pnl_points: Math.floor(body.realizedPnlPoints ?? 0),
         reserved_points: Math.floor(body.reservedPoints ?? 0),
         updated_at: new Date().toISOString(),
       })
-      .eq('season_id', body.seasonId)
-      .eq('user_id', userId);
+      .eq("season_id", body.seasonId)
+      .eq("user_id", userId);
     if (error) throw error;
     return json(await buildUserDetail(context, userId));
   }
@@ -806,7 +899,7 @@ export async function handleAdminRoute(
   const positionUpdateMatch = path.match(
     /^\/api\/admin\/users\/(\d+)\/positions\/(\d+)$/,
   );
-  if (positionUpdateMatch && method === 'PATCH') {
+  if (positionUpdateMatch && method === "PATCH") {
     const userId = Number(positionUpdateMatch[1]);
     const positionId = Number(positionUpdateMatch[2]);
     const body = await readJson<{
@@ -815,37 +908,41 @@ export async function handleAdminRoute(
       stakePoints?: number;
     }>(context.request);
     const { data, error } = await context.service
-      .from('game_positions')
+      .from("game_positions")
       .update({
         ...(body.createdAt ? { created_at: body.createdAt } : {}),
         quantity: Math.floor(body.quantity ?? 0),
         stake_points: Math.floor(body.stakePoints ?? 0),
       })
-      .eq('id', positionId)
-      .eq('user_id', userId)
-      .select('*, game_seasons(name)')
+      .eq("id", positionId)
+      .eq("user_id", userId)
+      .select("*, game_seasons(name)")
       .single();
     if (error) throw error;
-    return json(toAdminPosition(data as GamePositionRow, data.game_seasons?.name ?? ''));
+    return json(
+      toAdminPosition(data as GamePositionRow, data.game_seasons?.name ?? ""),
+    );
   }
 
   const userMatch = path.match(/^\/api\/admin\/users\/(\d+)$/);
-  if (userMatch && method === 'GET') {
+  if (userMatch && method === "GET") {
     return json(await buildUserDetail(context, Number(userMatch[1])));
   }
 
-  if (userMatch && method === 'DELETE') {
+  if (userMatch && method === "DELETE") {
     const userId = Number(userMatch[1]);
     const { data: profile, error: profileError } = await context.service
-      .from('profiles')
-      .select('auth_user_id')
-      .eq('id', userId)
+      .from("profiles")
+      .select("auth_user_id")
+      .eq("id", userId)
       .single();
     if (profileError) throw profileError;
-    const { error } = await context.service.auth.admin.deleteUser(profile.auth_user_id);
+    const { error } = await context.service.auth.admin.deleteUser(
+      profile.auth_user_id,
+    );
     if (error) throw error;
     return noContent();
   }
 
-  throw new ApiError(404, 'not_found', '관리자 API를 찾을 수 없습니다.');
+  throw new ApiError(404, "not_found", "관리자 API를 찾을 수 없습니다.");
 }

@@ -1,4 +1,5 @@
-export type ViewOptionTone = 'top200' | 'buy' | 'fav' | 'surge' | 'new' | 'music';
+export type ViewOptionTone =
+  "top200" | "buy" | "like" | "surge" | "new" | "music";
 
 export interface ViewOption {
   id: string;

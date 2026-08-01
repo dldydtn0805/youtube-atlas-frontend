@@ -1,5 +1,5 @@
-import './RankingGamePanel.css';
-import './RankingGamePositionBadges.css';
+import "./RankingGamePanel.css";
+import "./RankingGamePositionBadges.css";
 import {
   memo,
   useEffect,
@@ -10,9 +10,9 @@ import {
   type CSSProperties,
   type ReactNode,
   type RefObject,
-} from 'react';
-import ThumbnailPlayOverlay from '../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
-import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
+} from "react";
+import ThumbnailPlayOverlay from "../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay";
+import type { VideoPlayerHandle } from "../../../components/VideoPlayer/VideoPlayer";
 import type {
   GameCurrentSeason,
   GameHighlight,
@@ -21,9 +21,9 @@ import type {
   GameScheduledSellOrder,
   GameStrategyType,
   GameTierProgress,
-} from '../../../features/game/types';
-import { getGameInventorySlotLimit } from '../../../features/game/inventory';
-import type { VideoTrendSignal } from '../../../features/trending/types';
+} from "../../../features/game/types";
+import { getGameInventorySlotLimit } from "../../../features/game/inventory";
+import type { VideoTrendSignal } from "../../../features/trending/types";
 import {
   formatPercent,
   formatPoints,
@@ -31,29 +31,32 @@ import {
   formatSeasonDateTime,
   getPointTone,
   type OpenGameHolding,
-} from '../gameHelpers';
-import { sortGameInventoryHoldings, type GameInventorySortKey } from '../gameInventorySorting';
-import { buildGameStrategyBadges } from '../gameStrategyTags';
-import { GAME_PORTFOLIO_QUEUE_ID, HISTORY_PLAYBACK_QUEUE_ID } from '../utils';
-import AchievementTitleBadge from './AchievementTitleBadge';
-import GameInventoryCapacity from './GameInventoryCapacity';
-import { RankingGameHistoryRow } from './RankingGameHistoryRow';
-import GamePanelNyanRefreshIcon from './GamePanelNyanRefreshIcon';
-import { RankingGamePositionRow } from './RankingGamePositionRow';
-import GameTierSummary from './GameTierSummary';
-import GameWalletSummary from './GameWalletSummary';
-import GameInventorySummary from './GameInventory/GameInventorySummary';
-import MiniVideoPreview from './MiniVideoPreview';
-import StickySelectedVideoHeaderCopy from './StickySelectedVideoHeaderCopy';
-import useGamePanelPullToRefresh from './useGamePanelPullToRefresh';
+} from "../gameHelpers";
+import {
+  sortGameInventoryHoldings,
+  type GameInventorySortKey,
+} from "../gameInventorySorting";
+import { buildGameStrategyBadges } from "../gameStrategyTags";
+import { GAME_PORTFOLIO_QUEUE_ID, HISTORY_PLAYBACK_QUEUE_ID } from "../utils";
+import AchievementTitleBadge from "./AchievementTitleBadge";
+import GameInventoryCapacity from "./GameInventoryCapacity";
+import { RankingGameHistoryRow } from "./RankingGameHistoryRow";
+import GamePanelNyanRefreshIcon from "./GamePanelNyanRefreshIcon";
+import { RankingGamePositionRow } from "./RankingGamePositionRow";
+import GameTierSummary from "./GameTierSummary";
+import GameWalletSummary from "./GameWalletSummary";
+import GameInventorySummary from "./GameInventory/GameInventorySummary";
+import MiniVideoPreview from "./MiniVideoPreview";
+import StickySelectedVideoHeaderCopy from "./StickySelectedVideoHeaderCopy";
+import useGamePanelPullToRefresh from "./useGamePanelPullToRefresh";
 
-type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
+type GameTab = "positions" | "scheduledOrders" | "history" | "guide";
 
 const GAME_PANEL_TABS: ReadonlyArray<{ id: GameTab; label: string }> = [
-  { id: 'positions', label: '인벤토리' },
-  { id: 'scheduledOrders', label: '대기열' },
-  { id: 'history', label: '로그' },
-  { id: 'guide', label: '튜토리얼' },
+  { id: "positions", label: "인벤토리" },
+  { id: "scheduledOrders", label: "대기열" },
+  { id: "history", label: "로그" },
+  { id: "guide", label: "튜토리얼" },
 ];
 
 const GAME_PANEL_CAROUSEL_GAP = 10;
@@ -125,7 +128,7 @@ interface RankingGamePositionsTabProps {
   activePlaybackQueueId?: string;
   canShowGameActions: boolean;
   emptyMessage?: string | null;
-  favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
+  likedVideoTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
   holdings: OpenGameHolding[];
   currentGameSeason?: GameCurrentSeason;
@@ -133,7 +136,10 @@ interface RankingGamePositionsTabProps {
   onCancelScheduledSellOrder?: (orderId: number) => void;
   onOpenPositionChart?: (position: GamePosition) => void;
   onOpenSellTradeModal?: (position: GamePosition) => void;
-  onOpenStrategyScheduledSellTradeModal?: (position: GamePosition, strategyType: GameStrategyType) => void;
+  onOpenStrategyScheduledSellTradeModal?: (
+    position: GamePosition,
+    strategyType: GameStrategyType,
+  ) => void;
   onSelectPosition: (position: GamePosition) => void;
   openDistinctVideoCount?: number;
   scheduledSellOrderCancelingId?: number | null;
@@ -168,7 +174,8 @@ function areRankingGameHistoryTabPropsEqual(
   return (
     prevProps.activePlaybackQueueId === nextProps.activePlaybackQueueId &&
     prevProps.emptyMessage === nextProps.emptyMessage &&
-    prevProps.historyPlaybackLoadingVideoId === nextProps.historyPlaybackLoadingVideoId &&
+    prevProps.historyPlaybackLoadingVideoId ===
+      nextProps.historyPlaybackLoadingVideoId &&
     prevProps.isLoading === nextProps.isLoading &&
     prevProps.onOpenPositionChart === nextProps.onOpenPositionChart &&
     prevProps.positions === nextProps.positions &&
@@ -189,21 +196,24 @@ function areRankingGamePositionsTabPropsEqual(
     prevProps.holdings === nextProps.holdings &&
     prevProps.currentGameSeason === nextProps.currentGameSeason &&
     prevProps.isLoading === nextProps.isLoading &&
-    prevProps.onCancelScheduledSellOrder === nextProps.onCancelScheduledSellOrder &&
+    prevProps.onCancelScheduledSellOrder ===
+      nextProps.onCancelScheduledSellOrder &&
     prevProps.onOpenPositionChart === nextProps.onOpenPositionChart &&
     prevProps.onOpenSellTradeModal === nextProps.onOpenSellTradeModal &&
-    prevProps.onOpenStrategyScheduledSellTradeModal === nextProps.onOpenStrategyScheduledSellTradeModal &&
+    prevProps.onOpenStrategyScheduledSellTradeModal ===
+      nextProps.onOpenStrategyScheduledSellTradeModal &&
     prevProps.onSelectPosition === nextProps.onSelectPosition &&
     prevProps.openDistinctVideoCount === nextProps.openDistinctVideoCount &&
-    prevProps.scheduledSellOrderCancelingId === nextProps.scheduledSellOrderCancelingId &&
+    prevProps.scheduledSellOrderCancelingId ===
+      nextProps.scheduledSellOrderCancelingId &&
     prevProps.scheduledSellOrders === nextProps.scheduledSellOrders &&
     prevProps.selectedPositionId === nextProps.selectedPositionId
   );
 }
 
 function formatSignedPercent(value?: number | null) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '집계 중';
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "집계 중";
   }
 
   if (value > 0) {
@@ -214,12 +224,12 @@ function formatSignedPercent(value?: number | null) {
     return `-${formatPercent(Math.abs(value))}`;
   }
 
-  return '0%';
+  return "0%";
 }
 
 function formatSignedPoints(points?: number | null) {
-  if (typeof points !== 'number' || !Number.isFinite(points)) {
-    return '집계 중';
+  if (typeof points !== "number" || !Number.isFinite(points)) {
+    return "집계 중";
   }
 
   if (points > 0) {
@@ -230,47 +240,47 @@ function formatSignedPoints(points?: number | null) {
     return `-${formatPoints(Math.abs(points))}`;
   }
 
-  return '0P';
+  return "0P";
 }
 
 function formatHighlightScore(score?: number | null) {
-  if (typeof score !== 'number' || !Number.isFinite(score)) {
-    return '0점';
+  if (typeof score !== "number" || !Number.isFinite(score)) {
+    return "0점";
   }
 
-  return `${score.toLocaleString('ko-KR')}점`;
+  return `${score.toLocaleString("ko-KR")}점`;
 }
 
 function getLeaderboardHighlightTypeLabel(type: string) {
-  if (type === 'ATLAS_SHOT') {
-    return '아틀라스 샷';
+  if (type === "ATLAS_SHOT") {
+    return "아틀라스 샷";
   }
 
-  if (type === 'GALAXY_SHOT') {
-    return '갤럭시 샷';
+  if (type === "GALAXY_SHOT") {
+    return "갤럭시 샷";
   }
 
-  if (type === 'SOLAR_SHOT') {
-    return '솔라 샷';
+  if (type === "SOLAR_SHOT") {
+    return "솔라 샷";
   }
 
-  if (type === 'MOONSHOT') {
-    return '문샷';
+  if (type === "MOONSHOT") {
+    return "문샷";
   }
 
-  if (type === 'SNIPE') {
-    return '스나이프';
+  if (type === "SNIPE") {
+    return "스나이프";
   }
 
-  if (type === 'SMALL_CASHOUT') {
-    return '스몰 캐시아웃';
+  if (type === "SMALL_CASHOUT") {
+    return "스몰 캐시아웃";
   }
 
-  if (type === 'BIG_CASHOUT') {
-    return '빅 캐시아웃';
+  if (type === "BIG_CASHOUT") {
+    return "빅 캐시아웃";
   }
 
-  return '하이라이트';
+  return "하이라이트";
 }
 
 function LeaderboardHighlightList({
@@ -285,13 +295,17 @@ function LeaderboardHighlightList({
   return (
     <ul className="app-shell__game-leaderboard-position-list">
       {highlights.map((highlight) => {
-        const strategyBadges = buildGameStrategyBadges(highlight.strategyTags, highlight.highlightType);
+        const strategyBadges = buildGameStrategyBadges(
+          highlight.strategyTags,
+          highlight.highlightType,
+        );
 
         return (
-          <li key={highlight.id} className="app-shell__game-leaderboard-position-item">
-            <article
-              className="app-shell__game-leaderboard-position-select"
-            >
+          <li
+            key={highlight.id}
+            className="app-shell__game-leaderboard-position-item"
+          >
+            <article className="app-shell__game-leaderboard-position-select">
               {onSelectHighlightVideo ? (
                 <button
                   aria-label={`${highlight.videoTitle} 재생`}
@@ -322,49 +336,65 @@ function LeaderboardHighlightList({
                 type="button"
               >
                 <div className="app-shell__game-leaderboard-position-copy">
-                <p className="app-shell__game-leaderboard-position-title">{highlight.videoTitle}</p>
-                <p className="app-shell__game-leaderboard-position-meta">
-                  <span className="app-shell__game-leaderboard-position-meta-label">하이라이트 점수</span>{' '}
-                  <span className="app-shell__game-leaderboard-position-score">
-                    +{formatHighlightScore(highlight.highlightScore)}
-                  </span>
-                  {' · '}
-                  <span className="app-shell__game-leaderboard-position-meta-label">순위</span>{' '}
-                  <span>{formatRank(highlight.buyRank)}</span>
-                  {' → '}
-                  <span>{formatRank(highlight.highlightRank)}</span>
-                  {' · '}
-                  <span className="app-shell__game-leaderboard-position-meta-label">손익금</span>{' '}
-                  <span data-tone={getPointTone(highlight.profitPoints)}>{formatSignedPoints(highlight.profitPoints)}</span>
-                  {' · '}
-                  <span className="app-shell__game-leaderboard-position-meta-label">손익률</span>{' '}
-                  <span data-tone={getPointTone(highlight.profitPoints)}>
-                    {formatSignedPercent(highlight.profitRatePercent)}
-                  </span>
-                </p>
-                <div className="app-shell__game-leaderboard-position-detail">
-                  <span className="app-shell__game-leaderboard-position-badges">
-                    {strategyBadges.map((badge) => (
-                      <span
-                        key={`${highlight.id}-${badge.type}`}
-                        className="app-shell__game-leaderboard-position-tag"
-                        data-tone={badge.tone}
-                      >
-                        {badge.label}
-                      </span>
-                    ))}
-                    {strategyBadges.length === 0 ? (
-                      <span
-                        className="app-shell__game-leaderboard-position-tag"
-                        data-tone="moonshot"
-                      >
-                        {getLeaderboardHighlightTypeLabel(highlight.highlightType)}
-                      </span>
-                    ) : null}
-                  </span>
-                  <p className="app-shell__game-leaderboard-position-description">{highlight.description}</p>
+                  <p className="app-shell__game-leaderboard-position-title">
+                    {highlight.videoTitle}
+                  </p>
+                  <p className="app-shell__game-leaderboard-position-meta">
+                    <span className="app-shell__game-leaderboard-position-meta-label">
+                      하이라이트 점수
+                    </span>{" "}
+                    <span className="app-shell__game-leaderboard-position-score">
+                      +{formatHighlightScore(highlight.highlightScore)}
+                    </span>
+                    {" · "}
+                    <span className="app-shell__game-leaderboard-position-meta-label">
+                      순위
+                    </span>{" "}
+                    <span>{formatRank(highlight.buyRank)}</span>
+                    {" → "}
+                    <span>{formatRank(highlight.highlightRank)}</span>
+                    {" · "}
+                    <span className="app-shell__game-leaderboard-position-meta-label">
+                      손익금
+                    </span>{" "}
+                    <span data-tone={getPointTone(highlight.profitPoints)}>
+                      {formatSignedPoints(highlight.profitPoints)}
+                    </span>
+                    {" · "}
+                    <span className="app-shell__game-leaderboard-position-meta-label">
+                      손익률
+                    </span>{" "}
+                    <span data-tone={getPointTone(highlight.profitPoints)}>
+                      {formatSignedPercent(highlight.profitRatePercent)}
+                    </span>
+                  </p>
+                  <div className="app-shell__game-leaderboard-position-detail">
+                    <span className="app-shell__game-leaderboard-position-badges">
+                      {strategyBadges.map((badge) => (
+                        <span
+                          key={`${highlight.id}-${badge.type}`}
+                          className="app-shell__game-leaderboard-position-tag"
+                          data-tone={badge.tone}
+                        >
+                          {badge.label}
+                        </span>
+                      ))}
+                      {strategyBadges.length === 0 ? (
+                        <span
+                          className="app-shell__game-leaderboard-position-tag"
+                          data-tone="moonshot"
+                        >
+                          {getLeaderboardHighlightTypeLabel(
+                            highlight.highlightType,
+                          )}
+                        </span>
+                      ) : null}
+                    </span>
+                    <p className="app-shell__game-leaderboard-position-description">
+                      {highlight.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
               </button>
             </article>
           </li>
@@ -398,13 +428,22 @@ function LeaderboardHighlightsPanel({
   }
 
   return (
-    <div className="app-shell__game-leaderboard-positions" aria-label={highlightsTitle}>
-      <p className="app-shell__game-leaderboard-positions-title">{highlightsTitle}</p>
+    <div
+      className="app-shell__game-leaderboard-positions"
+      aria-label={highlightsTitle}
+    >
+      <p className="app-shell__game-leaderboard-positions-title">
+        {highlightsTitle}
+      </p>
       {isLoading ? (
-        <p className="app-shell__game-leaderboard-positions-status">하이라이트를 불러오는 중입니다.</p>
+        <p className="app-shell__game-leaderboard-positions-status">
+          하이라이트를 불러오는 중입니다.
+        </p>
       ) : isError ? (
         <p className="app-shell__game-leaderboard-positions-status">
-          {highlightsError instanceof Error ? highlightsError.message : '하이라이트를 불러오지 못했습니다.'}
+          {highlightsError instanceof Error
+            ? highlightsError.message
+            : "하이라이트를 불러오지 못했습니다."}
         </p>
       ) : highlights.length > 0 ? (
         <LeaderboardHighlightList
@@ -413,7 +452,9 @@ function LeaderboardHighlightsPanel({
           onSelectHighlightVideo={onSelectHighlightVideo}
         />
       ) : (
-        <p className="app-shell__game-leaderboard-positions-status">아직 하이라이트가 없습니다.</p>
+        <p className="app-shell__game-leaderboard-positions-status">
+          아직 하이라이트가 없습니다.
+        </p>
       )}
     </div>
   );
@@ -465,18 +506,23 @@ function LeaderboardRow({
             aria-hidden="true"
             className="app-shell__game-leaderboard-avatar app-shell__game-leaderboard-avatar--fallback"
           >
-            {(entry.displayName || 'A').slice(0, 1).toUpperCase()}
+            {(entry.displayName || "A").slice(0, 1).toUpperCase()}
           </span>
         )}
         <div className="app-shell__game-leaderboard-copy">
           <div className="app-shell__game-leaderboard-head">
             <div className="app-shell__game-leaderboard-identity">
-              <p className="app-shell__game-leaderboard-name">{entry.displayName}</p>
+              <p className="app-shell__game-leaderboard-name">
+                {entry.displayName}
+              </p>
               {entry.selectedAchievementTitle ? (
                 <AchievementTitleBadge title={entry.selectedAchievementTitle} />
               ) : null}
             </div>
-            <p className="app-shell__game-leaderboard-total" title={formatHighlightScore(entry.highlightScore)}>
+            <p
+              className="app-shell__game-leaderboard-total"
+              title={formatHighlightScore(entry.highlightScore)}
+            >
               {formatHighlightScore(entry.highlightScore)}
             </p>
           </div>
@@ -516,7 +562,9 @@ export function RankingGamePanelShell({
 }: RankingGamePanelShellProps) {
   const hasDividendOverview = Boolean(dividendOverview);
   const hasSelectedVideoActions = Boolean(selectedVideoActions);
-  const [trackIndex, setTrackIndex] = useState(GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab) + 1);
+  const [trackIndex, setTrackIndex] = useState(
+    GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab) + 1,
+  );
   const [isTrackAnimating, setIsTrackAnimating] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(1);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -528,16 +576,23 @@ export function RankingGamePanelShell({
     pullDistance,
   } = useGamePanelPullToRefresh({
     activeTab: activeGameTab,
-    disabled: !enablePullToRefresh || !onRefreshTab || activeGameTab === 'guide',
+    disabled:
+      !enablePullToRefresh || !onRefreshTab || activeGameTab === "guide",
     onRefresh: onRefreshTab,
   });
   const carouselTabs = useMemo(
-    () => [GAME_PANEL_TABS[GAME_PANEL_TABS.length - 1], ...GAME_PANEL_TABS, GAME_PANEL_TABS[0]],
+    () => [
+      GAME_PANEL_TABS[GAME_PANEL_TABS.length - 1],
+      ...GAME_PANEL_TABS,
+      GAME_PANEL_TABS[0],
+    ],
     [],
   );
 
   useEffect(() => {
-    const nextIndex = GAME_PANEL_TABS.findIndex((tab) => tab.id === activeGameTab);
+    const nextIndex = GAME_PANEL_TABS.findIndex(
+      (tab) => tab.id === activeGameTab,
+    );
 
     if (nextIndex < 0) {
       return;
@@ -555,7 +610,7 @@ export function RankingGamePanelShell({
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
 
-    if (!viewport || typeof window === 'undefined') {
+    if (!viewport || typeof window === "undefined") {
       return;
     }
 
@@ -565,19 +620,24 @@ export function RankingGamePanelShell({
     };
 
     syncViewportWidth();
-    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(syncViewportWidth);
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(syncViewportWidth);
     resizeObserver?.observe(viewport);
-    window.addEventListener('resize', syncViewportWidth);
+    window.addEventListener("resize", syncViewportWidth);
 
     return () => {
       resizeObserver?.disconnect();
-      window.removeEventListener('resize', syncViewportWidth);
+      window.removeEventListener("resize", syncViewportWidth);
     };
   }, []);
 
   useEffect(() => {
     viewportRef.current
-      ?.querySelectorAll<HTMLElement>(`[data-game-panel-tab="${activeGameTab}"]`)
+      ?.querySelectorAll<HTMLElement>(
+        `[data-game-panel-tab="${activeGameTab}"]`,
+      )
       .forEach((panel) => {
         panel.scrollTo({ top: 0 });
       });
@@ -616,29 +676,39 @@ export function RankingGamePanelShell({
   const pullProgress = Math.min(pullDistance / 64, 1);
 
   return (
-    <div className="app-shell__game-panel" data-current-tier={tierProgress?.currentTier.tierCode}>
+    <div
+      className="app-shell__game-panel"
+      data-current-tier={tierProgress?.currentTier.tierCode}
+    >
       <div className="app-shell__game-panel-header">
         <div className="app-shell__game-panel-copy">
           <p className="app-shell__game-panel-eyebrow">Ranking Game</p>
           <div className="app-shell__game-panel-title-row">
             <h3 className="app-shell__game-panel-title">
-              {season ? `${season.regionCode} · ${season.seasonName}` : '시즌 준비 중'}
+              {season
+                ? `${season.regionCode} · ${season.seasonName}`
+                : "시즌 준비 중"}
             </h3>
             <button
               aria-expanded={!isCollapsed}
-              aria-label={isCollapsed ? '랭킹 게임 펼치기' : '랭킹 게임 숨기기'}
+              aria-label={isCollapsed ? "랭킹 게임 펼치기" : "랭킹 게임 숨기기"}
               className="app-shell__collapse-toggle"
               data-active={isCollapsed}
               onClick={onToggleCollapse}
               type="button"
             >
-              <span className="app-shell__collapse-toggle-icon" aria-hidden="true">
+              <span
+                className="app-shell__collapse-toggle-icon"
+                aria-hidden="true"
+              >
                 ▾
               </span>
             </button>
           </div>
           {season ? (
-            <p className="app-shell__game-panel-subtle">종료 {formatSeasonDateTime(season.endAt)}</p>
+            <p className="app-shell__game-panel-subtle">
+              종료 {formatSeasonDateTime(season.endAt)}
+            </p>
           ) : null}
         </div>
       </div>
@@ -655,10 +725,14 @@ export function RankingGamePanelShell({
             >
               <div className="app-shell__game-panel-overview-side">
                 <GameWalletSummary
-                  computedWalletTotalAssetPoints={summary.computedWalletTotalAssetPoints}
+                  computedWalletTotalAssetPoints={
+                    summary.computedWalletTotalAssetPoints
+                  }
                   currentTierCode={tierProgress?.currentTier.tierCode}
                   openPositionsBuyPoints={summary.openPositionsBuyPoints}
-                  openPositionsEvaluationPoints={summary.openPositionsEvaluationPoints}
+                  openPositionsEvaluationPoints={
+                    summary.openPositionsEvaluationPoints
+                  }
                   openPositionsProfitPoints={summary.openPositionsProfitPoints}
                   season={season}
                   walletUpdatedAt={walletUpdatedAt}
@@ -676,7 +750,11 @@ export function RankingGamePanelShell({
               </div>
             ) : null}
           </div>
-          <div aria-label="게임 패널 탭" className="app-shell__game-tabs" role="tablist">
+          <div
+            aria-label="게임 패널 탭"
+            className="app-shell__game-tabs"
+            role="tablist"
+          >
             {GAME_PANEL_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -699,18 +777,25 @@ export function RankingGamePanelShell({
             {isViewportReady ? (
               <div
                 className="app-shell__game-tab-track"
-                data-animating={isTrackAnimating ? 'true' : 'false'}
+                data-animating={isTrackAnimating ? "true" : "false"}
                 onTransitionEnd={handleTrackTransitionEnd}
-                style={{
-                  '--game-panel-carousel-gap': `${GAME_PANEL_CAROUSEL_GAP}px`,
-                  '--game-panel-slide-width': `${slideWidth}px`,
-                  transform: `translateX(${trackTranslateX}px)`,
-                } as CSSProperties}
+                style={
+                  {
+                    "--game-panel-carousel-gap": `${GAME_PANEL_CAROUSEL_GAP}px`,
+                    "--game-panel-slide-width": `${slideWidth}px`,
+                    transform: `translateX(${trackTranslateX}px)`,
+                  } as CSSProperties
+                }
               >
                 {carouselTabs.map((tab, index) => (
-                  <div key={`${tab.id}-${index}`} className="app-shell__game-tab-slide">
+                  <div
+                    key={`${tab.id}-${index}`}
+                    className="app-shell__game-tab-slide"
+                  >
                     <div
-                      {...(tab.id === activeGameTab ? pullToRefreshBind : undefined)}
+                      {...(tab.id === activeGameTab
+                        ? pullToRefreshBind
+                        : undefined)}
                       className="app-shell__game-tab-slide-panel"
                       data-game-panel-tab={tab.id}
                     >
@@ -720,13 +805,20 @@ export function RankingGamePanelShell({
                           className="app-shell__game-tab-pull-indicator"
                           data-ready={isReadyToRefresh || undefined}
                           data-refreshing={isRefreshing || undefined}
-                          data-visible={pullDistance > 0 || isRefreshing || undefined}
-                          style={{
-                            '--game-tab-pull-distance': `${pullDistance}px`,
-                            '--game-tab-pull-progress': `${pullProgress}`,
-                          } as CSSProperties}
+                          data-visible={
+                            pullDistance > 0 || isRefreshing || undefined
+                          }
+                          style={
+                            {
+                              "--game-tab-pull-distance": `${pullDistance}px`,
+                              "--game-tab-pull-progress": `${pullProgress}`,
+                            } as CSSProperties
+                          }
                         >
-                          <span className="app-shell__game-tab-pull-indicator-spinner" aria-hidden="true">
+                          <span
+                            className="app-shell__game-tab-pull-indicator-spinner"
+                            aria-hidden="true"
+                          >
                             <GamePanelNyanRefreshIcon />
                           </span>
                         </div>
@@ -754,8 +846,8 @@ export function RankingGameTierOverview({
   }
 
   const assetPointLabel = tierProgress
-    ? `${tierProgress.totalAssetPoints.toLocaleString('ko-KR')}P`
-    : '-';
+    ? `${tierProgress.totalAssetPoints.toLocaleString("ko-KR")}P`
+    : "-";
 
   return (
     <section
@@ -773,9 +865,7 @@ export function RankingGameTierOverview({
         <div className="app-shell__game-dividend-copy">
           <p className="app-shell__game-dividend-eyebrow">Asset Tier</p>
           <div className="app-shell__game-dividend-title-row">
-            <h4 className="app-shell__game-dividend-title">
-              보유 포인트 티어
-            </h4>
+            <h4 className="app-shell__game-dividend-title">보유 포인트 티어</h4>
             <button
               className="app-shell__game-dividend-action app-shell__game-dividend-action--compact"
               onClick={onOpenDetails}
@@ -787,7 +877,10 @@ export function RankingGameTierOverview({
         </div>
       </div>
       {tierProgress ? (
-        <div className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview" aria-label="보유 포인트 티어 요약">
+        <div
+          className="app-shell__game-dividend-metrics app-shell__game-dividend-metrics--preview"
+          aria-label="보유 포인트 티어 요약"
+        >
           <span className="app-shell__game-dividend-metric">
             <span className="app-shell__game-dividend-metric-label">점수</span>
             <strong
@@ -796,17 +889,22 @@ export function RankingGameTierOverview({
             >
               {assetPointLabel}
             </strong>
-            <span className="app-shell__game-dividend-metric-detail" aria-hidden="true" />
+            <span
+              className="app-shell__game-dividend-metric-detail"
+              aria-hidden="true"
+            />
           </span>
           <span className="app-shell__game-dividend-metric">
-            <span className="app-shell__game-dividend-metric-label">현재 티어</span>
+            <span className="app-shell__game-dividend-metric-label">
+              현재 티어
+            </span>
             <strong className="app-shell__game-dividend-metric-value">
               {tierProgress.currentTier.displayName}
             </strong>
             <span className="app-shell__game-dividend-metric-detail">
               {tierProgress.nextTier
                 ? `다음 ${tierProgress.nextTier.displayName}`
-                : '최고 티어'}
+                : "최고 티어"}
             </span>
           </span>
         </div>
@@ -842,21 +940,21 @@ export function RankingGameSelectedVideoActions({
   return (
     <div className="app-shell__game-panel-actions">
       <div
-        aria-expanded={onHeaderClick ? 'true' : undefined}
+        aria-expanded={onHeaderClick ? "true" : undefined}
         className="app-shell__game-panel-actions-header"
-        data-clickable={onHeaderClick ? 'true' : undefined}
+        data-clickable={onHeaderClick ? "true" : undefined}
         onClick={onHeaderClick}
         onKeyDown={
           onHeaderClick
             ? (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
+                if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   onHeaderClick();
                 }
               }
             : undefined
         }
-        role={onHeaderClick ? 'button' : undefined}
+        role={onHeaderClick ? "button" : undefined}
         tabIndex={onHeaderClick ? 0 : undefined}
       >
         <StickySelectedVideoHeaderCopy
@@ -875,21 +973,21 @@ export function RankingGameSelectedVideoActions({
         ) : null}
       </div>
       <div
-        aria-expanded={onContentClick ? 'true' : undefined}
+        aria-expanded={onContentClick ? "true" : undefined}
         className="app-shell__game-panel-actions-content"
-        data-clickable={onContentClick ? 'true' : undefined}
+        data-clickable={onContentClick ? "true" : undefined}
         onClick={onContentClick}
         onKeyDown={
           onContentClick
             ? (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
+                if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   onContentClick();
                 }
               }
             : undefined
         }
-        role={onContentClick ? 'button' : undefined}
+        role={onContentClick ? "button" : undefined}
         tabIndex={onContentClick ? 0 : undefined}
       >
         <div className="app-shell__game-panel-actions-main">
@@ -915,9 +1013,13 @@ export function RankingGameSelectedVideoActions({
             />
           ) : null}
           <div className="app-shell__game-panel-actions-body">
-            <p className="app-shell__game-panel-actions-title">{selectedGameActionTitle}</p>
+            <p className="app-shell__game-panel-actions-title">
+              {selectedGameActionTitle}
+            </p>
             {selectedGameActionChannelTitle ? (
-              <p className="app-shell__game-panel-actions-channel">{selectedGameActionChannelTitle}</p>
+              <p className="app-shell__game-panel-actions-channel">
+                {selectedGameActionChannelTitle}
+              </p>
             ) : null}
             {currentVideoGamePriceSummary}
           </div>
@@ -931,19 +1033,26 @@ export function RankingGameSelectedVideoActions({
             <button
               aria-label={
                 isVideoOwned
-                  ? '선택한 영상 보유 중'
+                  ? "선택한 영상 보유 중"
                   : isBuySubmitting
-                    ? '선택한 영상 매수 중'
-                    : '선택한 영상 매수'
+                    ? "선택한 영상 매수 중"
+                    : "선택한 영상 매수"
               }
               className="app-shell__game-panel-action"
               data-variant="buy"
               disabled={!canShowGameActions || isBuyDisabled}
               onClick={onOpenBuyTradeModal}
-              title={!canShowGameActions ? '전체 카테고리에서만 매수할 수 있습니다.' : buyActionTitle}
+              title={
+                !canShowGameActions
+                  ? "전체 카테고리에서만 매수할 수 있습니다."
+                  : buyActionTitle
+              }
               type="button"
             >
-              <span className="app-shell__game-panel-action-icon" aria-hidden="true">
+              <span
+                className="app-shell__game-panel-action-icon"
+                aria-hidden="true"
+              >
                 <svg viewBox="0 0 24 24" fill="none">
                   <path
                     d="M12 18V6M12 6l-4 4M12 6l4 4"
@@ -956,12 +1065,14 @@ export function RankingGameSelectedVideoActions({
               </span>
             </button>
             <span className="app-shell__game-panel-action-caption">
-              {isVideoOwned ? '보유 중' : isBuySubmitting ? '매수 중' : '매수'}
+              {isVideoOwned ? "보유 중" : isBuySubmitting ? "매수 중" : "매수"}
             </span>
           </div>
           <div className="app-shell__game-panel-action-item">
             <button
-              aria-label={isSellSubmitting ? '선택한 영상 매도 중' : '선택한 영상 매도'}
+              aria-label={
+                isSellSubmitting ? "선택한 영상 매도 중" : "선택한 영상 매도"
+              }
               className="app-shell__game-panel-action"
               data-variant="sell"
               disabled={isSellDisabled}
@@ -969,7 +1080,10 @@ export function RankingGameSelectedVideoActions({
               title={sellActionTitle}
               type="button"
             >
-              <span className="app-shell__game-panel-action-icon" aria-hidden="true">
+              <span
+                className="app-shell__game-panel-action-icon"
+                aria-hidden="true"
+              >
                 <svg viewBox="0 0 24 24" fill="none">
                   <path
                     d="M12 6v12M12 18l-4-4M12 18l4-4"
@@ -981,7 +1095,9 @@ export function RankingGameSelectedVideoActions({
                 </svg>
               </span>
             </button>
-            <span className="app-shell__game-panel-action-caption">{isSellSubmitting ? '매도 중' : '매도'}</span>
+            <span className="app-shell__game-panel-action-caption">
+              {isSellSubmitting ? "매도 중" : "매도"}
+            </span>
           </div>
         </div>
       </div>
@@ -1011,20 +1127,34 @@ export function RankingGameLeaderboardTab({
   if (isError) {
     return (
       <p className="app-shell__game-empty">
-        {error instanceof Error ? error.message : '리더보드를 불러오지 못했습니다.'}
+        {error instanceof Error
+          ? error.message
+          : "리더보드를 불러오지 못했습니다."}
       </p>
     );
   }
 
   if (topEntries.length === 0) {
     return season ? (
-      <div className="app-shell__game-leaderboard-shell" data-loading={isLoading}>
+      <div
+        className="app-shell__game-leaderboard-shell"
+        data-loading={isLoading}
+      >
         {!isLoading ? (
-          <p className="app-shell__game-empty app-shell__game-leaderboard-empty">아직 리더보드에 표시할 참가자가 없습니다.</p>
+          <p className="app-shell__game-empty app-shell__game-leaderboard-empty">
+            아직 리더보드에 표시할 참가자가 없습니다.
+          </p>
         ) : null}
         {isLoading ? (
-          <div className="app-shell__game-leaderboard-overlay" role="status" aria-live="polite">
-            <span className="app-shell__game-leaderboard-overlay-spinner" aria-hidden="true" />
+          <div
+            className="app-shell__game-leaderboard-overlay"
+            role="status"
+            aria-live="polite"
+          >
+            <span
+              className="app-shell__game-leaderboard-overlay-spinner"
+              aria-hidden="true"
+            />
             <span className="sr-only">리더보드 불러오는 중</span>
           </div>
         ) : null}
@@ -1054,7 +1184,10 @@ export function RankingGameLeaderboardTab({
           ))}
         </ol>
         {myEntry ? (
-          <section className="app-shell__game-leaderboard-pinned" aria-label="내 순위">
+          <section
+            className="app-shell__game-leaderboard-pinned"
+            aria-label="내 순위"
+          >
             <p className="app-shell__game-leaderboard-pinned-label">내 순위</p>
             <LeaderboardRow
               entry={myEntry}
@@ -1072,8 +1205,15 @@ export function RankingGameLeaderboardTab({
         ) : null}
       </div>
       {isLoading ? (
-        <div className="app-shell__game-leaderboard-overlay" role="status" aria-live="polite">
-          <span className="app-shell__game-leaderboard-overlay-spinner" aria-hidden="true" />
+        <div
+          className="app-shell__game-leaderboard-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            className="app-shell__game-leaderboard-overlay-spinner"
+            aria-hidden="true"
+          />
           <span className="sr-only">리더보드 불러오는 중</span>
         </div>
       ) : null}
@@ -1098,10 +1238,14 @@ function RankingGamePositionsTabComponent({
   scheduledSellOrders = [],
   selectedPositionId,
 }: RankingGamePositionsTabProps) {
-  const [inventorySortKey, setInventorySortKey] = useState<GameInventorySortKey>('profit');
+  const [inventorySortKey, setInventorySortKey] =
+    useState<GameInventorySortKey>("profit");
   const inventoryOpenCount =
-    openDistinctVideoCount ?? new Set(holdings.map((holding) => holding.videoId)).size;
-  const maxOpenPositions = currentGameSeason ? getGameInventorySlotLimit(currentGameSeason) : null;
+    openDistinctVideoCount ??
+    new Set(holdings.map((holding) => holding.videoId)).size;
+  const maxOpenPositions = currentGameSeason
+    ? getGameInventorySlotLimit(currentGameSeason)
+    : null;
   const sortedHoldings = useMemo(
     () => sortGameInventoryHoldings(holdings, inventorySortKey),
     [holdings, inventorySortKey],
@@ -1126,8 +1270,15 @@ function RankingGamePositionsTabComponent({
       <div className="app-shell__game-inventory">
         {inventorySummary}
         <div className="app-shell__game-tab-loading-shell" data-loading>
-          <div className="app-shell__game-tab-loading-overlay" role="status" aria-live="polite">
-            <span className="app-shell__game-tab-loading-spinner" aria-hidden="true" />
+          <div
+            className="app-shell__game-tab-loading-overlay"
+            role="status"
+            aria-live="polite"
+          >
+            <span
+              className="app-shell__game-tab-loading-spinner"
+              aria-hidden="true"
+            />
             <span className="sr-only">인벤토리 불러오는 중</span>
           </div>
         </div>
@@ -1140,7 +1291,11 @@ function RankingGamePositionsTabComponent({
       <div className="app-shell__game-inventory">
         {inventorySummary}
         {inventoryDashboard}
-        {emptyMessage ? <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{emptyMessage}</p> : null}
+        {emptyMessage ? (
+          <p className="app-shell__game-empty app-shell__game-empty--panel-centered">
+            {emptyMessage}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -1155,11 +1310,16 @@ function RankingGamePositionsTabComponent({
             key={holding.positionId}
             canShowGameActions={canShowGameActions}
             holding={holding}
-            isSelected={activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID && holding.positionId === selectedPositionId}
+            isSelected={
+              activePlaybackQueueId === GAME_PORTFOLIO_QUEUE_ID &&
+              holding.positionId === selectedPositionId
+            }
             onCancelScheduledSellOrder={onCancelScheduledSellOrder}
             onOpenPositionChart={onOpenPositionChart}
             onOpenSellTradeModal={onOpenSellTradeModal}
-            onOpenStrategyScheduledSellTradeModal={onOpenStrategyScheduledSellTradeModal}
+            onOpenStrategyScheduledSellTradeModal={
+              onOpenStrategyScheduledSellTradeModal
+            }
             onSelectPosition={onSelectPosition}
             scheduledSellOrderCancelingId={scheduledSellOrderCancelingId}
             scheduledSellOrders={scheduledSellOrders}
@@ -1199,11 +1359,13 @@ function RankingGameHistoryTabComponent({
     }
 
     const selectedItemTop = selectedHistoryItem.offsetTop;
-    const selectedItemBottom = selectedItemTop + selectedHistoryItem.offsetHeight;
+    const selectedItemBottom =
+      selectedItemTop + selectedHistoryItem.offsetHeight;
     const visibleTop = historyList.scrollTop;
     const visibleBottom = visibleTop + historyList.clientHeight;
     const selectedItemLeft = selectedHistoryItem.offsetLeft;
-    const selectedItemRight = selectedItemLeft + selectedHistoryItem.offsetWidth;
+    const selectedItemRight =
+      selectedItemLeft + selectedHistoryItem.offsetWidth;
     const visibleLeft = historyList.scrollLeft;
     const visibleRight = visibleLeft + historyList.clientWidth;
 
@@ -1222,9 +1384,19 @@ function RankingGameHistoryTabComponent({
 
   if (isLoading) {
     return (
-      <div className="app-shell__game-tab-loading-shell app-shell__game-tab-loading-shell--history" data-loading>
-        <div className="app-shell__game-tab-loading-overlay" role="status" aria-live="polite">
-          <span className="app-shell__game-tab-loading-spinner" aria-hidden="true" />
+      <div
+        className="app-shell__game-tab-loading-shell app-shell__game-tab-loading-shell--history"
+        data-loading
+      >
+        <div
+          className="app-shell__game-tab-loading-overlay"
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            className="app-shell__game-tab-loading-spinner"
+            aria-hidden="true"
+          />
           <span className="sr-only">거래내역 불러오는 중</span>
         </div>
       </div>
@@ -1232,7 +1404,11 @@ function RankingGameHistoryTabComponent({
   }
 
   if (positions.length === 0) {
-    return emptyMessage ? <p className="app-shell__game-empty app-shell__game-empty--panel-centered">{emptyMessage}</p> : null;
+    return emptyMessage ? (
+      <p className="app-shell__game-empty app-shell__game-empty--panel-centered">
+        {emptyMessage}
+      </p>
+    ) : null;
   }
 
   return (

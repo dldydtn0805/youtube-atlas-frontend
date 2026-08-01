@@ -1,11 +1,13 @@
-import type { CSSProperties, ReactNode, RefObject } from 'react';
-import VideoPlayer, { type VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
-import type { AuthStatus } from '../../../features/auth/types';
-import { formatHeaderPoints } from '../gameHelpers';
-import type { PendingPlaybackRestore } from '../utils';
-import CinematicModeIcon from './CinematicModeIcon';
-import PlayerStageWatchLayout from './PlayerStageWatchLayout';
-import './PlayerStage.css';
+import type { CSSProperties, ReactNode, RefObject } from "react";
+import VideoPlayer, {
+  type VideoPlayerHandle,
+} from "../../../components/VideoPlayer/VideoPlayer";
+import type { AuthStatus } from "../../../features/auth/types";
+import { formatHeaderPoints } from "../gameHelpers";
+import type { PendingPlaybackRestore } from "../utils";
+import CinematicModeIcon from "./CinematicModeIcon";
+import PlayerStageWatchLayout from "./PlayerStageWatchLayout";
+import "./PlayerStage.css";
 
 interface PlayerViewportContentProps {
   canNavigateVideos: boolean;
@@ -15,7 +17,7 @@ interface PlayerViewportContentProps {
   onNextVideo: () => void;
   onPreviousVideo: () => void;
   onPlaybackRestoreApplied?: (restoreId: number) => void;
-  onPlaybackStateChange?: (state: 'paused' | 'playing') => void;
+  onPlaybackStateChange?: (state: "paused" | "playing") => void;
   playbackRestore?: PendingPlaybackRestore | null;
   playerRef: RefObject<VideoPlayerHandle | null>;
   playerViewportRef: RefObject<HTMLDivElement | null>;
@@ -53,13 +55,10 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   communityContent?: ReactNode;
   currentTierCode?: string | null;
   currentTierName?: string | null;
-  favoriteToggleLabel: string;
   filterContent?: ReactNode;
   headerSupplementalContent?: ReactNode;
-  isFavoriteToggleDisabled: boolean;
   isManualPlaybackSaveDisabled: boolean;
   isOpenPositionLimitReached?: boolean;
-  isSelectedChannelFavorited: boolean;
   manualPlaybackSaveButtonLabel: string;
   manualPlaybackSaveStatus?: string;
   onManualPlaybackSave: () => void;
@@ -70,7 +69,6 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   onOpenWalletModal?: () => void;
   onOpenViewModal?: () => void;
   onToggleCinematicMode: () => void;
-  onToggleFavoriteStreamer: () => void;
   playerSectionRef: RefObject<HTMLElement | null>;
   playerStageRef: RefObject<HTMLDivElement | null>;
   renderHeaderInline?: boolean;
@@ -85,11 +83,10 @@ interface PlayerStageProps extends PlayerViewportContentProps {
   showManualPlaybackSave?: boolean;
   stageActionContent?: ReactNode;
   stageActionStatus?: string;
-  stageActionStatusTone?: 'error' | 'success';
+  stageActionStatusTone?: "error" | "success";
   stageMetadataContent?: ReactNode;
   supplementalContent?: ReactNode;
   topContent?: ReactNode;
-  toggleFavoriteStreamerPending: boolean;
 }
 
 export function PlayerViewportContent({
@@ -116,7 +113,7 @@ export function PlayerViewportContent({
     <div
       ref={playerViewportRef}
       className="app-shell__player-viewport"
-      data-docked={isVideoPlayerDocked ? 'true' : 'false'}
+      data-docked={isVideoPlayerDocked ? "true" : "false"}
       style={playerViewportStyle}
     >
       <VideoPlayer
@@ -159,12 +156,13 @@ export function PlayerStageHeader({
   selectedCountryName,
   walletBalancePoints,
 }: PlayerStageHeaderProps) {
-  const isAuthenticated = authStatus === 'authenticated';
+  const isAuthenticated = authStatus === "authenticated";
   const walletSummary =
-    typeof walletBalancePoints === 'number' && Number.isFinite(walletBalancePoints)
+    typeof walletBalancePoints === "number" &&
+    Number.isFinite(walletBalancePoints)
       ? formatHeaderPoints(walletBalancePoints)
-      : '집계 중';
-  const tierSummary = currentTierName?.trim() || '미정';
+      : "집계 중";
+  const tierSummary = currentTierName?.trim() || "미정";
 
   return (
     <div className="app-shell__section-heading app-shell__section-heading--player">
@@ -174,13 +172,21 @@ export function PlayerStageHeader({
             <div className="app-shell__player-mobile-header-row">
               <div className="app-shell__player-title-row app-shell__player-title-row--mobile">
                 <h2 className="app-shell__section-title app-shell__section-title--mobile-player">
-                  <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
+                  <button
+                    className="app-shell__section-title-button"
+                    onClick={onOpenRegionModal}
+                    type="button"
+                  >
                     {selectedCountryName}
                   </button>
                   {selectedCategoryLabel ? (
                     <>
-                      {' '}
-                      <button className="app-shell__section-title-button" onClick={onOpenViewModal} type="button">
+                      {" "}
+                      <button
+                        className="app-shell__section-title-button"
+                        onClick={onOpenViewModal}
+                        type="button"
+                      >
                         {selectedCategoryLabel}
                       </button>
                     </>
@@ -188,17 +194,26 @@ export function PlayerStageHeader({
                 </h2>
               </div>
               {isAuthenticated ? (
-                <div className="app-shell__player-mobile-summary" aria-label="내 게임 요약">
+                <div
+                  className="app-shell__player-mobile-summary"
+                  aria-label="내 게임 요약"
+                >
                   <button
                     aria-label="내 게임 열기"
                     className="app-shell__player-mobile-summary-item app-shell__player-mobile-summary-item--button app-shell__player-mobile-summary-item--game"
                     data-tier-code={currentTierCode ?? undefined}
-                    data-limit-reached={isOpenPositionLimitReached ? 'true' : undefined}
+                    data-limit-reached={
+                      isOpenPositionLimitReached ? "true" : undefined
+                    }
                     onClick={onOpenGameModal}
                     type="button"
                   >
-                    <span className="app-shell__player-mobile-summary-label">내 게임</span>
-                    <span className="app-shell__player-mobile-summary-value">{openPositionCount}개</span>
+                    <span className="app-shell__player-mobile-summary-label">
+                      내 게임
+                    </span>
+                    <span className="app-shell__player-mobile-summary-value">
+                      {openPositionCount}개
+                    </span>
                   </button>
                   <button
                     aria-label="지갑 현황 열기"
@@ -206,8 +221,12 @@ export function PlayerStageHeader({
                     onClick={onOpenWalletModal}
                     type="button"
                   >
-                    <span className="app-shell__player-mobile-summary-label">잔액</span>
-                    <span className="app-shell__player-mobile-summary-value">{walletSummary}</span>
+                    <span className="app-shell__player-mobile-summary-label">
+                      잔액
+                    </span>
+                    <span className="app-shell__player-mobile-summary-value">
+                      {walletSummary}
+                    </span>
                   </button>
                   <button
                     aria-label="티어 현황 열기"
@@ -216,8 +235,12 @@ export function PlayerStageHeader({
                     onClick={onOpenTierModal}
                     type="button"
                   >
-                    <span className="app-shell__player-mobile-summary-label">티어</span>
-                    <span className="app-shell__player-mobile-summary-value">{tierSummary}</span>
+                    <span className="app-shell__player-mobile-summary-label">
+                      티어
+                    </span>
+                    <span className="app-shell__player-mobile-summary-value">
+                      {tierSummary}
+                    </span>
                   </button>
                 </div>
               ) : null}
@@ -232,13 +255,21 @@ export function PlayerStageHeader({
           <div className="app-shell__player-title-row app-shell__player-title-row--desktop">
             <p className="app-shell__section-eyebrow">Now Playing</p>
             <h2 className="app-shell__section-title">
-              <button className="app-shell__section-title-button" onClick={onOpenRegionModal} type="button">
+              <button
+                className="app-shell__section-title-button"
+                onClick={onOpenRegionModal}
+                type="button"
+              >
                 {selectedCountryName}
               </button>
               {selectedCategoryLabel ? (
                 <>
-                  {' · '}
-                  <button className="app-shell__section-title-button" onClick={onOpenViewModal} type="button">
+                  {" · "}
+                  <button
+                    className="app-shell__section-title-button"
+                    onClick={onOpenViewModal}
+                    type="button"
+                  >
                     {selectedCategoryLabel}
                   </button>
                 </>
@@ -248,7 +279,9 @@ export function PlayerStageHeader({
         )}
       </div>
       {!isMobileLayout && headerSupplementalContent ? (
-        <div className="app-shell__player-heading-supplemental">{headerSupplementalContent}</div>
+        <div className="app-shell__player-heading-supplemental">
+          {headerSupplementalContent}
+        </div>
       ) : null}
       {!isMobileLayout ? (
         <div className="app-shell__player-actions">
@@ -278,16 +311,13 @@ function PlayerStage({
   communityContent,
   currentTierCode,
   currentTierName,
-  favoriteToggleLabel,
   filterContent,
   headerSupplementalContent,
   isChartLoading,
   isCinematicModeActive,
-  isFavoriteToggleDisabled,
   isManualPlaybackSaveDisabled,
   isOpenPositionLimitReached,
   isMobileLayout,
-  isSelectedChannelFavorited,
   manualPlaybackSaveButtonLabel,
   manualPlaybackSaveStatus,
   onManualPlaybackSave,
@@ -302,7 +332,6 @@ function PlayerStage({
   onPlaybackRestoreApplied,
   onPlaybackStateChange,
   onToggleCinematicMode,
-  onToggleFavoriteStreamer,
   playbackRestore,
   playerRef,
   playerSectionRef,
@@ -328,11 +357,13 @@ function PlayerStage({
   stageMetadataContent,
   supplementalContent,
   topContent,
-  toggleFavoriteStreamerPending,
 }: PlayerStageProps) {
   const hasSelectedVideo = Boolean(selectedVideoId);
-  const hasFallbackMetadata = Boolean(selectedVideoRankLabel || selectedVideoStatLabel);
-  const shouldUseCinematicWatchLayout = isCinematicModeActive && !isMobileLayout && Boolean(communityContent);
+  const hasFallbackMetadata = Boolean(
+    selectedVideoRankLabel || selectedVideoStatLabel,
+  );
+  const shouldUseCinematicWatchLayout =
+    isCinematicModeActive && !isMobileLayout && Boolean(communityContent);
   const headerContent = renderHeaderInline ? (
     <PlayerStageHeader
       authStatus={authStatus}
@@ -381,18 +412,9 @@ function PlayerStage({
           <h3 className="app-shell__stage-title">{selectedVideoTitle}</h3>
         </div>
         <div className="app-shell__stage-channel-row">
-          <p className="app-shell__stage-channel">{selectedVideoChannelTitle}</p>
-          <button
-            aria-label={favoriteToggleLabel}
-            className="app-shell__stage-channel-favorite"
-            data-active={isSelectedChannelFavorited}
-            disabled={authStatus !== 'authenticated' || isFavoriteToggleDisabled}
-            onClick={onToggleFavoriteStreamer}
-            title={favoriteToggleLabel}
-            type="button"
-          >
-            {toggleFavoriteStreamerPending ? '...' : isSelectedChannelFavorited ? '★' : '☆'}
-          </button>
+          <p className="app-shell__stage-channel">
+            {selectedVideoChannelTitle}
+          </p>
         </div>
         {stageMetadataContent ? (
           <div className="app-shell__stage-summary">{stageMetadataContent}</div>
@@ -401,14 +423,18 @@ function PlayerStage({
             <p className="app-shell__stage-summary-fallback">
               {selectedVideoRankLabel ? (
                 <>
-                  <span className="app-shell__stage-summary-fallback-label">순위</span>{' '}
+                  <span className="app-shell__stage-summary-fallback-label">
+                    순위
+                  </span>{" "}
                   <span>{selectedVideoRankLabel}</span>
                 </>
               ) : null}
-              {selectedVideoRankLabel && selectedVideoStatLabel ? ' · ' : null}
+              {selectedVideoRankLabel && selectedVideoStatLabel ? " · " : null}
               {selectedVideoStatLabel ? (
                 <>
-                  <span className="app-shell__stage-summary-fallback-label">조회수</span>{' '}
+                  <span className="app-shell__stage-summary-fallback-label">
+                    조회수
+                  </span>{" "}
                   <span>{selectedVideoStatLabel}</span>
                 </>
               ) : null}
@@ -429,9 +455,12 @@ function PlayerStage({
                 title={manualPlaybackSaveButtonLabel}
                 type="button"
               >
-                <span className="app-shell__stage-action-icon" aria-hidden="true">
-                  {manualPlaybackSaveButtonLabel === '저장 중...' ? (
-                    '⋯'
+                <span
+                  className="app-shell__stage-action-icon"
+                  aria-hidden="true"
+                >
+                  {manualPlaybackSaveButtonLabel === "저장 중..." ? (
+                    "⋯"
                   ) : (
                     <svg viewBox="0 0 24 24" fill="none">
                       <path
@@ -464,7 +493,7 @@ function PlayerStage({
           data-visible={Boolean(stageActionStatus || manualPlaybackSaveStatus)}
           role="status"
         >
-          {stageActionStatus ?? manualPlaybackSaveStatus ?? ' '}
+          {stageActionStatus ?? manualPlaybackSaveStatus ?? " "}
         </p>
       </div>
     </div>
@@ -492,12 +521,12 @@ function PlayerStage({
       ref={playerStageRef}
       className="app-shell__stage"
       data-cinematic={isCinematicModeActive}
-      data-player-docked={isVideoPlayerDocked ? 'true' : 'false'}
+      data-player-docked={isVideoPlayerDocked ? "true" : "false"}
     >
       <div
         className="app-shell__stage-stack"
         data-cinematic={isCinematicModeActive}
-        data-player-docked={isVideoPlayerDocked ? 'true' : 'false'}
+        data-player-docked={isVideoPlayerDocked ? "true" : "false"}
       >
         {isCinematicModeActive ? topContent : null}
         <section

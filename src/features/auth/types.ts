@@ -1,5 +1,5 @@
-import type { PlaybackProgress } from '../playback/types';
-import type { SelectedAchievementTitle } from '../game/types';
+import type { PlaybackProgress } from "../playback/types";
+import type { SelectedAchievementTitle } from "../game/types";
 
 export interface AuthUser {
   id: number;
@@ -9,7 +9,6 @@ export interface AuthUser {
   selectedTitle: SelectedAchievementTitle | null;
   createdAt: string;
   lastLoginAt: string;
-  favoriteCount: number;
   commentCount: number;
   tradeCount: number;
   lastPlaybackProgress: PlaybackProgress | null;
@@ -28,4 +27,4 @@ export interface GoogleAuthConfig {
   enabled: boolean;
 }
 
-export type AuthStatus = 'loading' | 'anonymous' | 'authenticated';
+export type AuthStatus = "loading" | "anonymous" | "authenticated";

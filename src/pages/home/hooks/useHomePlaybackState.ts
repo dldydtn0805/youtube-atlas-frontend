@@ -1,19 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import type { VideoPlayerHandle } from '../../../components/VideoPlayer/VideoPlayer';
-import type { VideoCategory } from '../../../constants/videoCategories';
-import type { AuthStatus, AuthUser } from '../../../features/auth/types';
-import { upsertPlaybackProgress } from '../../../features/playback/api';
-import { useVideoById } from '../../../features/youtube/queries';
-import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
-import { ApiRequestError, isApiConfigured } from '../../../lib/api';
-import usePlaybackQueue from './usePlaybackQueue';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import type { VideoPlayerHandle } from "../../../components/VideoPlayer/VideoPlayer";
+import type { VideoCategory } from "../../../constants/videoCategories";
+import type { AuthStatus, AuthUser } from "../../../features/auth/types";
+import { upsertPlaybackProgress } from "../../../features/playback/api";
+import { useVideoById } from "../../../features/youtube/queries";
+import type {
+  YouTubeCategorySection,
+  YouTubeVideoItem,
+} from "../../../features/youtube/types";
+import { ApiRequestError, isApiConfigured } from "../../../lib/api";
+import usePlaybackQueue from "./usePlaybackQueue";
 import {
   getVideoThumbnailUrl,
   mapPlaybackProgressToVideoItem,
   mergeUniqueVideoItems,
   type PendingPlaybackRestore,
-} from '../utils';
-import { formatPlaybackSaveTimestamp } from '../gameHelpers';
+} from "../utils";
+import { formatPlaybackSaveTimestamp } from "../gameHelpers";
 
 const ENABLE_PLAYBACK_PROGRESS = true;
 const PLAYBACK_PROGRESS_AUTOSAVE_INTERVAL_MS = 60000;
@@ -22,7 +32,7 @@ interface UseHomePlaybackStateOptions {
   accessToken: string | null;
   authStatus: AuthStatus;
   extraPlaybackSections?: YouTubeCategorySection[];
-  favoriteStreamerVideoSection?: YouTubeCategorySection;
+  likedVideoSection?: YouTubeCategorySection;
   gamePortfolioSection: YouTubeCategorySection;
   historyPlaybackSection?: YouTubeCategorySection;
   isMobileLayout: boolean;
@@ -73,7 +83,7 @@ export default function useHomePlaybackState({
   accessToken,
   authStatus,
   extraPlaybackSections,
-  favoriteStreamerVideoSection,
+  likedVideoSection,
   gamePortfolioSection,
   historyPlaybackSection,
   isMobileLayout,
@@ -93,14 +103,18 @@ export default function useHomePlaybackState({
   user,
   videoPlayerRef,
 }: UseHomePlaybackStateOptions): UseHomePlaybackStateResult {
-  const [isManualPlaybackSavePending, setIsManualPlaybackSavePending] = useState(false);
-  const [manualPlaybackSaveStatus, setManualPlaybackSaveStatus] = useState<string | null>(null);
+  const [isManualPlaybackSavePending, setIsManualPlaybackSavePending] =
+    useState(false);
+  const [manualPlaybackSaveStatus, setManualPlaybackSaveStatus] = useState<
+    string | null
+  >(null);
   const lastPersistedPlaybackSecondsRef = useRef<Record<string, number>>({});
   const lastPlaybackEntryVideoIdRef = useRef<string | undefined>(undefined);
 
-  const restoredPlaybackVideo = ENABLE_PLAYBACK_PROGRESS && user?.lastPlaybackProgress
-    ? mapPlaybackProgressToVideoItem(user.lastPlaybackProgress)
-    : undefined;
+  const restoredPlaybackVideo =
+    ENABLE_PLAYBACK_PROGRESS && user?.lastPlaybackProgress
+      ? mapPlaybackProgressToVideoItem(user.lastPlaybackProgress)
+      : undefined;
   const combinedPlayableItems = useMemo(
     () =>
       mergeUniqueVideoItems(
@@ -108,13 +122,13 @@ export default function useHomePlaybackState({
         newChartEntriesSection?.items,
         selectedPlaybackSection?.items,
         ...(extraPlaybackSections?.map((section) => section.items) ?? []),
-        favoriteStreamerVideoSection?.items,
+        likedVideoSection?.items,
         gamePortfolioSection.items,
         historyPlaybackSection?.items,
         restoredPlaybackVideo ? [restoredPlaybackVideo] : undefined,
       ),
     [
-      favoriteStreamerVideoSection?.items,
+      likedVideoSection?.items,
       gamePortfolioSection.items,
       historyPlaybackSection?.items,
       newChartEntriesSection?.items,
@@ -135,9 +149,9 @@ export default function useHomePlaybackState({
     syncPlaybackSelection,
     selectedVideoId,
   } = usePlaybackQueue({
-    autoSelectFirstVideoWhenEmpty: authStatus !== 'loading',
+    autoSelectFirstVideoWhenEmpty: authStatus !== "loading",
     extraPlaybackSections,
-    favoriteStreamerVideoSection,
+    likedVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
     isMobileLayout,
@@ -156,30 +170,42 @@ export default function useHomePlaybackState({
     setSelectedCategoryId,
     sortedVideoCategories,
   });
-  const selectedVideo = combinedPlayableItems.find((item) => item.id === selectedVideoId);
+  const selectedVideo = combinedPlayableItems.find(
+    (item) => item.id === selectedVideoId,
+  );
   const shouldLoadSelectedVideoDetail =
     isApiConfigured &&
     Boolean(selectedVideoId) &&
-    (!selectedVideo?.statistics?.viewCount || !selectedVideo?.snippet.channelId?.trim());
-  const { data: selectedVideoDetail } = useVideoById(selectedVideoId, shouldLoadSelectedVideoDetail);
+    (!selectedVideo?.statistics?.viewCount ||
+      !selectedVideo?.snippet.channelId?.trim());
+  const { data: selectedVideoDetail } = useVideoById(
+    selectedVideoId,
+    shouldLoadSelectedVideoDetail,
+  );
   const resolvedSelectedVideo =
     selectedVideo && selectedVideoDetail
       ? {
           ...selectedVideoDetail,
           ...selectedVideo,
-          statistics: selectedVideo.statistics ?? selectedVideoDetail.statistics,
+          statistics:
+            selectedVideo.statistics ?? selectedVideoDetail.statistics,
           snippet: {
             ...selectedVideoDetail.snippet,
             ...selectedVideo.snippet,
-            channelId: selectedVideo.snippet.channelId || selectedVideoDetail.snippet.channelId,
-            channelTitle: selectedVideo.snippet.channelTitle || selectedVideoDetail.snippet.channelTitle,
-            title: selectedVideo.snippet.title || selectedVideoDetail.snippet.title,
+            channelId:
+              selectedVideo.snippet.channelId ||
+              selectedVideoDetail.snippet.channelId,
+            channelTitle:
+              selectedVideo.snippet.channelTitle ||
+              selectedVideoDetail.snippet.channelTitle,
+            title:
+              selectedVideo.snippet.title || selectedVideoDetail.snippet.title,
           },
         }
-      : selectedVideoDetail ?? selectedVideo;
+      : (selectedVideoDetail ?? selectedVideo);
 
   useEffect(() => {
-    if (authStatus === 'authenticated') {
+    if (authStatus === "authenticated") {
       return;
     }
 
@@ -218,43 +244,62 @@ export default function useHomePlaybackState({
         keepalive?: boolean;
       },
     ) => {
-      if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !accessToken) {
+      if (
+        !ENABLE_PLAYBACK_PROGRESS ||
+        authStatus !== "authenticated" ||
+        !accessToken
+      ) {
         return null;
       }
 
-      const playbackVideo = combinedPlayableItems.find((item) => item.id === videoId);
+      const playbackVideo = combinedPlayableItems.find(
+        (item) => item.id === videoId,
+      );
 
       if (!playbackVideo) {
         return null;
       }
 
-      const normalizedPositionSeconds = Math.max(0, Math.floor(positionSeconds));
-      const previousPositionSeconds = lastPersistedPlaybackSecondsRef.current[videoId];
+      const normalizedPositionSeconds = Math.max(
+        0,
+        Math.floor(positionSeconds),
+      );
+      const previousPositionSeconds =
+        lastPersistedPlaybackSecondsRef.current[videoId];
 
-      if (!options?.force && previousPositionSeconds === normalizedPositionSeconds) {
+      if (
+        !options?.force &&
+        previousPositionSeconds === normalizedPositionSeconds
+      ) {
         return normalizedPositionSeconds;
       }
 
-      lastPersistedPlaybackSecondsRef.current[videoId] = normalizedPositionSeconds;
+      lastPersistedPlaybackSecondsRef.current[videoId] =
+        normalizedPositionSeconds;
 
       try {
-        await upsertPlaybackProgress(accessToken, {
-          channelTitle: playbackVideo.snippet.channelTitle || null,
-          positionSeconds: normalizedPositionSeconds,
-          thumbnailUrl: getVideoThumbnailUrl(playbackVideo),
-          videoId,
-          videoTitle: playbackVideo.snippet.title || null,
-        }, { keepalive: options?.keepalive });
+        await upsertPlaybackProgress(
+          accessToken,
+          {
+            channelTitle: playbackVideo.snippet.channelTitle || null,
+            positionSeconds: normalizedPositionSeconds,
+            thumbnailUrl: getVideoThumbnailUrl(playbackVideo),
+            videoId,
+            videoTitle: playbackVideo.snippet.title || null,
+          },
+          { keepalive: options?.keepalive },
+        );
       } catch (error) {
         if (previousPositionSeconds === undefined) {
           delete lastPersistedPlaybackSecondsRef.current[videoId];
         } else {
-          lastPersistedPlaybackSecondsRef.current[videoId] = previousPositionSeconds;
+          lastPersistedPlaybackSecondsRef.current[videoId] =
+            previousPositionSeconds;
         }
 
         if (
           error instanceof ApiRequestError &&
-          (error.code === 'unauthorized' || error.code === 'session_expired')
+          (error.code === "unauthorized" || error.code === "session_expired")
         ) {
           void logout();
         }
@@ -275,7 +320,11 @@ export default function useHomePlaybackState({
         return null;
       }
 
-      return persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, options);
+      return persistPlaybackProgress(
+        snapshot.videoId,
+        snapshot.positionSeconds,
+        options,
+      );
     },
     [persistPlaybackProgress, videoPlayerRef],
   );
@@ -283,10 +332,12 @@ export default function useHomePlaybackState({
   const persistPlaybackEntry = useCallback(
     (videoId: string) => {
       const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
-      const entryPositionSeconds = snapshot?.videoId === videoId ? snapshot.positionSeconds : 0;
+      const entryPositionSeconds =
+        snapshot?.videoId === videoId ? snapshot.positionSeconds : 0;
 
-      void persistPlaybackProgress(videoId, entryPositionSeconds)
-        .catch(() => undefined);
+      void persistPlaybackProgress(videoId, entryPositionSeconds).catch(
+        () => undefined,
+      );
     },
     [persistPlaybackProgress, videoPlayerRef],
   );
@@ -299,8 +350,9 @@ export default function useHomePlaybackState({
         return;
       }
 
-      void persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, { force: true })
-        .catch(() => undefined);
+      void persistPlaybackProgress(snapshot.videoId, snapshot.positionSeconds, {
+        force: true,
+      }).catch(() => undefined);
     },
     [persistPlaybackProgress, videoPlayerRef],
   );
@@ -314,7 +366,11 @@ export default function useHomePlaybackState({
   );
 
   const handleSelectVideoWithRestoreReset = useCallback(
-    (videoId: string, playbackQueueId: string, triggerElement?: HTMLButtonElement) => {
+    (
+      videoId: string,
+      playbackQueueId: string,
+      triggerElement?: HTMLButtonElement,
+    ) => {
       persistCurrentPlaybackBeforeSwitch(videoId);
       handleSelectVideo(videoId, playbackQueueId, triggerElement);
     },
@@ -345,7 +401,7 @@ export default function useHomePlaybackState({
       return;
     }
 
-    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated') {
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== "authenticated") {
       return;
     }
 
@@ -358,7 +414,11 @@ export default function useHomePlaybackState({
   }, [authStatus, persistPlaybackEntry, selectedVideoId]);
 
   useEffect(() => {
-    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated' || !selectedVideoId) {
+    if (
+      !ENABLE_PLAYBACK_PROGRESS ||
+      authStatus !== "authenticated" ||
+      !selectedVideoId
+    ) {
       return undefined;
     }
 
@@ -372,7 +432,7 @@ export default function useHomePlaybackState({
   }, [authStatus, persistCurrentPlaybackSnapshot, selectedVideoId]);
 
   useEffect(() => {
-    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== 'authenticated') {
+    if (!ENABLE_PLAYBACK_PROGRESS || authStatus !== "authenticated") {
       return undefined;
     }
 
@@ -381,35 +441,35 @@ export default function useHomePlaybackState({
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
+      if (document.visibilityState === "hidden") {
         void persistCurrentPlaybackSnapshot({ force: true, keepalive: true });
       }
     };
 
-    window.addEventListener('pagehide', handlePageHide);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [authStatus, persistCurrentPlaybackSnapshot]);
 
   const handleManualPlaybackSave = useCallback(async () => {
     if (!ENABLE_PLAYBACK_PROGRESS) {
-      setManualPlaybackSaveStatus('재생 위치 저장을 사용하지 않습니다.');
+      setManualPlaybackSaveStatus("재생 위치 저장을 사용하지 않습니다.");
       return;
     }
 
-    if (authStatus !== 'authenticated' || !selectedVideoId) {
-      setManualPlaybackSaveStatus('로그인 후 저장할 수 있습니다.');
+    if (authStatus !== "authenticated" || !selectedVideoId) {
+      setManualPlaybackSaveStatus("로그인 후 저장할 수 있습니다.");
       return;
     }
 
     const snapshot = videoPlayerRef.current?.readPlaybackSnapshot();
 
     if (!snapshot) {
-      setManualPlaybackSaveStatus('플레이어 준비 후 다시 저장해 주세요.');
+      setManualPlaybackSaveStatus("플레이어 준비 후 다시 저장해 주세요.");
       return;
     }
 
@@ -426,7 +486,7 @@ export default function useHomePlaybackState({
       );
 
       if (savedPositionSeconds === null) {
-        setManualPlaybackSaveStatus('저장할 재생 위치를 찾지 못했습니다.');
+        setManualPlaybackSaveStatus("저장할 재생 위치를 찾지 못했습니다.");
         return;
       }
 
@@ -435,7 +495,9 @@ export default function useHomePlaybackState({
       );
     } catch (error) {
       setManualPlaybackSaveStatus(
-        error instanceof Error ? error.message : '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        error instanceof Error
+          ? error.message
+          : "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.",
       );
     } finally {
       setIsManualPlaybackSavePending(false);

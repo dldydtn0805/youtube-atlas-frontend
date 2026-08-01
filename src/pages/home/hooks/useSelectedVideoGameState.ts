@@ -1,13 +1,20 @@
-import { useMemo } from 'react';
-import type { FavoriteStreamer } from '../../../features/favorites/types';
+import { useMemo } from "react";
 import {
   getGameInventoryNextTierText,
   getGameInventorySlotLimit,
-} from '../../../features/game/inventory';
-import type { GameCurrentSeason, GameMarketVideo, GamePosition } from '../../../features/game/types';
-import { getPrimaryVideoTrendBadge, getVideoTrendBadges, type VideoTrendBadge } from '../../../features/trending/presentation';
-import type { VideoTrendSignal } from '../../../features/trending/types';
-import type { YouTubeVideoItem } from '../../../features/youtube/types';
+} from "../../../features/game/inventory";
+import type {
+  GameCurrentSeason,
+  GameMarketVideo,
+  GamePosition,
+} from "../../../features/game/types";
+import {
+  getPrimaryVideoTrendBadge,
+  getVideoTrendBadges,
+  type VideoTrendBadge,
+} from "../../../features/trending/presentation";
+import type { VideoTrendSignal } from "../../../features/trending/types";
+import type { YouTubeVideoItem } from "../../../features/youtube/types";
 import {
   buildSellCandidates,
   calculateGameOrderPoints,
@@ -26,25 +33,22 @@ import {
   type OpenGameHolding,
   type GamePositionSummary,
   type GameSellSummary,
-} from '../gameHelpers';
+} from "../gameHelpers";
 import {
   formatSelectedVideoRankLabel,
   formatVideoViewCount,
   getVideoThumbnailUrl,
-} from '../utils';
+} from "../utils";
 
 interface UseSelectedVideoGameStateOptions {
-  authStatus: 'loading' | 'anonymous' | 'authenticated';
+  authStatus: "loading" | "anonymous" | "authenticated";
   canShowGameActions: boolean;
   currentGameSeason?: GameCurrentSeason;
   currentGameSeasonError: unknown;
-  favoriteStreamers: FavoriteStreamer[];
-  favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameHistoryPositions: GamePosition[];
   gameMarket: GameMarketVideo[];
   isBuySubmitting: boolean;
   isCurrentGameSeasonLoading: boolean;
-  isFavoriteTogglePending: boolean;
   openGameHoldings: OpenGameHolding[];
   openGamePositions: GamePosition[];
   resolvedSelectedVideo?: YouTubeVideoItem;
@@ -65,11 +69,8 @@ interface UseSelectedVideoGameStateResult {
   buyModalHelperText: string;
   buyShortfallPointsText: string | null;
   currentVideoGameHelperText: string;
-  favoriteToggleHelperText: string;
-  favoriteToggleLabel: string;
   gameSeasonRegionMismatch: boolean;
   isCurrentVideoGameHelperWarning: boolean;
-  isSelectedChannelFavorited: boolean;
   isSelectedVideoBuyDisabled: boolean;
   isSelectedVideoSellDisabled: boolean;
   isChartActionDisabled: boolean;
@@ -77,7 +78,6 @@ interface UseSelectedVideoGameStateResult {
   maxSellQuantity: number;
   normalizedBuyQuantity: number;
   normalizedSellQuantity: number;
-  selectedChannelId?: string;
   selectedGameActionChannelTitle: string;
   selectedGameActionTitle: string;
   selectedVideoCurrentChartRank: number | null | undefined;
@@ -121,7 +121,7 @@ export function buildSelectedVideoTrendBadgeSource(options: {
   if (selectedVideoMarketEntry) {
     return {
       categoryId: selectedCategoryId,
-      categoryLabel: selectedCategoryLabel ?? '',
+      categoryLabel: selectedCategoryLabel ?? "",
       capturedAt: selectedVideoMarketEntry.capturedAt,
       currentRank: selectedVideoMarketEntry.currentRank,
       currentViewCount: selectedVideoMarketEntry.currentViewCount,
@@ -146,13 +146,10 @@ export default function useSelectedVideoGameState({
   canShowGameActions,
   currentGameSeason,
   currentGameSeasonError,
-  favoriteStreamers,
-  favoriteTrendSignalsByVideoId,
   gameHistoryPositions,
   gameMarket,
   isBuySubmitting,
   isCurrentGameSeasonLoading,
-  isFavoriteTogglePending,
   openGameHoldings,
   openGamePositions,
   resolvedSelectedVideo,
@@ -237,33 +234,44 @@ export default function useSelectedVideoGameState({
     [openGameHoldings],
   );
   const selectedVideoOpenPositionsForVideo = useMemo(
-    () => (selectedVideoId ? openGamePositionsByVideoId.get(selectedVideoId) ?? [] : []),
+    () =>
+      selectedVideoId
+        ? (openGamePositionsByVideoId.get(selectedVideoId) ?? [])
+        : [],
     [openGamePositionsByVideoId, selectedVideoId],
   );
-  const selectedVideoOpenPosition = useMemo(
-    () => {
-      const matchedPosition =
-        selectedOpenPositionId != null
-          ? openGamePositionsById.get(selectedOpenPositionId)
-          : undefined;
+  const selectedVideoOpenPosition = useMemo(() => {
+    const matchedPosition =
+      selectedOpenPositionId != null
+        ? openGamePositionsById.get(selectedOpenPositionId)
+        : undefined;
 
-      if (matchedPosition && (!selectedVideoId || matchedPosition.videoId === selectedVideoId)) {
-        return matchedPosition;
-      }
+    if (
+      matchedPosition &&
+      (!selectedVideoId || matchedPosition.videoId === selectedVideoId)
+    ) {
+      return matchedPosition;
+    }
 
-      return selectedVideoOpenPositionsForVideo[0];
-    },
-    [openGamePositionsById, selectedOpenPositionId, selectedVideoId, selectedVideoOpenPositionsForVideo],
-  );
+    return selectedVideoOpenPositionsForVideo[0];
+  }, [
+    openGamePositionsById,
+    selectedOpenPositionId,
+    selectedVideoId,
+    selectedVideoOpenPositionsForVideo,
+  ]);
   const selectedVideoOpenPositions = useMemo(
-    () => (selectedVideoOpenPosition ? [selectedVideoOpenPosition] : selectedVideoOpenPositionsForVideo),
+    () =>
+      selectedVideoOpenPosition
+        ? [selectedVideoOpenPosition]
+        : selectedVideoOpenPositionsForVideo,
     [selectedVideoOpenPosition, selectedVideoOpenPositionsForVideo],
   );
   const selectedVideoMarketEntry = selectedVideoId
     ? gameMarket.find((marketVideo) => marketVideo.videoId === selectedVideoId)
     : undefined;
   const selectedVideoTrendSignal = selectedVideoId
-    ? selectedVideoRankSignalById[selectedVideoId] ?? favoriteTrendSignalsByVideoId[selectedVideoId]
+    ? selectedVideoRankSignalById[selectedVideoId]
     : undefined;
   const selectedHistoricalPosition = useMemo(() => {
     const matchedPosition =
@@ -271,12 +279,22 @@ export default function useSelectedVideoGameState({
         ? gameHistoryPositionsById.get(selectedOpenPositionId)
         : undefined;
 
-    if (matchedPosition && (!selectedVideoId || matchedPosition.videoId === selectedVideoId)) {
+    if (
+      matchedPosition &&
+      (!selectedVideoId || matchedPosition.videoId === selectedVideoId)
+    ) {
       return matchedPosition;
     }
 
-    return selectedVideoId ? gameHistoryPositionsByVideoId.get(selectedVideoId)?.[0] : undefined;
-  }, [gameHistoryPositionsByVideoId, gameHistoryPositionsById, selectedOpenPositionId, selectedVideoId]);
+    return selectedVideoId
+      ? gameHistoryPositionsByVideoId.get(selectedVideoId)?.[0]
+      : undefined;
+  }, [
+    gameHistoryPositionsByVideoId,
+    gameHistoryPositionsById,
+    selectedOpenPositionId,
+    selectedVideoId,
+  ]);
   const selectedVideoHistoryTargetPosition = useMemo(() => {
     const candidatePositions = [...selectedVideoOpenPositions];
 
@@ -289,7 +307,8 @@ export default function useSelectedVideoGameState({
     }
 
     return candidatePositions.reduce((latestPosition, currentPosition) =>
-      new Date(currentPosition.createdAt).getTime() > new Date(latestPosition.createdAt).getTime()
+      new Date(currentPosition.createdAt).getTime() >
+      new Date(latestPosition.createdAt).getTime()
         ? currentPosition
         : latestPosition,
     );
@@ -302,11 +321,18 @@ export default function useSelectedVideoGameState({
     () => summarizeGamePositions(selectedVideoOpenPositions),
     [selectedVideoOpenPositions],
   );
-  const selectedVideoUnitPricePoints = selectedVideoMarketEntry?.currentPricePoints ?? null;
-  const selectedVideoAlreadyOwned = selectedVideoOpenPositionsForVideo.length > 0;
-  const openDistinctVideoCount = new Set(openGamePositions.map((position) => position.videoId)).size;
+  const selectedVideoUnitPricePoints =
+    selectedVideoMarketEntry?.currentPricePoints ?? null;
+  const selectedVideoAlreadyOwned =
+    selectedVideoOpenPositionsForVideo.length > 0;
+  const openDistinctVideoCount = new Set(
+    openGamePositions.map((position) => position.videoId),
+  ).size;
   const remainingOpenPositionSlots = currentGameSeason
-    ? Math.max(0, getGameInventorySlotLimit(currentGameSeason) - openDistinctVideoCount)
+    ? Math.max(
+        0,
+        getGameInventorySlotLimit(currentGameSeason) - openDistinctVideoCount,
+      )
     : 0;
   const nextInventoryTierText = getGameInventoryNextTierText(currentGameSeason);
   const maxBuyQuantity =
@@ -314,15 +340,22 @@ export default function useSelectedVideoGameState({
       ? Math.max(
           0,
           !selectedVideoAlreadyOwned && remainingOpenPositionSlots > 0
-            ? Math.floor((currentGameSeason.wallet.balancePoints * DEFAULT_GAME_QUANTITY) / selectedVideoUnitPricePoints)
+            ? Math.floor(
+                (currentGameSeason.wallet.balancePoints *
+                  DEFAULT_GAME_QUANTITY) /
+                  selectedVideoUnitPricePoints,
+              )
             : 0,
         )
       : 0;
   const normalizedBuyQuantity = normalizeGameOrderQuantity(buyQuantity);
   const maxOrderBuyQuantity = normalizeGameOrderCapacity(maxBuyQuantity);
   const totalSelectedVideoBuyPoints =
-    typeof selectedVideoUnitPricePoints === 'number'
-      ? calculateGameOrderPoints(selectedVideoUnitPricePoints, normalizedBuyQuantity)
+    typeof selectedVideoUnitPricePoints === "number"
+      ? calculateGameOrderPoints(
+          selectedVideoUnitPricePoints,
+          normalizedBuyQuantity,
+        )
       : null;
   const selectedVideoCurrentChartRank =
     selectedVideoMarketEntry?.currentRank ??
@@ -331,7 +364,8 @@ export default function useSelectedVideoGameState({
   const selectedVideoIsChartOut =
     selectedVideoMarketEntry || selectedVideoTrendSignal
       ? false
-      : selectedVideoOpenPositions.some((position) => position.chartOut) || (selectedHistoricalPosition?.chartOut ?? false);
+      : selectedVideoOpenPositions.some((position) => position.chartOut) ||
+        (selectedHistoricalPosition?.chartOut ?? false);
   const selectedVideoRankLabel = formatSelectedVideoRankLabel(
     selectedCountryName,
     selectedVideoCurrentChartRank,
@@ -340,7 +374,7 @@ export default function useSelectedVideoGameState({
     },
   );
   const selectedVideoPriceLabel =
-    typeof selectedVideoUnitPricePoints === 'number'
+    typeof selectedVideoUnitPricePoints === "number"
       ? formatPoints(selectedVideoUnitPricePoints)
       : undefined;
   const selectedVideoStatLabel = formatVideoViewCount(
@@ -348,29 +382,18 @@ export default function useSelectedVideoGameState({
       selectedVideoTrendSignal?.currentViewCount?.toString() ??
       selectedVideoMarketEntry?.currentViewCount?.toString(),
   );
-  const selectedChannelId = resolvedSelectedVideo?.snippet.channelId?.trim();
   const gameSeasonRegionMismatch =
     Boolean(currentGameSeason?.regionCode) &&
-    selectedRegionCode.toUpperCase() !== currentGameSeason?.regionCode.toUpperCase();
-  const isSelectedChannelFavorited = selectedChannelId
-    ? favoriteStreamers.some((favoriteStreamer) => favoriteStreamer.channelId === selectedChannelId)
-    : false;
-  const favoriteToggleHelperText =
-    authStatus === 'authenticated'
-      ? isSelectedChannelFavorited
-        ? '즐겨찾는 채널입니다.'
-        : '이 채널을 즐겨찾기에 추가할 수 있습니다.'
-      : '로그인 후 즐겨찾기를 사용할 수 있습니다.';
-  const favoriteToggleLabel =
-    isFavoriteTogglePending
-      ? '즐겨찾기 처리 중'
-      : isSelectedChannelFavorited
-        ? '즐겨찾기 저장됨'
-        : '채널 즐겨찾기';
+    selectedRegionCode.toUpperCase() !==
+      currentGameSeason?.regionCode.toUpperCase();
   const sellableSelectedVideoOpenPositions = useMemo(
     () =>
       [...selectedVideoOpenPositions]
-        .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
+        .sort(
+          (left, right) =>
+            new Date(left.createdAt).getTime() -
+            new Date(right.createdAt).getTime(),
+        )
         .filter(
           (position) =>
             position.sellLockedUntilNextSync !== true &&
@@ -386,36 +409,50 @@ export default function useSelectedVideoGameState({
   const normalizedSellQuantity = normalizeGameOrderQuantity(sellQuantity);
   const maxOrderSellQuantity = normalizeGameOrderCapacity(maxSellQuantity);
   const selectedVideoSellSummary = useMemo(
-    () => summarizeSellCandidates(buildSellCandidates(sellableSelectedVideoOpenPositions, normalizedSellQuantity)),
+    () =>
+      summarizeSellCandidates(
+        buildSellCandidates(
+          sellableSelectedVideoOpenPositions,
+          normalizedSellQuantity,
+        ),
+      ),
     [normalizedSellQuantity, sellableSelectedVideoOpenPositions],
   );
   const selectedGameActionTitle =
-    selectedVideoOpenPosition?.title ?? resolvedSelectedVideo?.snippet.title ?? '선택한 영상';
+    selectedVideoOpenPosition?.title ??
+    resolvedSelectedVideo?.snippet.title ??
+    "선택한 영상";
   const selectedOpenHolding =
     selectedOpenPositionId != null
       ? openGameHoldingsByPositionId.get(selectedOpenPositionId)
       : selectedVideoId
         ? openGameHoldingsByVideoId.get(selectedVideoId)?.[0]
         : undefined;
-  const selectedOpenHoldingLockedQuantity = selectedOpenHolding?.lockedQuantity ?? 0;
-  const selectedOpenHoldingNextSellableInSeconds = selectedOpenHolding?.nextSellableInSeconds ?? null;
+  const selectedOpenHoldingLockedQuantity =
+    selectedOpenHolding?.lockedQuantity ?? 0;
+  const selectedOpenHoldingNextSellableInSeconds =
+    selectedOpenHolding?.nextSellableInSeconds ?? null;
   const selectedOpenHoldingSellLockedUntilNextSync =
     selectedOpenHolding?.sellLockedUntilNextSync === true;
-  const selectedOpenHoldingReservedQuantity = selectedOpenHolding?.scheduledSellQuantity ?? 0;
+  const selectedOpenHoldingReservedQuantity =
+    selectedOpenHolding?.scheduledSellQuantity ?? 0;
   const sellModalHelperText =
     maxOrderSellQuantity > 0
       ? selectedOpenHoldingReservedQuantity > 0
-        ? '이 영상은 예약 매도에 등록되어 있습니다. 예약을 취소하면 보유한 1개를 전량 매도할 수 있습니다.'
-        : selectedOpenHoldingLockedQuantity > 0 && selectedOpenHoldingNextSellableInSeconds !== null
+        ? "이 영상은 예약 매도에 등록되어 있습니다. 예약을 취소하면 보유한 1개를 전량 매도할 수 있습니다."
+        : selectedOpenHoldingLockedQuantity > 0 &&
+            selectedOpenHoldingNextSellableInSeconds !== null
           ? `${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후 보유한 1개를 전량 매도할 수 있습니다.`
-        : '보유한 영상 1개를 전량 매도합니다.'
+          : "보유한 영상 1개를 전량 매도합니다."
       : selectedOpenHoldingSellLockedUntilNextSync
-        ? '이번 트렌드 싱크에서 매수한 영상입니다. 다음 트렌드 싱크 후 매도할 수 있습니다.'
-      : selectedOpenHoldingNextSellableInSeconds !== null
-        ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
-        : '지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.';
+        ? "이번 트렌드 싱크에서 매수한 영상입니다. 다음 트렌드 싱크 후 매도할 수 있습니다."
+        : selectedOpenHoldingNextSellableInSeconds !== null
+          ? `지금은 최소 보유 시간이 지나지 않았습니다. ${formatHoldCountdown(selectedOpenHoldingNextSellableInSeconds)} 후부터 매도할 수 있습니다.`
+          : "지금은 최소 보유 시간이 지나지 않아 매도 가능한 포지션이 없습니다.";
   const defaultPreviewBuyQuantity =
-    maxOrderBuyQuantity > 0 ? Math.min(DEFAULT_GAME_QUANTITY, maxOrderBuyQuantity) : DEFAULT_GAME_QUANTITY;
+    maxOrderBuyQuantity > 0
+      ? Math.min(DEFAULT_GAME_QUANTITY, maxOrderBuyQuantity)
+      : DEFAULT_GAME_QUANTITY;
   const buyRemainingPointsText = getBuyRemainingPointsText(
     currentGameSeason,
     selectedVideoMarketEntry,
@@ -436,39 +473,37 @@ export default function useSelectedVideoGameState({
     selectedVideoMarketEntry,
     normalizedBuyQuantity,
   );
-  const buyModalHelperText =
-    selectedVideoAlreadyOwned
-      ? '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.'
-      : maxOrderBuyQuantity > 0
-        ? buyModalRemainingPointsText ??
-          `남은 종목 슬롯 ${remainingOpenPositionSlots}개 안에서 서로 다른 영상을 보유할 수 있으며, 같은 영상은 1개만 매수할 수 있습니다.`
-        : buyModalShortfallPointsText ??
-          selectedVideoMarketEntry?.buyBlockedReason ??
-          (nextInventoryTierText
-            ? `${nextInventoryTierText}으로 늘릴 수 있습니다.`
-            : '지금은 추가 매수할 수 없습니다.');
-  const currentVideoGameHelperText =
-    !canShowGameActions
-      ? '매수/매도는 전체 카테고리에서만 가능합니다.'
-      : authStatus !== 'authenticated'
-        ? '로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다.'
-        : selectedVideoOpenPositionCount > 0
-          ? `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중입니다. 전량 매도하면 다시 매수할 수 있습니다.`
-          : selectedVideoMarketEntry
-            ? selectedVideoMarketEntry.canBuy
-              ? buyRemainingPointsText ?? '지금 바로 매수할 수 있습니다.'
-              : buyShortfallPointsText ??
-                selectedVideoMarketEntry.buyBlockedReason ??
-                '지금은 매수할 수 없습니다.'
-            : currentGameSeason
-              ? gameSeasonRegionMismatch
-                ? `게임 시즌은 ${currentGameSeason.regionCode} 기준으로 진행 중입니다.`
-                : '현재 영상은 아직 게임 거래 대상이 아닙니다.'
-              : isCurrentGameSeasonLoading
-                ? '게임 시즌을 불러오는 중입니다.'
-                : currentGameSeasonError instanceof Error
-                  ? currentGameSeasonError.message
-                  : '다음 게임 시즌을 준비 중입니다.';
+  const buyModalHelperText = selectedVideoAlreadyOwned
+    ? "이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다."
+    : maxOrderBuyQuantity > 0
+      ? (buyModalRemainingPointsText ??
+        `남은 종목 슬롯 ${remainingOpenPositionSlots}개 안에서 서로 다른 영상을 보유할 수 있으며, 같은 영상은 1개만 매수할 수 있습니다.`)
+      : (buyModalShortfallPointsText ??
+        selectedVideoMarketEntry?.buyBlockedReason ??
+        (nextInventoryTierText
+          ? `${nextInventoryTierText}으로 늘릴 수 있습니다.`
+          : "지금은 추가 매수할 수 없습니다."));
+  const currentVideoGameHelperText = !canShowGameActions
+    ? "매수/매도는 전체 카테고리에서만 가능합니다."
+    : authStatus !== "authenticated"
+      ? "로그인하면 지금 보는 영상도 바로 게임 포지션으로 담을 수 있습니다."
+      : selectedVideoOpenPositionCount > 0
+        ? `현재 이 영상을 ${formatGameQuantity(selectedVideoOpenPositionCount)} 보유 중입니다. 전량 매도하면 다시 매수할 수 있습니다.`
+        : selectedVideoMarketEntry
+          ? selectedVideoMarketEntry.canBuy
+            ? (buyRemainingPointsText ?? "지금 바로 매수할 수 있습니다.")
+            : (buyShortfallPointsText ??
+              selectedVideoMarketEntry.buyBlockedReason ??
+              "지금은 매수할 수 없습니다.")
+          : currentGameSeason
+            ? gameSeasonRegionMismatch
+              ? `게임 시즌은 ${currentGameSeason.regionCode} 기준으로 진행 중입니다.`
+              : "현재 영상은 아직 게임 거래 대상이 아닙니다."
+            : isCurrentGameSeasonLoading
+              ? "게임 시즌을 불러오는 중입니다."
+              : currentGameSeasonError instanceof Error
+                ? currentGameSeasonError.message
+                : "다음 게임 시즌을 준비 중입니다.";
   const isCurrentVideoGameHelperWarning = Boolean(
     selectedVideoMarketEntry?.canBuy === false && buyShortfallPointsText,
   );
@@ -480,11 +515,15 @@ export default function useSelectedVideoGameState({
     selectedVideoMarketEntry,
     selectedVideoTrendSignal,
   });
-  const selectedVideoTrendBadges = getVideoTrendBadges(selectedVideoTrendBadgeSource);
-  const selectedVideoRankTrendIndicator = getPrimaryVideoTrendBadge(selectedVideoTrendBadgeSource);
+  const selectedVideoTrendBadges = getVideoTrendBadges(
+    selectedVideoTrendBadgeSource,
+  );
+  const selectedVideoRankTrendIndicator = getPrimaryVideoTrendBadge(
+    selectedVideoTrendBadgeSource,
+  );
   const isSelectedVideoBuyDisabled =
     !selectedVideoId ||
-    authStatus !== 'authenticated' ||
+    authStatus !== "authenticated" ||
     isBuySubmitting ||
     !selectedVideoMarketEntry ||
     !selectedVideoMarketEntry.canBuy ||
@@ -492,37 +531,38 @@ export default function useSelectedVideoGameState({
     !currentGameSeason;
   const isSelectedVideoSellDisabled =
     !selectedVideoId ||
-    authStatus !== 'authenticated' ||
+    authStatus !== "authenticated" ||
     !canShowGameActions ||
     selectedVideoOpenPositionCount <= 0 ||
     maxOrderSellQuantity <= 0;
   const buyActionTitle =
-    authStatus !== 'authenticated'
-      ? '로그인 후 매수할 수 있습니다.'
+    authStatus !== "authenticated"
+      ? "로그인 후 매수할 수 있습니다."
       : selectedVideoAlreadyOwned
-        ? '이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다.'
+        ? "이미 보유 중인 영상입니다. 전량 매도한 뒤 다시 매수할 수 있습니다."
         : selectedVideoMarketEntry?.canBuy
-          ? '현재 영상을 1개 매수합니다.'
-          : buyShortfallPointsText ??
+          ? "현재 영상을 1개 매수합니다."
+          : (buyShortfallPointsText ??
             selectedVideoMarketEntry?.buyBlockedReason ??
             (currentGameSeason
-              ? '현재 영상은 게임 거래 대상이 아닙니다.'
-              : '활성 시즌이 없습니다.');
-  const sellActionTitle =
-    !canShowGameActions
-      ? '전체 카테고리에서만 매도할 수 있습니다.'
-      : maxOrderSellQuantity > 0
-        ? '보유한 영상 1개를 전량 매도합니다.'
-        : sellModalHelperText;
+              ? "현재 영상은 게임 거래 대상이 아닙니다."
+              : "활성 시즌이 없습니다."));
+  const sellActionTitle = !canShowGameActions
+    ? "전체 카테고리에서만 매도할 수 있습니다."
+    : maxOrderSellQuantity > 0
+      ? "보유한 영상 1개를 전량 매도합니다."
+      : sellModalHelperText;
   const selectedVideoTradeThumbnailUrl =
     selectedVideoMarketEntry?.thumbnailUrl ??
     selectedVideoOpenPosition?.thumbnailUrl ??
-    (resolvedSelectedVideo ? getVideoThumbnailUrl(resolvedSelectedVideo) : null);
+    (resolvedSelectedVideo
+      ? getVideoThumbnailUrl(resolvedSelectedVideo)
+      : null);
   const selectedGameActionChannelTitle =
     selectedVideoOpenPosition?.channelTitle ??
     selectedVideoMarketEntry?.channelTitle ??
     resolvedSelectedVideo?.snippet.channelTitle ??
-    '';
+    "";
   const isChartActionDisabled = !selectedVideoId || !canShowGameActions;
 
   return {
@@ -530,19 +570,15 @@ export default function useSelectedVideoGameState({
     buyModalHelperText,
     buyShortfallPointsText,
     currentVideoGameHelperText,
-    favoriteToggleHelperText,
-    favoriteToggleLabel,
     gameSeasonRegionMismatch,
     isChartActionDisabled,
     isCurrentVideoGameHelperWarning,
-    isSelectedChannelFavorited,
     isSelectedVideoBuyDisabled,
     isSelectedVideoSellDisabled,
     maxBuyQuantity,
     maxSellQuantity,
     normalizedBuyQuantity,
     normalizedSellQuantity,
-    selectedChannelId,
     selectedGameActionChannelTitle,
     selectedGameActionTitle,
     selectedVideoCurrentChartRank,

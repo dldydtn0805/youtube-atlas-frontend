@@ -1,32 +1,32 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
-import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { useState } from "react";
+import { describe, expect, it, vi } from "vitest";
 import type {
   GameCurrentSeason,
   GameHighlight,
   GameLeaderboardEntry,
   GamePosition,
   GameScheduledSellOrder,
-} from '../../../features/game/types';
-import type { OpenGameHolding } from '../gameHelpers';
-import { HISTORY_PLAYBACK_QUEUE_ID } from '../utils';
+} from "../../../features/game/types";
+import type { OpenGameHolding } from "../gameHelpers";
+import { HISTORY_PLAYBACK_QUEUE_ID } from "../utils";
 import {
   RankingGameHistoryTab,
   RankingGameLeaderboardTab,
   RankingGamePanelShell,
   RankingGamePositionsTab,
   RankingGameSelectedVideoActions,
-} from './RankingGamePanel';
+} from "./RankingGamePanel";
 
-type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
+type GameTab = "positions" | "scheduledOrders" | "history" | "guide";
 
 function createGamePosition(overrides: Partial<GamePosition>): GamePosition {
   return {
     id: 1,
-    videoId: 'video-1',
-    title: 'Video Title',
-    channelTitle: 'Channel',
-    thumbnailUrl: '',
+    videoId: "video-1",
+    title: "Video Title",
+    channelTitle: "Channel",
+    thumbnailUrl: "",
     buyRank: 1,
     currentRank: 1,
     rankDiff: null,
@@ -35,26 +35,28 @@ function createGamePosition(overrides: Partial<GamePosition>): GamePosition {
     currentPricePoints: 120,
     profitPoints: 20,
     chartOut: false,
-    status: 'OPEN',
-    buyCapturedAt: '2026-01-01T00:00:00.000Z',
-    createdAt: '2026-01-01T00:00:00.000Z',
+    status: "OPEN",
+    buyCapturedAt: "2026-01-01T00:00:00.000Z",
+    createdAt: "2026-01-01T00:00:00.000Z",
     closedAt: null,
     ...overrides,
   };
 }
 
-function createCurrentSeason(overrides: Partial<GameCurrentSeason> = {}): GameCurrentSeason {
+function createCurrentSeason(
+  overrides: Partial<GameCurrentSeason> = {},
+): GameCurrentSeason {
   return {
-    endAt: '2026-04-30T00:00:00.000Z',
+    endAt: "2026-04-30T00:00:00.000Z",
     maxOpenPositions: 3,
     minHoldSeconds: 60,
     rankPointMultiplier: 1,
-    regionCode: 'KR',
+    regionCode: "KR",
     seasonId: 1,
-    seasonName: '테스트 시즌',
+    seasonName: "테스트 시즌",
     startingBalancePoints: 1000,
-    startAt: '2026-04-01T00:00:00.000Z',
-    status: 'ACTIVE',
+    startAt: "2026-04-01T00:00:00.000Z",
+    status: "ACTIVE",
     inventorySlots: {
       baseSlots: 5,
       currentTier: null,
@@ -74,17 +76,19 @@ function createCurrentSeason(overrides: Partial<GameCurrentSeason> = {}): GameCu
   };
 }
 
-function createGameHighlight(overrides: Partial<GameHighlight> = {}): GameHighlight {
+function createGameHighlight(
+  overrides: Partial<GameHighlight> = {},
+): GameHighlight {
   return {
-    id: 'highlight-1',
-    highlightType: 'SNIPE',
-    title: 'Highlight',
-    description: '수익률 359.2% 플레이가 기록됐습니다.',
+    id: "highlight-1",
+    highlightType: "SNIPE",
+    title: "Highlight",
+    description: "수익률 359.2% 플레이가 기록됐습니다.",
     positionId: 1,
-    videoId: 'video-1',
-    videoTitle: '하이라이트 영상 제목',
-    channelTitle: '채널',
-    thumbnailUrl: 'https://example.com/thumb.jpg',
+    videoId: "video-1",
+    videoTitle: "하이라이트 영상 제목",
+    channelTitle: "채널",
+    thumbnailUrl: "https://example.com/thumb.jpg",
     buyRank: 96,
     highlightRank: 47,
     sellRank: null,
@@ -94,33 +98,35 @@ function createGameHighlight(overrides: Partial<GameHighlight> = {}): GameHighli
     currentPricePoints: 200,
     profitPoints: 100,
     profitRatePercent: 359.2,
-    strategyTags: ['SMALL_CASHOUT'],
+    strategyTags: ["SMALL_CASHOUT"],
     highlightScore: 37072,
-    status: 'OPEN',
-    createdAt: '2026-01-01T00:00:00.000Z',
+    status: "OPEN",
+    createdAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
 
-function createLeaderboardEntry(overrides: Partial<GameLeaderboardEntry> = {}): GameLeaderboardEntry {
+function createLeaderboardEntry(
+  overrides: Partial<GameLeaderboardEntry> = {},
+): GameLeaderboardEntry {
   return {
     rank: 1,
     userId: 7,
-    displayName: '소몰 캐시아웃',
+    displayName: "소몰 캐시아웃",
     pictureUrl: null,
     currentTier: {
-      tierCode: 'PLATINUM',
-      displayName: '플래티넘',
+      tierCode: "PLATINUM",
+      displayName: "플래티넘",
       minScore: 1000,
-      badgeCode: 'badge',
+      badgeCode: "badge",
       inventorySlots: 12,
-      titleCode: 'title',
-      profileThemeCode: 'theme',
+      titleCode: "title",
+      profileThemeCode: "theme",
     },
     selectedAchievementTitle: null,
     highlightScore: 37072,
     highlightCount: 3,
-    topHighlightType: 'SMALL_CASHOUT',
+    topHighlightType: "SMALL_CASHOUT",
     totalAssetPoints: 2000,
     balancePoints: 1000,
     reservedPoints: 0,
@@ -135,13 +141,15 @@ function createLeaderboardEntry(overrides: Partial<GameLeaderboardEntry> = {}): 
   };
 }
 
-function createOpenGameHolding(overrides: Partial<OpenGameHolding> = {}): OpenGameHolding {
+function createOpenGameHolding(
+  overrides: Partial<OpenGameHolding> = {},
+): OpenGameHolding {
   return {
     positionId: 1,
-    videoId: 'video-1',
-    title: 'Holding Video',
-    channelTitle: 'Channel',
-    thumbnailUrl: '',
+    videoId: "video-1",
+    title: "Holding Video",
+    channelTitle: "Channel",
+    thumbnailUrl: "",
     buyRank: 96,
     currentRank: 47,
     chartOut: false,
@@ -156,7 +164,7 @@ function createOpenGameHolding(overrides: Partial<OpenGameHolding> = {}): OpenGa
     achievedStrategyTags: [],
     targetStrategyTags: [],
     projectedHighlightScore: 2500,
-    createdAt: '2026-01-01T00:00:00.000Z',
+    createdAt: "2026-01-01T00:00:00.000Z",
     reservedForSell: false,
     scheduledSellOrderId: null,
     scheduledSellTriggerType: null,
@@ -168,12 +176,14 @@ function createOpenGameHolding(overrides: Partial<OpenGameHolding> = {}): OpenGa
   };
 }
 
-function createScheduledSellOrder(overrides: Partial<GameScheduledSellOrder> = {}): GameScheduledSellOrder {
+function createScheduledSellOrder(
+  overrides: Partial<GameScheduledSellOrder> = {},
+): GameScheduledSellOrder {
   return {
     buyRank: 15,
     canceledAt: null,
-    channelTitle: 'Channel',
-    createdAt: '2026-04-24T00:00:00.000Z',
+    channelTitle: "Channel",
+    createdAt: "2026-04-24T00:00:00.000Z",
     currentRank: 12,
     executedAt: null,
     failureReason: null,
@@ -181,37 +191,40 @@ function createScheduledSellOrder(overrides: Partial<GameScheduledSellOrder> = {
     pnlPoints: null,
     positionId: 1,
     quantity: 100,
-    regionCode: 'KR',
+    regionCode: "KR",
     seasonId: 1,
     sellPricePoints: null,
     settledPoints: null,
     stakePoints: 5000,
-    status: 'PENDING',
-    triggerType: 'RANK',
+    status: "PENDING",
+    triggerType: "RANK",
     targetRank: 10,
     targetProfitRatePercent: null,
-    thumbnailUrl: 'https://example.com/a.jpg',
+    thumbnailUrl: "https://example.com/a.jpg",
     triggeredAt: null,
-    triggerDirection: 'RANK_IMPROVES_TO',
-    updatedAt: '2026-04-24T00:00:00.000Z',
+    triggerDirection: "RANK_IMPROVES_TO",
+    updatedAt: "2026-04-24T00:00:00.000Z",
     userId: 1,
-    videoId: 'video-1',
-    videoTitle: 'Holding Video',
+    videoId: "video-1",
+    videoTitle: "Holding Video",
     ...overrides,
   };
 }
 
 function setGamePanelViewportWidth(width = 320) {
-  const panel = screen.getByRole('tabpanel');
+  const panel = screen.getByRole("tabpanel");
 
-  Object.defineProperty(panel, 'clientWidth', { configurable: true, value: width });
-  fireEvent(window, new Event('resize'));
+  Object.defineProperty(panel, "clientWidth", {
+    configurable: true,
+    value: width,
+  });
+  fireEvent(window, new Event("resize"));
 
   return panel;
 }
 
-describe('RankingGameSelectedVideoActions', () => {
-  it('labels the disabled buy action as owned', () => {
+describe("RankingGameSelectedVideoActions", () => {
+  it("labels the disabled buy action as owned", () => {
     render(
       <RankingGameSelectedVideoActions
         buyActionTitle="이미 보유 중인 영상입니다."
@@ -229,11 +242,13 @@ describe('RankingGameSelectedVideoActions', () => {
       />,
     );
 
-    expect(screen.getByText('보유 중')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '선택한 영상 보유 중' })).toBeDisabled();
+    expect(screen.getByText("보유 중")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "선택한 영상 보유 중" }),
+    ).toBeDisabled();
   });
 
-  it('keeps the now playing label and selected title click targets separate', () => {
+  it("keeps the now playing label and selected title click targets separate", () => {
     const onContentClick = vi.fn();
     const onEyebrowClick = vi.fn();
     const onHeaderClick = vi.fn();
@@ -259,20 +274,24 @@ describe('RankingGameSelectedVideoActions', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Now Playing'));
+    fireEvent.click(screen.getByText("Now Playing"));
 
     expect(onEyebrowClick).toHaveBeenCalledTimes(1);
     expect(onHeaderClick).not.toHaveBeenCalled();
     expect(onContentClick).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText('Video Title', { selector: '.app-shell__game-panel-actions-title' }));
+    fireEvent.click(
+      screen.getByText("Video Title", {
+        selector: ".app-shell__game-panel-actions-title",
+      }),
+    );
 
     expect(onContentClick).toHaveBeenCalledTimes(1);
     expect(onEyebrowClick).toHaveBeenCalledTimes(1);
     expect(onHeaderClick).not.toHaveBeenCalled();
   });
 
-  it('uses the header title click for header actions', () => {
+  it("uses the header title click for header actions", () => {
     const onContentClick = vi.fn();
     const onHeaderClick = vi.fn();
 
@@ -296,13 +315,17 @@ describe('RankingGameSelectedVideoActions', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Video Title', { selector: '.app-shell__game-panel-actions-header-title' }));
+    fireEvent.click(
+      screen.getByText("Video Title", {
+        selector: ".app-shell__game-panel-actions-header-title",
+      }),
+    );
 
     expect(onHeaderClick).toHaveBeenCalledTimes(1);
     expect(onContentClick).not.toHaveBeenCalled();
   });
 
-  it('shows buy and sell actions even when there is no open position', () => {
+  it("shows buy and sell actions even when there is no open position", () => {
     render(
       <RankingGameSelectedVideoActions
         buyActionTitle="매수"
@@ -321,19 +344,25 @@ describe('RankingGameSelectedVideoActions', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: '선택한 영상 매수' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '선택한 영상 매도' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '선택한 영상 차트' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "선택한 영상 매수" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "선택한 영상 매도" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "선택한 영상 차트" }),
+    ).not.toBeInTheDocument();
   });
 });
 
-describe('RankingGamePositionsTab', () => {
-  it('shows a loading overlay instead of the empty holdings message while loading', () => {
+describe("RankingGamePositionsTab", () => {
+  it("shows a loading overlay instead of the empty holdings message while loading", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
         emptyMessage="아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다."
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[]}
         isLoading
@@ -342,15 +371,19 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.queryByText('아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.')).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "아직 보유 중인 영상이 없어요. 지금 보는 영상에서 바로 시작할 수 있습니다.",
+      ),
+    ).not.toBeInTheDocument();
   });
 
-  it('shows slot capacity at the top of the inventory tab', () => {
+  it("shows slot capacity at the top of the inventory tab", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
         currentGameSeason={createCurrentSeason()}
@@ -360,12 +393,12 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByText('2/3')).toBeInTheDocument();
-    expect(screen.getByText('남은 슬롯 1개')).toBeInTheDocument();
-    expect(screen.queryByText('인벤토리')).not.toBeInTheDocument();
+    expect(screen.getByText("2/3")).toBeInTheDocument();
+    expect(screen.getByText("남은 슬롯 1개")).toBeInTheDocument();
+    expect(screen.queryByText("인벤토리")).not.toBeInTheDocument();
   });
 
-  it('shows the next tier inventory slot reward', () => {
+  it("shows the next tier inventory slot reward", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
@@ -373,30 +406,30 @@ describe('RankingGamePositionsTab', () => {
           inventorySlots: {
             baseSlots: 5,
             currentTier: {
-              badgeCode: 'season-bronze',
-              displayName: '브론즈',
+              badgeCode: "season-bronze",
+              displayName: "브론즈",
               inventorySlots: 5,
               minScore: 0,
-              profileThemeCode: 'bronze',
-              tierCode: 'BRONZE',
-              titleCode: 'bronze-investor',
+              profileThemeCode: "bronze",
+              tierCode: "BRONZE",
+              titleCode: "bronze-investor",
             },
             maxSlots: 20,
             nextTier: {
-              badgeCode: 'season-silver',
-              displayName: '실버',
+              badgeCode: "season-silver",
+              displayName: "실버",
               inventorySlots: 7,
               minScore: 5000,
-              profileThemeCode: 'silver',
-              tierCode: 'SILVER',
-              titleCode: 'silver-investor',
+              profileThemeCode: "silver",
+              tierCode: "SILVER",
+              titleCode: "silver-investor",
             },
             tiers: [],
             totalSlots: 5,
           },
           maxOpenPositions: 5,
         })}
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
         onSelectPosition={vi.fn()}
@@ -405,14 +438,14 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByText('실버 달성 시 7칸')).toBeInTheDocument();
+    expect(screen.getByText("실버 달성 시 7칸")).toBeInTheDocument();
   });
 
-  it('shows buy rank into current rank for open positions', () => {
+  it("shows buy rank into current rank for open positions", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
         onSelectPosition={vi.fn()}
@@ -420,40 +453,51 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByText('순위')).toBeInTheDocument();
-    expect(screen.getByText('96위')).toBeInTheDocument();
-    expect(screen.getAllByText('47위').length).toBeGreaterThan(0);
+    expect(screen.getByText("순위")).toBeInTheDocument();
+    expect(screen.getByText("96위")).toBeInTheDocument();
+    expect(screen.getAllByText("47위").length).toBeGreaterThan(0);
   });
 
-  it('shows portfolio segment video details below the bar after clicking a segment', () => {
+  it("shows portfolio segment video details below the bar after clicking a segment", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
-        holdings={[createOpenGameHolding({ title: 'Tooltip Video', channelTitle: 'Tooltip Channel' })]}
+        holdings={[
+          createOpenGameHolding({
+            title: "Tooltip Video",
+            channelTitle: "Tooltip Channel",
+          }),
+        ]}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    const segmentButton = screen.getByRole('button', { name: 'Tooltip Video · Tooltip Channel' });
+    const segmentButton = screen.getByRole("button", {
+      name: "Tooltip Video · Tooltip Channel",
+    });
 
-    expect(segmentButton).not.toHaveAttribute('title');
-    expect(screen.queryByText('Tooltip Video · Tooltip Channel')).not.toBeInTheDocument();
+    expect(segmentButton).not.toHaveAttribute("title");
+    expect(
+      screen.queryByText("Tooltip Video · Tooltip Channel"),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(segmentButton);
 
-    expect(screen.getByText('Tooltip Video · Tooltip Channel')).toBeInTheDocument();
+    expect(
+      screen.getByText("Tooltip Video · Tooltip Channel"),
+    ).toBeInTheDocument();
   });
 
-  it('keeps only the sell action on inventory holding cards', () => {
+  it("keeps only the sell action on inventory holding cards", () => {
     const onOpenSellTradeModal = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
         onOpenSellTradeModal={onOpenSellTradeModal}
@@ -462,22 +506,26 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 매도' }));
+    fireEvent.click(screen.getByRole("button", { name: "Holding Video 매도" }));
 
-    expect(screen.queryByRole('button', { name: 'Holding Video 추가 매수' })).not.toBeInTheDocument();
-    expect(screen.queryByText('예상 티어 점수')).not.toBeInTheDocument();
-    expect(screen.queryByText('획득 티어점수')).not.toBeInTheDocument();
-    expect(onOpenSellTradeModal).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(
+      screen.queryByRole("button", { name: "Holding Video 추가 매수" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("예상 티어 점수")).not.toBeInTheDocument();
+    expect(screen.queryByText("획득 티어점수")).not.toBeInTheDocument();
+    expect(onOpenSellTradeModal).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+    );
   });
 
-  it('opens strategy target badges as scheduled sell presets', () => {
+  it("opens strategy target badges as scheduled sell presets", () => {
     const onOpenStrategyScheduledSellTradeModal = vi.fn();
     const onOpenPositionChart = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[
           createOpenGameHolding({
@@ -485,43 +533,55 @@ describe('RankingGamePositionsTab', () => {
             quantity: 100,
             sellableQuantity: 100,
             stakePoints: 58_000,
-            targetStrategyTags: ['MOONSHOT', 'SMALL_CASHOUT', 'BIG_CASHOUT'],
+            targetStrategyTags: ["MOONSHOT", "SMALL_CASHOUT", "BIG_CASHOUT"],
           }),
         ]}
         onOpenPositionChart={onOpenPositionChart}
-        onOpenStrategyScheduledSellTradeModal={onOpenStrategyScheduledSellTradeModal}
+        onOpenStrategyScheduledSellTradeModal={
+          onOpenStrategyScheduledSellTradeModal
+        }
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 문샷 노림 예약 매도' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 스몰 캐시아웃 노림 예약 매도' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 빅 캐시아웃 노림 예약 매도' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 문샷 노림 예약 매도" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Holding Video 스몰 캐시아웃 노림 예약 매도",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Holding Video 빅 캐시아웃 노림 예약 매도",
+      }),
+    );
 
     expect(onOpenStrategyScheduledSellTradeModal).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, videoId: 'video-1' }),
-      'MOONSHOT',
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+      "MOONSHOT",
     );
     expect(onOpenStrategyScheduledSellTradeModal).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, videoId: 'video-1' }),
-      'SMALL_CASHOUT',
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+      "SMALL_CASHOUT",
     );
     expect(onOpenStrategyScheduledSellTradeModal).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, videoId: 'video-1' }),
-      'BIG_CASHOUT',
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+      "BIG_CASHOUT",
     );
     expect(onOpenPositionChart).not.toHaveBeenCalled();
   });
 
-  it('opens the chart from the holding title without selecting playback', () => {
+  it("opens the chart from the holding title without selecting playback", () => {
     const onOpenPositionChart = vi.fn();
     const onSelectPosition = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
         onOpenPositionChart={onOpenPositionChart}
@@ -530,20 +590,24 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 순위 추이 차트' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 순위 추이 차트" }),
+    );
 
-    expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(onOpenPositionChart).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+    );
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it('opens the chart from the holding body without selecting playback', () => {
+  it("opens the chart from the holding body without selecting playback", () => {
     const onOpenPositionChart = vi.fn();
     const onSelectPosition = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding()]}
         onOpenPositionChart={onOpenPositionChart}
@@ -552,17 +616,21 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 본문 차트 보기' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 본문 차트 보기" }),
+    );
 
-    expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(onOpenPositionChart).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+    );
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it('disables sell action until a holding has sellable quantity', () => {
+  it("disables sell action until a holding has sellable quantity", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[createOpenGameHolding({ sellableQuantity: 0 })]}
         onOpenSellTradeModal={vi.fn()}
@@ -571,30 +639,35 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Holding Video 매도')).toBeDisabled();
+    expect(screen.getByLabelText("Holding Video 매도")).toBeDisabled();
   });
 
-  it('does not show a zero-second sell wait badge when sellable quantity is zero', () => {
+  it("does not show a zero-second sell wait badge when sellable quantity is zero", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
-        holdings={[createOpenGameHolding({ sellableQuantity: 0, nextSellableInSeconds: 0 })]}
+        holdings={[
+          createOpenGameHolding({
+            sellableQuantity: 0,
+            nextSellableInSeconds: 0,
+          }),
+        ]}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    expect(screen.queryByText('매도 대기 · 0초')).not.toBeInTheDocument();
-    expect(screen.getByText('현재 매도 불가')).toBeInTheDocument();
+    expect(screen.queryByText("매도 대기 · 0초")).not.toBeInTheDocument();
+    expect(screen.getByText("현재 매도 불가")).toBeInTheDocument();
   });
 
-  it('shows that a current-sync purchase unlocks after the next trend sync', () => {
+  it("shows that a current-sync purchase unlocks after the next trend sync", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[
           createOpenGameHolding({
@@ -609,33 +682,42 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    expect(screen.getByText('다음 트렌드 싱크 후 매도 가능')).toBeInTheDocument();
-    expect(screen.getByLabelText('Holding Video 매도')).toBeDisabled();
+    expect(
+      screen.getByText("다음 트렌드 싱크 후 매도 가능"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Holding Video 매도")).toBeDisabled();
   });
 
-  it('shows a reserved sell badge when a holding is already queued for scheduled sell', () => {
+  it("shows a reserved sell badge when a holding is already queued for scheduled sell", () => {
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
-        holdings={[createOpenGameHolding({ quantity: 100, sellableQuantity: 0, reservedForSell: true, scheduledSellQuantity: 100 })]}
+        holdings={[
+          createOpenGameHolding({
+            quantity: 100,
+            sellableQuantity: 0,
+            reservedForSell: true,
+            scheduledSellQuantity: 100,
+          }),
+        ]}
         onSelectPosition={vi.fn()}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    expect(screen.getByText('1개 예약 중')).toBeInTheDocument();
+    expect(screen.getByText("1개 예약 중")).toBeInTheDocument();
   });
 
-  it('opens a fallback cancel menu from the reserved sell badge', () => {
+  it("opens a fallback cancel menu from the reserved sell badge", () => {
     const onOpenPositionChart = vi.fn();
     const onCancelScheduledSellOrder = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[
           createOpenGameHolding({
@@ -653,24 +735,28 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 예약 매도 취소' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 예약 매도 취소" }),
+    );
 
-    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole("menu")).toBeInTheDocument();
     expect(onCancelScheduledSellOrder).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Holding Video 예약 주문 11 취소' }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Holding Video 예약 주문 11 취소" }),
+    );
 
     expect(onCancelScheduledSellOrder).toHaveBeenCalledWith(11);
     expect(onOpenPositionChart).not.toHaveBeenCalled();
   });
 
-  it('cancels a loaded scheduled order even before the holding has the scheduled order id', () => {
+  it("cancels a loaded scheduled order even before the holding has the scheduled order id", () => {
     const onCancelScheduledSellOrder = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[
           createOpenGameHolding({
@@ -688,20 +774,24 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 예약 매도 취소' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Holding Video 예약 주문 22 취소' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 예약 매도 취소" }),
+    );
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Holding Video 예약 주문 22 취소" }),
+    );
 
     expect(onCancelScheduledSellOrder).toHaveBeenCalledWith(22);
   });
 
-  it('lets the user cancel a specific scheduled order when a holding has multiple reservations', () => {
+  it("lets the user cancel a specific scheduled order when a holding has multiple reservations", () => {
     const onOpenPositionChart = vi.fn();
     const onCancelScheduledSellOrder = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[
           createOpenGameHolding({
@@ -723,24 +813,28 @@ describe('RankingGamePositionsTab', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 예약 매도 취소' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 예약 매도 취소" }),
+    );
 
-    expect(screen.getByRole('menu')).toBeInTheDocument();
+    expect(screen.getByRole("menu")).toBeInTheDocument();
     expect(onCancelScheduledSellOrder).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Holding Video 예약 주문 12 취소' }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Holding Video 예약 주문 12 취소" }),
+    );
 
     expect(onCancelScheduledSellOrder).toHaveBeenCalledWith(12);
     expect(onOpenPositionChart).not.toHaveBeenCalled();
   });
 
-  it('keeps the reservation controls visible when pending orders remain after position summary changes', () => {
+  it("keeps the reservation controls visible when pending orders remain after position summary changes", () => {
     const onCancelScheduledSellOrder = vi.fn();
 
     render(
       <RankingGamePositionsTab
         canShowGameActions
-        favoriteTrendSignalsByVideoId={{}}
+        likedVideoTrendSignalsByVideoId={{}}
         gameMarketSignalsByVideoId={{}}
         holdings={[
           createOpenGameHolding({
@@ -753,23 +847,29 @@ describe('RankingGamePositionsTab', () => {
         ]}
         onCancelScheduledSellOrder={onCancelScheduledSellOrder}
         onSelectPosition={vi.fn()}
-        scheduledSellOrders={[createScheduledSellOrder({ id: 12, quantity: 100 })]}
+        scheduledSellOrders={[
+          createScheduledSellOrder({ id: 12, quantity: 100 }),
+        ]}
         trendSignalsByVideoId={{}}
       />,
     );
 
-    expect(screen.getByText('1개 예약 중')).toBeInTheDocument();
+    expect(screen.getByText("1개 예약 중")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Holding Video 예약 매도 취소' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Holding Video 예약 주문 12 취소' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Holding Video 예약 매도 취소" }),
+    );
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Holding Video 예약 주문 12 취소" }),
+    );
 
     expect(onCancelScheduledSellOrder).toHaveBeenCalledWith(12);
   });
 });
 
-describe('RankingGamePanelShell', () => {
+describe("RankingGamePanelShell", () => {
   function ControlledRankingGamePanelShell({
-    initialTab = 'positions',
+    initialTab = "positions",
     onRefreshTab,
   }: {
     initialTab?: GameTab;
@@ -800,34 +900,49 @@ describe('RankingGamePanelShell', () => {
     );
   }
 
-  it('changes tabs when a tab button is clicked', () => {
+  it("changes tabs when a tab button is clicked", () => {
     render(<ControlledRankingGamePanelShell initialTab="positions" />);
     setGamePanelViewportWidth();
 
-    fireEvent.click(screen.getByRole('tab', { name: '대기열' }));
+    fireEvent.click(screen.getByRole("tab", { name: "대기열" }));
 
-    expect(screen.getByRole('tab', { name: '대기열' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('대기열 패널')).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "대기열" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByText("대기열 패널")).toBeInTheDocument();
   });
 
-  it('renders the carousel track after measuring the panel width', () => {
-    const { container } = render(<ControlledRankingGamePanelShell initialTab="positions" />);
+  it("renders the carousel track after measuring the panel width", () => {
+    const { container } = render(
+      <ControlledRankingGamePanelShell initialTab="positions" />,
+    );
     setGamePanelViewportWidth();
-    const track = container.querySelector('.app-shell__game-tab-track');
+    const track = container.querySelector(".app-shell__game-tab-track");
 
     expect(track).toBeInTheDocument();
   });
 
-  it('refetches the active tab when the user scrolls upward at the top of the panel', () => {
+  it("refetches the active tab when the user scrolls upward at the top of the panel", () => {
     vi.useFakeTimers();
     const onRefreshTab = vi.fn().mockResolvedValue(undefined);
 
     try {
-      const { container } = render(<ControlledRankingGamePanelShell initialTab="positions" onRefreshTab={onRefreshTab} />);
+      const { container } = render(
+        <ControlledRankingGamePanelShell
+          initialTab="positions"
+          onRefreshTab={onRefreshTab}
+        />,
+      );
       setGamePanelViewportWidth();
-      const panel = container.querySelector('[data-game-panel-tab="positions"]') as HTMLDivElement;
+      const panel = container.querySelector(
+        '[data-game-panel-tab="positions"]',
+      ) as HTMLDivElement;
 
-      Object.defineProperty(panel, 'scrollTop', { configurable: true, value: 0 });
+      Object.defineProperty(panel, "scrollTop", {
+        configurable: true,
+        value: 0,
+      });
       fireEvent.wheel(panel, { deltaY: -72 });
 
       expect(onRefreshTab).not.toHaveBeenCalled();
@@ -837,30 +952,37 @@ describe('RankingGamePanelShell', () => {
       });
       vi.advanceTimersByTime(150);
 
-      expect(onRefreshTab).toHaveBeenCalledWith('positions');
+      expect(onRefreshTab).toHaveBeenCalledWith("positions");
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('refetches the active tab when the user pulls down from the top of the panel', () => {
+  it("refetches the active tab when the user pulls down from the top of the panel", () => {
     const onRefreshTab = vi.fn().mockResolvedValue(undefined);
 
-    const { container } = render(<ControlledRankingGamePanelShell initialTab="history" onRefreshTab={onRefreshTab} />);
+    const { container } = render(
+      <ControlledRankingGamePanelShell
+        initialTab="history"
+        onRefreshTab={onRefreshTab}
+      />,
+    );
     setGamePanelViewportWidth();
-    const panel = container.querySelector('[data-game-panel-tab="history"]') as HTMLDivElement;
+    const panel = container.querySelector(
+      '[data-game-panel-tab="history"]',
+    ) as HTMLDivElement;
 
-    Object.defineProperty(panel, 'scrollTop', { configurable: true, value: 0 });
+    Object.defineProperty(panel, "scrollTop", { configurable: true, value: 0 });
     fireEvent.touchStart(panel, { touches: [{ clientY: 100 }] });
     fireEvent.touchMove(panel, { touches: [{ clientY: 240 }] });
     fireEvent.touchEnd(panel);
 
-    expect(onRefreshTab).toHaveBeenCalledWith('history');
+    expect(onRefreshTab).toHaveBeenCalledWith("history");
   });
 });
 
-describe('RankingGameHistoryTab', () => {
-  it('shows a loading overlay instead of the old loading sentence', () => {
+describe("RankingGameHistoryTab", () => {
+  it("shows a loading overlay instead of the old loading sentence", () => {
     render(
       <RankingGameHistoryTab
         emptyMessage={null}
@@ -872,11 +994,13 @@ describe('RankingGameHistoryTab', () => {
       />,
     );
 
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.queryByText('거래내역을 불러오는 중입니다.')).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(
+      screen.queryByText("거래내역을 불러오는 중입니다."),
+    ).not.toBeInTheDocument();
   });
 
-  it('opens the chart from the history title without selecting playback', () => {
+  it("opens the chart from the history title without selecting playback", () => {
     const onOpenPositionChart = vi.fn();
     const onSelectPosition = vi.fn();
 
@@ -888,20 +1012,24 @@ describe('RankingGameHistoryTab', () => {
         isLoading={false}
         onOpenPositionChart={onOpenPositionChart}
         onSelectPosition={onSelectPosition}
-        positions={[createGamePosition({ title: 'History position' })]}
+        positions={[createGamePosition({ title: "History position" })]}
         resolvePlaybackQueueId={() => HISTORY_PLAYBACK_QUEUE_ID}
         selectedPositionId={1}
         selectedVideoId="video-1"
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'History position 순위 추이 차트' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "History position 순위 추이 차트" }),
+    );
 
-    expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(onOpenPositionChart).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+    );
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it('opens the chart from the history body without selecting playback', () => {
+  it("opens the chart from the history body without selecting playback", () => {
     const onOpenPositionChart = vi.fn();
     const onSelectPosition = vi.fn();
 
@@ -913,20 +1041,24 @@ describe('RankingGameHistoryTab', () => {
         isLoading={false}
         onOpenPositionChart={onOpenPositionChart}
         onSelectPosition={onSelectPosition}
-        positions={[createGamePosition({ title: 'History position' })]}
+        positions={[createGamePosition({ title: "History position" })]}
         resolvePlaybackQueueId={() => HISTORY_PLAYBACK_QUEUE_ID}
         selectedPositionId={1}
         selectedVideoId="video-1"
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'History position 본문 차트 보기' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "History position 본문 차트 보기" }),
+    );
 
-    expect(onOpenPositionChart).toHaveBeenCalledWith(expect.objectContaining({ id: 1, videoId: 'video-1' }));
+    expect(onOpenPositionChart).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, videoId: "video-1" }),
+    );
     expect(onSelectPosition).not.toHaveBeenCalled();
   });
 
-  it('tracks the selected history row by position id when the same video appears twice', () => {
+  it("tracks the selected history row by position id when the same video appears twice", () => {
     render(
       <RankingGameHistoryTab
         activePlaybackQueueId={HISTORY_PLAYBACK_QUEUE_ID}
@@ -937,14 +1069,14 @@ describe('RankingGameHistoryTab', () => {
         positions={[
           createGamePosition({
             id: 1,
-            title: 'First position',
-            videoId: 'same-video',
+            title: "First position",
+            videoId: "same-video",
           }),
           createGamePosition({
             id: 2,
-            title: 'Second position',
-            videoId: 'same-video',
-            createdAt: '2026-01-02T00:00:00.000Z',
+            title: "Second position",
+            videoId: "same-video",
+            createdAt: "2026-01-02T00:00:00.000Z",
           }),
         ]}
         resolvePlaybackQueueId={() => HISTORY_PLAYBACK_QUEUE_ID}
@@ -953,33 +1085,48 @@ describe('RankingGameHistoryTab', () => {
       />,
     );
 
-    expect(screen.getByText('First position').closest('li')).toHaveAttribute('data-selected', 'false');
-    expect(screen.getByText('Second position').closest('li')).toHaveAttribute('data-selected', 'true');
+    expect(screen.getByText("First position").closest("li")).toHaveAttribute(
+      "data-selected",
+      "false",
+    );
+    expect(screen.getByText("Second position").closest("li")).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
   });
 
-  it('adjusts only the history list scroll when the selected history row is below view', () => {
-    const originalOffsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop');
-    const originalOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
-    const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+  it("adjusts only the history list scroll when the selected history row is below view", () => {
+    const originalOffsetTop = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "offsetTop",
+    );
+    const originalOffsetHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "offsetHeight",
+    );
+    const originalClientHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      "clientHeight",
+    );
     const windowScrollTo = vi.fn();
-    vi.stubGlobal('scrollTo', windowScrollTo);
+    vi.stubGlobal("scrollTo", windowScrollTo);
 
-    Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
+    Object.defineProperty(HTMLElement.prototype, "offsetTop", {
       configurable: true,
       get() {
-        return this.textContent?.includes('Selected position') ? 200 : 0;
+        return this.textContent?.includes("Selected position") ? 200 : 0;
       },
     });
-    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
       configurable: true,
       get() {
-        return this.textContent?.includes('Selected position') ? 80 : 0;
+        return this.textContent?.includes("Selected position") ? 80 : 0;
       },
     });
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
       configurable: true,
       get() {
-        return this.classList.contains('app-shell__game-history') ? 100 : 0;
+        return this.classList.contains("app-shell__game-history") ? 100 : 0;
       },
     });
 
@@ -994,14 +1141,14 @@ describe('RankingGameHistoryTab', () => {
           positions={[
             createGamePosition({
               id: 1,
-              title: 'First position',
-              videoId: 'video-1',
+              title: "First position",
+              videoId: "video-1",
             }),
             createGamePosition({
               id: 2,
-              title: 'Selected position',
-              videoId: 'video-2',
-              createdAt: '2026-01-02T00:00:00.000Z',
+              title: "Selected position",
+              videoId: "video-2",
+              createdAt: "2026-01-02T00:00:00.000Z",
             }),
           ]}
           resolvePlaybackQueueId={() => HISTORY_PLAYBACK_QUEUE_ID}
@@ -1010,25 +1157,40 @@ describe('RankingGameHistoryTab', () => {
         />,
       );
 
-      expect(document.querySelector('.app-shell__game-history')).toHaveProperty('scrollTop', 180);
+      expect(document.querySelector(".app-shell__game-history")).toHaveProperty(
+        "scrollTop",
+        180,
+      );
       expect(windowScrollTo).not.toHaveBeenCalled();
     } finally {
       if (originalOffsetTop) {
-        Object.defineProperty(HTMLElement.prototype, 'offsetTop', originalOffsetTop);
+        Object.defineProperty(
+          HTMLElement.prototype,
+          "offsetTop",
+          originalOffsetTop,
+        );
       }
       if (originalOffsetHeight) {
-        Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalOffsetHeight);
+        Object.defineProperty(
+          HTMLElement.prototype,
+          "offsetHeight",
+          originalOffsetHeight,
+        );
       }
       if (originalClientHeight) {
-        Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight);
+        Object.defineProperty(
+          HTMLElement.prototype,
+          "clientHeight",
+          originalClientHeight,
+        );
       }
       vi.unstubAllGlobals();
     }
   });
 });
 
-describe('RankingGameLeaderboardTab', () => {
-  it('hides the empty leaderboard message while ranking is loading', () => {
+describe("RankingGameLeaderboardTab", () => {
+  it("hides the empty leaderboard message while ranking is loading", () => {
     render(
       <RankingGameLeaderboardTab
         entries={[]}
@@ -1047,11 +1209,13 @@ describe('RankingGameLeaderboardTab', () => {
       />,
     );
 
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.queryByText('아직 리더보드에 표시할 참가자가 없습니다.')).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(
+      screen.queryByText("아직 리더보드에 표시할 참가자가 없습니다."),
+    ).not.toBeInTheDocument();
   });
 
-  it('keeps highlight summary metadata out of the tier ranking row', () => {
+  it("keeps highlight summary metadata out of the tier ranking row", () => {
     render(
       <RankingGameLeaderboardTab
         entries={[createLeaderboardEntry()]}
@@ -1069,26 +1233,27 @@ describe('RankingGameLeaderboardTab', () => {
       />,
     );
 
-    const row = screen.getByRole('button', { name: /소몰 캐시아웃/ });
+    const row = screen.getByRole("button", { name: /소몰 캐시아웃/ });
 
-    expect(row).toHaveAttribute('data-tier-code', 'PLATINUM');
-    expect(within(row).queryByText('플래티넘')).not.toBeInTheDocument();
-    expect(within(row).queryByText('하이라이트 3개')).not.toBeInTheDocument();
+    expect(row).toHaveAttribute("data-tier-code", "PLATINUM");
+    expect(within(row).queryByText("플래티넘")).not.toBeInTheDocument();
+    expect(within(row).queryByText("하이라이트 3개")).not.toBeInTheDocument();
     expect(within(row).queryByText(/실시간 수익률/)).not.toBeInTheDocument();
-    expect(within(row).queryByText('스몰 캐시아웃')).not.toBeInTheDocument();
+    expect(within(row).queryByText("스몰 캐시아웃")).not.toBeInTheDocument();
   });
 
-  it('renders the selected achievement title with its full name in the leaderboard row', () => {
+  it("renders the selected achievement title with its full name in the leaderboard row", () => {
     render(
       <RankingGameLeaderboardTab
         entries={[
           createLeaderboardEntry({
             selectedAchievementTitle: {
-              code: 'ATLAS_SNIPER',
-              displayName: 'Atlas Sniper',
-              shortName: 'A. Sniper',
-              grade: 'ULTIMATE',
-              description: '150위 밖에서 잡은 영상이 1위까지 올라온 전 구간 복합 하이라이트 달성자입니다.',
+              code: "ATLAS_SNIPER",
+              displayName: "Atlas Sniper",
+              shortName: "A. Sniper",
+              grade: "ULTIMATE",
+              description:
+                "150위 밖에서 잡은 영상이 1위까지 올라온 전 구간 복합 하이라이트 달성자입니다.",
             },
           }),
         ]}
@@ -1106,17 +1271,19 @@ describe('RankingGameLeaderboardTab', () => {
       />,
     );
 
-    const row = screen.getByRole('button', { name: /소몰 캐시아웃/ });
-    const badge = within(row).getByText('Atlas Sniper').closest('.app-shell__achievement-title-badge');
+    const row = screen.getByRole("button", { name: /소몰 캐시아웃/ });
+    const badge = within(row)
+      .getByText("Atlas Sniper")
+      .closest(".app-shell__achievement-title-badge");
 
-    expect(within(row).getByText('Atlas Sniper')).toBeInTheDocument();
+    expect(within(row).getByText("Atlas Sniper")).toBeInTheDocument();
     expect(badge).toHaveAttribute(
-      'title',
-      '얼티밋 Atlas Sniper: 150위 밖에서 잡은 영상이 1위까지 올라온 전 구간 복합 하이라이트 달성자입니다.',
+      "title",
+      "얼티밋 Atlas Sniper: 150위 밖에서 잡은 영상이 1위까지 올라온 전 구간 복합 하이라이트 달성자입니다.",
     );
   });
 
-  it('renders expanded leaderboard highlights with the richer card metadata', () => {
+  it("renders expanded leaderboard highlights with the richer card metadata", () => {
     const onSelectHighlight = vi.fn();
     const onSelectHighlightVideo = vi.fn();
     const highlight = createGameHighlight();
@@ -1139,16 +1306,22 @@ describe('RankingGameLeaderboardTab', () => {
       />,
     );
 
-    expect(screen.getByText('하이라이트 영상 제목')).toBeInTheDocument();
-    expect(screen.getByText('+37,072점')).toBeInTheDocument();
-    expect(screen.getByText('수익률 359.2% 플레이가 기록됐습니다.')).toBeInTheDocument();
-    expect(screen.getByText('스몰 캐시아웃')).toBeInTheDocument();
+    expect(screen.getByText("하이라이트 영상 제목")).toBeInTheDocument();
+    expect(screen.getByText("+37,072점")).toBeInTheDocument();
+    expect(
+      screen.getByText("수익률 359.2% 플레이가 기록됐습니다."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("스몰 캐시아웃")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTitle('이 하이라이트의 순위 추이 차트를 봅니다.'));
+    fireEvent.click(
+      screen.getByTitle("이 하이라이트의 순위 추이 차트를 봅니다."),
+    );
 
     expect(onSelectHighlight).toHaveBeenCalledWith(highlight);
 
-    fireEvent.click(screen.getByRole('button', { name: '하이라이트 영상 제목 재생' }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "하이라이트 영상 제목 재생" }),
+    );
 
     expect(onSelectHighlightVideo).toHaveBeenCalledWith(highlight);
   });

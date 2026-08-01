@@ -1,16 +1,16 @@
 export type ChartViewMode =
-  | 'all'
-  | 'buyable'
-  | 'realtime-surging'
-  | 'new-chart-entries'
-  | 'favorites'
-  | 'popular'
-  | 'music';
+  | "all"
+  | "buyable"
+  | "realtime-surging"
+  | "new-chart-entries"
+  | "liked"
+  | "popular"
+  | "music";
 
 export type ChartSortMode =
-  | 'popular-desc'
-  | 'popular-asc'
-  | 'views-desc'
-  | 'views-asc'
-  | 'rank-up'
-  | 'rank-down';
+  | "popular-desc"
+  | "popular-asc"
+  | "views-desc"
+  | "views-asc"
+  | "rank-up"
+  | "rank-down";

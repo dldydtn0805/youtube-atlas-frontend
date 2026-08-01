@@ -47,11 +47,6 @@
   transform: translateY(-1px);
 }
 
-.app-shell__favorites-list {
-  display: grid;
-  gap: 14px;
-}
-
 .app-shell__filter-pill-group {
   display: flex;
   flex-wrap: wrap;

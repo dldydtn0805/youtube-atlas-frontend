@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import GoogleLoginButton from '../../components/GoogleLoginButton/GoogleLoginButton';
-import { useAuth } from '../../features/auth/useAuth';
+import { useEffect, useState } from "react";
+import GoogleLoginButton from "../../components/GoogleLoginButton/GoogleLoginButton";
+import { useAuth } from "../../features/auth/useAuth";
 import {
   useCloseAdminSeason,
   useAdminDashboard,
@@ -21,10 +21,9 @@ import {
   useUpdateAdminSeasonSchedule,
   useUpdateAdminSeasonStartingBalance,
   useUpdateAdminUserWallet,
-} from '../../features/admin/queries';
+} from "../../features/admin/queries";
 import type {
   AdminCommentSummary,
-  AdminFavoriteSummary,
   AdminSeasonSummary,
   AdminTrendSnapshotHistoryItem,
   AdminTrendSnapshot,
@@ -35,37 +34,37 @@ import type {
   AdminUserHighlightSummary,
   AdminUserPosition,
   AdminUserSummary,
-} from '../../features/admin/types';
-import useLogoutOnUnauthorized from '../home/hooks/useLogoutOnUnauthorized';
-import { ApiRequestError, isApiConfigured } from '../../lib/api';
-import countryCodes from '../../constants/countryCodes';
-import AdminUserHighlightsPanel from './components/AdminUserHighlightsPanel';
-import AdminPriceAnchorsPanel from './components/AdminPriceAnchorsPanel';
-import AdminTierThresholdsPanel from './components/AdminTierThresholdsPanel';
-import './AdminPage.css';
+} from "../../features/admin/types";
+import useLogoutOnUnauthorized from "../home/hooks/useLogoutOnUnauthorized";
+import { ApiRequestError, isApiConfigured } from "../../lib/api";
+import countryCodes from "../../constants/countryCodes";
+import AdminUserHighlightsPanel from "./components/AdminUserHighlightsPanel";
+import AdminPriceAnchorsPanel from "./components/AdminPriceAnchorsPanel";
+import AdminTierThresholdsPanel from "./components/AdminTierThresholdsPanel";
+import "./AdminPage.css";
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) {
-    return '-';
+    return "-";
   }
 
-  return new Intl.DateTimeFormat('ko-KR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "medium",
+    timeStyle: "short",
   }).format(new Date(value));
 }
 
 function formatNumber(value: number | null | undefined) {
-  if (typeof value !== 'number') {
-    return '-';
+  if (typeof value !== "number") {
+    return "-";
   }
 
-  return new Intl.NumberFormat('ko-KR').format(value);
+  return new Intl.NumberFormat("ko-KR").format(value);
 }
 
 function formatDurationSeconds(value: number | null | undefined) {
-  if (typeof value !== 'number') {
-    return '-';
+  if (typeof value !== "number") {
+    return "-";
   }
 
   const hours = Math.floor(value / 3600);
@@ -73,12 +72,17 @@ function formatDurationSeconds(value: number | null | undefined) {
   const seconds = value % 60;
 
   return [hours, minutes, seconds]
-    .map((part, index) => (index === 0 ? String(part) : String(part).padStart(2, '0')))
-    .join(':');
+    .map((part, index) =>
+      index === 0 ? String(part) : String(part).padStart(2, "0"),
+    )
+    .join(":");
 }
 
-function getRemainingScoreToNextTier(tierScore: number | null | undefined, nextTier: AdminTierSummary | null | undefined) {
-  if (typeof tierScore !== 'number' || !nextTier) {
+function getRemainingScoreToNextTier(
+  tierScore: number | null | undefined,
+  nextTier: AdminTierSummary | null | undefined,
+) {
+  if (typeof tierScore !== "number" || !nextTier) {
     return null;
   }
 
@@ -90,19 +94,33 @@ function getActiveSeasonGames(user: AdminUserDetail | null | undefined) {
     return [] as AdminUserGameSummary[];
   }
 
-  if (Array.isArray(user.activeSeasonGames) && user.activeSeasonGames.length > 0) {
+  if (
+    Array.isArray(user.activeSeasonGames) &&
+    user.activeSeasonGames.length > 0
+  ) {
     return user.activeSeasonGames;
   }
 
   return user.activeSeasonGame ? [user.activeSeasonGame] : [];
 }
 
-function getDashboardActiveSeasons(dashboard: { activeSeason?: AdminSeasonSummary | null; activeSeasons?: AdminSeasonSummary[] } | null | undefined) {
+function getDashboardActiveSeasons(
+  dashboard:
+    | {
+        activeSeason?: AdminSeasonSummary | null;
+        activeSeasons?: AdminSeasonSummary[];
+      }
+    | null
+    | undefined,
+) {
   if (!dashboard) {
     return [] as AdminSeasonSummary[];
   }
 
-  if (Array.isArray(dashboard.activeSeasons) && dashboard.activeSeasons.length > 0) {
+  if (
+    Array.isArray(dashboard.activeSeasons) &&
+    dashboard.activeSeasons.length > 0
+  ) {
     return dashboard.activeSeasons;
   }
 
@@ -111,30 +129,33 @@ function getDashboardActiveSeasons(dashboard: { activeSeason?: AdminSeasonSummar
 
 function formatDateTimeInput(value: string | null | undefined) {
   if (!value) {
-    return '';
+    return "";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return '';
+    return "";
   }
 
-  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  const localDate = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60_000,
+  );
   return localDate.toISOString().slice(0, 16);
 }
 
 function formatCleanupDateTimeInput(value: string | null | undefined) {
   if (!value) {
-    return '';
+    return "";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return '';
+    return "";
   }
 
   const latestAllowed = new Date(Date.now() - 60_000);
-  const cleanupDate = date.getTime() > latestAllowed.getTime() ? latestAllowed : date;
+  const cleanupDate =
+    date.getTime() > latestAllowed.getTime() ? latestAllowed : date;
   return formatDateTimeInput(cleanupDate.toISOString());
 }
 
@@ -159,7 +180,7 @@ function createDefaultSubmittedSnapshotRange() {
 
 function formatRegionLabel(regionCode: string | null | undefined) {
   if (!regionCode) {
-    return '국가 미선택';
+    return "국가 미선택";
   }
 
   const country = countryCodes.find((item) => item.code === regionCode);
@@ -182,15 +203,23 @@ function parseDateTimeInput(value: string, label: string) {
   return parsedDate.toISOString();
 }
 
-function formatScopedCommentCleanupMessage(deletedCount: number, deleteBefore: string, userId: number | null) {
+function formatScopedCommentCleanupMessage(
+  deletedCount: number,
+  deleteBefore: string,
+  userId: number | null,
+) {
   return `${formatCleanupScopeLabel(userId)} 기준으로 ${formatNumber(deletedCount)}건의 댓글을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
 }
 
 function formatCleanupScopeLabel(userId: number | null) {
-  return userId === null ? '전체' : `유저 #${userId}`;
+  return userId === null ? "전체" : `유저 #${userId}`;
 }
 
-function formatHighlightCleanupMessage(deletedCount: number, deleteBefore: string, userId: number | null) {
+function formatHighlightCleanupMessage(
+  deletedCount: number,
+  deleteBefore: string,
+  userId: number | null,
+) {
   return `${formatCleanupScopeLabel(userId)} 기준으로 ${formatNumber(deletedCount)}건의 하이라이트 내역을 정리했습니다. 기준 시각: ${formatDateTime(deleteBefore)}`;
 }
 
@@ -208,20 +237,16 @@ function formatTradeHistoryCleanupMessage(
     `배당 지급 ${formatNumber(deletedDividendPayoutCount)}건`,
     `예약 매도 ${formatNumber(deletedScheduledSellOrderCount)}건`,
     `기준 시각: ${formatDateTime(deleteBefore)}`,
-  ].join(' ');
+  ].join(" ");
 }
 
-function MetricCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
+function MetricCard({ label, value }: { label: string; value: number }) {
   return (
     <article className="admin-page__metric-card">
       <p className="admin-page__metric-label">{label}</p>
-      <strong className="admin-page__metric-value">{formatNumber(value)}</strong>
+      <strong className="admin-page__metric-value">
+        {formatNumber(value)}
+      </strong>
     </article>
   );
 }
@@ -282,34 +307,7 @@ function RecentCommentsTable({ items }: { items: AdminCommentSummary[] }) {
             <tr key={item.id}>
               <td>{item.author}</td>
               <td className="admin-page__content-cell">{item.content}</td>
-              <td>{item.videoId === 'global' ? '전체' : item.videoId}</td>
-              <td>{formatDateTime(item.createdAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function RecentFavoritesTable({ items }: { items: AdminFavoriteSummary[] }) {
-  return (
-    <div className="admin-page__table-wrap">
-      <table className="admin-page__table">
-        <thead>
-          <tr>
-            <th>채널</th>
-            <th>사용자</th>
-            <th>채널 ID</th>
-            <th>추가일</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id}>
-              <td>{item.channelTitle}</td>
-              <td>{item.userEmail}</td>
-              <td>{item.channelId}</td>
+              <td>{item.videoId === "global" ? "전체" : item.videoId}</td>
               <td>{formatDateTime(item.createdAt)}</td>
             </tr>
           ))}
@@ -324,12 +322,18 @@ function TrendList({ items }: { items: AdminTrendSnapshot[] }) {
     <div className="admin-page__trend-list">
       {items.map((item) => (
         <article className="admin-page__trend-card" key={item.videoId}>
-          <img alt="" className="admin-page__trend-thumbnail" src={item.thumbnailUrl} />
+          <img
+            alt=""
+            className="admin-page__trend-thumbnail"
+            src={item.thumbnailUrl}
+          />
           <div className="admin-page__trend-body">
             <p className="admin-page__trend-rank">#{item.rank}</p>
             <strong className="admin-page__trend-title">{item.title}</strong>
             <p className="admin-page__trend-channel">{item.channelTitle}</p>
-            <p className="admin-page__trend-meta">조회수 {formatNumber(item.viewCount)}</p>
+            <p className="admin-page__trend-meta">
+              조회수 {formatNumber(item.viewCount)}
+            </p>
           </div>
         </article>
       ))}
@@ -337,7 +341,11 @@ function TrendList({ items }: { items: AdminTrendSnapshot[] }) {
   );
 }
 
-function TrendSnapshotHistoryTable({ items }: { items: AdminTrendSnapshotHistoryItem[] }) {
+function TrendSnapshotHistoryTable({
+  items,
+}: {
+  items: AdminTrendSnapshotHistoryItem[];
+}) {
   return (
     <div className="admin-page__table-wrap">
       <table className="admin-page__table">
@@ -360,10 +368,15 @@ function TrendSnapshotHistoryTable({ items }: { items: AdminTrendSnapshotHistory
               <td>{formatDateTime(item.capturedAt)}</td>
               <td>
                 <div className="admin-page__detail-list admin-page__detail-list--table">
-                  <p><span>#{item.runId}</span><strong>{item.source}</strong></p>
+                  <p>
+                    <span>#{item.runId}</span>
+                    <strong>{item.source}</strong>
+                  </p>
                 </div>
               </td>
-              <td>{item.regionCode} / {item.categoryLabel || item.categoryId}</td>
+              <td>
+                {item.regionCode} / {item.categoryLabel || item.categoryId}
+              </td>
               <td>#{item.rank}</td>
               <td className="admin-page__content-cell">
                 <strong>{item.title}</strong>
@@ -403,7 +416,11 @@ function UserDirectoryTable({
         <tbody>
           {items.map((item) => (
             <tr
-              className={item.id === selectedUserId ? 'admin-page__table-row--selected' : undefined}
+              className={
+                item.id === selectedUserId
+                  ? "admin-page__table-row--selected"
+                  : undefined
+              }
               key={item.id}
               onClick={() => onSelect(item.id)}
             >
@@ -414,7 +431,7 @@ function UserDirectoryTable({
                 </div>
               </td>
               <td>{item.email}</td>
-              <td>{item.admin ? '관리자' : '일반'}</td>
+              <td>{item.admin ? "관리자" : "일반"}</td>
               <td>{formatDateTime(item.lastLoginAt)}</td>
             </tr>
           ))}
@@ -457,7 +474,10 @@ function UserDetailPanel({
     stakePoints: string;
     createdAt: string;
   };
-  onPositionDraftChange: (field: 'quantity' | 'stakePoints' | 'createdAt', value: string) => void;
+  onPositionDraftChange: (
+    field: "quantity" | "stakePoints" | "createdAt",
+    value: string,
+  ) => void;
   onSavePosition: () => void;
   isSavingPosition: boolean;
   selectedSeasonId: number | null;
@@ -469,7 +489,11 @@ function UserDetailPanel({
     manualTierScoreAdjustment: string;
   };
   onWalletDraftChange: (
-    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'manualTierScoreAdjustment',
+    field:
+      | "balancePoints"
+      | "reservedPoints"
+      | "realizedPnlPoints"
+      | "manualTierScoreAdjustment",
     value: string,
   ) => void;
   onSaveWallet: () => void;
@@ -482,7 +506,10 @@ function UserDetailPanel({
     activeSeasonGames.find((item) => item.seasonId === selectedSeasonId) ??
     activeSeasonGames[0] ??
     null;
-  const selectedPosition = positions.find((item) => item.id === selectedPositionId) ?? positions[0] ?? null;
+  const selectedPosition =
+    positions.find((item) => item.id === selectedPositionId) ??
+    positions[0] ??
+    null;
   const remainingScoreToNextTier = getRemainingScoreToNextTier(
     selectedSeasonGame?.tierScore,
     selectedSeasonGame?.nextTier,
@@ -496,12 +523,26 @@ function UserDetailPanel({
           <UserBadge admin={user.admin} />
         </div>
         <div className="admin-page__detail-list">
-          <p><span>유저 ID</span><strong>#{user.id}</strong></p>
-          <p><span>이름</span><strong>{user.displayName}</strong></p>
-          <p><span>이메일</span><strong>{user.email}</strong></p>
-          <p><span>가입일</span><strong>{formatDateTime(user.createdAt)}</strong></p>
-          <p><span>마지막 로그인</span><strong>{formatDateTime(user.lastLoginAt)}</strong></p>
-          <p><span>즐겨찾기 수</span><strong>{formatNumber(user.favoriteCount)}</strong></p>
+          <p>
+            <span>유저 ID</span>
+            <strong>#{user.id}</strong>
+          </p>
+          <p>
+            <span>이름</span>
+            <strong>{user.displayName}</strong>
+          </p>
+          <p>
+            <span>이메일</span>
+            <strong>{user.email}</strong>
+          </p>
+          <p>
+            <span>가입일</span>
+            <strong>{formatDateTime(user.createdAt)}</strong>
+          </p>
+          <p>
+            <span>마지막 로그인</span>
+            <strong>{formatDateTime(user.lastLoginAt)}</strong>
+          </p>
         </div>
       </div>
 
@@ -517,10 +558,31 @@ function UserDetailPanel({
         </div>
         {user.lastPlaybackProgress ? (
           <div className="admin-page__detail-list">
-            <p><span>영상</span><strong>{user.lastPlaybackProgress.videoTitle ?? user.lastPlaybackProgress.videoId}</strong></p>
-            <p><span>채널</span><strong>{user.lastPlaybackProgress.channelTitle ?? '-'}</strong></p>
-            <p><span>재생 위치</span><strong>{formatDurationSeconds(user.lastPlaybackProgress.positionSeconds)}</strong></p>
-            <p><span>업데이트</span><strong>{formatDateTime(user.lastPlaybackProgress.updatedAt)}</strong></p>
+            <p>
+              <span>영상</span>
+              <strong>
+                {user.lastPlaybackProgress.videoTitle ??
+                  user.lastPlaybackProgress.videoId}
+              </strong>
+            </p>
+            <p>
+              <span>채널</span>
+              <strong>{user.lastPlaybackProgress.channelTitle ?? "-"}</strong>
+            </p>
+            <p>
+              <span>재생 위치</span>
+              <strong>
+                {formatDurationSeconds(
+                  user.lastPlaybackProgress.positionSeconds,
+                )}
+              </strong>
+            </p>
+            <p>
+              <span>업데이트</span>
+              <strong>
+                {formatDateTime(user.lastPlaybackProgress.updatedAt)}
+              </strong>
+            </p>
           </div>
         ) : (
           <p className="admin-page__muted">저장된 최근 재생 위치가 없습니다.</p>
@@ -531,11 +593,17 @@ function UserDetailPanel({
         <div className="admin-page__section-header">
           <h3 className="admin-page__section-title">활성 시즌 지갑 수정</h3>
           <span className="admin-page__section-caption">
-            {selectedSeasonGame ? `${selectedSeasonGame.regionCode} · ${selectedSeasonGame.seasonName}` : '활성 시즌 없음'}
+            {selectedSeasonGame
+              ? `${selectedSeasonGame.regionCode} · ${selectedSeasonGame.seasonName}`
+              : "활성 시즌 없음"}
           </span>
         </div>
         {activeSeasonGames.length > 1 ? (
-          <div className="admin-page__season-selector" role="tablist" aria-label="활성 시즌 지갑 선택">
+          <div
+            className="admin-page__season-selector"
+            role="tablist"
+            aria-label="활성 시즌 지갑 선택"
+          >
             {activeSeasonGames.map((seasonGame) => (
               <button
                 aria-selected={seasonGame.seasonId === selectedSeasonId}
@@ -555,21 +623,61 @@ function UserDetailPanel({
         {selectedSeasonGame ? (
           <>
             <div className="admin-page__detail-list admin-page__detail-list--compact">
-              <p><span>지역</span><strong>{selectedSeasonGame.regionCode}</strong></p>
-              <p><span>참여 여부</span><strong>{selectedSeasonGame.participating ? '참여 중' : '미참여'}</strong></p>
-              <p><span>오픈 포지션</span><strong>{formatNumber(selectedSeasonGame.openPositionCount)}</strong></p>
-              <p><span>종료 포지션</span><strong>{formatNumber(selectedSeasonGame.closedPositionCount)}</strong></p>
-              <p><span>티어 기준 총자산</span><strong>{formatNumber(selectedSeasonGame.tierScore)}P</strong></p>
-              <p><span>현재 티어</span><strong>{selectedSeasonGame.currentTier?.displayName ?? '-'}</strong></p>
-              <p><span>다음 티어</span><strong>{selectedSeasonGame.nextTier?.displayName ?? '최종 티어'}</strong></p>
-              <p><span>다음 티어까지</span><strong>{remainingScoreToNextTier !== null ? `${formatNumber(remainingScoreToNextTier)}P` : '-'}</strong></p>
+              <p>
+                <span>지역</span>
+                <strong>{selectedSeasonGame.regionCode}</strong>
+              </p>
+              <p>
+                <span>참여 여부</span>
+                <strong>
+                  {selectedSeasonGame.participating ? "참여 중" : "미참여"}
+                </strong>
+              </p>
+              <p>
+                <span>오픈 포지션</span>
+                <strong>
+                  {formatNumber(selectedSeasonGame.openPositionCount)}
+                </strong>
+              </p>
+              <p>
+                <span>종료 포지션</span>
+                <strong>
+                  {formatNumber(selectedSeasonGame.closedPositionCount)}
+                </strong>
+              </p>
+              <p>
+                <span>티어 기준 총자산</span>
+                <strong>{formatNumber(selectedSeasonGame.tierScore)}P</strong>
+              </p>
+              <p>
+                <span>현재 티어</span>
+                <strong>
+                  {selectedSeasonGame.currentTier?.displayName ?? "-"}
+                </strong>
+              </p>
+              <p>
+                <span>다음 티어</span>
+                <strong>
+                  {selectedSeasonGame.nextTier?.displayName ?? "최종 티어"}
+                </strong>
+              </p>
+              <p>
+                <span>다음 티어까지</span>
+                <strong>
+                  {remainingScoreToNextTier !== null
+                    ? `${formatNumber(remainingScoreToNextTier)}P`
+                    : "-"}
+                </strong>
+              </p>
             </div>
             <div className="admin-page__form-grid">
               <label className="admin-page__field">
                 <span>가용 포인트</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => onWalletDraftChange('balancePoints', event.target.value)}
+                  onChange={(event) =>
+                    onWalletDraftChange("balancePoints", event.target.value)
+                  }
                   type="text"
                   value={walletDraft.balancePoints}
                 />
@@ -578,7 +686,9 @@ function UserDetailPanel({
                 <span>예약 포인트</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => onWalletDraftChange('reservedPoints', event.target.value)}
+                  onChange={(event) =>
+                    onWalletDraftChange("reservedPoints", event.target.value)
+                  }
                   type="text"
                   value={walletDraft.reservedPoints}
                 />
@@ -587,18 +697,26 @@ function UserDetailPanel({
                 <span>실현 손익</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => onWalletDraftChange('realizedPnlPoints', event.target.value)}
+                  onChange={(event) =>
+                    onWalletDraftChange("realizedPnlPoints", event.target.value)
+                  }
                   type="text"
                   value={walletDraft.realizedPnlPoints}
                 />
               </label>
             </div>
             <p className="admin-page__muted">
-              티어는 가용 포인트, 예약 포인트, 보유 영상의 현재 평가액을 합친 총자산으로 자동 계산됩니다.
+              티어는 가용 포인트, 예약 포인트, 보유 영상의 현재 평가액을 합친
+              총자산으로 자동 계산됩니다.
             </p>
             <div className="admin-page__action-row">
-              <button className="admin-page__button" disabled={isSaving || isDeleting} onClick={onSaveWallet} type="button">
-                {isSaving ? '저장 중...' : '지갑 저장'}
+              <button
+                className="admin-page__button"
+                disabled={isSaving || isDeleting}
+                onClick={onSaveWallet}
+                type="button"
+              >
+                {isSaving ? "저장 중..." : "지갑 저장"}
               </button>
               <button
                 className="admin-page__button admin-page__button--danger"
@@ -606,13 +724,15 @@ function UserDetailPanel({
                 onClick={onDeleteUser}
                 type="button"
               >
-                {isDeleting ? '탈퇴 처리 중...' : '유저 탈퇴'}
+                {isDeleting ? "탈퇴 처리 중..." : "유저 탈퇴"}
               </button>
             </div>
           </>
         ) : (
           <>
-            <p className="admin-page__muted">현재 활성 시즌이 없어 지갑 수정은 비활성화되어 있습니다.</p>
+            <p className="admin-page__muted">
+              현재 활성 시즌이 없어 지갑 수정은 비활성화되어 있습니다.
+            </p>
             <div className="admin-page__action-row">
               <button
                 className="admin-page__button admin-page__button--danger"
@@ -620,7 +740,7 @@ function UserDetailPanel({
                 onClick={onDeleteUser}
                 type="button"
               >
-                {isDeleting ? '탈퇴 처리 중...' : '유저 탈퇴'}
+                {isDeleting ? "탈퇴 처리 중..." : "유저 탈퇴"}
               </button>
             </div>
           </>
@@ -631,12 +751,18 @@ function UserDetailPanel({
         <div className="admin-page__section-header">
           <h3 className="admin-page__section-title">보유 포지션 조정</h3>
           <span className="admin-page__section-caption">
-            {selectedSeasonGame ? `${selectedSeasonGame.regionCode} · OPEN ${formatNumber(positions.length)}건` : '활성 시즌 없음'}
+            {selectedSeasonGame
+              ? `${selectedSeasonGame.regionCode} · OPEN ${formatNumber(positions.length)}건`
+              : "활성 시즌 없음"}
           </span>
         </div>
         {positions.length ? (
           <>
-            <div className="admin-page__season-selector" role="tablist" aria-label="보유 포지션 선택">
+            <div
+              className="admin-page__season-selector"
+              role="tablist"
+              aria-label="보유 포지션 선택"
+            >
               {positions.map((position) => (
                 <button
                   aria-selected={position.id === selectedPositionId}
@@ -655,19 +781,43 @@ function UserDetailPanel({
             {selectedPosition ? (
               <>
                 <div className="admin-page__detail-list admin-page__detail-list--compact">
-                  <p><span>영상</span><strong>{selectedPosition.title}</strong></p>
-                  <p><span>채널</span><strong>{selectedPosition.channelTitle}</strong></p>
-                  <p><span>카테고리</span><strong>{selectedPosition.categoryId}</strong></p>
-                  <p><span>매수 랭크</span><strong>{formatNumber(selectedPosition.buyRank)}</strong></p>
-                  <p><span>매수 시각</span><strong>{formatDateTime(selectedPosition.buyCapturedAt)}</strong></p>
-                  <p><span>생성 시각</span><strong>{formatDateTime(selectedPosition.createdAt)}</strong></p>
+                  <p>
+                    <span>영상</span>
+                    <strong>{selectedPosition.title}</strong>
+                  </p>
+                  <p>
+                    <span>채널</span>
+                    <strong>{selectedPosition.channelTitle}</strong>
+                  </p>
+                  <p>
+                    <span>카테고리</span>
+                    <strong>{selectedPosition.categoryId}</strong>
+                  </p>
+                  <p>
+                    <span>매수 랭크</span>
+                    <strong>{formatNumber(selectedPosition.buyRank)}</strong>
+                  </p>
+                  <p>
+                    <span>매수 시각</span>
+                    <strong>
+                      {formatDateTime(selectedPosition.buyCapturedAt)}
+                    </strong>
+                  </p>
+                  <p>
+                    <span>생성 시각</span>
+                    <strong>
+                      {formatDateTime(selectedPosition.createdAt)}
+                    </strong>
+                  </p>
                 </div>
                 <div className="admin-page__form-grid">
                   <label className="admin-page__field">
                     <span>수량</span>
                     <input
                       inputMode="numeric"
-                      onChange={(event) => onPositionDraftChange('quantity', event.target.value)}
+                      onChange={(event) =>
+                        onPositionDraftChange("quantity", event.target.value)
+                      }
                       type="text"
                       value={positionDraft.quantity}
                     />
@@ -676,7 +826,9 @@ function UserDetailPanel({
                     <span>매수 금액</span>
                     <input
                       inputMode="numeric"
-                      onChange={(event) => onPositionDraftChange('stakePoints', event.target.value)}
+                      onChange={(event) =>
+                        onPositionDraftChange("stakePoints", event.target.value)
+                      }
                       type="text"
                       value={positionDraft.stakePoints}
                     />
@@ -684,25 +836,37 @@ function UserDetailPanel({
                   <label className="admin-page__field">
                     <span>구매 시간</span>
                     <input
-                      onChange={(event) => onPositionDraftChange('createdAt', event.target.value)}
+                      onChange={(event) =>
+                        onPositionDraftChange("createdAt", event.target.value)
+                      }
                       type="datetime-local"
                       value={positionDraft.createdAt}
                     />
                   </label>
                 </div>
                 <p className="admin-page__muted">
-                  수량은 100 단위로만 수정할 수 있습니다. 매수 금액을 수정하면 지갑의 가용 포인트와 예약 포인트도 함께 보정됩니다. 구매 시간을 바꾸면 해당 시각 이전의 스냅샷으로 매수 랭크와 매수 시각이 다시 계산됩니다.
+                  수량은 100 단위로만 수정할 수 있습니다. 매수 금액을 수정하면
+                  지갑의 가용 포인트와 예약 포인트도 함께 보정됩니다. 구매
+                  시간을 바꾸면 해당 시각 이전의 스냅샷으로 매수 랭크와 매수
+                  시각이 다시 계산됩니다.
                 </p>
                 <div className="admin-page__action-row">
-                  <button className="admin-page__button" disabled={isSavingPosition} onClick={onSavePosition} type="button">
-                    {isSavingPosition ? '저장 중...' : '포지션 저장'}
+                  <button
+                    className="admin-page__button"
+                    disabled={isSavingPosition}
+                    onClick={onSavePosition}
+                    type="button"
+                  >
+                    {isSavingPosition ? "저장 중..." : "포지션 저장"}
                   </button>
                 </div>
               </>
             ) : null}
           </>
         ) : (
-          <p className="admin-page__muted">선택한 시즌에 보유 중인 OPEN 포지션이 없습니다.</p>
+          <p className="admin-page__muted">
+            선택한 시즌에 보유 중인 OPEN 포지션이 없습니다.
+          </p>
         )}
       </div>
     </div>
@@ -744,66 +908,112 @@ function parseOptionalUserIdInput(value: string, label: string) {
 
 export default function AdminPage() {
   const { accessToken, isLoggingOut, logout, status, user } = useAuth();
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedSeasonId, setSelectedSeasonId] = useState<number | null>(null);
-  const [seasonDrafts, setSeasonDrafts] = useState<Record<number, {
-    startAt: string;
-    endAt: string;
-    startingBalancePoints: string;
-  }>>({});
-  const [seasonActionState, setSeasonActionState] = useState<{ seasonId: number; type: 'save' | 'close' | 'balance' } | null>(null);
+  const [seasonDrafts, setSeasonDrafts] = useState<
+    Record<
+      number,
+      {
+        startAt: string;
+        endAt: string;
+        startingBalancePoints: string;
+      }
+    >
+  >({});
+  const [seasonActionState, setSeasonActionState] = useState<{
+    seasonId: number;
+    type: "save" | "close" | "balance";
+  } | null>(null);
   const [walletDraft, setWalletDraft] = useState({
-    balancePoints: '',
-    reservedPoints: '',
-    realizedPnlPoints: '',
-    manualTierScoreAdjustment: '',
+    balancePoints: "",
+    reservedPoints: "",
+    realizedPnlPoints: "",
+    manualTierScoreAdjustment: "",
   });
-  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
+  const [selectedPositionId, setSelectedPositionId] = useState<number | null>(
+    null,
+  );
   const [positionDraft, setPositionDraft] = useState({
-    quantity: '',
-    stakePoints: '',
-    createdAt: '',
+    quantity: "",
+    stakePoints: "",
+    createdAt: "",
   });
-  const [commentCleanupDraft, setCommentCleanupDraft] = useState('');
-  const [commentCleanupUserIdDraft, setCommentCleanupUserIdDraft] = useState('');
-  const [highlightCleanupDraft, setHighlightCleanupDraft] = useState('');
-  const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState('');
-  const [highlightCleanupUserIdDraft, setHighlightCleanupUserIdDraft] = useState('');
-  const [tradeHistoryCleanupUserIdDraft, setTradeHistoryCleanupUserIdDraft] = useState('');
-  const [trendSnapshotRangeDraft, setTrendSnapshotRangeDraft] = useState(createDefaultSnapshotRange);
-  const [submittedTrendSnapshotRange, setSubmittedTrendSnapshotRange] = useState<{
-    startAt: string | null;
-    endAt: string | null;
-    regionCode: string | null;
-  }>(createDefaultSubmittedSnapshotRange);
+  const [commentCleanupDraft, setCommentCleanupDraft] = useState("");
+  const [commentCleanupUserIdDraft, setCommentCleanupUserIdDraft] =
+    useState("");
+  const [highlightCleanupDraft, setHighlightCleanupDraft] = useState("");
+  const [tradeHistoryCleanupDraft, setTradeHistoryCleanupDraft] = useState("");
+  const [highlightCleanupUserIdDraft, setHighlightCleanupUserIdDraft] =
+    useState("");
+  const [tradeHistoryCleanupUserIdDraft, setTradeHistoryCleanupUserIdDraft] =
+    useState("");
+  const [trendSnapshotRangeDraft, setTrendSnapshotRangeDraft] = useState(
+    createDefaultSnapshotRange,
+  );
+  const [submittedTrendSnapshotRange, setSubmittedTrendSnapshotRange] =
+    useState<{
+      startAt: string | null;
+      endAt: string | null;
+      regionCode: string | null;
+    }>(createDefaultSubmittedSnapshotRange);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
-  const dashboardQuery = useAdminDashboard(accessToken, status === 'authenticated');
-  const priceAnchorsQuery = useAdminPriceAnchors(accessToken, status === 'authenticated');
-  const tierThresholdsQuery = useAdminTierThresholds(accessToken, status === 'authenticated');
+  const dashboardQuery = useAdminDashboard(
+    accessToken,
+    status === "authenticated",
+  );
+  const priceAnchorsQuery = useAdminPriceAnchors(
+    accessToken,
+    status === "authenticated",
+  );
+  const tierThresholdsQuery = useAdminTierThresholds(
+    accessToken,
+    status === "authenticated",
+  );
   const trendSnapshotsQuery = useAdminTrendSnapshots(
     accessToken,
     submittedTrendSnapshotRange.startAt,
     submittedTrendSnapshotRange.endAt,
     submittedTrendSnapshotRange.regionCode,
-    status === 'authenticated',
+    status === "authenticated",
   );
-  const usersQuery = useAdminUsers(accessToken, submittedQuery, status === 'authenticated');
-  const detailQuery = useAdminUserDetail(accessToken, selectedUserId, status === 'authenticated');
-  const highlightsQuery = useAdminUserHighlights(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
-  const positionsQuery = useAdminUserPositions(accessToken, selectedUserId, selectedSeasonId, status === 'authenticated');
+  const usersQuery = useAdminUsers(
+    accessToken,
+    submittedQuery,
+    status === "authenticated",
+  );
+  const detailQuery = useAdminUserDetail(
+    accessToken,
+    selectedUserId,
+    status === "authenticated",
+  );
+  const highlightsQuery = useAdminUserHighlights(
+    accessToken,
+    selectedUserId,
+    selectedSeasonId,
+    status === "authenticated",
+  );
+  const positionsQuery = useAdminUserPositions(
+    accessToken,
+    selectedUserId,
+    selectedSeasonId,
+    status === "authenticated",
+  );
   const updateSeasonMutation = useUpdateAdminSeasonSchedule(accessToken);
   const updatePriceAnchorsMutation = useUpdateAdminPriceAnchors(accessToken);
-  const updateTierThresholdsMutation = useUpdateAdminTierThresholds(accessToken);
-  const updateSeasonStartingBalanceMutation = useUpdateAdminSeasonStartingBalance(accessToken);
+  const updateTierThresholdsMutation =
+    useUpdateAdminTierThresholds(accessToken);
+  const updateSeasonStartingBalanceMutation =
+    useUpdateAdminSeasonStartingBalance(accessToken);
   const closeSeasonMutation = useCloseAdminSeason(accessToken);
   const updateWalletMutation = useUpdateAdminUserWallet(accessToken);
   const updatePositionMutation = useUpdateAdminUserPosition(accessToken);
   const deleteUserMutation = useDeleteAdminUser(accessToken);
   const purgeCommentsMutation = usePurgeAdminComments(accessToken);
-  const purgeHighlightHistoryMutation = usePurgeAdminHighlightHistory(accessToken);
+  const purgeHighlightHistoryMutation =
+    usePurgeAdminHighlightHistory(accessToken);
   const purgeTradeHistoryMutation = usePurgeAdminTradeHistory(accessToken);
 
   useLogoutOnUnauthorized(dashboardQuery.error, logout);
@@ -823,7 +1033,10 @@ export default function AdminPage() {
       return;
     }
 
-    if (selectedUserId === null || !users.some((item) => item.id === selectedUserId)) {
+    if (
+      selectedUserId === null ||
+      !users.some((item) => item.id === selectedUserId)
+    ) {
       setSelectedUserId(users[0].id);
     }
   }, [selectedUserId, usersQuery.data]);
@@ -836,9 +1049,14 @@ export default function AdminPage() {
         activeSeasons.map((season) => [
           season.id,
           {
-            startAt: current[season.id]?.startAt ?? formatDateTimeInput(season.startAt),
-            endAt: current[season.id]?.endAt ?? formatDateTimeInput(season.endAt),
-            startingBalancePoints: current[season.id]?.startingBalancePoints ?? String(season.startingBalancePoints),
+            startAt:
+              current[season.id]?.startAt ??
+              formatDateTimeInput(season.startAt),
+            endAt:
+              current[season.id]?.endAt ?? formatDateTimeInput(season.endAt),
+            startingBalancePoints:
+              current[season.id]?.startingBalancePoints ??
+              String(season.startingBalancePoints),
           },
         ]),
       ),
@@ -850,7 +1068,10 @@ export default function AdminPage() {
       return;
     }
 
-    const recentCommentCreatedAt = dashboardQuery.data?.recentComments[dashboardQuery.data.recentComments.length - 1]?.createdAt;
+    const recentCommentCreatedAt =
+      dashboardQuery.data?.recentComments[
+        dashboardQuery.data.recentComments.length - 1
+      ]?.createdAt;
 
     if (recentCommentCreatedAt) {
       setCommentCleanupDraft(formatDateTimeInput(recentCommentCreatedAt));
@@ -862,10 +1083,13 @@ export default function AdminPage() {
       return;
     }
 
-    const activeSeasonEndAt = getDashboardActiveSeasons(dashboardQuery.data)[0]?.endAt;
+    const activeSeasonEndAt = getDashboardActiveSeasons(dashboardQuery.data)[0]
+      ?.endAt;
 
     if (activeSeasonEndAt) {
-      setTradeHistoryCleanupDraft(formatCleanupDateTimeInput(activeSeasonEndAt));
+      setTradeHistoryCleanupDraft(
+        formatCleanupDateTimeInput(activeSeasonEndAt),
+      );
     }
   }, [tradeHistoryCleanupDraft, dashboardQuery.data]);
 
@@ -874,7 +1098,8 @@ export default function AdminPage() {
       return;
     }
 
-    const activeSeasonEndAt = getDashboardActiveSeasons(dashboardQuery.data)[0]?.endAt;
+    const activeSeasonEndAt = getDashboardActiveSeasons(dashboardQuery.data)[0]
+      ?.endAt;
 
     if (activeSeasonEndAt) {
       setHighlightCleanupDraft(formatCleanupDateTimeInput(activeSeasonEndAt));
@@ -884,7 +1109,8 @@ export default function AdminPage() {
   useEffect(() => {
     const activeSeasonGames = getActiveSeasonGames(detailQuery.data);
     const nextSelectedSeasonId =
-      activeSeasonGames.find((item) => item.seasonId === selectedSeasonId)?.seasonId ??
+      activeSeasonGames.find((item) => item.seasonId === selectedSeasonId)
+        ?.seasonId ??
       activeSeasonGames[0]?.seasonId ??
       null;
 
@@ -914,10 +1140,10 @@ export default function AdminPage() {
 
     if (!game) {
       setWalletDraft({
-        balancePoints: '',
-        reservedPoints: '',
-        realizedPnlPoints: '',
-        manualTierScoreAdjustment: '',
+        balancePoints: "",
+        reservedPoints: "",
+        realizedPnlPoints: "",
+        manualTierScoreAdjustment: "",
       });
       return;
     }
@@ -932,13 +1158,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     const positions = positionsQuery.data ?? [];
-    const position = positions.find((item) => item.id === selectedPositionId) ?? positions[0] ?? null;
+    const position =
+      positions.find((item) => item.id === selectedPositionId) ??
+      positions[0] ??
+      null;
 
     if (!position) {
       setPositionDraft({
-        quantity: '',
-        stakePoints: '',
-        createdAt: '',
+        quantity: "",
+        stakePoints: "",
+        createdAt: "",
       });
       return;
     }
@@ -957,20 +1186,25 @@ export default function AdminPage() {
         ? priceAnchorsQuery.error.message
         : tierThresholdsQuery.error instanceof ApiRequestError
           ? tierThresholdsQuery.error.message
-        : usersQuery.error instanceof ApiRequestError
-          ? usersQuery.error.message
-          : detailQuery.error instanceof ApiRequestError
-            ? detailQuery.error.message
-            : positionsQuery.error instanceof ApiRequestError
-              ? positionsQuery.error.message
-              : trendSnapshotsQuery.error instanceof ApiRequestError
-                ? trendSnapshotsQuery.error.message
-                : '관리자 정보를 불러오지 못했습니다.';
+          : usersQuery.error instanceof ApiRequestError
+            ? usersQuery.error.message
+            : detailQuery.error instanceof ApiRequestError
+              ? detailQuery.error.message
+              : positionsQuery.error instanceof ApiRequestError
+                ? positionsQuery.error.message
+                : trendSnapshotsQuery.error instanceof ApiRequestError
+                  ? trendSnapshotsQuery.error.message
+                  : "관리자 정보를 불러오지 못했습니다.";
   const isForbidden =
-    dashboardQuery.error instanceof ApiRequestError && dashboardQuery.error.status === 403;
+    dashboardQuery.error instanceof ApiRequestError &&
+    dashboardQuery.error.status === 403;
 
   const handleWalletDraftChange = (
-    field: 'balancePoints' | 'reservedPoints' | 'realizedPnlPoints' | 'manualTierScoreAdjustment',
+    field:
+      | "balancePoints"
+      | "reservedPoints"
+      | "realizedPnlPoints"
+      | "manualTierScoreAdjustment",
     value: string,
   ) => {
     setWalletDraft((current) => ({
@@ -981,28 +1215,34 @@ export default function AdminPage() {
 
   const handleSeasonDraftChange = (
     seasonId: number,
-    field: 'startAt' | 'endAt' | 'startingBalancePoints',
+    field: "startAt" | "endAt" | "startingBalancePoints",
     value: string,
   ) => {
     setSeasonDrafts((current) => ({
       ...current,
       [seasonId]: {
-        startAt: current[seasonId]?.startAt ?? '',
-        endAt: current[seasonId]?.endAt ?? '',
-        startingBalancePoints: current[seasonId]?.startingBalancePoints ?? '',
+        startAt: current[seasonId]?.startAt ?? "",
+        endAt: current[seasonId]?.endAt ?? "",
+        startingBalancePoints: current[seasonId]?.startingBalancePoints ?? "",
         [field]: value,
       },
     }));
   };
 
-  const handlePositionDraftChange = (field: 'quantity' | 'stakePoints' | 'createdAt', value: string) => {
+  const handlePositionDraftChange = (
+    field: "quantity" | "stakePoints" | "createdAt",
+    value: string,
+  ) => {
     setPositionDraft((current) => ({
       ...current,
       [field]: value,
     }));
   };
 
-  const handleTrendSnapshotRangeChange = (field: 'startAt' | 'endAt', value: string) => {
+  const handleTrendSnapshotRangeChange = (
+    field: "startAt" | "endAt",
+    value: string,
+  ) => {
     setTrendSnapshotRangeDraft((current) => ({
       ...current,
       [field]: value,
@@ -1022,27 +1262,35 @@ export default function AdminPage() {
 
     try {
       const request = {
-        startAt: parseDateTimeInput(draft?.startAt ?? '', '시작'),
-        endAt: parseDateTimeInput(draft?.endAt ?? '', '종료'),
+        startAt: parseDateTimeInput(draft?.startAt ?? "", "시작"),
+        endAt: parseDateTimeInput(draft?.endAt ?? "", "종료"),
       };
 
       setActionMessage(null);
-      setSeasonActionState({ seasonId: season.id, type: 'save' });
+      setSeasonActionState({ seasonId: season.id, type: "save" });
       updateSeasonMutation.mutate(
         { seasonId: season.id, request },
         {
           onSuccess: () => {
-            setActionMessage(`${season.regionCode} 시즌 시간이 저장되었습니다.`);
+            setActionMessage(
+              `${season.regionCode} 시즌 시간이 저장되었습니다.`,
+            );
             setSeasonActionState(null);
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '시즌 시간 저장에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "시즌 시간 저장에 실패했습니다.",
+            );
             setSeasonActionState(null);
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '시즌 시간을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error ? error.message : "시즌 시간을 확인해주세요.",
+      );
     }
   };
 
@@ -1056,14 +1304,16 @@ export default function AdminPage() {
     }
 
     setActionMessage(null);
-    setSeasonActionState({ seasonId: season.id, type: 'close' });
+    setSeasonActionState({ seasonId: season.id, type: "close" });
     closeSeasonMutation.mutate(season.id, {
       onSuccess: () => {
         setActionMessage(`${season.regionCode} 시즌을 종료했습니다.`);
         setSeasonActionState(null);
       },
       onError: (error) => {
-        setActionMessage(error instanceof Error ? error.message : '시즌 종료에 실패했습니다.');
+        setActionMessage(
+          error instanceof Error ? error.message : "시즌 종료에 실패했습니다.",
+        );
         setSeasonActionState(null);
       },
     });
@@ -1074,26 +1324,37 @@ export default function AdminPage() {
 
     try {
       const request = {
-        startingBalancePoints: parsePointInput(draft?.startingBalancePoints ?? '', '시작 자금'),
+        startingBalancePoints: parsePointInput(
+          draft?.startingBalancePoints ?? "",
+          "시작 자금",
+        ),
       };
 
       setActionMessage(null);
-      setSeasonActionState({ seasonId: season.id, type: 'balance' });
+      setSeasonActionState({ seasonId: season.id, type: "balance" });
       updateSeasonStartingBalanceMutation.mutate(
         { seasonId: season.id, request },
         {
           onSuccess: () => {
-            setActionMessage(`${season.regionCode} 시즌 시작 자금이 저장되었습니다. 이미 생성된 유저 지갑은 변경하지 않습니다.`);
+            setActionMessage(
+              `${season.regionCode} 시즌 시작 자금이 저장되었습니다. 이미 생성된 유저 지갑은 변경하지 않습니다.`,
+            );
             setSeasonActionState(null);
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '시작 자금 저장에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "시작 자금 저장에 실패했습니다.",
+            );
             setSeasonActionState(null);
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '시작 자금을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error ? error.message : "시작 자금을 확인해주세요.",
+      );
     }
   };
 
@@ -1105,9 +1366,18 @@ export default function AdminPage() {
     try {
       const request = {
         seasonId: selectedSeasonId,
-        balancePoints: parsePointInput(walletDraft.balancePoints, '가용 포인트'),
-        reservedPoints: parsePointInput(walletDraft.reservedPoints, '예약 포인트'),
-        realizedPnlPoints: parsePointInput(walletDraft.realizedPnlPoints, '실현 손익'),
+        balancePoints: parsePointInput(
+          walletDraft.balancePoints,
+          "가용 포인트",
+        ),
+        reservedPoints: parsePointInput(
+          walletDraft.reservedPoints,
+          "예약 포인트",
+        ),
+        realizedPnlPoints: parsePointInput(
+          walletDraft.realizedPnlPoints,
+          "실현 손익",
+        ),
       };
 
       setActionMessage(null);
@@ -1115,15 +1385,21 @@ export default function AdminPage() {
         { userId: selectedUserId, request },
         {
           onSuccess: () => {
-            setActionMessage('지갑 정보가 저장되었습니다.');
+            setActionMessage("지갑 정보가 저장되었습니다.");
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '지갑 저장에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "지갑 저장에 실패했습니다.",
+            );
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '입력값을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error ? error.message : "입력값을 확인해주세요.",
+      );
     }
   };
 
@@ -1133,7 +1409,7 @@ export default function AdminPage() {
     }
 
     const confirmed = window.confirm(
-      `${detailQuery.data.displayName} (${detailQuery.data.email}) 사용자를 탈퇴 처리할까요? 연관 세션, 즐겨찾기, 재생 위치, 게임 데이터가 함께 삭제됩니다.`,
+      `${detailQuery.data.displayName} (${detailQuery.data.email}) 사용자를 탈퇴 처리할까요? 연관 세션, 재생 위치, 게임 데이터가 함께 삭제됩니다.`,
     );
 
     if (!confirmed) {
@@ -1143,11 +1419,15 @@ export default function AdminPage() {
     setActionMessage(null);
     deleteUserMutation.mutate(selectedUserId, {
       onSuccess: () => {
-        setActionMessage('유저 탈퇴 처리가 완료되었습니다.');
+        setActionMessage("유저 탈퇴 처리가 완료되었습니다.");
         setSelectedUserId(null);
       },
       onError: (error) => {
-        setActionMessage(error instanceof Error ? error.message : '유저 탈퇴 처리에 실패했습니다.');
+        setActionMessage(
+          error instanceof Error
+            ? error.message
+            : "유저 탈퇴 처리에 실패했습니다.",
+        );
       },
     });
   };
@@ -1159,10 +1439,10 @@ export default function AdminPage() {
 
     try {
       const request = {
-        quantity: parsePointInput(positionDraft.quantity, '수량'),
-        stakePoints: parsePointInput(positionDraft.stakePoints, '매수 금액'),
+        quantity: parsePointInput(positionDraft.quantity, "수량"),
+        stakePoints: parsePointInput(positionDraft.stakePoints, "매수 금액"),
         createdAt: positionDraft.createdAt.trim()
-          ? parseDateTimeInput(positionDraft.createdAt, '구매 시간')
+          ? parseDateTimeInput(positionDraft.createdAt, "구매 시간")
           : undefined,
       };
 
@@ -1171,23 +1451,37 @@ export default function AdminPage() {
         { userId: selectedUserId, positionId: selectedPositionId, request },
         {
           onSuccess: () => {
-            setActionMessage('보유 포지션이 저장되었습니다.');
+            setActionMessage("보유 포지션이 저장되었습니다.");
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '포지션 저장에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "포지션 저장에 실패했습니다.",
+            );
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '포지션 입력값을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error
+          ? error.message
+          : "포지션 입력값을 확인해주세요.",
+      );
     }
   };
 
   const handleCommentCleanup = () => {
     try {
-      const deleteBefore = parseDateTimeInput(commentCleanupDraft, '댓글 정리 기준');
-      const userId = parseOptionalUserIdInput(commentCleanupUserIdDraft, '댓글 정리 유저 ID');
-      const targetLabel = userId === null ? '전체 유저' : `유저 #${userId}`;
+      const deleteBefore = parseDateTimeInput(
+        commentCleanupDraft,
+        "댓글 정리 기준",
+      );
+      const userId = parseOptionalUserIdInput(
+        commentCleanupUserIdDraft,
+        "댓글 정리 유저 ID",
+      );
+      const targetLabel = userId === null ? "전체 유저" : `유저 #${userId}`;
       const confirmed = window.confirm(
         `${targetLabel} 기준으로 ${formatDateTime(deleteBefore)} 이전 댓글을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
       );
@@ -1201,23 +1495,43 @@ export default function AdminPage() {
         userId === null ? { deleteBefore } : { deleteBefore, userId },
         {
           onSuccess: (response) => {
-            setActionMessage(formatScopedCommentCleanupMessage(response.deletedCount, response.deleteBefore, userId));
+            setActionMessage(
+              formatScopedCommentCleanupMessage(
+                response.deletedCount,
+                response.deleteBefore,
+                userId,
+              ),
+            );
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '댓글 정리에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "댓글 정리에 실패했습니다.",
+            );
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '댓글 정리 기준 시각을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error
+          ? error.message
+          : "댓글 정리 기준 시각을 확인해주세요.",
+      );
     }
   };
 
   const handleTradeHistoryCleanup = () => {
     try {
-      const deleteBefore = parseDateTimeInput(tradeHistoryCleanupDraft, '거래내역 정리 기준');
-      const userId = parseOptionalUserIdInput(tradeHistoryCleanupUserIdDraft, '거래내역 정리 유저 ID');
-      const targetLabel = userId === null ? '전체 유저' : `유저 #${userId}`;
+      const deleteBefore = parseDateTimeInput(
+        tradeHistoryCleanupDraft,
+        "거래내역 정리 기준",
+      );
+      const userId = parseOptionalUserIdInput(
+        tradeHistoryCleanupUserIdDraft,
+        "거래내역 정리 유저 ID",
+      );
+      const targetLabel = userId === null ? "전체 유저" : `유저 #${userId}`;
       const confirmed = window.confirm(
         `${targetLabel} 기준으로 ${formatDateTime(deleteBefore)} 이전에 종료된 거래내역을 삭제할까요? 연결된 원장/지급 내역도 함께 삭제되며 이 작업은 되돌릴 수 없습니다.`,
       );
@@ -1243,20 +1557,34 @@ export default function AdminPage() {
             );
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '거래내역 정리에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "거래내역 정리에 실패했습니다.",
+            );
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '거래내역 정리 기준 시각을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error
+          ? error.message
+          : "거래내역 정리 기준 시각을 확인해주세요.",
+      );
     }
   };
 
   const handleHighlightCleanup = () => {
     try {
-      const deleteBefore = parseDateTimeInput(highlightCleanupDraft, '하이라이트 정리 기준');
-      const userId = parseOptionalUserIdInput(highlightCleanupUserIdDraft, '하이라이트 정리 유저 ID');
-      const targetLabel = userId === null ? '전체 유저' : `유저 #${userId}`;
+      const deleteBefore = parseDateTimeInput(
+        highlightCleanupDraft,
+        "하이라이트 정리 기준",
+      );
+      const userId = parseOptionalUserIdInput(
+        highlightCleanupUserIdDraft,
+        "하이라이트 정리 유저 ID",
+      );
+      const targetLabel = userId === null ? "전체 유저" : `유저 #${userId}`;
       const confirmed = window.confirm(
         `${targetLabel} 기준으로 ${formatDateTime(deleteBefore)} 이전에 확정된 하이라이트 내역을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`,
       );
@@ -1270,31 +1598,54 @@ export default function AdminPage() {
         userId === null ? { deleteBefore } : { deleteBefore, userId },
         {
           onSuccess: (response) => {
-            setActionMessage(formatHighlightCleanupMessage(response.deletedCount, response.deleteBefore, userId));
+            setActionMessage(
+              formatHighlightCleanupMessage(
+                response.deletedCount,
+                response.deleteBefore,
+                userId,
+              ),
+            );
           },
           onError: (error) => {
-            setActionMessage(error instanceof Error ? error.message : '하이라이트 내역 정리에 실패했습니다.');
+            setActionMessage(
+              error instanceof Error
+                ? error.message
+                : "하이라이트 내역 정리에 실패했습니다.",
+            );
           },
         },
       );
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '하이라이트 정리 기준 시각을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error
+          ? error.message
+          : "하이라이트 정리 기준 시각을 확인해주세요.",
+      );
     }
   };
 
   const handleTrendSnapshotSearch = () => {
     try {
-      const regionCode = trendSnapshotRangeDraft.regionCode?.trim().toUpperCase() ?? '';
+      const regionCode =
+        trendSnapshotRangeDraft.regionCode?.trim().toUpperCase() ?? "";
 
       if (!regionCode) {
-        throw new Error('국가를 선택하세요.');
+        throw new Error("국가를 선택하세요.");
       }
 
-      const startAt = parseDateTimeInput(trendSnapshotRangeDraft.startAt, '스냅샷 조회 시작');
-      const endAt = parseDateTimeInput(trendSnapshotRangeDraft.endAt, '스냅샷 조회 종료');
+      const startAt = parseDateTimeInput(
+        trendSnapshotRangeDraft.startAt,
+        "스냅샷 조회 시작",
+      );
+      const endAt = parseDateTimeInput(
+        trendSnapshotRangeDraft.endAt,
+        "스냅샷 조회 종료",
+      );
 
       if (new Date(startAt).getTime() > new Date(endAt).getTime()) {
-        throw new Error('스냅샷 조회 시작 시각은 종료 시각보다 늦을 수 없습니다.');
+        throw new Error(
+          "스냅샷 조회 시작 시각은 종료 시각보다 늦을 수 없습니다.",
+        );
       }
 
       setActionMessage(null);
@@ -1304,7 +1655,11 @@ export default function AdminPage() {
         regionCode,
       });
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : '스냅샷 조회 기간을 확인해주세요.');
+      setActionMessage(
+        error instanceof Error
+          ? error.message
+          : "스냅샷 조회 기간을 확인해주세요.",
+      );
     }
   };
 
@@ -1316,10 +1671,16 @@ export default function AdminPage() {
       { anchors },
       {
         onSuccess: () => {
-          setActionMessage('등수별 가격 앵커가 저장되어 게임 가격에 즉시 반영되었습니다.');
+          setActionMessage(
+            "등수별 가격 앵커가 저장되어 게임 가격에 즉시 반영되었습니다.",
+          );
         },
         onError: (error) => {
-          setActionMessage(error instanceof Error ? error.message : '가격 앵커 저장에 실패했습니다.');
+          setActionMessage(
+            error instanceof Error
+              ? error.message
+              : "가격 앵커 저장에 실패했습니다.",
+          );
         },
       },
     );
@@ -1334,10 +1695,16 @@ export default function AdminPage() {
       { seasonId, tiers },
       {
         onSuccess: () => {
-          setActionMessage('보유 포인트 티어 기준이 저장되어 현재 티어에 즉시 반영되었습니다.');
+          setActionMessage(
+            "보유 포인트 티어 기준이 저장되어 현재 티어에 즉시 반영되었습니다.",
+          );
         },
         onError: (error) => {
-          setActionMessage(error instanceof Error ? error.message : '티어 기준 저장에 실패했습니다.');
+          setActionMessage(
+            error instanceof Error
+              ? error.message
+              : "티어 기준 저장에 실패했습니다.",
+          );
         },
       },
     );
@@ -1349,13 +1716,15 @@ export default function AdminPage() {
         <section className="admin-page__hero admin-page__hero--centered">
           <p className="admin-page__eyebrow">Admin</p>
           <h1 className="admin-page__title">백엔드 연결이 필요합니다</h1>
-          <p className="admin-page__description">`VITE_API_BASE_URL` 설정 후 관리자 대시보드를 사용할 수 있습니다.</p>
+          <p className="admin-page__description">
+            `VITE_API_BASE_URL` 설정 후 관리자 대시보드를 사용할 수 있습니다.
+          </p>
         </section>
       </main>
     );
   }
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <main className="admin-page">
         <section className="admin-page__hero admin-page__hero--centered">
@@ -1366,14 +1735,15 @@ export default function AdminPage() {
     );
   }
 
-  if (status !== 'authenticated') {
+  if (status !== "authenticated") {
     return (
       <main className="admin-page">
         <section className="admin-page__hero admin-page__hero--centered">
           <p className="admin-page__eyebrow">Admin</p>
           <h1 className="admin-page__title">관리자 로그인이 필요합니다</h1>
           <p className="admin-page__description">
-            기존 구글 로그인 세션을 그대로 사용합니다. 로그인 후 허용된 관리자 이메일이면 대시보드가 열립니다.
+            기존 구글 로그인 세션을 그대로 사용합니다. 로그인 후 허용된 관리자
+            이메일이면 대시보드가 열립니다.
           </p>
           <div className="admin-page__login-panel">
             <GoogleLoginButton />
@@ -1393,7 +1763,8 @@ export default function AdminPage() {
           <p className="admin-page__eyebrow">Operations Console</p>
           <h1 className="admin-page__title">YouTube Atlas Admin</h1>
           <p className="admin-page__description">
-            최근 사용자 활동과 댓글, 즐겨찾기, 트렌딩 수집 상태뿐 아니라 댓글 정리, 유저 지갑 수정, 탈퇴 처리까지 한 화면에서 운영할 수 있습니다.
+            최근 사용자 활동과 댓글, 트렌딩 수집 상태뿐 아니라 댓글 정리, 유저
+            지갑 수정, 탈퇴 처리까지 한 화면에서 운영할 수 있습니다.
           </p>
         </div>
         <div className="admin-page__hero-actions">
@@ -1417,18 +1788,32 @@ export default function AdminPage() {
         </div>
       </section>
 
-      {dashboardQuery.isLoading || priceAnchorsQuery.isLoading || tierThresholdsQuery.isLoading || usersQuery.isLoading ? (
+      {dashboardQuery.isLoading ||
+      priceAnchorsQuery.isLoading ||
+      tierThresholdsQuery.isLoading ||
+      usersQuery.isLoading ? (
         <section className="admin-page__panel">
           <h2 className="admin-page__section-title">대시보드 로딩 중</h2>
         </section>
       ) : null}
 
-      {dashboardQuery.isError || priceAnchorsQuery.isError || tierThresholdsQuery.isError || trendSnapshotsQuery.isError || usersQuery.isError || detailQuery.isError || positionsQuery.isError ? (
+      {dashboardQuery.isError ||
+      priceAnchorsQuery.isError ||
+      tierThresholdsQuery.isError ||
+      trendSnapshotsQuery.isError ||
+      usersQuery.isError ||
+      detailQuery.isError ||
+      positionsQuery.isError ? (
         <section className="admin-page__panel">
-          <h2 className="admin-page__section-title">{isForbidden ? '접근 권한 없음' : '불러오기 실패'}</h2>
+          <h2 className="admin-page__section-title">
+            {isForbidden ? "접근 권한 없음" : "불러오기 실패"}
+          </h2>
           <p className="admin-page__error">{errorMessage}</p>
           {isForbidden ? (
-            <p className="admin-page__muted">백엔드의 `ADMIN_ALLOWED_EMAILS`에 현재 이메일을 추가하면 접근할 수 있습니다.</p>
+            <p className="admin-page__muted">
+              백엔드의 `ADMIN_ALLOWED_EMAILS`에 현재 이메일을 추가하면 접근할 수
+              있습니다.
+            </p>
           ) : null}
         </section>
       ) : null}
@@ -1442,11 +1827,22 @@ export default function AdminPage() {
       {dashboardQuery.data ? (
         <>
           <section className="admin-page__metrics">
-            <MetricCard label="총 사용자" value={dashboardQuery.data.metrics.totalUsers} />
-            <MetricCard label="총 댓글" value={dashboardQuery.data.metrics.totalComments} />
-            <MetricCard label="총 즐겨찾기" value={dashboardQuery.data.metrics.totalFavorites} />
-            <MetricCard label="트렌드 수집 런" value={dashboardQuery.data.metrics.totalTrendRuns} />
-            <MetricCard label="총 거래내역" value={dashboardQuery.data.metrics.totalTradeHistories} />
+            <MetricCard
+              label="총 사용자"
+              value={dashboardQuery.data.metrics.totalUsers}
+            />
+            <MetricCard
+              label="총 댓글"
+              value={dashboardQuery.data.metrics.totalComments}
+            />
+            <MetricCard
+              label="트렌드 수집 런"
+              value={dashboardQuery.data.metrics.totalTrendRuns}
+            />
+            <MetricCard
+              label="총 거래내역"
+              value={dashboardQuery.data.metrics.totalTradeHistories}
+            />
           </section>
 
           <AdminPriceAnchorsPanel
@@ -1468,20 +1864,41 @@ export default function AdminPage() {
               <h2 className="admin-page__section-title">활성 시즌 현황</h2>
               {getDashboardActiveSeasons(dashboardQuery.data).length ? (
                 <div className="admin-page__season-overview-list">
-                  {getDashboardActiveSeasons(dashboardQuery.data).map((season) => (
-                    <article className="admin-page__season-overview-card" key={season.id}>
-                      <div className="admin-page__section-header">
-                        <strong>{season.regionCode}</strong>
-                        <span className="admin-page__pill">{season.status}</span>
-                      </div>
-                      <div className="admin-page__detail-list">
-                        <p><span>이름</span><strong>{season.name}</strong></p>
-                        <p><span>시작 자금</span><strong>{formatNumber(season.startingBalancePoints)}</strong></p>
-                        <p><span>시작</span><strong>{formatDateTime(season.startAt)}</strong></p>
-                        <p><span>종료</span><strong>{formatDateTime(season.endAt)}</strong></p>
-                      </div>
-                    </article>
-                  ))}
+                  {getDashboardActiveSeasons(dashboardQuery.data).map(
+                    (season) => (
+                      <article
+                        className="admin-page__season-overview-card"
+                        key={season.id}
+                      >
+                        <div className="admin-page__section-header">
+                          <strong>{season.regionCode}</strong>
+                          <span className="admin-page__pill">
+                            {season.status}
+                          </span>
+                        </div>
+                        <div className="admin-page__detail-list">
+                          <p>
+                            <span>이름</span>
+                            <strong>{season.name}</strong>
+                          </p>
+                          <p>
+                            <span>시작 자금</span>
+                            <strong>
+                              {formatNumber(season.startingBalancePoints)}
+                            </strong>
+                          </p>
+                          <p>
+                            <span>시작</span>
+                            <strong>{formatDateTime(season.startAt)}</strong>
+                          </p>
+                          <p>
+                            <span>종료</span>
+                            <strong>{formatDateTime(season.endAt)}</strong>
+                          </p>
+                        </div>
+                      </article>
+                    ),
+                  )}
                 </div>
               ) : (
                 <p className="admin-page__muted">현재 활성 시즌이 없습니다.</p>
@@ -1493,15 +1910,41 @@ export default function AdminPage() {
               {dashboardQuery.data.latestTrendRun ? (
                 <>
                   <div className="admin-page__detail-list">
-                    <p><span>카테고리</span><strong>{dashboardQuery.data.latestTrendRun.categoryLabel}</strong></p>
-                    <p><span>지역</span><strong>{dashboardQuery.data.latestTrendRun.regionCode}</strong></p>
-                    <p><span>소스</span><strong>{dashboardQuery.data.latestTrendRun.source}</strong></p>
-                    <p><span>수집 시각</span><strong>{formatDateTime(dashboardQuery.data.latestTrendRun.capturedAt)}</strong></p>
+                    <p>
+                      <span>카테고리</span>
+                      <strong>
+                        {dashboardQuery.data.latestTrendRun.categoryLabel}
+                      </strong>
+                    </p>
+                    <p>
+                      <span>지역</span>
+                      <strong>
+                        {dashboardQuery.data.latestTrendRun.regionCode}
+                      </strong>
+                    </p>
+                    <p>
+                      <span>소스</span>
+                      <strong>
+                        {dashboardQuery.data.latestTrendRun.source}
+                      </strong>
+                    </p>
+                    <p>
+                      <span>수집 시각</span>
+                      <strong>
+                        {formatDateTime(
+                          dashboardQuery.data.latestTrendRun.capturedAt,
+                        )}
+                      </strong>
+                    </p>
                   </div>
-                  <TrendList items={dashboardQuery.data.latestTrendRun.topVideos} />
+                  <TrendList
+                    items={dashboardQuery.data.latestTrendRun.topVideos}
+                  />
                 </>
               ) : (
-                <p className="admin-page__muted">아직 수집된 트렌딩 데이터가 없습니다.</p>
+                <p className="admin-page__muted">
+                  아직 수집된 트렌딩 데이터가 없습니다.
+                </p>
               )}
             </article>
           </section>
@@ -1509,12 +1952,19 @@ export default function AdminPage() {
           <section className="admin-page__panel">
             <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
               <div>
-                <h2 className="admin-page__section-title">스냅샷 저장 기록 조회</h2>
-                <p className="admin-page__section-caption">저장 시각 기준으로 기간 내 스냅샷 레코드를 전부 조회합니다.</p>
+                <h2 className="admin-page__section-title">
+                  스냅샷 저장 기록 조회
+                </h2>
+                <p className="admin-page__section-caption">
+                  저장 시각 기준으로 기간 내 스냅샷 레코드를 전부 조회합니다.
+                </p>
               </div>
               {trendSnapshotsQuery.data ? (
                 <span className="admin-page__section-caption">
-                  {formatRegionLabel(submittedTrendSnapshotRange.regionCode)} · {formatDateTime(trendSnapshotsQuery.data.startAt)} ~ {formatDateTime(trendSnapshotsQuery.data.endAt)} · {formatNumber(trendSnapshotsQuery.data.count)}건
+                  {formatRegionLabel(submittedTrendSnapshotRange.regionCode)} ·{" "}
+                  {formatDateTime(trendSnapshotsQuery.data.startAt)} ~{" "}
+                  {formatDateTime(trendSnapshotsQuery.data.endAt)} ·{" "}
+                  {formatNumber(trendSnapshotsQuery.data.count)}건
                 </span>
               ) : null}
             </div>
@@ -1523,8 +1973,10 @@ export default function AdminPage() {
                 <span>국가</span>
                 <select
                   className="admin-page__select"
-                  onChange={(event) => handleTrendSnapshotRegionChange(event.target.value)}
-                  value={trendSnapshotRangeDraft.regionCode ?? ''}
+                  onChange={(event) =>
+                    handleTrendSnapshotRegionChange(event.target.value)
+                  }
+                  value={trendSnapshotRangeDraft.regionCode ?? ""}
                 >
                   <option value="">국가 선택</option>
                   {countryCodes.map((country) => (
@@ -1537,7 +1989,12 @@ export default function AdminPage() {
               <label className="admin-page__field">
                 <span>조회 시작 시각</span>
                 <input
-                  onChange={(event) => handleTrendSnapshotRangeChange('startAt', event.target.value)}
+                  onChange={(event) =>
+                    handleTrendSnapshotRangeChange(
+                      "startAt",
+                      event.target.value,
+                    )
+                  }
                   type="datetime-local"
                   value={trendSnapshotRangeDraft.startAt}
                 />
@@ -1545,7 +2002,9 @@ export default function AdminPage() {
               <label className="admin-page__field">
                 <span>조회 종료 시각</span>
                 <input
-                  onChange={(event) => handleTrendSnapshotRangeChange('endAt', event.target.value)}
+                  onChange={(event) =>
+                    handleTrendSnapshotRangeChange("endAt", event.target.value)
+                  }
                   type="datetime-local"
                   value={trendSnapshotRangeDraft.endAt}
                 />
@@ -1558,16 +2017,22 @@ export default function AdminPage() {
                 onClick={handleTrendSnapshotSearch}
                 type="button"
               >
-                {trendSnapshotsQuery.isFetching ? '조회 중...' : '스냅샷 기록 조회'}
+                {trendSnapshotsQuery.isFetching
+                  ? "조회 중..."
+                  : "스냅샷 기록 조회"}
               </button>
             </div>
             {trendSnapshotsQuery.data ? (
               trendSnapshotsQuery.data.items.length ? (
                 <div className="admin-page__table-section">
-                  <TrendSnapshotHistoryTable items={trendSnapshotsQuery.data.items} />
+                  <TrendSnapshotHistoryTable
+                    items={trendSnapshotsQuery.data.items}
+                  />
                 </div>
               ) : (
-                <p className="admin-page__muted">선택한 기간에 저장된 스냅샷 기록이 없습니다.</p>
+                <p className="admin-page__muted">
+                  선택한 기간에 저장된 스냅샷 기록이 없습니다.
+                </p>
               )
             ) : null}
           </section>
@@ -1576,14 +2041,18 @@ export default function AdminPage() {
             <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
               <div>
                 <h2 className="admin-page__section-title">댓글 정리</h2>
-                <p className="admin-page__section-caption">기준 시각보다 오래된 전체 채팅 로그를 한 번에 삭제합니다.</p>
+                <p className="admin-page__section-caption">
+                  기준 시각보다 오래된 전체 채팅 로그를 한 번에 삭제합니다.
+                </p>
               </div>
             </div>
             <div className="admin-page__form-grid">
               <label className="admin-page__field">
                 <span>삭제 기준 시각</span>
                 <input
-                  onChange={(event) => setCommentCleanupDraft(event.target.value)}
+                  onChange={(event) =>
+                    setCommentCleanupDraft(event.target.value)
+                  }
                   type="datetime-local"
                   value={commentCleanupDraft}
                 />
@@ -1592,7 +2061,9 @@ export default function AdminPage() {
                 <span>대상 유저 ID</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => setCommentCleanupUserIdDraft(event.target.value)}
+                  onChange={(event) =>
+                    setCommentCleanupUserIdDraft(event.target.value)
+                  }
                   placeholder="비워두면 전체"
                   type="text"
                   value={commentCleanupUserIdDraft}
@@ -1600,7 +2071,9 @@ export default function AdminPage() {
               </label>
             </div>
             <p className="admin-page__muted">
-              입력한 시각보다 이전에 생성된 전체 채팅 댓글만 삭제됩니다. 유저 ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 미래 시각은 허용되지 않으며, 삭제 후에는 복구할 수 없습니다.
+              입력한 시각보다 이전에 생성된 전체 채팅 댓글만 삭제됩니다. 유저
+              ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 미래 시각은
+              허용되지 않으며, 삭제 후에는 복구할 수 없습니다.
             </p>
             <div className="admin-page__action-row">
               <button
@@ -1609,7 +2082,9 @@ export default function AdminPage() {
                 onClick={handleCommentCleanup}
                 type="button"
               >
-                {purgeCommentsMutation.isPending ? '정리 중...' : '오래된 댓글 삭제'}
+                {purgeCommentsMutation.isPending
+                  ? "정리 중..."
+                  : "오래된 댓글 삭제"}
               </button>
             </div>
           </section>
@@ -1618,14 +2093,19 @@ export default function AdminPage() {
             <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
               <div>
                 <h2 className="admin-page__section-title">거래내역 정리</h2>
-                <p className="admin-page__section-caption">기준 시각보다 오래된 완료 거래내역과 연결된 지급 내역을 정리합니다.</p>
+                <p className="admin-page__section-caption">
+                  기준 시각보다 오래된 완료 거래내역과 연결된 지급 내역을
+                  정리합니다.
+                </p>
               </div>
             </div>
             <div className="admin-page__form-grid">
               <label className="admin-page__field">
                 <span>삭제 기준 시각</span>
                 <input
-                  onChange={(event) => setTradeHistoryCleanupDraft(event.target.value)}
+                  onChange={(event) =>
+                    setTradeHistoryCleanupDraft(event.target.value)
+                  }
                   type="datetime-local"
                   value={tradeHistoryCleanupDraft}
                 />
@@ -1634,7 +2114,9 @@ export default function AdminPage() {
                 <span>대상 유저 ID</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => setTradeHistoryCleanupUserIdDraft(event.target.value)}
+                  onChange={(event) =>
+                    setTradeHistoryCleanupUserIdDraft(event.target.value)
+                  }
                   placeholder="비워두면 전체"
                   type="text"
                   value={tradeHistoryCleanupUserIdDraft}
@@ -1642,7 +2124,9 @@ export default function AdminPage() {
               </label>
             </div>
             <p className="admin-page__muted">
-              입력한 시각보다 이전에 종료된 거래내역만 삭제됩니다. 유저 ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 보유 중인 포지션은 유지되며, 연결된 원장·배당 지급·예약 매도 기록은 함께 제거됩니다.
+              입력한 시각보다 이전에 종료된 거래내역만 삭제됩니다. 유저 ID를
+              비워두면 전체, 입력하면 해당 유저만 정리합니다. 보유 중인 포지션은
+              유지되며, 연결된 원장·배당 지급·예약 매도 기록은 함께 제거됩니다.
             </p>
             <div className="admin-page__action-row">
               <button
@@ -1651,7 +2135,9 @@ export default function AdminPage() {
                 onClick={handleTradeHistoryCleanup}
                 type="button"
               >
-                {purgeTradeHistoryMutation.isPending ? '정리 중...' : '오래된 거래내역 삭제'}
+                {purgeTradeHistoryMutation.isPending
+                  ? "정리 중..."
+                  : "오래된 거래내역 삭제"}
               </button>
             </div>
           </section>
@@ -1659,15 +2145,21 @@ export default function AdminPage() {
           <section className="admin-page__panel">
             <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
               <div>
-                <h2 className="admin-page__section-title">하이라이트 내역 정리</h2>
-                <p className="admin-page__section-caption">기준 시각보다 오래된 확정 하이라이트 기록을 정리합니다.</p>
+                <h2 className="admin-page__section-title">
+                  하이라이트 내역 정리
+                </h2>
+                <p className="admin-page__section-caption">
+                  기준 시각보다 오래된 확정 하이라이트 기록을 정리합니다.
+                </p>
               </div>
             </div>
             <div className="admin-page__form-grid">
               <label className="admin-page__field">
                 <span>삭제 기준 시각</span>
                 <input
-                  onChange={(event) => setHighlightCleanupDraft(event.target.value)}
+                  onChange={(event) =>
+                    setHighlightCleanupDraft(event.target.value)
+                  }
                   type="datetime-local"
                   value={highlightCleanupDraft}
                 />
@@ -1676,7 +2168,9 @@ export default function AdminPage() {
                 <span>대상 유저 ID</span>
                 <input
                   inputMode="numeric"
-                  onChange={(event) => setHighlightCleanupUserIdDraft(event.target.value)}
+                  onChange={(event) =>
+                    setHighlightCleanupUserIdDraft(event.target.value)
+                  }
                   placeholder="비워두면 전체"
                   type="text"
                   value={highlightCleanupUserIdDraft}
@@ -1684,7 +2178,9 @@ export default function AdminPage() {
               </label>
             </div>
             <p className="admin-page__muted">
-              입력한 시각보다 이전에 확정된 하이라이트 내역만 삭제됩니다. 유저 ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 연결된 거래내역이 남아 있으면 이후 계산 과정에서 다시 생성될 수 있습니다.
+              입력한 시각보다 이전에 확정된 하이라이트 내역만 삭제됩니다. 유저
+              ID를 비워두면 전체, 입력하면 해당 유저만 정리합니다. 연결된
+              거래내역이 남아 있으면 이후 계산 과정에서 다시 생성될 수 있습니다.
             </p>
             <div className="admin-page__action-row">
               <button
@@ -1693,7 +2189,9 @@ export default function AdminPage() {
                 onClick={handleHighlightCleanup}
                 type="button"
               >
-                {purgeHighlightHistoryMutation.isPending ? '정리 중...' : '오래된 하이라이트 삭제'}
+                {purgeHighlightHistoryMutation.isPending
+                  ? "정리 중..."
+                  : "오래된 하이라이트 삭제"}
               </button>
             </div>
           </section>
@@ -1702,99 +2200,166 @@ export default function AdminPage() {
             <div className="admin-page__section-header">
               <div>
                 <h2 className="admin-page__section-title">시즌 운영</h2>
-                <p className="admin-page__section-caption">시작/종료 시간을 수정하거나 시즌을 즉시 종료할 수 있습니다.</p>
+                <p className="admin-page__section-caption">
+                  시작/종료 시간을 수정하거나 시즌을 즉시 종료할 수 있습니다.
+                </p>
               </div>
             </div>
             {getDashboardActiveSeasons(dashboardQuery.data).length ? (
               <div className="admin-page__season-management-list">
-                {getDashboardActiveSeasons(dashboardQuery.data).map((season) => {
-                  const draft = seasonDrafts[season.id] ?? {
-                    startAt: formatDateTimeInput(season.startAt),
-                    endAt: formatDateTimeInput(season.endAt),
-                    startingBalancePoints: String(season.startingBalancePoints),
-                  };
-                  const isSavingSeason = seasonActionState?.type === 'save' && seasonActionState.seasonId === season.id && updateSeasonMutation.isPending;
-                  const isSavingStartingBalance =
-                    seasonActionState?.type === 'balance' &&
-                    seasonActionState.seasonId === season.id &&
-                    updateSeasonStartingBalanceMutation.isPending;
-                  const isClosingSeason = seasonActionState?.type === 'close' && seasonActionState.seasonId === season.id && closeSeasonMutation.isPending;
+                {getDashboardActiveSeasons(dashboardQuery.data).map(
+                  (season) => {
+                    const draft = seasonDrafts[season.id] ?? {
+                      startAt: formatDateTimeInput(season.startAt),
+                      endAt: formatDateTimeInput(season.endAt),
+                      startingBalancePoints: String(
+                        season.startingBalancePoints,
+                      ),
+                    };
+                    const isSavingSeason =
+                      seasonActionState?.type === "save" &&
+                      seasonActionState.seasonId === season.id &&
+                      updateSeasonMutation.isPending;
+                    const isSavingStartingBalance =
+                      seasonActionState?.type === "balance" &&
+                      seasonActionState.seasonId === season.id &&
+                      updateSeasonStartingBalanceMutation.isPending;
+                    const isClosingSeason =
+                      seasonActionState?.type === "close" &&
+                      seasonActionState.seasonId === season.id &&
+                      closeSeasonMutation.isPending;
 
-                  return (
-                    <article className="admin-page__season-management-card" key={season.id}>
-                      <div className="admin-page__section-header">
-                        <div>
-                          <h3 className="admin-page__section-title">{season.regionCode} 시즌</h3>
-                          <p className="admin-page__section-caption">{season.name}</p>
+                    return (
+                      <article
+                        className="admin-page__season-management-card"
+                        key={season.id}
+                      >
+                        <div className="admin-page__section-header">
+                          <div>
+                            <h3 className="admin-page__section-title">
+                              {season.regionCode} 시즌
+                            </h3>
+                            <p className="admin-page__section-caption">
+                              {season.name}
+                            </p>
+                          </div>
+                          <span className="admin-page__pill">
+                            {season.status}
+                          </span>
                         </div>
-                        <span className="admin-page__pill">{season.status}</span>
-                      </div>
-                      <div className="admin-page__detail-list admin-page__detail-list--compact">
-                        <p><span>생성일</span><strong>{formatDateTime(season.createdAt)}</strong></p>
-                        <p><span>현재 시작 자금</span><strong>{formatNumber(season.startingBalancePoints)}</strong></p>
-                      </div>
-                      <div className="admin-page__form-grid">
-                        <label className="admin-page__field">
-                          <span>게임 시작 자금</span>
-                          <input
-                            inputMode="numeric"
-                            onChange={(event) => handleSeasonDraftChange(season.id, 'startingBalancePoints', event.target.value)}
-                            type="text"
-                            value={draft.startingBalancePoints}
-                          />
-                        </label>
-                        <label className="admin-page__field">
-                          <span>시작 시각</span>
-                          <input
-                            onChange={(event) => handleSeasonDraftChange(season.id, 'startAt', event.target.value)}
-                            type="datetime-local"
-                            value={draft.startAt}
-                          />
-                        </label>
-                        <label className="admin-page__field">
-                          <span>종료 시각</span>
-                          <input
-                            onChange={(event) => handleSeasonDraftChange(season.id, 'endAt', event.target.value)}
-                            type="datetime-local"
-                            value={draft.endAt}
-                          />
-                        </label>
-                      </div>
-                      <p className="admin-page__muted">
-                        시작 자금은 이 시즌에서 새로 생성되는 지갑과 다음 시즌 생성 기준에 적용됩니다. 이미 참여 중인 유저 지갑은 유저 관리에서 별도로 조정하세요.
-                      </p>
-                      <div className="admin-page__action-row">
-                        <button
-                          className="admin-page__button"
-                          disabled={isSavingSeason || isSavingStartingBalance || isClosingSeason}
-                          onClick={() => handleSeasonStartingBalanceSave(season)}
-                          type="button"
-                        >
-                          {isSavingStartingBalance ? '저장 중...' : '시작 자금 저장'}
-                        </button>
-                        <button
-                          className="admin-page__button"
-                          disabled={isSavingSeason || isSavingStartingBalance || isClosingSeason}
-                          onClick={() => handleSeasonSave(season)}
-                          type="button"
-                        >
-                          {isSavingSeason ? '저장 중...' : '시즌 시간 저장'}
-                        </button>
-                        <button
-                          className="admin-page__button admin-page__button--danger"
-                          disabled={isSavingSeason || isSavingStartingBalance || isClosingSeason}
-                          onClick={() => handleSeasonClose(season)}
-                          type="button"
-                        >
-                          {isClosingSeason ? '종료 중...' : '시즌 즉시 종료'}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
+                        <div className="admin-page__detail-list admin-page__detail-list--compact">
+                          <p>
+                            <span>생성일</span>
+                            <strong>{formatDateTime(season.createdAt)}</strong>
+                          </p>
+                          <p>
+                            <span>현재 시작 자금</span>
+                            <strong>
+                              {formatNumber(season.startingBalancePoints)}
+                            </strong>
+                          </p>
+                        </div>
+                        <div className="admin-page__form-grid">
+                          <label className="admin-page__field">
+                            <span>게임 시작 자금</span>
+                            <input
+                              inputMode="numeric"
+                              onChange={(event) =>
+                                handleSeasonDraftChange(
+                                  season.id,
+                                  "startingBalancePoints",
+                                  event.target.value,
+                                )
+                              }
+                              type="text"
+                              value={draft.startingBalancePoints}
+                            />
+                          </label>
+                          <label className="admin-page__field">
+                            <span>시작 시각</span>
+                            <input
+                              onChange={(event) =>
+                                handleSeasonDraftChange(
+                                  season.id,
+                                  "startAt",
+                                  event.target.value,
+                                )
+                              }
+                              type="datetime-local"
+                              value={draft.startAt}
+                            />
+                          </label>
+                          <label className="admin-page__field">
+                            <span>종료 시각</span>
+                            <input
+                              onChange={(event) =>
+                                handleSeasonDraftChange(
+                                  season.id,
+                                  "endAt",
+                                  event.target.value,
+                                )
+                              }
+                              type="datetime-local"
+                              value={draft.endAt}
+                            />
+                          </label>
+                        </div>
+                        <p className="admin-page__muted">
+                          시작 자금은 이 시즌에서 새로 생성되는 지갑과 다음 시즌
+                          생성 기준에 적용됩니다. 이미 참여 중인 유저 지갑은
+                          유저 관리에서 별도로 조정하세요.
+                        </p>
+                        <div className="admin-page__action-row">
+                          <button
+                            className="admin-page__button"
+                            disabled={
+                              isSavingSeason ||
+                              isSavingStartingBalance ||
+                              isClosingSeason
+                            }
+                            onClick={() =>
+                              handleSeasonStartingBalanceSave(season)
+                            }
+                            type="button"
+                          >
+                            {isSavingStartingBalance
+                              ? "저장 중..."
+                              : "시작 자금 저장"}
+                          </button>
+                          <button
+                            className="admin-page__button"
+                            disabled={
+                              isSavingSeason ||
+                              isSavingStartingBalance ||
+                              isClosingSeason
+                            }
+                            onClick={() => handleSeasonSave(season)}
+                            type="button"
+                          >
+                            {isSavingSeason ? "저장 중..." : "시즌 시간 저장"}
+                          </button>
+                          <button
+                            className="admin-page__button admin-page__button--danger"
+                            disabled={
+                              isSavingSeason ||
+                              isSavingStartingBalance ||
+                              isClosingSeason
+                            }
+                            onClick={() => handleSeasonClose(season)}
+                            type="button"
+                          >
+                            {isClosingSeason ? "종료 중..." : "시즌 즉시 종료"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  },
+                )}
               </div>
             ) : (
-              <p className="admin-page__muted">현재 운영 중인 활성 시즌이 없습니다.</p>
+              <p className="admin-page__muted">
+                현재 운영 중인 활성 시즌이 없습니다.
+              </p>
             )}
           </section>
 
@@ -1802,7 +2367,9 @@ export default function AdminPage() {
             <div className="admin-page__section-header admin-page__section-header--stacked-mobile">
               <div>
                 <h2 className="admin-page__section-title">유저 관리</h2>
-                <p className="admin-page__section-caption">검색, 지갑 수정, 탈퇴 처리를 지원합니다.</p>
+                <p className="admin-page__section-caption">
+                  검색, 지갑 수정, 탈퇴 처리를 지원합니다.
+                </p>
               </div>
               <form
                 className="admin-page__search-bar"
@@ -1817,7 +2384,10 @@ export default function AdminPage() {
                   type="search"
                   value={searchInput}
                 />
-                <button className="admin-page__button admin-page__button--ghost" type="submit">
+                <button
+                  className="admin-page__button admin-page__button--ghost"
+                  type="submit"
+                >
                   검색
                 </button>
               </form>
@@ -1826,7 +2396,9 @@ export default function AdminPage() {
               <article className="admin-page__subpanel">
                 <div className="admin-page__section-header">
                   <h3 className="admin-page__section-title">유저 목록</h3>
-                  <span className="admin-page__section-caption">{formatNumber(usersQuery.data?.count ?? 0)}명</span>
+                  <span className="admin-page__section-caption">
+                    {formatNumber(usersQuery.data?.count ?? 0)}명
+                  </span>
                 </div>
                 {usersQuery.data?.users.length ? (
                   <UserDirectoryTable
@@ -1839,7 +2411,11 @@ export default function AdminPage() {
                 )}
               </article>
               <article className="admin-page__subpanel">
-                {detailQuery.isLoading ? <p className="admin-page__muted">사용자 상세를 불러오는 중입니다.</p> : null}
+                {detailQuery.isLoading ? (
+                  <p className="admin-page__muted">
+                    사용자 상세를 불러오는 중입니다.
+                  </p>
+                ) : null}
                 {detailQuery.data ? (
                   <UserDetailPanel
                     isSavingPosition={updatePositionMutation.isPending}
@@ -1863,7 +2439,9 @@ export default function AdminPage() {
                     walletDraft={walletDraft}
                   />
                 ) : !detailQuery.isLoading ? (
-                  <p className="admin-page__muted">왼쪽 목록에서 유저를 선택하면 상세 정보가 표시됩니다.</p>
+                  <p className="admin-page__muted">
+                    왼쪽 목록에서 유저를 선택하면 상세 정보가 표시됩니다.
+                  </p>
                 ) : null}
               </article>
             </div>
@@ -1883,14 +2461,6 @@ export default function AdminPage() {
               <span className="admin-page__section-caption">최근 8건</span>
             </div>
             <RecentCommentsTable items={dashboardQuery.data.recentComments} />
-          </section>
-
-          <section className="admin-page__panel">
-            <div className="admin-page__section-header">
-              <h2 className="admin-page__section-title">최근 즐겨찾기 추가</h2>
-              <span className="admin-page__section-caption">최근 8건</span>
-            </div>
-            <RecentFavoritesTable items={dashboardQuery.data.recentFavorites} />
           </section>
         </>
       ) : null}

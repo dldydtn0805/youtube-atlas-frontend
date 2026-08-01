@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import { ALL_VIDEO_CATEGORY_ID } from '../../../constants/videoCategories';
-import { getCategoryPlaybackQueueId, getPlaybackQueueItems } from '../utils';
-import type { VideoCategory } from '../../../constants/videoCategories';
-import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
+import { useEffect, useRef, useState } from "react";
+import { ALL_VIDEO_CATEGORY_ID } from "../../../constants/videoCategories";
+import { getCategoryPlaybackQueueId, getPlaybackQueueItems } from "../utils";
+import type { VideoCategory } from "../../../constants/videoCategories";
+import type {
+  YouTubeCategorySection,
+  YouTubeVideoItem,
+} from "../../../features/youtube/types";
 
 const INITIAL_RANDOM_PLAYBACK_LIMIT = 50;
 
 interface UsePlaybackQueueOptions {
   autoSelectFirstVideoWhenEmpty?: boolean;
   extraPlaybackSections?: YouTubeCategorySection[];
-  favoriteStreamerVideoSection?: YouTubeCategorySection;
+  likedVideoSection?: YouTubeCategorySection;
   gamePortfolioSection?: YouTubeCategorySection;
   historyPlaybackSection?: YouTubeCategorySection;
   isMobileLayout: boolean;
@@ -36,7 +39,10 @@ function pickRandomInitialVideoId(items: YouTubeVideoItem[]) {
     return undefined;
   }
 
-  const selectedIndex = Math.min(Math.floor(Math.random() * candidateCount), candidateCount - 1);
+  const selectedIndex = Math.min(
+    Math.floor(Math.random() * candidateCount),
+    candidateCount - 1,
+  );
 
   return items[selectedIndex]?.id;
 }
@@ -44,7 +50,7 @@ function pickRandomInitialVideoId(items: YouTubeVideoItem[]) {
 function usePlaybackQueue({
   autoSelectFirstVideoWhenEmpty = false,
   extraPlaybackSections,
-  favoriteStreamerVideoSection,
+  likedVideoSection,
   gamePortfolioSection,
   historyPlaybackSection,
   isMobileLayout,
@@ -65,19 +71,26 @@ function usePlaybackQueue({
 }: UsePlaybackQueueOptions) {
   const [selectedVideoId, setSelectedVideoId] = useState<string>();
   const [scrollRequestKey, setScrollRequestKey] = useState(0);
-  const selectedCategoryQueueId = getCategoryPlaybackQueueId(selectedCategoryId);
+  const selectedCategoryQueueId =
+    getCategoryPlaybackQueueId(selectedCategoryId);
   const matchedSelectedSection =
-    selectedSection?.categoryId === selectedCategoryQueueId ? selectedSection : undefined;
-  const autoPlayableFavoriteStreamerSection =
-    selectedCategoryId === ALL_VIDEO_CATEGORY_ID ? favoriteStreamerVideoSection : undefined;
-  const [activePlaybackQueueId, setActivePlaybackQueueId] = useState<string>(selectedCategoryQueueId);
+    selectedSection?.categoryId === selectedCategoryQueueId
+      ? selectedSection
+      : undefined;
+  const autoPlayableLikedVideoSection =
+    selectedCategoryId === ALL_VIDEO_CATEGORY_ID
+      ? likedVideoSection
+      : undefined;
+  const [activePlaybackQueueId, setActivePlaybackQueueId] = useState<string>(
+    selectedCategoryQueueId,
+  );
   const shouldScrollToPlayerRef = useRef(false);
   const shouldAutoSelectNextAvailableRef = useRef(false);
   const handledPreferredInitialSelectionKeyRef = useRef<string | null>(null);
 
   const activePlaybackItems = getPlaybackQueueItems(activePlaybackQueueId, {
     extraSections: extraPlaybackSections,
-    favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
+    likedVideoSection: autoPlayableLikedVideoSection,
     gamePortfolioSection,
     historyPlaybackSection,
     newChartEntriesSection,
@@ -108,7 +121,10 @@ function usePlaybackQueue({
     triggerElement?.blur();
   }
 
-  function handleSelectCategory(categoryId: string, triggerElement?: HTMLButtonElement) {
+  function handleSelectCategory(
+    categoryId: string,
+    triggerElement?: HTMLButtonElement,
+  ) {
     if (!categoryId) {
       triggerElement?.blur();
       return;
@@ -161,7 +177,7 @@ function usePlaybackQueue({
   function handleSelectAdjacentVideo(step: number) {
     const queueItems = getPlaybackQueueItems(activePlaybackQueueId, {
       extraSections: extraPlaybackSections,
-      favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
+      likedVideoSection: autoPlayableLikedVideoSection,
       gamePortfolioSection,
       historyPlaybackSection,
       newChartEntriesSection,
@@ -174,7 +190,9 @@ function usePlaybackQueue({
       return;
     }
 
-    const currentIndex = queueItems.findIndex((item) => item.id === selectedVideoId);
+    const currentIndex = queueItems.findIndex(
+      (item) => item.id === selectedVideoId,
+    );
     const nextIndex =
       currentIndex >= 0
         ? (currentIndex + step + queueItems.length) % queueItems.length
@@ -200,7 +218,7 @@ function usePlaybackQueue({
       !matchedSelectedSection;
     const queueItems = getPlaybackQueueItems(activePlaybackQueueId, {
       extraSections: extraPlaybackSections,
-      favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
+      likedVideoSection: autoPlayableLikedVideoSection,
       gamePortfolioSection,
       historyPlaybackSection,
       newChartEntriesSection,
@@ -213,19 +231,24 @@ function usePlaybackQueue({
       !selectedVideoId &&
       !shouldAutoSelectNextAvailableRef.current &&
       activePlaybackQueueId === selectedCategoryQueueId;
-    const hasPreferredInitialVideo = (preferredInitialPlaybackSection?.items.length ?? 0) > 0;
-    const preferredInitialFallbackVideoId = preferredInitialPlaybackFallbackSection?.items[0]?.id;
+    const hasPreferredInitialVideo =
+      (preferredInitialPlaybackSection?.items.length ?? 0) > 0;
+    const preferredInitialFallbackVideoId =
+      preferredInitialPlaybackFallbackSection?.items[0]?.id;
     const shouldApplyPreferredInitialSelection =
       Boolean(preferredInitialPlaybackSectionSelectionKey) &&
-      handledPreferredInitialSelectionKeyRef.current !== preferredInitialPlaybackSectionSelectionKey;
+      handledPreferredInitialSelectionKeyRef.current !==
+        preferredInitialPlaybackSectionSelectionKey;
     const preferredInitialTargetSection =
       hasPreferredInitialVideo && preferredInitialPlaybackSection?.categoryId
         ? preferredInitialPlaybackSection
-        : preferredInitialFallbackVideoId && preferredInitialPlaybackFallbackSection?.categoryId
+        : preferredInitialFallbackVideoId &&
+            preferredInitialPlaybackFallbackSection?.categoryId
           ? preferredInitialPlaybackFallbackSection
           : undefined;
     const preferredInitialTargetVideoId =
-      preferredInitialTargetSection === preferredInitialPlaybackSection && preferredInitialPlaybackSection
+      preferredInitialTargetSection === preferredInitialPlaybackSection &&
+      preferredInitialPlaybackSection
         ? pickRandomInitialVideoId(preferredInitialPlaybackSection.items)
         : preferredInitialFallbackVideoId;
 
@@ -236,7 +259,8 @@ function usePlaybackQueue({
     if (
       shouldApplyPreferredInitialSelection &&
       (preferredInitialPlaybackSectionLoading ||
-        (!hasPreferredInitialVideo && preferredInitialPlaybackFallbackSectionLoading))
+        (!hasPreferredInitialVideo &&
+          preferredInitialPlaybackFallbackSectionLoading))
     ) {
       return;
     }
@@ -246,13 +270,17 @@ function usePlaybackQueue({
       preferredInitialTargetVideoId &&
       preferredInitialTargetSection?.categoryId
     ) {
-      handledPreferredInitialSelectionKeyRef.current = preferredInitialPlaybackSectionSelectionKey ?? null;
+      handledPreferredInitialSelectionKeyRef.current =
+        preferredInitialPlaybackSectionSelectionKey ?? null;
       setActivePlaybackQueueId(preferredInitialTargetSection.categoryId);
       setSelectedVideoId(preferredInitialTargetVideoId);
       return;
     }
 
-    if (shouldPreferInitialPlaybackSection && preferredInitialPlaybackSectionLoading) {
+    if (
+      shouldPreferInitialPlaybackSection &&
+      preferredInitialPlaybackSectionLoading
+    ) {
       return;
     }
 
@@ -269,19 +297,20 @@ function usePlaybackQueue({
 
     const fallbackQueueId = isWaitingForSelectedCategoryQueue
       ? undefined
-      : matchedSelectedSection?.categoryId ??
+      : (matchedSelectedSection?.categoryId ??
         historyPlaybackSection?.categoryId ??
         gamePortfolioSection?.categoryId ??
-        autoPlayableFavoriteStreamerSection?.categoryId ??
-        extraPlaybackSections?.find((section) => section.items.length > 0)?.categoryId ??
+        autoPlayableLikedVideoSection?.categoryId ??
+        extraPlaybackSections?.find((section) => section.items.length > 0)
+          ?.categoryId ??
         newChartEntriesSection?.categoryId ??
-        realtimeSurgingSection?.categoryId;
+        realtimeSurgingSection?.categoryId);
     const fallbackItems =
       queueItems.length > 0
         ? queueItems
         : getPlaybackQueueItems(fallbackQueueId, {
             extraSections: extraPlaybackSections,
-            favoriteStreamerVideoSection: autoPlayableFavoriteStreamerSection,
+            likedVideoSection: autoPlayableLikedVideoSection,
             gamePortfolioSection,
             historyPlaybackSection,
             newChartEntriesSection,
@@ -289,7 +318,9 @@ function usePlaybackQueue({
             restoredPlaybackVideo,
             selectedSection: matchedSelectedSection,
           });
-    const hasSelectedVideoInQueue = queueItems.some((item) => item.id === selectedVideoId);
+    const hasSelectedVideoInQueue = queueItems.some(
+      (item) => item.id === selectedVideoId,
+    );
     const shouldKeepMissingSelectedVideo =
       preserveSelectedVideoWhenQueueChanges &&
       Boolean(selectedVideoId) &&
@@ -336,7 +367,7 @@ function usePlaybackQueue({
   }, [
     activePlaybackQueueId,
     autoSelectFirstVideoWhenEmpty,
-    autoPlayableFavoriteStreamerSection,
+    autoPlayableLikedVideoSection,
     extraPlaybackSections,
     gamePortfolioSection,
     historyPlaybackSection,
@@ -359,10 +390,14 @@ function usePlaybackQueue({
       return;
     }
 
-    const hasSelectedCategory = sortedVideoCategories.some((category) => category.id === selectedCategoryId);
+    const hasSelectedCategory = sortedVideoCategories.some(
+      (category) => category.id === selectedCategoryId,
+    );
 
     if (!hasSelectedCategory) {
-      setActivePlaybackQueueId(getCategoryPlaybackQueueId(sortedVideoCategories[0].id));
+      setActivePlaybackQueueId(
+        getCategoryPlaybackQueueId(sortedVideoCategories[0].id),
+      );
       setSelectedCategoryId(sortedVideoCategories[0].id);
       setSelectedVideoId(undefined);
     }

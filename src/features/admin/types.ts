@@ -1,9 +1,8 @@
-import type { GameHighlight } from '../game/types';
+import type { GameHighlight } from "../game/types";
 
 export interface AdminSummaryMetrics {
   totalUsers: number;
   totalComments: number;
-  totalFavorites: number;
   totalTrendRuns: number;
   totalTradeHistories: number;
 }
@@ -57,16 +56,6 @@ export interface AdminCommentSummary {
   createdAt: string;
 }
 
-export interface AdminFavoriteSummary {
-  id: number;
-  userId: number;
-  userEmail: string;
-  channelId: string;
-  channelTitle: string;
-  thumbnailUrl: string | null;
-  createdAt: string;
-}
-
 export interface AdminDashboard {
   metrics: AdminSummaryMetrics;
   activeSeason: AdminSeasonSummary | null;
@@ -74,7 +63,6 @@ export interface AdminDashboard {
   latestTrendRun: AdminTrendRunSummary | null;
   recentUsers: AdminUserSummary[];
   recentComments: AdminCommentSummary[];
-  recentFavorites: AdminFavoriteSummary[];
 }
 
 export interface AdminPriceAnchor {
@@ -260,7 +248,6 @@ export interface AdminUserDetail {
   admin: boolean;
   createdAt: string;
   lastLoginAt: string;
-  favoriteCount: number;
   lastPlaybackProgress: AdminPlaybackProgress | null;
   activeSeasonGame: AdminUserGameSummary | null;
   activeSeasonGames?: AdminUserGameSummary[];

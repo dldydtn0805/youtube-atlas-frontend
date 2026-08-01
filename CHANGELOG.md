@@ -2,6 +2,9 @@
 
 ## 2026-08-01
 
+- Replaced channel favorites with the signed-in YouTube account's real liked-video list, including pagination, contextual OAuth recovery, and live list invalidation after a like or unlike.
+- Removed the channel star action, favorite-streamer API and frontend feature, favorite admin metrics, and the `favorite_streamers` table through migration `20260801020000`.
+- Verified the liked-video change with 438 tests, a production build, ESLint with no errors, and Deno checks for the Supabase Edge API.
 - Simplified the two-line home header brand from `YouTube Atlas / the rank game` to the single name `The Rank Game`, including its accessible home-link label and responsive styles.
 - Replaced the ambiguous numbered game-season label with spring, summer, autumn, and winter seasons using fixed three-month calendar windows.
 - Renamed and extended the active season to its current calendar-season boundary, and made newly created seasons use the same boundaries.

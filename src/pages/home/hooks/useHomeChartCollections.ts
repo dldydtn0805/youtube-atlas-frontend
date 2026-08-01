@@ -1,19 +1,26 @@
-import { useMemo } from 'react';
-import countryCodes from '../../../constants/countryCodes';
+import { useMemo } from "react";
+import countryCodes from "../../../constants/countryCodes";
 import {
   ALL_VIDEO_CATEGORY_ID,
   supportsVideoGameActions,
   supportsVideoTrendSignals,
   type VideoCategory,
-} from '../../../constants/videoCategories';
-import type { AuthStatus } from '../../../features/auth/types';
-import { getGameInventorySlotLimit } from '../../../features/game/inventory';
-import type { GameCurrentSeason, GameMarketVideo, GamePosition } from '../../../features/game/types';
-import type { VideoTrendSignal } from '../../../features/trending/types';
-import type { YouTubeCategorySection, YouTubeVideoItem } from '../../../features/youtube/types';
-import type { ChartSortMode } from '../types';
+} from "../../../constants/videoCategories";
+import type { AuthStatus } from "../../../features/auth/types";
+import { getGameInventorySlotLimit } from "../../../features/game/inventory";
+import type {
+  GameCurrentSeason,
+  GameMarketVideo,
+  GamePosition,
+} from "../../../features/game/types";
+import type { VideoTrendSignal } from "../../../features/trending/types";
+import type {
+  YouTubeCategorySection,
+  YouTubeVideoItem,
+} from "../../../features/youtube/types";
+import type { ChartSortMode } from "../types";
 import {
-  FAVORITE_STREAMER_VIDEO_SECTION,
+  LIKED_VIDEO_SECTION,
   GAME_PORTFOLIO_QUEUE_ID,
   HISTORY_PLAYBACK_QUEUE_ID,
   filterVideoSection,
@@ -23,17 +30,16 @@ import {
   relabelVideoSection,
   shouldPrefetchBuyableVideos,
   sortVideoSection,
-} from '../utils';
-import useHomeTrendSections from './useHomeTrendSections';
+} from "../utils";
+import useHomeTrendSections from "./useHomeTrendSections";
 
 interface UseHomeChartCollectionsOptions {
   authStatus: AuthStatus;
   buyableMarketChartPages?: YouTubeCategorySection[];
   chartSortMode: ChartSortMode;
   currentGameSeason?: GameCurrentSeason;
-  favoriteStreamerVideosError: unknown;
-  favoriteStreamerVideosPages?: YouTubeCategorySection[];
-  favoriteStreamersCount: number;
+  likedVideosError: unknown;
+  likedVideosPages?: YouTubeCategorySection[];
   gameHistoryPositions: GamePosition[];
   gameMarket: GameMarketVideo[];
   hasNextMusicChartPage: boolean;
@@ -54,7 +60,7 @@ interface UseHomeChartCollectionsOptions {
   selectedCategory?: VideoCategory;
   selectedRegionCode: string;
   selectedSectionPages?: YouTubeCategorySection[];
-  shouldLoadFavorites: boolean;
+  shouldLoadLikedVideos: boolean;
 }
 
 function mapMusicTrendSignalsByVideoId(
@@ -67,30 +73,32 @@ function mapMusicTrendSignalsByVideoId(
 
   return Object.fromEntries(
     section.items.flatMap((item) => {
-      if (!item.trend || typeof item.trend.currentRank !== 'number') {
+      if (!item.trend || typeof item.trend.currentRank !== "number") {
         return [];
       }
 
-      return [[
-        item.id,
-        {
-          categoryId: section.categoryId,
-          categoryLabel: section.label,
-          capturedAt: item.trend.capturedAt ?? '',
-          channelTitle: item.snippet.channelTitle,
-          currentRank: item.trend.currentRank,
-          currentViewCount: item.trend.currentViewCount ?? null,
-          isNew: item.trend.isNew ?? false,
-          previousRank: item.trend.previousRank ?? null,
-          previousViewCount: item.trend.previousViewCount ?? null,
-          rankChange: item.trend.rankChange ?? null,
-          regionCode,
-          thumbnailUrl: item.snippet.thumbnails.medium.url,
-          title: item.snippet.title,
-          videoId: item.id,
-          viewCountDelta: item.trend.viewCountDelta ?? null,
-        } satisfies VideoTrendSignal,
-      ]];
+      return [
+        [
+          item.id,
+          {
+            categoryId: section.categoryId,
+            categoryLabel: section.label,
+            capturedAt: item.trend.capturedAt ?? "",
+            channelTitle: item.snippet.channelTitle,
+            currentRank: item.trend.currentRank,
+            currentViewCount: item.trend.currentViewCount ?? null,
+            isNew: item.trend.isNew ?? false,
+            previousRank: item.trend.previousRank ?? null,
+            previousViewCount: item.trend.previousViewCount ?? null,
+            rankChange: item.trend.rankChange ?? null,
+            regionCode,
+            thumbnailUrl: item.snippet.thumbnails.medium.url,
+            title: item.snippet.title,
+            videoId: item.id,
+            viewCountDelta: item.trend.viewCountDelta ?? null,
+          } satisfies VideoTrendSignal,
+        ],
+      ];
     }),
   );
 }
@@ -100,9 +108,8 @@ export default function useHomeChartCollections({
   buyableMarketChartPages,
   chartSortMode,
   currentGameSeason,
-  favoriteStreamerVideosError,
-  favoriteStreamerVideosPages,
-  favoriteStreamersCount,
+  likedVideosError,
+  likedVideosPages,
   gameHistoryPositions,
   gameMarket,
   hasNextMusicChartPage,
@@ -123,7 +130,7 @@ export default function useHomeChartCollections({
   selectedCategory,
   selectedRegionCode,
   selectedSectionPages,
-  shouldLoadFavorites,
+  shouldLoadLikedVideos,
 }: UseHomeChartCollectionsOptions) {
   const gameMarketSignalsByVideoId = useMemo(
     () =>
@@ -132,7 +139,7 @@ export default function useHomeChartCollections({
           marketVideo.videoId,
           {
             categoryId: ALL_VIDEO_CATEGORY_ID,
-            categoryLabel: '전체',
+            categoryLabel: "전체",
             capturedAt: marketVideo.capturedAt,
             channelTitle: marketVideo.channelTitle,
             currentRank: marketVideo.currentRank,
@@ -152,7 +159,10 @@ export default function useHomeChartCollections({
     [currentGameSeason?.regionCode, gameMarket, selectedRegionCode],
   );
 
-  const selectedSection = useMemo(() => mergeSections(selectedSectionPages), [selectedSectionPages]);
+  const selectedSection = useMemo(
+    () => mergeSections(selectedSectionPages),
+    [selectedSectionPages],
+  );
   const shouldShowMusicChart =
     selectedCategory?.id === ALL_VIDEO_CATEGORY_ID &&
     supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode);
@@ -163,29 +173,46 @@ export default function useHomeChartCollections({
   const buyableMarketChartSection = useMemo(
     () =>
       mergeSections(buyableMarketChartPages) ?? {
-        categoryId: 'buyable-market',
-        description: '현재 지갑과 보유 상태 기준으로 바로 매수 가능한 영상만 모았습니다.',
+        categoryId: "buyable-market",
+        description:
+          "현재 지갑과 보유 상태 기준으로 바로 매수 가능한 영상만 모았습니다.",
         items: [],
-        label: '매수 가능',
+        label: "매수 가능",
       },
     [buyableMarketChartPages],
   );
   const musicPlaybackSection = useMemo(
-    () => (musicChartSection ? { ...musicChartSection, categoryId: 'chart:music' } : undefined),
+    () =>
+      musicChartSection
+        ? { ...musicChartSection, categoryId: "chart:music" }
+        : undefined,
     [musicChartSection],
   );
   const buyableVideoIdSet = useMemo(
-    () => new Set(gameMarket.filter((marketVideo) => marketVideo.canBuy).map((marketVideo) => marketVideo.videoId)),
+    () =>
+      new Set(
+        gameMarket
+          .filter((marketVideo) => marketVideo.canBuy)
+          .map((marketVideo) => marketVideo.videoId),
+      ),
     [gameMarket],
   );
   const marketPriceByVideoId = useMemo(
-    () => Object.fromEntries(gameMarket.map((marketVideo) => [marketVideo.videoId, marketVideo.currentPricePoints])),
+    () =>
+      Object.fromEntries(
+        gameMarket.map((marketVideo) => [
+          marketVideo.videoId,
+          marketVideo.currentPricePoints,
+        ]),
+      ),
     [gameMarket],
   );
   const filteredMusicChartSection = useMemo(
     () =>
       isBuyableOnlyFilterActive
-        ? filterVideoSection(musicPlaybackSection, (item) => buyableVideoIdSet.has(item.id))
+        ? filterVideoSection(musicPlaybackSection, (item) =>
+            buyableVideoIdSet.has(item.id),
+          )
         : musicPlaybackSection,
     [buyableVideoIdSet, isBuyableOnlyFilterActive, musicPlaybackSection],
   );
@@ -198,7 +225,8 @@ export default function useHomeChartCollections({
     [buyableMarketChartSection, chartSortMode],
   );
   const musicTrendSignalsByVideoId = useMemo(
-    () => mapMusicTrendSignalsByVideoId(musicPlaybackSection, selectedRegionCode),
+    () =>
+      mapMusicTrendSignalsByVideoId(musicPlaybackSection, selectedRegionCode),
     [musicPlaybackSection, selectedRegionCode],
   );
   const selectedPlaybackSection = useMemo(
@@ -212,39 +240,48 @@ export default function useHomeChartCollections({
     [selectedCategory?.id, selectedSection],
   );
   const selectedCountryName =
-    countryCodes.find((country) => country.code === selectedRegionCode)?.name ?? selectedRegionCode;
+    countryCodes.find((country) => country.code === selectedRegionCode)?.name ??
+    selectedRegionCode;
   const isAllCategorySelected = selectedCategory?.id === ALL_VIDEO_CATEGORY_ID;
-  const isTrendRegionSelected = supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode);
-  const canShowGameActions = supportsVideoGameActions(selectedCategory?.id, selectedRegionCode);
+  const isTrendRegionSelected = supportsVideoTrendSignals(
+    ALL_VIDEO_CATEGORY_ID,
+    selectedRegionCode,
+  );
+  const canShowGameActions = supportsVideoGameActions(
+    selectedCategory?.id,
+    selectedRegionCode,
+  );
   const loadedSelectedVideoCount = selectedSection?.items.length ?? 0;
 
-  const favoriteStreamerVideoSection =
-    favoriteStreamersCount > 0
-      ? mergeSections(favoriteStreamerVideosPages) ?? FAVORITE_STREAMER_VIDEO_SECTION
+  const likedVideoSection =
+    authStatus === "authenticated"
+      ? (mergeSections(likedVideosPages) ?? LIKED_VIDEO_SECTION)
       : undefined;
-  const favoriteChartSection =
-    authStatus === 'authenticated'
-      ? favoriteStreamerVideoSection ?? FAVORITE_STREAMER_VIDEO_SECTION
-      : undefined;
-  const buyableFavoriteChartSection = useMemo(() => {
-    if (!favoriteChartSection) {
+  const buyableLikedVideoChartSection = useMemo(() => {
+    if (!likedVideoSection) {
       return undefined;
     }
 
     if (!isBuyableOnlyFilterActive) {
-      return favoriteChartSection;
+      return likedVideoSection;
     }
 
-    return filterVideoSection(favoriteChartSection, (item) => buyableVideoIdSet.has(item.id));
-  }, [buyableVideoIdSet, favoriteChartSection, isBuyableOnlyFilterActive]);
+    return filterVideoSection(likedVideoSection, (item) =>
+      buyableVideoIdSet.has(item.id),
+    );
+  }, [buyableVideoIdSet, isBuyableOnlyFilterActive, likedVideoSection]);
   const gamePortfolioSection = useMemo(
     () => ({
       categoryId: GAME_PORTFOLIO_QUEUE_ID,
-      description: '매수한 영상은 여기서 바로 다시 열고 정리할 수 있습니다.',
+      description: "매수한 영상은 여기서 바로 다시 열고 정리할 수 있습니다.",
       items: [...openGamePositions]
-        .sort((left, right) => new Date(right.buyCapturedAt).getTime() - new Date(left.buyCapturedAt).getTime())
+        .sort(
+          (left, right) =>
+            new Date(right.buyCapturedAt).getTime() -
+            new Date(left.buyCapturedAt).getTime(),
+        )
         .map(mapGamePositionToVideoItem),
-      label: '내 보유 포지션',
+      label: "내 보유 포지션",
     }),
     [openGamePositions],
   );
@@ -260,20 +297,21 @@ export default function useHomeChartCollections({
 
     return {
       categoryId: HISTORY_PLAYBACK_QUEUE_ID,
-      description: '거래내역에서 다시 연 영상을 순서대로 이어서 볼 수 있습니다.',
+      description:
+        "거래내역에서 다시 연 영상을 순서대로 이어서 볼 수 있습니다.",
       items: historyPlaybackItems,
-      label: '거래내역 다시 보기',
+      label: "거래내역 다시 보기",
     };
   }, [gameHistoryPositions, historyPlaybackVideo]);
 
   const {
     buyableVideoSearchStatus,
     chartTrendSignalsByVideoId,
-    favoriteTrendSignalsByVideoId,
+    likedVideoTrendSignalsByVideoId,
     featuredChartSections,
     filteredSelectedPlaybackSection,
     hasResolvedChartTrendSignals,
-    hasResolvedFavoriteTrendSignals,
+    hasResolvedLikedVideoTrendSignals,
     isBuyableOnlyFilterAvailable,
     isBuyableVideoSearchLoading,
     isNewChartEntriesError,
@@ -288,12 +326,12 @@ export default function useHomeChartCollections({
   } = useHomeTrendSections({
     canShowGameActions,
     currentGameSeason,
-    favoriteStreamerVideoSection,
+    likedVideoSection,
     gameMarket,
     hasNextPage,
     isAllCategorySelected,
     isApiConfigured,
-    isAuthenticated: authStatus === 'authenticated',
+    isAuthenticated: authStatus === "authenticated",
     isBuyableOnlyFilterActive,
     isChartError,
     isChartLoading,
@@ -303,22 +341,35 @@ export default function useHomeChartCollections({
     selectedCategoryId: selectedCategory?.id,
     selectedPlaybackSection,
     selectedRegionCode,
-    shouldLoadFavorites,
+    shouldLoadLikedVideos,
   });
 
   const extraPlaybackSections = useMemo(
     () =>
-      [topRankRisersSection, sortedBuyableMarketChartSection, sortedFilteredMusicChartSection].filter(
-        (section): section is NonNullable<typeof section> => Boolean(section),
+      [
+        topRankRisersSection,
+        sortedBuyableMarketChartSection,
+        sortedFilteredMusicChartSection,
+      ].filter((section): section is NonNullable<typeof section> =>
+        Boolean(section),
       ),
-    [sortedBuyableMarketChartSection, sortedFilteredMusicChartSection, topRankRisersSection],
+    [
+      sortedBuyableMarketChartSection,
+      sortedFilteredMusicChartSection,
+      topRankRisersSection,
+    ],
   );
   const selectedVideoRankSignalsById = useMemo(
     () => ({
       ...chartTrendSignalsByVideoId,
+      ...likedVideoTrendSignalsByVideoId,
       ...musicTrendSignalsByVideoId,
     }),
-    [chartTrendSignalsByVideoId, musicTrendSignalsByVideoId],
+    [
+      chartTrendSignalsByVideoId,
+      likedVideoTrendSignalsByVideoId,
+      musicTrendSignalsByVideoId,
+    ],
   );
   const shouldShowTop200Label = isAllCategorySelected && isTrendRegionSelected;
   const loadedMusicVideoCount = musicPlaybackSection?.items.length ?? 0;
@@ -331,14 +382,14 @@ export default function useHomeChartCollections({
   });
   const displaySelectedPlaybackSection = useMemo(() => {
     const labeledSection = shouldShowTop200Label
-      ? relabelVideoSection(filteredSelectedPlaybackSection, 'TOP 200')
+      ? relabelVideoSection(filteredSelectedPlaybackSection, "TOP 200")
       : filteredSelectedPlaybackSection;
 
     return sortVideoSection(labeledSection, chartSortMode);
   }, [chartSortMode, filteredSelectedPlaybackSection, shouldShowTop200Label]);
-  const sortedBuyableFavoriteChartSection = useMemo(
-    () => sortVideoSection(buyableFavoriteChartSection, chartSortMode),
-    [buyableFavoriteChartSection, chartSortMode],
+  const sortedBuyableLikedVideoChartSection = useMemo(
+    () => sortVideoSection(buyableLikedVideoChartSection, chartSortMode),
+    [buyableLikedVideoChartSection, chartSortMode],
   );
   const sortedRealtimeSurgingSection = useMemo(
     () => sortVideoSection(realtimeSurgingSection, chartSortMode),
@@ -352,9 +403,11 @@ export default function useHomeChartCollections({
     () =>
       featuredChartSections.map((featuredSection) => {
         const sortedSection =
-          featuredSection.section.categoryId === sortedRealtimeSurgingSection?.categoryId
+          featuredSection.section.categoryId ===
+          sortedRealtimeSurgingSection?.categoryId
             ? sortedRealtimeSurgingSection
-            : featuredSection.section.categoryId === sortedNewChartEntriesSection?.categoryId
+            : featuredSection.section.categoryId ===
+                sortedNewChartEntriesSection?.categoryId
               ? sortedNewChartEntriesSection
               : sortVideoSection(featuredSection.section, chartSortMode);
 
@@ -373,32 +426,43 @@ export default function useHomeChartCollections({
   const labeledSelectedPlaybackSection = useMemo(
     () =>
       shouldShowTop200Label
-        ? relabelVideoSection(selectedPlaybackSection, 'TOP 200')
+        ? relabelVideoSection(selectedPlaybackSection, "TOP 200")
         : selectedPlaybackSection,
     [selectedPlaybackSection, shouldShowTop200Label],
   );
-  const favoriteStreamerVideoErrorMessage =
-    favoriteStreamerVideosError instanceof Error
-      ? favoriteStreamerVideosError.message
-      : '즐겨찾기 영상을 불러오지 못했습니다.';
-  const openDistinctVideoCount = new Set(openGamePositions.map((position) => position.videoId)).size;
+  const likedVideoErrorMessage =
+    likedVideosError instanceof Error
+      ? likedVideosError.message
+      : "좋아요한 영상을 불러오지 못했습니다.";
+  const openDistinctVideoCount = new Set(
+    openGamePositions.map((position) => position.videoId),
+  ).size;
   const inventorySlotLimit = getGameInventorySlotLimit(currentGameSeason);
   const isOpenPositionLimitReached =
     currentGameSeason != null && openDistinctVideoCount >= inventorySlotLimit;
   const buyableChartEmptyMessage = useMemo(() => {
     if (currentGameSeason && openDistinctVideoCount >= inventorySlotLimit) {
-      return '현재 티어의 인벤토리 슬롯을 모두 사용 중입니다. 티어를 올리거나 기존 포지션을 정리하면 다시 매수 가능한 영상이 표시됩니다.';
+      return "현재 티어의 인벤토리 슬롯을 모두 사용 중입니다. 티어를 올리거나 기존 포지션을 정리하면 다시 매수 가능한 영상이 표시됩니다.";
     }
 
     if (
       gameMarket.length > 0 &&
-      gameMarket.every((marketVideo) => marketVideo.buyBlockedReason === '현재 가격 기준 보유 포인트가 부족합니다.')
+      gameMarket.every(
+        (marketVideo) =>
+          marketVideo.buyBlockedReason ===
+          "현재 가격 기준 보유 포인트가 부족합니다.",
+      )
     ) {
-      return '현재 잔액으로는 즉시 매수 가능한 영상이 없습니다.';
+      return "현재 잔액으로는 즉시 매수 가능한 영상이 없습니다.";
     }
 
-    return '지금 바로 매수 가능한 영상이 없습니다.';
-  }, [currentGameSeason, gameMarket, inventorySlotLimit, openDistinctVideoCount]);
+    return "지금 바로 매수 가능한 영상이 없습니다.";
+  }, [
+    currentGameSeason,
+    gameMarket,
+    inventorySlotLimit,
+    openDistinctVideoCount,
+  ]);
 
   return {
     buyableChartEmptyMessage,
@@ -407,13 +471,13 @@ export default function useHomeChartCollections({
     canShowGameActions,
     displaySelectedPlaybackSection,
     extraPlaybackSections,
-    favoriteStreamerVideoErrorMessage,
-    favoriteStreamerVideoSection,
-    favoriteTrendSignalsByVideoId,
+    likedVideoErrorMessage,
+    likedVideoSection,
+    likedVideoTrendSignalsByVideoId,
     gameMarketSignalsByVideoId,
     gamePortfolioSection,
     hasResolvedChartTrendSignals,
-    hasResolvedFavoriteTrendSignals,
+    hasResolvedLikedVideoTrendSignals,
     historyPlaybackSection,
     isAllCategorySelected,
     isOpenPositionLimitReached,
@@ -429,7 +493,7 @@ export default function useHomeChartCollections({
     selectedVideoRankSignalsById,
     shouldAutoPrefetchBuyableMusicVideos,
     shouldAutoPrefetchBuyableVideos,
-    sortedBuyableFavoriteChartSection,
+    sortedBuyableLikedVideoChartSection,
     sortedBuyableMarketChartSection,
     sortedFeaturedChartSections,
     sortedNewChartEntriesSection,
@@ -439,7 +503,10 @@ export default function useHomeChartCollections({
     isBuyableOnlyFilterAvailable,
     isBuyableVideoSearchLoading,
     isBuyableMarketChartLoading,
-    isChartLoading: isVideoCategoriesLoading || (!selectedCategory && !isVideoCategoriesError) || isChartLoading,
+    isChartLoading:
+      isVideoCategoriesLoading ||
+      (!selectedCategory && !isVideoCategoriesError) ||
+      isChartLoading,
     isNewChartEntriesError,
     isNewChartEntriesLoading,
     isRealtimeSurgingError,

@@ -1,27 +1,29 @@
-import { useCallback, type ReactNode } from 'react';
-import type { AuthStatus } from '../../../features/auth/types';
+import { useCallback, type ReactNode } from "react";
+import type { AuthStatus } from "../../../features/auth/types";
 import type {
   GameCurrentSeason,
   GamePosition,
   GameScheduledSellOrder,
   GameStrategyType,
   GameTierProgress,
-} from '../../../features/game/types';
-import type { VideoTrendSignal } from '../../../features/trending/types';
-import type { YouTubeCategorySection } from '../../../features/youtube/types';
-import { findPlaybackQueueIdForVideo } from '../utils';
-import type { OpenGameHolding } from '../gameHelpers';
-import BoldNumberText from './BoldNumberText';
-import { gameIntroSteps } from './GameIntroModal/steps';
-import GameScheduledSellOrdersTab, { type ScheduledSellOrderFocusRequest } from './GameScheduledSellOrdersTab';
+} from "../../../features/game/types";
+import type { VideoTrendSignal } from "../../../features/trending/types";
+import type { YouTubeCategorySection } from "../../../features/youtube/types";
+import { findPlaybackQueueIdForVideo } from "../utils";
+import type { OpenGameHolding } from "../gameHelpers";
+import BoldNumberText from "./BoldNumberText";
+import { gameIntroSteps } from "./GameIntroModal/steps";
+import GameScheduledSellOrdersTab, {
+  type ScheduledSellOrderFocusRequest,
+} from "./GameScheduledSellOrdersTab";
 import {
   RankingGameTierOverview,
   RankingGameHistoryTab,
   RankingGamePanelShell,
   RankingGamePositionsTab,
-} from './RankingGamePanel';
+} from "./RankingGamePanel";
 
-type GameTab = 'positions' | 'scheduledOrders' | 'history' | 'guide';
+type GameTab = "positions" | "scheduledOrders" | "history" | "guide";
 
 interface GamePanelSectionProps {
   activeGameTab: GameTab;
@@ -32,8 +34,8 @@ interface GamePanelSectionProps {
   computedWalletTotalAssetPoints: number | null;
   currentGameSeason?: GameCurrentSeason;
   currentGameSeasonUpdatedAt: number;
-  favoriteStreamerVideoSection?: YouTubeCategorySection;
-  favoriteTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
+  likedVideoSection?: YouTubeCategorySection;
+  likedVideoTrendSignalsByVideoId: Record<string, VideoTrendSignal>;
   gameHistoryPositions: GamePosition[];
   gameMarketSignalsByVideoId: Record<string, VideoTrendSignal>;
   gamePortfolioSection: YouTubeCategorySection;
@@ -52,11 +54,19 @@ interface GamePanelSectionProps {
   onRefreshTab?: (tab: GameTab) => Promise<void> | void;
   onOpenScheduledSellOrderChart?: (order: GameScheduledSellOrder) => void;
   onOpenPositionSellTradeModal?: (position: GamePosition) => void;
-  onOpenStrategyScheduledSellTradeModal?: (position: GamePosition, strategyType: GameStrategyType) => void;
+  onOpenStrategyScheduledSellTradeModal?: (
+    position: GamePosition,
+    strategyType: GameStrategyType,
+  ) => void;
   onCancelScheduledSellOrder?: (orderId: number) => void;
-  onSelectGameHistoryVideo: (position: GamePosition, playbackQueueId?: string) => void | Promise<void>;
+  onSelectGameHistoryVideo: (
+    position: GamePosition,
+    playbackQueueId?: string,
+  ) => void | Promise<void>;
   onSelectGamePositionVideo: (position: GamePosition) => void;
-  onSelectScheduledSellOrderVideo?: (order: GameScheduledSellOrder) => void | Promise<void>;
+  onSelectScheduledSellOrderVideo?: (
+    order: GameScheduledSellOrder,
+  ) => void | Promise<void>;
   onSelectTab: (tab: GameTab) => void;
   onToggleCollapse: () => void;
   openDistinctVideoCount: number;
@@ -85,8 +95,8 @@ export default function GamePanelSection({
   computedWalletTotalAssetPoints,
   currentGameSeason,
   currentGameSeasonUpdatedAt,
-  favoriteStreamerVideoSection,
-  favoriteTrendSignalsByVideoId,
+  likedVideoSection,
+  likedVideoTrendSignalsByVideoId,
   gameHistoryPositions,
   gameMarketSignalsByVideoId,
   gamePortfolioSection,
@@ -128,11 +138,13 @@ export default function GamePanelSection({
   scheduledSellOrderCancelingId,
   trendSignalsByVideoId,
 }: GamePanelSectionProps) {
-  const historyEmptyMessage = currentGameSeason ? '아직 현재 시즌 거래내역이 없습니다.' : null;
+  const historyEmptyMessage = currentGameSeason
+    ? "아직 현재 시즌 거래내역이 없습니다."
+    : null;
   const resolvePlaybackQueueId = useCallback(
     (videoId: string) =>
       findPlaybackQueueIdForVideo(videoId, {
-        favoriteStreamerVideoSection,
+        likedVideoSection,
         gamePortfolioSection,
         historyPlaybackSection,
         newChartEntriesSection,
@@ -140,7 +152,7 @@ export default function GamePanelSection({
         selectedSection: selectedPlaybackSection,
       }),
     [
-      favoriteStreamerVideoSection,
+      likedVideoSection,
       gamePortfolioSection,
       historyPlaybackSection,
       newChartEntriesSection,
@@ -149,7 +161,7 @@ export default function GamePanelSection({
     ],
   );
 
-  if (!hasApiConfigured || authStatus !== 'authenticated') {
+  if (!hasApiConfigured || authStatus !== "authenticated") {
     return null;
   }
 
@@ -158,7 +170,7 @@ export default function GamePanelSection({
       activePlaybackQueueId={activePlaybackQueueId}
       canShowGameActions={canShowGameActions}
       emptyMessage={positionsEmptyMessage}
-      favoriteTrendSignalsByVideoId={favoriteTrendSignalsByVideoId}
+      likedVideoTrendSignalsByVideoId={likedVideoTrendSignalsByVideoId}
       gameMarketSignalsByVideoId={gameMarketSignalsByVideoId}
       holdings={openGameHoldings}
       currentGameSeason={currentGameSeason}
@@ -166,7 +178,9 @@ export default function GamePanelSection({
       onCancelScheduledSellOrder={onCancelScheduledSellOrder}
       onOpenPositionChart={onOpenPositionChart}
       onOpenSellTradeModal={onOpenPositionSellTradeModal}
-      onOpenStrategyScheduledSellTradeModal={onOpenStrategyScheduledSellTradeModal}
+      onOpenStrategyScheduledSellTradeModal={
+        onOpenStrategyScheduledSellTradeModal
+      }
       onSelectPosition={onSelectGamePositionVideo}
       openDistinctVideoCount={openDistinctVideoCount}
       scheduledSellOrderCancelingId={scheduledSellOrderCancelingId}
@@ -196,7 +210,7 @@ export default function GamePanelSection({
     <GameScheduledSellOrdersTab
       activePlaybackQueueId={activePlaybackQueueId}
       focusedOrderRequest={scheduledSellOrderFocusRequest}
-      isActive={activeGameTab === 'scheduledOrders'}
+      isActive={activeGameTab === "scheduledOrders"}
       isCancelingOrderId={scheduledSellOrderCancelingId}
       isLoading={isScheduledSellOrdersLoading}
       onCancelOrder={onCancelScheduledSellOrder}
@@ -218,7 +232,9 @@ export default function GamePanelSection({
       <ol className="app-shell__game-guide-list">
         {gameIntroSteps.map((step) => (
           <li key={step.title} className="app-shell__game-guide-item">
-            <strong className="app-shell__game-guide-title">{step.title}</strong>
+            <strong className="app-shell__game-guide-title">
+              {step.title}
+            </strong>
             <p className="app-shell__game-guide-copy">
               <BoldNumberText>{step.body}</BoldNumberText>
             </p>

@@ -2,14 +2,14 @@ import {
   getOptionalAuth,
   requireAuth,
   type RequestContext,
-} from '../../_shared/context.ts';
-import { json, noContent } from '../../_shared/http.ts';
+} from "../../_shared/context.ts";
+import { json, noContent } from "../../_shared/http.ts";
 
 async function getSelectedTitle(context: RequestContext, userId: number) {
   const { data: setting } = await context.service
-    .from('user_achievement_title_settings')
-    .select('selected_title_code')
-    .eq('user_id', userId)
+    .from("user_achievement_title_settings")
+    .select("selected_title_code")
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (!setting?.selected_title_code) {
@@ -17,9 +17,9 @@ async function getSelectedTitle(context: RequestContext, userId: number) {
   }
 
   const { data: title } = await context.service
-    .from('achievement_titles')
-    .select('code, display_name, short_name, grade, description')
-    .eq('code', setting.selected_title_code)
+    .from("achievement_titles")
+    .select("code, display_name, short_name, grade, description")
+    .eq("code", setting.selected_title_code)
     .maybeSingle();
 
   return title
@@ -50,33 +50,24 @@ function toPlaybackProgress(row: Record<string, unknown> | null) {
 
 async function buildCurrentUser(context: RequestContext) {
   const { profile } = await requireAuth(context);
-  const [
-    favoriteCountResult,
-    commentCountResult,
-    tradeCountResult,
-    playbackResult,
-    selectedTitle,
-  ] = await Promise.all([
-    context.service
-      .from('favorite_streamers')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', profile.id),
-    context.service
-      .from('comments')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', profile.id),
-    context.service
-      .from('game_positions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', profile.id),
-    context.service
-      .from('playback_progress')
-      .select('*')
-      .eq('user_id', profile.id)
-      .order('updated_at', { ascending: false })
-      .limit(10),
-    getSelectedTitle(context, profile.id),
-  ]);
+  const [commentCountResult, tradeCountResult, playbackResult, selectedTitle] =
+    await Promise.all([
+      context.service
+        .from("comments")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile.id),
+      context.service
+        .from("game_positions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile.id),
+      context.service
+        .from("playback_progress")
+        .select("*")
+        .eq("user_id", profile.id)
+        .order("updated_at", { ascending: false })
+        .limit(10),
+      getSelectedTitle(context, profile.id),
+    ]);
 
   const recentPlaybackProgresses = (playbackResult.data ?? []).map((row) =>
     toPlaybackProgress(row as Record<string, unknown>),
@@ -87,7 +78,6 @@ async function buildCurrentUser(context: RequestContext) {
     createdAt: profile.created_at,
     displayName: profile.display_name,
     email: profile.email,
-    favoriteCount: favoriteCountResult.count ?? 0,
     id: profile.id,
     lastLoginAt: profile.last_login_at,
     lastPlaybackProgress: recentPlaybackProgresses[0] ?? null,
@@ -103,23 +93,23 @@ export async function handleAuthRoute(
   method: string,
   path: string,
 ) {
-  if (method === 'GET' && path === '/api/auth/google/config') {
+  if (method === "GET" && path === "/api/auth/google/config") {
     return json({
-      clientId: '',
+      clientId: "",
       enabled: true,
     });
   }
 
-  if (method === 'GET' && path === '/api/auth/me') {
+  if (method === "GET" && path === "/api/auth/me") {
     return json(await buildCurrentUser(context));
   }
 
-  if (method === 'DELETE' && path === '/api/auth/session') {
+  if (method === "DELETE" && path === "/api/auth/session") {
     await requireAuth(context);
     return noContent();
   }
 
-  if (method === 'GET' && path === '/api/auth/session') {
+  if (method === "GET" && path === "/api/auth/session") {
     const auth = await getOptionalAuth(context);
 
     return json({
