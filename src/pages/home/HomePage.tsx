@@ -3205,6 +3205,9 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
         }}
         quantity={tradeNormalizedSellQuantity}
         scheduledSellConditionError={scheduledSellConditionError}
+        scheduledSellProfitRatePresets={
+          currentGameSeason?.scheduledSellProfitRatePresets
+        }
         scheduledSellTriggerType={scheduledSellTriggerType}
         scheduledSellTargetRank={scheduledSellTargetRank}
         scheduledSellTargetProfitRatePercent={

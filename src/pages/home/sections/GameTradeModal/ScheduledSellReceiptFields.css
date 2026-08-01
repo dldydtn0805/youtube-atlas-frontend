@@ -92,6 +92,38 @@
   text-align: right;
 }
 
+.app-shell__scheduled-sell-receipt-profit-input {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.app-shell__scheduled-sell-receipt-profit-input input {
+  background: var(--surface-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  min-width: 0;
+  padding: 7px 8px;
+  text-align: right;
+  width: 76px;
+}
+
+.app-shell__scheduled-sell-receipt-profit-input input:focus {
+  border-color: var(--text);
+  outline: none;
+}
+
+.app-shell__scheduled-sell-receipt-profit-input > span {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
 .app-shell__scheduled-sell-receipt-display span {
   color: var(--text-muted);
   font-size: 0.82rem;

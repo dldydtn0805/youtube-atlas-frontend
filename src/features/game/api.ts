@@ -19,7 +19,10 @@ import type {
   SellGamePositionResponse,
 } from './types';
 import type { YouTubeCategorySection } from '../youtube/types';
-import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from './constants';
+import {
+  FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
+  FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS,
+} from './constants';
 
 type ApiGameTier = Omit<GameTier, 'minScore' | 'inventorySlots'> & {
   minScore?: number | null;
@@ -49,10 +52,14 @@ type ApiGameLeaderboardEntry = Omit<GameLeaderboardEntry, 'currentTier'> & {
 
 type ApiGameCurrentSeason = Omit<
   GameCurrentSeason,
-  'wallet' | 'inventorySlots' | 'scheduledSellDefaultProfitRatePercent'
+  | 'wallet'
+  | 'inventorySlots'
+  | 'scheduledSellDefaultProfitRatePercent'
+  | 'scheduledSellProfitRatePresets'
 > & {
   inventorySlots?: ApiGameInventorySlots | null;
   scheduledSellDefaultProfitRatePercent?: number | null;
+  scheduledSellProfitRatePresets?: number[] | null;
   wallet: GameCurrentSeason['wallet'];
 };
 
@@ -99,6 +106,7 @@ function normalizeGameTierProgress(progress: ApiGameTierProgress): GameTierProgr
 function normalizeGameCurrentSeason(season: ApiGameCurrentSeason): GameCurrentSeason {
   const fallbackSlots = Math.max(0, season.maxOpenPositions);
   const inventorySlots = season.inventorySlots;
+  const scheduledSellProfitRatePresets = season.scheduledSellProfitRatePresets;
 
   return {
     ...season,
@@ -108,6 +116,18 @@ function normalizeGameCurrentSeason(season: ApiGameCurrentSeason): GameCurrentSe
       season.scheduledSellDefaultProfitRatePercent >= 0
         ? season.scheduledSellDefaultProfitRatePercent
         : FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
+    scheduledSellProfitRatePresets:
+      Array.isArray(scheduledSellProfitRatePresets) &&
+      scheduledSellProfitRatePresets.length === 3 &&
+      scheduledSellProfitRatePresets.every(
+        (preset, index) =>
+          typeof preset === 'number' &&
+          Number.isFinite(preset) &&
+          preset >= 0 &&
+          (index === 0 || preset > scheduledSellProfitRatePresets[index - 1]),
+      )
+        ? scheduledSellProfitRatePresets
+        : [...FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS],
     inventorySlots: {
       baseSlots: inventorySlots?.baseSlots ?? fallbackSlots,
       totalSlots: inventorySlots?.totalSlots ?? fallbackSlots,

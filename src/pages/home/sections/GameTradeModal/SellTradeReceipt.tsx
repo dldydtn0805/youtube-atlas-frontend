@@ -1,7 +1,10 @@
 import type { HTMLAttributes } from 'react';
 import ThumbnailPlayOverlay from '../../../../components/ThumbnailPlayOverlay/ThumbnailPlayOverlay';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../../features/game/types';
-import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from '../../../../features/game/constants';
+import {
+  FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
+  FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS,
+} from '../../../../features/game/constants';
 import ScheduledSellReceiptFields from './ScheduledSellReceiptFields';
 import SellOrderModeTabs from './SellOrderModeTabs';
 import type { GameTradeModalSummaryItem } from './types';
@@ -25,6 +28,7 @@ interface SellTradeReceiptProps {
   onClose: () => void;
   onConfirm: () => void;
   scheduledSellConditionError?: string | null;
+  scheduledSellProfitRatePresets?: readonly number[];
   scheduledSellTargetProfitRatePercent?: number | null;
   scheduledSellTargetRank?: number | null;
   scheduledSellTriggerDirection?: ScheduledSellTriggerDirection;
@@ -66,6 +70,7 @@ export default function SellTradeReceipt({
   onClose,
   onConfirm,
   scheduledSellConditionError = null,
+  scheduledSellProfitRatePresets = FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS,
   scheduledSellTargetProfitRatePercent = FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
   scheduledSellTargetRank = 100,
   scheduledSellTriggerDirection = 'RANK_IMPROVES_TO',
@@ -130,6 +135,7 @@ export default function SellTradeReceipt({
               onChangeTargetRank={onChangeScheduledSellTargetRank}
               onChangeTriggerDirection={onChangeScheduledSellTriggerDirection}
               onChangeTriggerType={onChangeScheduledSellTriggerType}
+              profitRatePresets={scheduledSellProfitRatePresets}
               targetProfitRatePercent={scheduledSellTargetProfitRatePercent}
               targetRank={scheduledSellTargetRank}
               triggerDirection={scheduledSellTriggerDirection}

@@ -88,12 +88,14 @@ export interface AdminPriceAnchorUpdateRequest {
 
 export interface AdminGameSettings {
   scheduledSellDefaultProfitRatePercent: number;
+  scheduledSellProfitRatePresets: number[];
   updatedAt: string | null;
   updatedBy: string | null;
 }
 
 export interface AdminGameSettingsUpdateRequest {
   scheduledSellDefaultProfitRatePercent: number;
+  scheduledSellProfitRatePresets: number[];
 }
 
 export interface AdminTierThreshold {

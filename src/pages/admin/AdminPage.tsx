@@ -27,6 +27,7 @@ import {
 } from "../../features/admin/queries";
 import type {
   AdminCommentSummary,
+  AdminGameSettingsUpdateRequest,
   AdminSeasonSummary,
   AdminTrendSnapshotHistoryItem,
   AdminTrendSnapshot,
@@ -1702,16 +1703,14 @@ export default function AdminPage() {
     );
   };
 
-  const handleGameSettingsSave = (
-    scheduledSellDefaultProfitRatePercent: number,
-  ) => {
+  const handleGameSettingsSave = (request: AdminGameSettingsUpdateRequest) => {
     setActionMessage(null);
     updateGameSettingsMutation.mutate(
-      { scheduledSellDefaultProfitRatePercent },
+      request,
       {
         onSuccess: () => {
           setActionMessage(
-            "예약 매도 목표 수익률 기본값이 저장되었습니다.",
+            "예약 매도 기본값과 빠른 선택 수익률이 저장되었습니다.",
           );
         },
         onError: (error) => {

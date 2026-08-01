@@ -1,6 +1,9 @@
 import { createPortal } from 'react-dom';
 import type { ScheduledSellTriggerDirection, ScheduledSellTriggerType } from '../../../features/game/types';
-import { FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT } from '../../../features/game/constants';
+import {
+  FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
+  FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS,
+} from '../../../features/game/constants';
 import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { normalizeGameOrderCapacity } from '../gameHelpers';
@@ -29,6 +32,7 @@ interface GameTradeModalProps {
   onConfirm: () => void;
   quantity: number;
   scheduledSellConditionError?: string | null;
+  scheduledSellProfitRatePresets?: readonly number[];
   scheduledSellTriggerType?: ScheduledSellTriggerType;
   scheduledSellTargetRank?: number | null;
   scheduledSellTargetProfitRatePercent?: number | null;
@@ -58,6 +62,7 @@ export default function GameTradeModal({
   onClose,
   onConfirm,
   scheduledSellConditionError = null,
+  scheduledSellProfitRatePresets = FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS,
   scheduledSellTriggerType = 'RANK',
   scheduledSellTargetRank = 100,
   scheduledSellTargetProfitRatePercent = FALLBACK_SCHEDULED_SELL_DEFAULT_PROFIT_RATE_PERCENT,
@@ -158,6 +163,7 @@ export default function GameTradeModal({
           onClose={onClose}
           onConfirm={onConfirm}
           scheduledSellConditionError={scheduledSellConditionError}
+          scheduledSellProfitRatePresets={scheduledSellProfitRatePresets}
           scheduledSellTargetProfitRatePercent={scheduledSellTargetProfitRatePercent}
           scheduledSellTargetRank={scheduledSellTargetRank}
           scheduledSellTriggerDirection={scheduledSellTriggerDirection}

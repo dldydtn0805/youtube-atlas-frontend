@@ -8,6 +8,7 @@ interface ScheduledSellReceiptFieldsProps {
   onChangeTargetRank: (rank: number | null) => void;
   onChangeTriggerDirection: (direction: ScheduledSellTriggerDirection) => void;
   onChangeTriggerType: (triggerType: ScheduledSellTriggerType) => void;
+  profitRatePresets: readonly number[];
   targetProfitRatePercent: number | null;
   targetRank: number | null;
   triggerDirection: ScheduledSellTriggerDirection;
@@ -15,8 +16,6 @@ interface ScheduledSellReceiptFieldsProps {
 }
 
 const QUICK_RANKS = [1, 5, 20, 50, 100];
-const QUICK_PROFIT_RATES = [300, 500, 1000];
-
 function getRankValue(targetRank: number | null) {
   return typeof targetRank === 'number' && Number.isFinite(targetRank) ? targetRank : 100;
 }
@@ -24,7 +23,7 @@ function getRankValue(targetRank: number | null) {
 function getProfitValue(targetProfitRatePercent: number | null) {
   return typeof targetProfitRatePercent === 'number' && Number.isFinite(targetProfitRatePercent)
     ? targetProfitRatePercent
-    : 300;
+    : 0;
 }
 
 export default function ScheduledSellReceiptFields({
@@ -34,6 +33,7 @@ export default function ScheduledSellReceiptFields({
   onChangeTargetRank,
   onChangeTriggerDirection,
   onChangeTriggerType,
+  profitRatePresets,
   targetProfitRatePercent,
   targetRank,
   triggerDirection,
@@ -87,7 +87,7 @@ export default function ScheduledSellReceiptFields({
 
       <div className="app-shell__scheduled-sell-receipt-presets">
         <span>{isRankTrigger ? (isDropTrigger ? '방어 순위' : '목표 순위') : '목표 수익률'}</span>
-        {(isRankTrigger ? QUICK_RANKS : QUICK_PROFIT_RATES).map((value) => (
+        {(isRankTrigger ? QUICK_RANKS : profitRatePresets).map((value) => (
           <button
             key={value}
             disabled={disabled}
@@ -110,7 +110,30 @@ export default function ScheduledSellReceiptFields({
         <button disabled={disabled} onClick={() => updateTriggerValue(-1)} type="button">
           -
         </button>
-        <strong>{isRankTrigger ? rankValue : `+${profitValue}%`}</strong>
+        {isRankTrigger ? (
+          <strong>{rankValue}</strong>
+        ) : (
+          <label className="app-shell__scheduled-sell-receipt-profit-input">
+            <span className="sr-only">목표 수익률 직접 입력</span>
+            <input
+              aria-label="목표 수익률 직접 입력"
+              disabled={disabled}
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                const parsedValue = Number(nextValue);
+                onChangeTargetProfitRatePercent(
+                  nextValue === '' || !Number.isFinite(parsedValue) ? null : parsedValue,
+                );
+              }}
+              step="0.1"
+              type="number"
+              value={targetProfitRatePercent ?? ''}
+            />
+            <span>%</span>
+          </label>
+        )}
         <span>
           {isRankTrigger
             ? isDropTrigger

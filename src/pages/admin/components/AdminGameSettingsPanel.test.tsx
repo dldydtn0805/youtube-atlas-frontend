@@ -14,6 +14,7 @@ describe("AdminGameSettingsPanel", () => {
         onSave={onSave}
         settings={{
           scheduledSellDefaultProfitRatePercent: 300,
+          scheduledSellProfitRatePresets: [300, 500, 1000],
           updatedAt: null,
           updatedBy: null,
         }}
@@ -26,8 +27,17 @@ describe("AdminGameSettingsPanel", () => {
       }),
       { target: { value: "25.5" } },
     );
-    fireEvent.click(screen.getByRole("button", { name: "기본 수익률 저장" }));
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: "예약 매도 샘플 수익률 1",
+      }),
+      { target: { value: "30" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "수익률 설정 저장" }));
 
-    expect(onSave).toHaveBeenCalledWith(25.5);
+    expect(onSave).toHaveBeenCalledWith({
+      scheduledSellDefaultProfitRatePercent: 25.5,
+      scheduledSellProfitRatePresets: [30, 500, 1000],
+    });
   });
 });

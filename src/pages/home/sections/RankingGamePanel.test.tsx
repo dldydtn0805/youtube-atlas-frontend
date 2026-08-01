@@ -55,6 +55,7 @@ function createCurrentSeason(
     seasonId: 1,
     seasonName: "테스트 시즌",
     scheduledSellDefaultProfitRatePercent: 300,
+    scheduledSellProfitRatePresets: [300, 500, 1000],
     startingBalancePoints: 1000,
     startAt: "2026-04-01T00:00:00.000Z",
     status: "ACTIVE",

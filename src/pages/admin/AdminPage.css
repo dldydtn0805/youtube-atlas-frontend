@@ -509,8 +509,15 @@
 }
 
 .admin-page__game-setting-field {
+  min-width: 0;
+}
+
+.admin-page__game-settings-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   margin-bottom: 14px;
-  max-width: 320px;
+  max-width: 820px;
 }
 
 .admin-page__price-input-wrap {

@@ -34,6 +34,7 @@ interface AdminTierThresholdInput {
 
 interface AdminGameSettingsInput {
   scheduledSellDefaultProfitRatePercent?: number;
+  scheduledSellProfitRatePresets?: number[];
 }
 
 function validateScheduledSellDefaultProfitRatePercent(value: unknown) {
@@ -46,6 +47,42 @@ function validateScheduledSellDefaultProfitRatePercent(value: unknown) {
   }
 
   return value;
+}
+
+function validateScheduledSellProfitRatePresets(value: unknown) {
+  if (!Array.isArray(value) || value.length !== 3) {
+    throw new ApiError(
+      400,
+      "validation_error",
+      "예약 매도 샘플 수익률은 3개가 필요합니다.",
+    );
+  }
+
+  const presets: number[] = [];
+  for (const preset of value) {
+    if (
+      typeof preset !== "number" ||
+      !Number.isFinite(preset) ||
+      preset < 0
+    ) {
+      throw new ApiError(
+        400,
+        "validation_error",
+        "예약 매도 샘플 수익률은 0 이상의 숫자여야 합니다.",
+      );
+    }
+
+    if (presets.length > 0 && preset <= presets[presets.length - 1]) {
+      throw new ApiError(
+        400,
+        "validation_error",
+        "예약 매도 샘플 수익률은 낮은 값부터 중복 없이 입력해야 합니다.",
+      );
+    }
+    presets.push(preset);
+  }
+
+  return presets;
 }
 
 function toAdminTierThreshold(
@@ -400,16 +437,27 @@ export async function handleAdminRoute(
 
   if (path === "/api/admin/game/settings" && method === "PUT") {
     const body = await readJson<AdminGameSettingsInput>(context.request);
+    const currentSettings = await loadGameSettings(context.service);
     const scheduledSellDefaultProfitRatePercent =
-      validateScheduledSellDefaultProfitRatePercent(
-        body.scheduledSellDefaultProfitRatePercent,
-      );
+      body.scheduledSellDefaultProfitRatePercent === undefined
+        ? currentSettings.scheduledSellDefaultProfitRatePercent
+        : validateScheduledSellDefaultProfitRatePercent(
+            body.scheduledSellDefaultProfitRatePercent,
+          );
+    const scheduledSellProfitRatePresets =
+      body.scheduledSellProfitRatePresets === undefined
+        ? currentSettings.scheduledSellProfitRatePresets
+        : validateScheduledSellProfitRatePresets(
+            body.scheduledSellProfitRatePresets,
+          );
     const updatedAt = new Date().toISOString();
     const { error } = await context.service.from("game_settings").upsert(
       {
         id: 1,
         scheduled_sell_default_profit_rate_percent:
           scheduledSellDefaultProfitRatePercent,
+        scheduled_sell_profit_rate_presets:
+          scheduledSellProfitRatePresets,
         updated_at: updatedAt,
         updated_by: adminProfile.email,
       },

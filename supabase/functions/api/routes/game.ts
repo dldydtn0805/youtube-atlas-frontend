@@ -650,6 +650,8 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       seasonName: game.season.name,
       scheduledSellDefaultProfitRatePercent:
         gameSettings.scheduledSellDefaultProfitRatePercent,
+      scheduledSellProfitRatePresets:
+        gameSettings.scheduledSellProfitRatePresets,
       startAt: game.season.start_at,
       startingBalancePoints: game.season.starting_balance_points,
       status: game.season.status,

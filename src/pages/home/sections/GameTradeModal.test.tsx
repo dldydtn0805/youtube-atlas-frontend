@@ -281,6 +281,50 @@ describe('GameTradeModal', () => {
     expect(onChangeScheduledSellTargetRank).toHaveBeenCalledWith(5);
   });
 
+  it('uses admin-configured profit presets and accepts a direct target profit rate', () => {
+    const onChangeScheduledSellTargetProfitRatePercent = vi.fn();
+
+    render(
+      <GameTradeModal
+        confirmLabel="예약 매도"
+        currentRankLabel="3위"
+        helperText="테스트"
+        isOpen
+        isSubmitting={false}
+        maxQuantity={100}
+        mode="sell"
+        onChangeQuantity={vi.fn()}
+        onChangeScheduledSellTriggerType={vi.fn()}
+        onChangeScheduledSellTargetRank={vi.fn()}
+        onChangeScheduledSellTargetProfitRatePercent={
+          onChangeScheduledSellTargetProfitRatePercent
+        }
+        onChangeScheduledSellTriggerDirection={vi.fn()}
+        onChangeSellOrderMode={vi.fn()}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        quantity={100}
+        scheduledSellProfitRatePresets={[25, 50, 75]}
+        scheduledSellTargetProfitRatePercent={50}
+        scheduledSellTriggerType="PROFIT_RATE"
+        sellOrderMode="scheduled"
+        summaryItems={[{ label: '처리 방식', value: '조건 도달 시 자동 매도' }]}
+        thumbnailUrl={null}
+        title="테스트 영상"
+        unitPointsLabel="1,000P"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '+75%' }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: '목표 수익률 직접 입력' }), {
+      target: { value: '42.5' },
+    });
+
+    expect(screen.queryByRole('button', { name: '+300%' })).not.toBeInTheDocument();
+    expect(onChangeScheduledSellTargetProfitRatePercent).toHaveBeenNthCalledWith(1, 75);
+    expect(onChangeScheduledSellTargetProfitRatePercent).toHaveBeenNthCalledWith(2, 42.5);
+  });
+
   it('closes when the modal header is swiped down on touch', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
