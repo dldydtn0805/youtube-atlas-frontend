@@ -107,6 +107,7 @@ import {
   useCancelScheduledSellOrder,
   useCreateScheduledSellOrder,
   useCurrentGameSeason,
+  useGameAccountState,
   useGameTierProgress,
   useGameHighlights,
   useGameBootstrap,
@@ -542,12 +543,23 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode) &&
       shouldLoadPublicHomeQueries,
   );
-  const shouldLoadGame = isApiConfigured && authStatus === "authenticated";
+  const shouldLoadGame = isApiConfigured && Boolean(accessToken);
+  const {
+    data: gameAccountState,
+    isError: isGameAccountStateError,
+    isLoading: isGameAccountStateLoading,
+  } = useGameAccountState(accessToken, shouldLoadGame);
+  const shouldLoadGameBootstrap =
+    shouldLoadGame && (Boolean(gameAccountState) || isGameAccountStateError);
   const {
     isError: isGameBootstrapError,
     isHydrated: isGameBootstrapHydrated,
     isLoading: isGameBootstrapLoading,
-  } = useGameBootstrap(accessToken, selectedRegionCode, shouldLoadGame);
+  } = useGameBootstrap(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameBootstrap,
+  );
   const shouldLoadGameQueries =
     shouldLoadGame && (isGameBootstrapHydrated || isGameBootstrapError);
   const shouldLoadGameMarket =
@@ -556,7 +568,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
 
   const {
-    data: currentGameSeason,
+    data: queriedCurrentGameSeason,
     error: currentGameSeasonError,
     isLoading: isCurrentGameSeasonQueryLoading,
     dataUpdatedAt: currentGameSeasonUpdatedAt,
@@ -565,9 +577,11 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     selectedRegionCode,
     shouldLoadGameQueries,
   );
+  const currentGameSeason =
+    queriedCurrentGameSeason ?? gameAccountState?.currentSeason;
   const isCurrentGameSeasonLoading =
     isCurrentGameSeasonQueryLoading ||
-    (shouldLoadGame && isGameBootstrapLoading);
+    (shouldLoadGame && isGameAccountStateLoading && !currentGameSeason);
   const {
     data: gameMarket = [],
     error: gameMarketError,
@@ -605,7 +619,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   );
   const isGameTierProgressLoading =
     isGameTierProgressQueryLoading ||
-    (shouldLoadGame && isGameBootstrapLoading);
+    (shouldLoadGame && isGameAccountStateLoading && !gameTierProgress);
 
   const {
     data: gameLeaderboard = [],
@@ -639,7 +653,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   );
   const isOpenGamePositionsLoading =
     isOpenGamePositionsQueryLoading ||
-    (shouldLoadGame && isGameBootstrapLoading);
+    (shouldLoadGame && isGameAccountStateLoading && !gameAccountState);
   const { data: gameSeasonResults = [], error: gameSeasonResultsError } =
     useMyGameSeasonResults(
       accessToken,
@@ -683,7 +697,8 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     30,
   );
   const isGameHistoryLoading =
-    isGameHistoryQueryLoading || (shouldLoadGame && isGameBootstrapLoading);
+    isGameHistoryQueryLoading ||
+    (shouldLoadGame && isGameAccountStateLoading && !gameAccountState);
   const gameHistoryPositions = useMemo(
     () =>
       allGameHistoryPositions

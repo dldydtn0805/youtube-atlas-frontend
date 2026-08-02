@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 import { fetchCurrentUser } from './api';
 import {
   clearStoredAuthSession,
+  readStoredAuthSession,
   writeStoredAuthSession,
 } from './storage';
 import { AuthContext } from './context';
@@ -37,20 +39,74 @@ function toAuthSession(session: Session, user: AuthUser): AuthSession {
   };
 }
 
+const STORED_SESSION_EXPIRY_BUFFER_MS = 30_000;
+
+function getInitialAuthSession() {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
+  const storedSession = readStoredAuthSession();
+  if (
+    !storedSession ||
+    new Date(storedSession.expiresAt).getTime() <=
+      Date.now() + STORED_SESSION_EXPIRY_BUFFER_MS
+  ) {
+    clearStoredAuthSession();
+    return null;
+  }
+
+  return storedSession;
+}
+
+function createProvisionalAuthUser(session: Session): AuthUser {
+  const metadata = session.user.user_metadata;
+  const email = session.user.email?.trim() || `${session.user.id}@unknown.local`;
+  const displayName =
+    String(metadata?.full_name ?? metadata?.name ?? '').trim() ||
+    email.split('@')[0] ||
+    '사용자';
+  const pictureUrl =
+    String(metadata?.avatar_url ?? metadata?.picture ?? '').trim() || null;
+  const createdAt = session.user.created_at || new Date().toISOString();
+
+  return {
+    commentCount: 0,
+    createdAt,
+    displayName,
+    email,
+    id: 0,
+    lastLoginAt: session.user.last_sign_in_at ?? createdAt,
+    lastPlaybackProgress: null,
+    pictureUrl,
+    recentPlaybackProgresses: [],
+    selectedTitle: null,
+    tradeCount: 0,
+  };
+}
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
-  const [session, setSession] = useState<AuthSession | null>(null);
-  const [status, setStatus] = useState<AuthStatus>(
-    isSupabaseConfigured ? 'loading' : 'anonymous',
+  const [session, setSession] = useState<AuthSession | null>(getInitialAuthSession);
+  const [status, setStatus] = useState<AuthStatus>(() =>
+    session
+      ? 'authenticated'
+      : isSupabaseConfigured
+        ? 'loading'
+        : 'anonymous',
   );
   const [authError, setAuthError] = useState<string | null>(null);
   const [googleProviderAccessToken, setGoogleProviderAccessToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const activeAccessTokenRef = useRef(session?.accessToken ?? null);
+  const profileRequestTokenRef = useRef<string | null>(null);
 
   const applySupabaseSession = useCallback(
     async (nextSupabaseSession: Session | null) => {
       if (!nextSupabaseSession) {
+        activeAccessTokenRef.current = null;
+        profileRequestTokenRef.current = null;
         clearStoredAuthSession();
         queryClient.removeQueries({ queryKey: authQueryKeys.all });
         setGoogleProviderAccessToken(null);
@@ -61,8 +117,35 @@ export function AuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
+      const accessToken = nextSupabaseSession.access_token;
+      activeAccessTokenRef.current = accessToken;
+      setGoogleProviderAccessToken(nextSupabaseSession.provider_token ?? null);
+      startTransition(() => {
+        setSession((currentSession) =>
+          toAuthSession(
+            nextSupabaseSession,
+            currentSession?.accessToken === accessToken
+              ? currentSession.user
+              : createProvisionalAuthUser(nextSupabaseSession),
+          ),
+        );
+        setStatus('authenticated');
+      });
+
+      if (profileRequestTokenRef.current === accessToken) {
+        return;
+      }
+
+      const profileRequest = fetchCurrentUser(accessToken);
+      profileRequestTokenRef.current = accessToken;
+
       try {
-        const user = await fetchCurrentUser(nextSupabaseSession.access_token);
+        const user = await profileRequest;
+
+        if (activeAccessTokenRef.current !== accessToken) {
+          return;
+        }
+
         const nextSession = toAuthSession(nextSupabaseSession, user);
 
         queryClient.setQueryData(
@@ -70,24 +153,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
           nextSession.user,
         );
         writeStoredAuthSession(nextSession);
-        setGoogleProviderAccessToken(nextSupabaseSession.provider_token ?? null);
         startTransition(() => {
           setSession(nextSession);
           setStatus('authenticated');
         });
         setAuthError(null);
       } catch (error) {
-        clearStoredAuthSession();
-        setGoogleProviderAccessToken(null);
-        startTransition(() => {
-          setSession(null);
-          setStatus('anonymous');
-        });
+        if (activeAccessTokenRef.current !== accessToken) {
+          return;
+        }
+
+        const isUnauthorized =
+          error instanceof ApiRequestError &&
+          (error.code === 'unauthorized' || error.code === 'session_expired');
+
+        if (isUnauthorized) {
+          activeAccessTokenRef.current = null;
+          clearStoredAuthSession();
+          setGoogleProviderAccessToken(null);
+          startTransition(() => {
+            setSession(null);
+            setStatus('anonymous');
+          });
+        }
         setAuthError(
           error instanceof ApiRequestError
             ? error.message
             : '로그인 정보를 불러오지 못했습니다.',
         );
+      } finally {
+        if (profileRequestTokenRef.current === accessToken) {
+          profileRequestTokenRef.current = null;
+        }
       }
     },
     [queryClient],
@@ -111,7 +208,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       if (error) {
         setAuthError('로그인 상태를 확인하지 못했습니다.');
-        setStatus('anonymous');
+        void applySupabaseSession(null);
         return;
       }
 

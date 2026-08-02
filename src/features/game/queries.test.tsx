@@ -17,6 +17,7 @@ import {
   useBuyGamePosition,
   useCancelScheduledSellOrder,
   useCreateScheduledSellOrder,
+  useGameAccountState,
   useGameBootstrap,
   useSellGamePositions,
 } from './queries';
@@ -25,12 +26,14 @@ const {
   buyGamePositionMock,
   cancelScheduledSellOrderMock,
   createScheduledSellOrderMock,
+  fetchGameAccountStateMock,
   fetchGameBootstrapMock,
   sellGamePositionsMock,
 } = vi.hoisted(() => ({
   buyGamePositionMock: vi.fn(),
   cancelScheduledSellOrderMock: vi.fn(),
   createScheduledSellOrderMock: vi.fn(),
+  fetchGameAccountStateMock: vi.fn(),
   fetchGameBootstrapMock: vi.fn(),
   sellGamePositionsMock: vi.fn(),
 }));
@@ -48,6 +51,7 @@ vi.mock('./api', async () => {
     fetchAchievementTitles: vi.fn(),
     fetchBuyableMarketChart: vi.fn(),
     fetchCurrentGameSeason: vi.fn(),
+    fetchGameAccountState: fetchGameAccountStateMock,
     fetchGameHighlights: vi.fn(),
     fetchGameBootstrap: fetchGameBootstrapMock,
     fetchGameLeaderboard: vi.fn(),
@@ -279,6 +283,74 @@ describe('useGameBootstrap', () => {
         gameQueryKeys.currentSeason('token-1', 'KR'),
       ),
     ).toEqual(bootstrap.currentSeason);
+  });
+});
+
+describe('useGameAccountState', () => {
+  afterEach(() => {
+    fetchGameAccountStateMock.mockReset();
+  });
+
+  it('hydrates the wallet, tier, and position counts before the full bootstrap', async () => {
+    const queryClient = createQueryClient();
+    const wrapper = createWrapper(queryClient);
+    const currentSeason = {
+      endAt: '2026-05-01T00:00:00.000Z',
+      inventorySlots: {
+        baseSlots: 5,
+        currentTier: null,
+        maxSlots: 10,
+        nextTier: null,
+        tiers: [],
+        totalSlots: 5,
+      },
+      maxOpenPositions: 5,
+      minHoldSeconds: 60,
+      rankPointMultiplier: 100,
+      regionCode: 'KR',
+      scheduledSellDefaultProfitRatePercent: 10,
+      scheduledSellProfitRatePresets: [5, 10, 20],
+      seasonId: 3,
+      seasonName: '시즌 3',
+      startAt: '2026-04-01T00:00:00.000Z',
+      startingBalancePoints: 10000,
+      status: 'ACTIVE',
+      wallet: createAccountState().wallet,
+    } as GameCurrentSeason;
+    const accountState = createAccountState({ currentSeason });
+    fetchGameAccountStateMock.mockResolvedValue(accountState);
+
+    const { result } = renderHook(
+      () => useGameAccountState('token-1'),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(fetchGameAccountStateMock).toHaveBeenCalledTimes(1);
+    expect(fetchGameAccountStateMock).toHaveBeenCalledWith('token-1');
+    expect(
+      queryClient.getQueryData(
+        gameQueryKeys.currentSeason('token-1', 'KR'),
+      ),
+    ).toEqual(currentSeason);
+    expect(
+      queryClient.getQueryData(
+        gameQueryKeys.tierProgress('token-1', 'KR'),
+      ),
+    ).toEqual(accountState.tierProgress);
+    expect(
+      queryClient.getQueryData([
+        ...gameQueryKeys.positions('token-1', 'KR', 'OPEN'),
+        null,
+      ]),
+    ).toEqual(accountState.openPositions);
+    expect(
+      queryClient.getQueryData([
+        ...gameQueryKeys.positions('token-1', 'KR', ''),
+        30,
+      ]),
+    ).toEqual(accountState.positionHistory);
   });
 });
 

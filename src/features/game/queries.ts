@@ -479,17 +479,36 @@ export function applyGameAccountState(
   }
 
   queryClient.setQueryData(gameQueryKeys.accountState(accessToken), state);
-  queryClient.setQueriesData<GameCurrentSeason>(
-    { queryKey: ['game', 'currentSeason', accessToken] },
-    (season) => (season ? { ...season, wallet: state.wallet } : season),
+  if (state.currentSeason) {
+    queryClient.setQueryData(
+      gameQueryKeys.currentSeason(accessToken, null),
+      state.currentSeason,
+    );
+  } else {
+    queryClient.setQueriesData<GameCurrentSeason>(
+      { queryKey: ['game', 'currentSeason', accessToken] },
+      (season) => (season ? { ...season, wallet: state.wallet } : season),
+    );
+  }
+  queryClient.setQueryData(
+    gameQueryKeys.tierProgress(accessToken, null),
+    state.tierProgress,
   );
   queryClient.setQueriesData(
     { queryKey: ['game', 'tierProgress', accessToken] },
     state.tierProgress,
   );
+  queryClient.setQueryData(
+    [...gameQueryKeys.positions(accessToken, null, 'OPEN'), null],
+    state.openPositions,
+  );
   queryClient.setQueriesData<GamePosition[]>(
     { queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, 'OPEN'] },
     state.openPositions,
+  );
+  queryClient.setQueryData(
+    [...gameQueryKeys.positions(accessToken, null, ''), 30],
+    state.positionHistory,
   );
   queryClient.setQueriesData<GamePosition[]>(
     { queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, ''] },
@@ -536,6 +555,29 @@ export async function refreshGameAccountState(
   });
   applyGameAccountState(queryClient, accessToken, state);
   return state;
+}
+
+export function useGameAccountState(
+  accessToken: string | null,
+  enabled = true,
+) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    enabled: enabled && Boolean(accessToken),
+    queryKey: gameQueryKeys.accountState(accessToken),
+    queryFn: () => fetchGameAccountState(accessToken as string),
+    staleTime: 1000 * 15,
+  });
+
+  useEffect(() => {
+    if (!query.data) {
+      return;
+    }
+
+    applyGameAccountState(queryClient, accessToken, query.data);
+  }, [accessToken, query.data, queryClient]);
+
+  return query;
 }
 
 async function refreshTradeDerivedQueries(

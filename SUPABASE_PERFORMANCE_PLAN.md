@@ -25,6 +25,7 @@
 | P0 | 안전한 DB 유지보수 | Done | 큰 추세 테이블의 vacuum/analyze scale factor를 낮추고 파괴적인 재작성은 하지 않음 |
 | P0 | 거래 직후 계정 상태 즉시 반영 | Done | 매수·매도 응답의 확정 wallet·포지션·티어를 React Query 캐시에 동기 반영 |
 | P0 | 계정 Realtime 병합 | Done | wallet·position·예약 주문 이벤트를 전용 채널에서 180ms 동안 합쳐 계정 상태를 한 번만 재조회 |
+| P0 | 로그인 직후 지갑·게임 상태 우선 로딩 | Done | 유효 토큰을 프로필 응답보다 먼저 노출하고 account-state가 전체 게임 bootstrap보다 먼저 지갑·티어·보유 수를 채움 |
 | P1 | 로그인 사용자의 운영 부트스트랩 계측 | Planned | 실제 로그인 세션에서 초기 game bootstrap 시간과 후속 중복 요청이 0인지 확인 |
 | P1 | Edge cold start 추적 | Planned | `Server-Timing`과 함수 로그로 국가별 p50/p95를 수집하고 5초 이상 cold sample 원인을 구분 |
 | P1 | 스냅샷 보관량 재측정 | Planned | 7일 보관 작업 이후 테이블 크기와 dead tuple을 재측정하고 필요한 경우 온라인 정비 결정 |
@@ -39,6 +40,8 @@
 - Account Realtime tests confirm immediate wallet patching and one account-state refresh for a wallet/position/scheduled-order event burst.
 - Vercel production deployment `dpl_BEWJiGQXL11JiVq3QBT67dCBBiAZ` is active at `trg.life`; the protected account-state route returns the expected HTTP 401 contract without a session.
 - The production page rendered 50 real TOP rows at 1280px with no horizontal overflow or visible error state after the release.
+- Supabase API v33 and Vercel production deployment `dpl_DjVL2NTAo8oy57D6GfKJRk8REuqc` are active. The frontend now exposes a restored Supabase token before `/api/auth/me` completes, loads the compact account state before the full game bootstrap, and limits that priority server query to open positions plus the latest 30 records while parallelizing independent database reads.
+- All 488 tests, the production build, ESLint with zero errors, remote database lint, API health, and the protected account-state HTTP 401 contract pass. The final production bundle contains the new provisional-auth and account-state paths, and the live page renders 50 real rows at 1280px without horizontal overflow or a visible loading error.
 - A production KR Cron run created run `11032` and updated `completed_at` after its signal writes completed.
 - KR/US/JP public bootstrap responses returned HTTP 200 from Tokyo; warm samples were approximately 0.25–0.41 seconds.
 - Production rendered 50 real TOP rows at 1280px with no horizontal overflow, visible error, console warning, or console error.

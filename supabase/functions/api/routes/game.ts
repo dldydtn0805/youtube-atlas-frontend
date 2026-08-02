@@ -117,20 +117,46 @@ async function listSerializedPositions(
 async function buildGameAccountState(
   context: RequestContext,
   userId: number,
+  options: { includeCurrentSeason?: boolean } = {},
 ) {
   const season = await ensureActiveSeason(context.service);
-  const positions = await getPositionRows(context.service, {
-    seasonId: season.id,
-    userId,
-  });
-  const [wallet, signals, pendingOrders, priceAnchors, tiers] =
-    await Promise.all([
-      ensureWallet(context.service, season, userId),
-      getSignalsForPositions(context.service, positions),
-      getPendingOrders(context.service, season.id, userId),
-      loadPriceAnchors(context.service),
-      loadSeasonTiers(context.service, season.id),
-    ]);
+  const [
+    openPositions,
+    recentPositions,
+    wallet,
+    pendingOrders,
+    priceAnchors,
+    tiers,
+    gameSettings,
+  ] = await Promise.all([
+    getPositionRows(context.service, {
+      seasonId: season.id,
+      status: 'OPEN',
+      userId,
+    }),
+    getPositionRows(context.service, {
+      limit: 30,
+      seasonId: season.id,
+      userId,
+    }),
+    ensureWallet(context.service, season, userId),
+    getPendingOrders(context.service, season.id, userId),
+    loadPriceAnchors(context.service),
+    loadSeasonTiers(context.service, season.id),
+    options.includeCurrentSeason
+      ? loadGameSettings(context.service)
+      : Promise.resolve(null),
+  ]);
+  const positionsById = new Map(
+    [...openPositions, ...recentPositions].map((position) => [
+      position.id,
+      position,
+    ]),
+  );
+  const signals = await getSignalsForPositions(
+    context.service,
+    [...positionsById.values()],
+  );
   const signalsByPosition = gamePositionSignalMap(signals);
   const pendingOrderByPositionId = new Map<number, ScheduledOrderRow>();
 
@@ -140,31 +166,64 @@ async function buildGameAccountState(
     }
   });
 
-  const serializedPositions = positions.map((position) =>
+  const serializeAccountPosition = (position: GamePositionRow) =>
     serializePosition(
       position,
       getGamePositionSignal(signalsByPosition, position),
       pendingOrderByPositionId.get(position.id),
       priceAnchors,
-    ),
-  );
+    );
   const walletSummary = walletResponse(
     wallet,
-    positions,
+    openPositions,
     (position) => getGamePositionSignal(signalsByPosition, position),
     priceAnchors,
   );
+  const tierProgress = tierProgressResponse(
+    season,
+    walletSummary.totalAssetPoints,
+    tiers,
+  );
+  const currentTier = resolveTier(walletSummary.totalAssetPoints, tiers);
+  const nextTier = tiers.find(
+    (tier) => walletSummary.totalAssetPoints < tier.minScore,
+  ) ?? null;
 
   return {
-    openPositions: serializedPositions.filter(
-      (position) => position.status === 'OPEN',
-    ),
-    positionHistory: serializedPositions.slice(0, 30),
-    tierProgress: tierProgressResponse(
-      season,
-      walletSummary.totalAssetPoints,
-      tiers,
-    ),
+    ...(gameSettings
+      ? {
+          currentSeason: {
+            endAt: season.end_at,
+            inventorySlots: {
+              baseSlots: season.max_open_positions,
+              currentTier: tierResponse(currentTier),
+              maxSlots:
+                tiers.at(-1)?.inventorySlots ?? currentTier.inventorySlots,
+              nextTier: nextTier ? tierResponse(nextTier) : null,
+              tiers: tiers.map(tierResponse),
+              totalSlots: currentTier.inventorySlots,
+            },
+            maxOpenPositions: currentTier.inventorySlots,
+            minHoldSeconds: season.min_hold_seconds,
+            notifications: [],
+            rankPointMultiplier: season.rank_point_multiplier,
+            regionCode: season.region_code,
+            seasonId: season.id,
+            seasonName: season.name,
+            scheduledSellDefaultProfitRatePercent:
+              gameSettings.scheduledSellDefaultProfitRatePercent,
+            scheduledSellProfitRatePresets:
+              gameSettings.scheduledSellProfitRatePresets,
+            startAt: season.start_at,
+            startingBalancePoints: season.starting_balance_points,
+            status: season.status,
+            wallet: walletSummary,
+          },
+        }
+      : {}),
+    openPositions: openPositions.map(serializeAccountPosition),
+    positionHistory: recentPositions.map(serializeAccountPosition),
+    tierProgress,
     updatedAt: (wallet as GameWalletRow).updated_at,
     wallet: walletSummary,
   };
@@ -754,7 +813,9 @@ export async function handleGameRoute(context: RequestContext, method: string, p
   if (path === '/api/game/account-state' && method === 'GET') {
     const startedAt = performance.now();
     const { profile } = await requireAuth(context);
-    const state = await buildGameAccountState(context, profile.id);
+    const state = await buildGameAccountState(context, profile.id, {
+      includeCurrentSeason: true,
+    });
 
     return json(state, 200, {
       'Cache-Control': 'private, no-store',

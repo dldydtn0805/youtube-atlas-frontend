@@ -423,6 +423,7 @@ export interface SellGamePositionResponse {
 }
 
 export interface GameAccountState {
+  currentSeason?: GameCurrentSeason;
   openPositions: GamePosition[];
   positionHistory: GamePosition[];
   tierProgress: GameTierProgress;

@@ -88,7 +88,8 @@ interface ApiGameBootstrap {
   tierProgress: ApiGameTierProgress;
 }
 
-type ApiGameAccountState = Omit<GameAccountState, 'tierProgress'> & {
+type ApiGameAccountState = Omit<GameAccountState, 'currentSeason' | 'tierProgress'> & {
+  currentSeason?: ApiGameCurrentSeason;
   tierProgress: ApiGameTierProgress;
 };
 
@@ -162,6 +163,9 @@ function normalizeGameAccountState(
 ): GameAccountState {
   return {
     ...state,
+    currentSeason: state.currentSeason
+      ? normalizeGameCurrentSeason(state.currentSeason)
+      : undefined,
     tierProgress: normalizeGameTierProgress(state.tierProgress),
   };
 }
