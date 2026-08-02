@@ -422,10 +422,35 @@ export interface SellGamePositionResponse {
   soldAt: string;
 }
 
+export interface GameAccountState {
+  openPositions: GamePosition[];
+  positionHistory: GamePosition[];
+  tierProgress: GameTierProgress;
+  updatedAt: string;
+  wallet: GameWallet;
+}
+
+export interface BuyGamePositionResponse {
+  positionId: number;
+  state: GameAccountState;
+}
+
+export interface SellGamePositionsResponse {
+  sales: SellGamePositionResponse[];
+  state: GameAccountState;
+}
+
+export interface SellSingleGamePositionResponse {
+  sale: SellGamePositionResponse;
+  state: GameAccountState;
+}
+
 export interface GameRealtimeEvent {
   eventType: string;
   regionCode: string;
   seasonId: number | null;
   capturedAt: string | null;
   occurredAt: string | null;
+  resource?: 'market' | 'positions' | 'scheduled-orders' | 'wallet';
+  wallet?: Partial<GameWallet>;
 }

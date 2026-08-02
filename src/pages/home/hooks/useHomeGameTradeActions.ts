@@ -4,7 +4,6 @@ import type {
   CreateGamePositionInput,
   GameCurrentSeason,
   GameMarketVideo,
-  SellGamePositionResponse,
   SellGamePositionsInput,
 } from '../../../features/game/types';
 import { ApiRequestError } from '../../../lib/api';
@@ -23,7 +22,7 @@ interface UseHomeGameTradeActionsOptions {
   maxBuyQuantity: number;
   maxSellQuantity: number;
   mutateBuyGamePosition: (input: CreateGamePositionInput) => Promise<unknown>;
-  mutateSellGamePositions: (input: SellGamePositionsInput) => Promise<SellGamePositionResponse[]>;
+  mutateSellGamePositions: (input: SellGamePositionsInput) => Promise<unknown>;
   onBuySuccess?: () => Promise<void> | void;
   onSellSuccess?: () => Promise<void> | void;
   selectedOpenPositionId?: number | null;

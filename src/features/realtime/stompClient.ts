@@ -60,6 +60,20 @@ function toNotification(payload: Record<string, unknown>) {
   };
 }
 
+function toFiniteNumber(value: unknown) {
+  const parsedValue = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsedValue) ? parsedValue : undefined;
+}
+
+function toWalletUpdate(payload: Record<string, unknown>) {
+  return {
+    balancePoints: toFiniteNumber(payload.balance_points),
+    realizedPnlPoints: toFiniteNumber(payload.realized_pnl_points),
+    reservedPoints: toFiniteNumber(payload.reserved_points),
+    seasonId: toFiniteNumber(payload.season_id),
+  };
+}
+
 function createTopicChannel(topic: string) {
   if (!supabase) {
     return null;
@@ -117,27 +131,69 @@ function createTopicChannel(topic: string) {
         dispatchMessage(topic, toNotification(payload.new));
       },
     );
-  } else if (topic.startsWith('/topic/game/')) {
-    const regionCode = topic.slice('/topic/game/'.length).toUpperCase();
+  } else if (topic === '/user/queue/game/account') {
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'game_wallets',
+      },
+      (payload) => {
+        const walletRow = payload.new as Record<string, unknown>;
+        dispatchMessage(topic, {
+          capturedAt: null,
+          eventType: 'account-updated',
+          occurredAt: walletRow.updated_at ?? new Date().toISOString(),
+          regionCode: 'GLOBAL',
+          resource: 'wallet',
+          seasonId: toFiniteNumber(walletRow.season_id) ?? null,
+          wallet: toWalletUpdate(walletRow),
+        });
+      },
+    );
 
     channel.on(
       'postgres_changes',
       {
         event: '*',
-        filter: `region_code=eq.${regionCode}`,
         schema: 'public',
         table: 'game_positions',
       },
-      () => {
+      (payload) => {
+        const positionRow = (payload.new ?? payload.old) as Record<string, unknown>;
         dispatchMessage(topic, {
           capturedAt: null,
-          eventType: 'wallet-updated',
+          eventType: 'account-updated',
           occurredAt: new Date().toISOString(),
-          regionCode,
-          seasonId: null,
+          regionCode: positionRow.region_code ?? 'GLOBAL',
+          resource: 'positions',
+          seasonId: toFiniteNumber(positionRow.season_id) ?? null,
         });
       },
     );
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'game_scheduled_sell_orders',
+      },
+      (payload) => {
+        const orderRow = (payload.new ?? payload.old) as Record<string, unknown>;
+        dispatchMessage(topic, {
+          capturedAt: null,
+          eventType: 'account-updated',
+          occurredAt: orderRow.updated_at ?? new Date().toISOString(),
+          regionCode: orderRow.region_code ?? 'GLOBAL',
+          resource: 'scheduled-orders',
+          seasonId: toFiniteNumber(orderRow.season_id) ?? null,
+        });
+      },
+    );
+  } else if (topic.startsWith('/topic/game/')) {
+    const regionCode = topic.slice('/topic/game/'.length).toUpperCase();
 
     channel.on(
       'postgres_changes',

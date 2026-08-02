@@ -2,7 +2,7 @@
 
 ## Goal
 
-첫 화면과 순위 갱신이 느려 유료 전환을 방해하는 구간을 먼저 줄인다. 기능 범위는 홈 초기 로딩, 게임 초기 로딩, 순위 동기화 Realtime, Edge Function과 데이터베이스 간 왕복으로 제한한다.
+첫 화면, 순위 갱신, 거래 직후 잔액·보유 내역 반영이 느려 유료 전환을 방해하는 구간을 먼저 줄인다. 기능 범위는 홈 초기 로딩, 게임 초기 로딩, 거래 응답, 순위·계정 Realtime, Edge Function과 데이터베이스 간 왕복으로 제한한다.
 
 ## Measured baseline
 
@@ -10,6 +10,7 @@
 - 공개 홈은 카테고리, TOP, 음악, 급상승, 상승, 신규, 게임 마켓을 별도 요청으로 시작했다.
 - 로그인 홈은 인증·프로필·활성 시즌·설정과 게임 데이터를 여러 Edge 요청에서 반복 조회했다.
 - 한 번의 순위 동기화가 `video_trend_signals`의 행별 Realtime 변경을 발생시켜 활성 게임 쿼리를 반복 무효화했다.
+- 매수·매도 한 번에 mutation, 홈 성공 콜백, `game_positions` Realtime이 각각 최대 10개 게임 쿼리를 다시 요청해 확정 잔액이 전체 재조회 뒤에야 보였다.
 - `video_trend_snapshots`가 데이터베이스에서 가장 큰 테이블이며 autovacuum 임계값을 더 촘촘하게 관리할 필요가 있었다.
 
 ## Priority and status
@@ -22,6 +23,8 @@
 | P0 | Tokyo 리전 고정 | Done | 브라우저 API와 KR/US/JP 동기화·정산 Cron이 `ap-northeast-1` 호출을 사용 |
 | P0 | 요청 단위 중복 조회 제거 | Done | 인증, 시즌, 게임 설정, 가격 앵커, 티어 조회 Promise를 요청 안에서 재사용 |
 | P0 | 안전한 DB 유지보수 | Done | 큰 추세 테이블의 vacuum/analyze scale factor를 낮추고 파괴적인 재작성은 하지 않음 |
+| P0 | 거래 직후 계정 상태 즉시 반영 | Done | 매수·매도 응답의 확정 wallet·포지션·티어를 React Query 캐시에 동기 반영 |
+| P0 | 계정 Realtime 병합 | Done | wallet·position·예약 주문 이벤트를 전용 채널에서 180ms 동안 합쳐 계정 상태를 한 번만 재조회 |
 | P1 | 로그인 사용자의 운영 부트스트랩 계측 | Planned | 실제 로그인 세션에서 초기 game bootstrap 시간과 후속 중복 요청이 0인지 확인 |
 | P1 | Edge cold start 추적 | Planned | `Server-Timing`과 함수 로그로 국가별 p50/p95를 수집하고 5초 이상 cold sample 원인을 구분 |
 | P1 | 스냅샷 보관량 재측정 | Planned | 7일 보관 작업 이후 테이블 크기와 dead tuple을 재측정하고 필요한 경우 온라인 정비 결정 |
@@ -31,6 +34,11 @@
 
 - Migration `20260802040000` applied with remote migration parity and zero database lint errors.
 - Supabase API v31 and `sync-trending` v2 are active.
+- Migration `20260802050000` is applied, database lint reports zero schema errors, and Supabase API v32 is active.
+- Buy and sell mutation tests confirm that the authoritative response replaces wallet, open-position, history, and tier caches without waiting for a full refetch.
+- Account Realtime tests confirm immediate wallet patching and one account-state refresh for a wallet/position/scheduled-order event burst.
+- Vercel production deployment `dpl_BEWJiGQXL11JiVq3QBT67dCBBiAZ` is active at `trg.life`; the protected account-state route returns the expected HTTP 401 contract without a session.
+- The production page rendered 50 real TOP rows at 1280px with no horizontal overflow or visible error state after the release.
 - A production KR Cron run created run `11032` and updated `completed_at` after its signal writes completed.
 - KR/US/JP public bootstrap responses returned HTTP 200 from Tokyo; warm samples were approximately 0.25–0.41 seconds.
 - Production rendered 50 real TOP rows at 1280px with no horizontal overflow, visible error, console warning, or console error.
@@ -41,4 +49,4 @@
 - Do not drop indexes or run `VACUUM FULL` from an application migration without a separate maintenance window and fresh evidence.
 - Do not expose service-role or Cron secrets to the browser or Vercel client variables.
 - Keep the existing API response contracts and fall back to the individual queries when a bootstrap request fails.
-- Preserve all three supported market subscriptions—KR, US, and JP—while coalescing each completed sync to one refresh event.
+- Subscribe to only the selected market region and switch the subscription with the country selection; keep the global account channel separate from market updates.

@@ -1,9 +1,11 @@
 import { fetchApi } from '../../lib/api';
 import type {
   AchievementTitleCollection,
+  BuyGamePositionResponse,
   CreateScheduledSellOrderInput,
   CreateGamePositionInput,
   GameCurrentSeason,
+  GameAccountState,
   GameHighlight,
   GameLeaderboardEntry,
   GameMarketVideo,
@@ -16,7 +18,8 @@ import type {
   GameTierProgress,
   SellGamePreviewResponse,
   SellGamePositionsInput,
-  SellGamePositionResponse,
+  SellGamePositionsResponse,
+  SellSingleGamePositionResponse,
 } from './types';
 import type { YouTubeCategorySection } from '../youtube/types';
 import {
@@ -85,6 +88,25 @@ interface ApiGameBootstrap {
   tierProgress: ApiGameTierProgress;
 }
 
+type ApiGameAccountState = Omit<GameAccountState, 'tierProgress'> & {
+  tierProgress: ApiGameTierProgress;
+};
+
+type ApiBuyGamePositionResponse = Omit<BuyGamePositionResponse, 'state'> & {
+  state: ApiGameAccountState;
+};
+
+type ApiSellGamePositionsResponse = Omit<SellGamePositionsResponse, 'state'> & {
+  state: ApiGameAccountState;
+};
+
+type ApiSellSingleGamePositionResponse = Omit<
+  SellSingleGamePositionResponse,
+  'state'
+> & {
+  state: ApiGameAccountState;
+};
+
 export interface GameBootstrap {
   achievementTitles: AchievementTitleCollection;
   buyableMarketChart: YouTubeCategorySection;
@@ -132,6 +154,15 @@ function normalizeGameTierProgress(progress: ApiGameTierProgress): GameTierProgr
           ? progress.highlightScore
           : 0,
     tiers: progress.tiers.map(normalizeGameTier),
+  };
+}
+
+function normalizeGameAccountState(
+  state: ApiGameAccountState,
+): GameAccountState {
+  return {
+    ...state,
+    tierProgress: normalizeGameTierProgress(state.tierProgress),
   };
 }
 
@@ -220,6 +251,16 @@ export async function fetchGameBootstrap(
     ),
     tierProgress: normalizeGameTierProgress(bootstrap.tierProgress),
   };
+}
+
+export async function fetchGameAccountState(
+  accessToken: string,
+): Promise<GameAccountState> {
+  const state = await fetchApi<ApiGameAccountState>('/api/game/account-state', {
+    headers: createAuthorizationHeader(accessToken),
+  });
+
+  return normalizeGameAccountState(state);
 }
 
 export async function fetchCurrentGameSeason(accessToken: string, regionCode: string) {
@@ -417,7 +458,7 @@ export async function fetchGameLeaderboardPositionRankHistory(
 }
 
 export async function buyGamePosition(accessToken: string, input: CreateGamePositionInput) {
-  return fetchApi<GamePosition[]>('/api/game/positions', {
+  const response = await fetchApi<ApiBuyGamePositionResponse>('/api/game/positions', {
     method: 'POST',
     headers: {
       ...createAuthorizationHeader(accessToken),
@@ -425,17 +466,30 @@ export async function buyGamePosition(accessToken: string, input: CreateGamePosi
     },
     body: JSON.stringify(input),
   });
+
+  return {
+    ...response,
+    state: normalizeGameAccountState(response.state),
+  } satisfies BuyGamePositionResponse;
 }
 
-export async function sellGamePosition(accessToken: string, positionId: number) {
-  return fetchApi<SellGamePositionResponse>(`/api/game/positions/${positionId}/sell`, {
+export async function sellGamePosition(
+  accessToken: string,
+  positionId: number,
+) {
+  const response = await fetchApi<ApiSellSingleGamePositionResponse>(`/api/game/positions/${positionId}/sell`, {
     method: 'POST',
     headers: createAuthorizationHeader(accessToken),
   });
+
+  return {
+    ...response,
+    state: normalizeGameAccountState(response.state),
+  } satisfies SellSingleGamePositionResponse;
 }
 
 export async function sellGamePositions(accessToken: string, input: SellGamePositionsInput) {
-  return fetchApi<SellGamePositionResponse[]>('/api/game/positions/sell', {
+  const response = await fetchApi<ApiSellGamePositionsResponse>('/api/game/positions/sell', {
     method: 'POST',
     headers: {
       ...createAuthorizationHeader(accessToken),
@@ -443,6 +497,11 @@ export async function sellGamePositions(accessToken: string, input: SellGamePosi
     },
     body: JSON.stringify(input),
   });
+
+  return {
+    ...response,
+    state: normalizeGameAccountState(response.state),
+  } satisfies SellGamePositionsResponse;
 }
 
 export async function fetchSellGamePreview(accessToken: string, input: SellGamePositionsInput) {

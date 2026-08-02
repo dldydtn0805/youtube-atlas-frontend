@@ -101,7 +101,6 @@ import {
 import { useAuth } from "../../features/auth/useAuth";
 import { usePublicHomeBootstrap } from "../../features/homeBootstrap/queries";
 import {
-  gameQueryKeys,
   useAchievementTitles,
   useBuyableMarketChart,
   useBuyGamePosition,
@@ -1757,61 +1756,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const tradeSelectedSellPositionId = isTradeTargetActive
     ? tradeTargetSellPositionId
     : selectedSellPositionId;
-  const refetchCurrentChartAfterBuy = useCallback(async () => {
-    const invalidations: Array<Promise<unknown>> = [];
-
-    if (effectiveChartView === "buyable" && accessToken) {
-      invalidations.push(
-        queryClient.invalidateQueries({
-          queryKey: gameQueryKeys.buyableMarketChart(
-            accessToken,
-            selectedRegionCode,
-          ),
-          refetchType: "active",
-        }),
-      );
-    } else if (effectiveChartView === "music") {
-      invalidations.push(
-        queryClient.invalidateQueries({
-          queryKey: ["musicTopVideos", selectedRegionCode],
-          refetchType: "active",
-        }),
-      );
-    } else if (effectiveChartView === "realtime-surging") {
-      invalidations.push(
-        queryClient.invalidateQueries({
-          queryKey: ["realtimeSurging", selectedRegionCode],
-          refetchType: "active",
-        }),
-      );
-    } else if (effectiveChartView === "new-chart-entries") {
-      invalidations.push(
-        queryClient.invalidateQueries({
-          queryKey: ["newChartEntries", selectedRegionCode],
-          refetchType: "active",
-        }),
-      );
-    } else if (effectiveChartView !== "liked") {
-      invalidations.push(
-        queryClient.invalidateQueries({
-          queryKey: [
-            "popularVideosByCategory",
-            selectedRegionCode,
-            selectedCategory?.id,
-          ],
-          refetchType: "active",
-        }),
-      );
-    }
-
-    await Promise.all(invalidations);
-  }, [
-    accessToken,
-    effectiveChartView,
-    queryClient,
-    selectedCategory?.id,
-    selectedRegionCode,
-  ]);
   const refetchGameTradePanels = useCallback(async () => {
     await Promise.all([
       refetchOpenGamePositions(),
@@ -1845,13 +1789,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
       refetchScheduledSellOrders,
     ],
   );
-  const refetchGameDataAfterBuy = useCallback(async () => {
-    await Promise.all([
-      refetchCurrentChartAfterBuy(),
-      refetchGameTradePanels(),
-    ]);
-  }, [refetchCurrentChartAfterBuy, refetchGameTradePanels]);
-
   const {
     closeTradeModal: closeTradeModalFromFlow,
     handleBuyCurrentVideo,
@@ -1895,9 +1832,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     maxSellQuantity: tradeMaxSellQuantity,
     mutateBuyGamePosition: buyGamePositionMutation.mutateAsync,
     mutateSellGamePositions: sellGamePositionsMutation.mutateAsync,
-    onBuySuccess: refetchGameDataAfterBuy,
-    onSellSuccess: refetchGameTradePanels,
-    onScheduledSellSuccess: refetchGameTradePanels,
     scheduledSellDefaultProfitRatePercent:
       currentGameSeason?.scheduledSellDefaultProfitRatePercent,
     selectedOpenPositionId: tradeSelectedSellPositionId,
@@ -1984,7 +1918,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     async (orderId: number) => {
       try {
         await cancelScheduledSellOrderMutation.mutateAsync(orderId);
-        await refetchGameTradePanels();
       } catch (error) {
         if (
           error instanceof ApiRequestError &&
@@ -2004,7 +1937,6 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     [
       cancelScheduledSellOrderMutation,
       logout,
-      refetchGameTradePanels,
       setGameActionStatus,
     ],
   );

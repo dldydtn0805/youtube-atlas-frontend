@@ -13,6 +13,7 @@ import type { YouTubeCategorySection } from '../youtube/types';
 import {
   cancelScheduledSellOrder,
   fetchAchievementTitles,
+  fetchGameAccountState,
   fetchBuyableMarketChart,
   buyGamePosition,
   createScheduledSellOrder,
@@ -43,10 +44,12 @@ import type {
   CreateScheduledSellOrderInput,
   CreateGamePositionInput,
   GameCurrentSeason,
+  GameAccountState,
   GameNotification,
   GamePosition,
   GameScheduledSellOrder,
   GameSeasonResult,
+  GameWallet,
   SellGamePositionsInput,
 } from './types';
 
@@ -58,6 +61,7 @@ function getGameScopeQueryKey(regionCode: string | null) {
 }
 
 export const gameQueryKeys = {
+  accountState: (accessToken: string | null) => ['game', 'accountState', accessToken] as const,
   buyableMarketChart: (accessToken: string | null, regionCode: string | null) =>
     ['game', 'buyableMarketChart', accessToken, regionCode] as const,
   currentSeason: (accessToken: string | null, regionCode: string | null) =>
@@ -463,6 +467,135 @@ export async function invalidateGameQueries(
   }
 
   await Promise.all(invalidations);
+}
+
+export function applyGameAccountState(
+  queryClient: QueryClient,
+  accessToken: string | null,
+  state: GameAccountState,
+) {
+  if (!accessToken) {
+    return;
+  }
+
+  queryClient.setQueryData(gameQueryKeys.accountState(accessToken), state);
+  queryClient.setQueriesData<GameCurrentSeason>(
+    { queryKey: ['game', 'currentSeason', accessToken] },
+    (season) => (season ? { ...season, wallet: state.wallet } : season),
+  );
+  queryClient.setQueriesData(
+    { queryKey: ['game', 'tierProgress', accessToken] },
+    state.tierProgress,
+  );
+  queryClient.setQueriesData<GamePosition[]>(
+    { queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, 'OPEN'] },
+    state.openPositions,
+  );
+  queryClient.setQueriesData<GamePosition[]>(
+    { queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, ''] },
+    state.positionHistory,
+  );
+}
+
+export function applyGameWalletRealtimeUpdate(
+  queryClient: QueryClient,
+  accessToken: string | null,
+  walletUpdate: Partial<GameWallet>,
+) {
+  if (!accessToken) {
+    return;
+  }
+
+  queryClient.setQueriesData<GameCurrentSeason>(
+    { queryKey: ['game', 'currentSeason', accessToken] },
+    (season) =>
+      season
+        ? {
+            ...season,
+            wallet: {
+              ...season.wallet,
+              ...walletUpdate,
+            },
+          }
+        : season,
+  );
+}
+
+export async function refreshGameAccountState(
+  queryClient: QueryClient,
+  accessToken: string | null,
+) {
+  if (!accessToken) {
+    return null;
+  }
+
+  const state = await queryClient.fetchQuery({
+    queryKey: gameQueryKeys.accountState(accessToken),
+    queryFn: () => fetchGameAccountState(accessToken),
+    staleTime: 0,
+  });
+  applyGameAccountState(queryClient, accessToken, state);
+  return state;
+}
+
+async function refreshTradeDerivedQueries(
+  queryClient: QueryClient,
+  accessToken: string | null,
+  regionCode: string | null,
+) {
+  if (!accessToken) {
+    return;
+  }
+
+  const activeRefreshes = regionCode
+    ? [
+        queryClient.invalidateQueries({
+          queryKey: gameQueryKeys.market(accessToken, regionCode),
+          refetchType: 'active',
+        }),
+        queryClient.invalidateQueries({
+          queryKey: gameQueryKeys.buyableMarketChart(accessToken, regionCode),
+          refetchType: 'active',
+        }),
+      ]
+    : [];
+  const staleOnlyPrefixes = [
+    ['game', 'leaderboard', accessToken],
+    ['game', 'highlights', accessToken],
+    ['game', 'notifications', accessToken],
+    ['game', 'leaderboardPositions', accessToken],
+    ['game', 'leaderboardHighlights', accessToken],
+    ['game', 'leaderboardPositionRankHistory', accessToken],
+    gameQueryKeys.achievementTitles(accessToken),
+  ];
+
+  await Promise.all([
+    ...activeRefreshes,
+    ...staleOnlyPrefixes.map((queryKey) =>
+      queryClient.invalidateQueries({ queryKey, refetchType: 'none' }),
+    ),
+  ]);
+}
+
+async function refreshScheduledSellQueries(
+  queryClient: QueryClient,
+  accessToken: string | null,
+  regionCode: string,
+) {
+  if (!accessToken) {
+    return;
+  }
+
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: gameQueryKeys.scheduledSellOrders(accessToken, regionCode),
+      refetchType: 'active',
+    }),
+    queryClient.invalidateQueries({
+      queryKey: ['game', 'positions', accessToken, GAME_SCOPE_QUERY_KEY, 'OPEN'],
+      refetchType: 'active',
+    }),
+  ]);
 }
 
 export function useGameBootstrap(
@@ -1011,12 +1144,9 @@ export function useBuyGamePosition(accessToken: string | null) {
 
       return buyGamePosition(accessToken, input);
     },
-    onSuccess: (_data, input) => {
-      void invalidateGameQueries(queryClient, {
-        accessToken,
-        includeLeaderboardPositions: true,
-        regionCode: input.regionCode,
-      });
+    onSuccess: (data, input) => {
+      applyGameAccountState(queryClient, accessToken, data.state);
+      void refreshTradeDerivedQueries(queryClient, accessToken, input.regionCode);
     },
   });
 }
@@ -1032,11 +1162,9 @@ export function useSellGamePosition(accessToken: string | null) {
 
       return sellGamePosition(accessToken, positionId);
     },
-    onSuccess: () => {
-      void invalidateGameQueries(queryClient, {
-        accessToken,
-        includeLeaderboardPositions: true,
-      });
+    onSuccess: (data) => {
+      applyGameAccountState(queryClient, accessToken, data.state);
+      void refreshTradeDerivedQueries(queryClient, accessToken, null);
     },
   });
 }
@@ -1098,12 +1226,9 @@ export function useSellGamePositions(accessToken: string | null) {
         queryClient.setQueryData(queryKey, positions);
       });
     },
-    onSuccess: (_data, input) => {
-      void invalidateGameQueries(queryClient, {
-        accessToken,
-        includeLeaderboardPositions: true,
-        regionCode: input.regionCode,
-      });
+    onSuccess: (data, input) => {
+      applyGameAccountState(queryClient, accessToken, data.state);
+      void refreshTradeDerivedQueries(queryClient, accessToken, input.regionCode);
     },
   });
 }
@@ -1166,11 +1291,7 @@ export function useCreateScheduledSellOrder(accessToken: string | null) {
       });
     },
     onSuccess: (_data, input) => {
-      void invalidateGameQueries(queryClient, {
-        accessToken,
-        includeLeaderboardPositions: true,
-        regionCode: input.regionCode,
-      });
+      void refreshScheduledSellQueries(queryClient, accessToken, input.regionCode);
     },
   });
 }
@@ -1241,11 +1362,7 @@ export function useCancelScheduledSellOrder(accessToken: string | null, regionCo
       });
     },
     onSuccess: () => {
-      void invalidateGameQueries(queryClient, {
-        accessToken,
-        includeLeaderboardPositions: true,
-        regionCode,
-      });
+      void refreshScheduledSellQueries(queryClient, accessToken, regionCode);
     },
   });
 }

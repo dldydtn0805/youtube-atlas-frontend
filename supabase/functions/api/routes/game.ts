@@ -41,6 +41,7 @@ import {
   tierResponse,
   walletResponse,
   type GamePositionRow,
+  type GameWalletRow,
   type ScheduledOrderRow,
 } from './game-helpers.ts';
 import {
@@ -111,6 +112,62 @@ async function listSerializedPositions(
       priceAnchors,
     ),
   );
+}
+
+async function buildGameAccountState(
+  context: RequestContext,
+  userId: number,
+) {
+  const season = await ensureActiveSeason(context.service);
+  const positions = await getPositionRows(context.service, {
+    seasonId: season.id,
+    userId,
+  });
+  const [wallet, signals, pendingOrders, priceAnchors, tiers] =
+    await Promise.all([
+      ensureWallet(context.service, season, userId),
+      getSignalsForPositions(context.service, positions),
+      getPendingOrders(context.service, season.id, userId),
+      loadPriceAnchors(context.service),
+      loadSeasonTiers(context.service, season.id),
+    ]);
+  const signalsByPosition = gamePositionSignalMap(signals);
+  const pendingOrderByPositionId = new Map<number, ScheduledOrderRow>();
+
+  pendingOrders.forEach((order) => {
+    if (!pendingOrderByPositionId.has(order.position_id)) {
+      pendingOrderByPositionId.set(order.position_id, order);
+    }
+  });
+
+  const serializedPositions = positions.map((position) =>
+    serializePosition(
+      position,
+      getGamePositionSignal(signalsByPosition, position),
+      pendingOrderByPositionId.get(position.id),
+      priceAnchors,
+    ),
+  );
+  const walletSummary = walletResponse(
+    wallet,
+    positions,
+    (position) => getGamePositionSignal(signalsByPosition, position),
+    priceAnchors,
+  );
+
+  return {
+    openPositions: serializedPositions.filter(
+      (position) => position.status === 'OPEN',
+    ),
+    positionHistory: serializedPositions.slice(0, 30),
+    tierProgress: tierProgressResponse(
+      season,
+      walletSummary.totalAssetPoints,
+      tiers,
+    ),
+    updatedAt: (wallet as GameWalletRow).updated_at,
+    wallet: walletSummary,
+  };
 }
 
 async function currentGameContext(context: RequestContext, marketRegionCode: string, userId: number) {
@@ -694,6 +751,17 @@ export async function handleGameRoute(context: RequestContext, method: string, p
     );
   }
 
+  if (path === '/api/game/account-state' && method === 'GET') {
+    const startedAt = performance.now();
+    const { profile } = await requireAuth(context);
+    const state = await buildGameAccountState(context, profile.id);
+
+    return json(state, 200, {
+      'Cache-Control': 'private, no-store',
+      'Server-Timing': `account-state;dur=${(performance.now() - startedAt).toFixed(1)}`,
+    });
+  }
+
   if (path === '/api/game/market/buyable-chart' && method === 'GET') {
     const { profile } = await requireAuth(context);
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
@@ -856,7 +924,7 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       throw new ApiError(409, 'market_price_unavailable', '현재 매수 가격을 계산할 수 없습니다.');
     }
 
-    const { error } = await context.service.rpc('atlas_buy_position', {
+    const { data: positionId, error } = await context.service.rpc('atlas_buy_position', {
       target_buy_captured_at: signal.captured_at,
       target_buy_rank: signal.current_rank,
       target_category_id: categoryId,
@@ -878,14 +946,10 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       throw error;
     }
 
-    return json(
-      await listSerializedPositions(context, {
-        seasonId: game.season.id,
-        status: 'OPEN',
-        userId: profile.id,
-      }),
-      201,
-    );
+    return json({
+      positionId,
+      state: await buildGameAccountState(context, profile.id),
+    }, 201);
   }
 
   if (path === '/api/game/positions/sell-preview' && method === 'POST') {
@@ -895,7 +959,15 @@ export async function handleGameRoute(context: RequestContext, method: string, p
 
   if (path === '/api/game/positions/sell' && method === 'POST') {
     const { profile } = await requireAuth(context);
-    return json(await executeSell(context, profile.id, await readJson<SellBody>(context.request)));
+    const sales = await executeSell(
+      context,
+      profile.id,
+      await readJson<SellBody>(context.request),
+    );
+    return json({
+      sales,
+      state: await buildGameAccountState(context, profile.id),
+    });
   }
 
   const singleSellMatch = path.match(/^\/api\/game\/positions\/(\d+)\/sell$/);
@@ -915,7 +987,10 @@ export async function handleGameRoute(context: RequestContext, method: string, p
       positionId,
       quantity: position.quantity,
     });
-    return json(responses[0]);
+    return json({
+      sale: responses[0],
+      state: await buildGameAccountState(context, profile.id),
+    });
   }
 
   const myHistoryMatch = path.match(/^\/api\/game\/positions\/(\d+)\/rank-history$/);

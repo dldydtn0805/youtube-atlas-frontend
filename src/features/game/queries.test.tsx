@@ -4,13 +4,17 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type {
   CreateScheduledSellOrderInput,
+  GameAccountState,
+  GameCurrentSeason,
   GamePosition,
   GameScheduledSellOrder,
   SellGamePositionsInput,
+  SellGamePositionsResponse,
 } from './types';
 import type { GameBootstrap } from './api';
 import {
   gameQueryKeys,
+  useBuyGamePosition,
   useCancelScheduledSellOrder,
   useCreateScheduledSellOrder,
   useGameBootstrap,
@@ -18,11 +22,13 @@ import {
 } from './queries';
 
 const {
+  buyGamePositionMock,
   cancelScheduledSellOrderMock,
   createScheduledSellOrderMock,
   fetchGameBootstrapMock,
   sellGamePositionsMock,
 } = vi.hoisted(() => ({
+  buyGamePositionMock: vi.fn(),
   cancelScheduledSellOrderMock: vi.fn(),
   createScheduledSellOrderMock: vi.fn(),
   fetchGameBootstrapMock: vi.fn(),
@@ -34,7 +40,7 @@ vi.mock('./api', async () => {
 
   return {
     ...actual,
-    buyGamePosition: vi.fn(),
+    buyGamePosition: buyGamePositionMock,
     cancelScheduledSellOrder: cancelScheduledSellOrderMock,
     createScheduledSellOrder: createScheduledSellOrderMock,
     deleteGameNotification: vi.fn(),
@@ -174,6 +180,26 @@ function createScheduledOrder(overrides: Partial<GameScheduledSellOrder> = {}): 
   };
 }
 
+function createAccountState(overrides: Partial<GameAccountState> = {}): GameAccountState {
+  return {
+    openPositions: [createOpenPosition()],
+    positionHistory: [createHistoryPosition()],
+    tierProgress: {
+      highlightScore: 40,
+      totalAssetPoints: 15000,
+    },
+    updatedAt: '2026-04-26T01:00:00.000Z',
+    wallet: {
+      balancePoints: 12000,
+      realizedPnlPoints: 2000,
+      reservedPoints: 0,
+      seasonId: 3,
+      totalAssetPoints: 15000,
+    },
+    ...overrides,
+  } as unknown as GameAccountState;
+}
+
 describe('game query scope', () => {
   it('shares season and portfolio caches across countries', () => {
     expect(gameQueryKeys.currentSeason('token', 'KR')).toEqual(
@@ -196,6 +222,7 @@ describe('game query scope', () => {
 
 describe('useGameBootstrap', () => {
   afterEach(() => {
+    buyGamePositionMock.mockReset();
     fetchGameBootstrapMock.mockReset();
   });
 
@@ -270,25 +297,15 @@ describe('game queries optimistic mutations', () => {
       quantity: 4,
       regionCode: 'KR',
     };
-    const deferred = createDeferred<{
-      balancePoints: number;
-      buyRank: number;
-      highlightScore: number;
-      pnlPoints: number;
-      positionId: number;
-      quantity: number;
-      rankDiff: number;
-      sellPricePoints: number;
-      sellRank: number;
-      settledPoints: number;
-      soldAt: string;
-      stakePoints: number;
-      videoId: string;
-    }[]>();
+    const deferred = createDeferred<SellGamePositionsResponse>();
     sellGamePositionsMock.mockReturnValue(deferred.promise);
 
     queryClient.setQueryData([...gameQueryKeys.positions('token-1', 'KR', 'OPEN'), null], [createOpenPosition()]);
     queryClient.setQueryData([...gameQueryKeys.positions('token-1', 'KR', ''), 30], [createHistoryPosition()]);
+    queryClient.setQueryData(
+      gameQueryKeys.currentSeason('token-1', 'KR'),
+      { wallet: createAccountState().wallet } as GameCurrentSeason,
+    );
 
     const { result } = renderHook(() => useSellGamePositions('token-1'), { wrapper });
 
@@ -319,8 +336,12 @@ describe('game queries optimistic mutations', () => {
       ]);
     });
 
-    deferred.resolve([
-      {
+    const confirmedState = createAccountState({
+      openPositions: [createOpenPosition({ quantity: 6, stakePoints: 6000 })],
+      positionHistory: [createHistoryPosition({ id: 102, quantity: 4 })],
+    });
+    deferred.resolve({
+      sales: [{
         balancePoints: 12000,
         buyRank: 12,
         highlightScore: 40,
@@ -334,12 +355,66 @@ describe('game queries optimistic mutations', () => {
         soldAt: '2026-04-26T01:00:00.000Z',
         stakePoints: 4000,
         videoId: 'video-1',
-      },
-    ]);
+      }],
+      state: confirmedState,
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
+    expect(
+      queryClient.getQueryData([...gameQueryKeys.positions('token-1', 'KR', 'OPEN'), null]),
+    ).toEqual(confirmedState.openPositions);
+    expect(
+      queryClient.getQueryData([...gameQueryKeys.positions('token-1', 'KR', ''), 30]),
+    ).toEqual(confirmedState.positionHistory);
+    expect(
+      queryClient.getQueryData<GameCurrentSeason>(
+        gameQueryKeys.currentSeason('token-1', 'KR'),
+      )?.wallet,
+    ).toEqual(confirmedState.wallet);
+  });
+
+  it('applies the confirmed wallet and portfolio from a buy response immediately', async () => {
+    const queryClient = createQueryClient();
+    const wrapper = createWrapper(queryClient);
+    const confirmedState = createAccountState({
+      openPositions: [createOpenPosition({ id: 22, quantity: 1, stakePoints: 1000 })],
+      wallet: {
+        ...createAccountState().wallet,
+        balancePoints: 9000,
+      },
+    });
+    buyGamePositionMock.mockResolvedValue({ positionId: 22, state: confirmedState });
+    queryClient.setQueryData(
+      gameQueryKeys.currentSeason('token-1', 'KR'),
+      { wallet: { ...confirmedState.wallet, balancePoints: 10000 } } as GameCurrentSeason,
+    );
+    queryClient.setQueryData(
+      [...gameQueryKeys.positions('token-1', 'KR', 'OPEN'), null],
+      [],
+    );
+
+    const { result } = renderHook(() => useBuyGamePosition('token-1'), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        categoryId: '0',
+        quantity: 1,
+        regionCode: 'KR',
+        stakePoints: 1000,
+        videoId: 'video-1',
+      });
+    });
+
+    expect(
+      queryClient.getQueryData<GameCurrentSeason>(
+        gameQueryKeys.currentSeason('token-1', 'KR'),
+      )?.wallet.balancePoints,
+    ).toBe(9000);
+    expect(
+      queryClient.getQueryData([...gameQueryKeys.positions('token-1', 'KR', 'OPEN'), null]),
+    ).toEqual(confirmedState.openPositions);
   });
 
   it('adds a scheduled sell order optimistically and rolls back on failure', async () => {

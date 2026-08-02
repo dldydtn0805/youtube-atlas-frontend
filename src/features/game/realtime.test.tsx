@@ -4,7 +4,8 @@ import { act, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const topicHandlers = new Map<string, Set<(message: string) => void>>();
-const invalidateGameQueriesMock = vi.fn();
+const applyGameWalletRealtimeUpdateMock = vi.fn();
+const refreshGameAccountStateMock = vi.fn().mockResolvedValue(null);
 
 vi.mock('../realtime/stompClient', () => ({
   resetSharedRealtimeClientForTests: vi.fn(() => topicHandlers.clear()),
@@ -30,7 +31,8 @@ vi.mock('./queries', async () => {
 
   return {
     ...actual,
-    invalidateGameQueries: invalidateGameQueriesMock,
+    applyGameWalletRealtimeUpdate: applyGameWalletRealtimeUpdateMock,
+    refreshGameAccountState: refreshGameAccountStateMock,
   };
 });
 
@@ -47,40 +49,12 @@ function emitTopic(topic: string, payload: unknown) {
 describe('game realtime', () => {
   afterEach(() => {
     topicHandlers.clear();
-    invalidateGameQueriesMock.mockReset();
+    applyGameWalletRealtimeUpdateMock.mockReset();
+    refreshGameAccountStateMock.mockReset().mockResolvedValue(null);
+    vi.useRealTimers();
   });
 
-  it('invalidates game queries when a wallet update arrives from Supabase Realtime', async () => {
-    const { useGameRealtimeInvalidation } = await import('./realtime');
-    const queryClient = new QueryClient();
-
-    function HookHarness() {
-      useGameRealtimeInvalidation('token-1', 'KR');
-      return null;
-    }
-
-    render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
-    });
-
-    act(() => {
-      emitTopic('/topic/game/KR', {
-        capturedAt: '2026-04-11T10:00:00Z',
-        eventType: 'wallet-updated',
-        occurredAt: '2026-04-11T10:00:01Z',
-        regionCode: 'KR',
-        seasonId: 12,
-      });
-    });
-
-    expect(invalidateGameQueriesMock).toHaveBeenCalledWith(queryClient, {
-      accessToken: 'token-1',
-      includeLeaderboardPositions: true,
-      regionCode: 'KR',
-    });
-  });
-
-  it('coalesces only exact duplicate wallet updates', async () => {
+  it('subscribes only to the active market and one personal account channel', async () => {
     const { useGameRealtimeInvalidation } = await import('./realtime');
 
     function HookHarness() {
@@ -92,149 +66,141 @@ describe('game realtime', () => {
       wrapper: createWrapper(new QueryClient()),
     });
 
-    const event = {
-      capturedAt: '2026-04-11T10:00:00Z',
-      eventType: 'wallet-updated',
-      occurredAt: '2026-04-11T10:00:01Z',
-      regionCode: 'KR',
+    expect(topicHandlers.has('/topic/game/KR')).toBe(true);
+    expect(topicHandlers.has('/topic/game/US')).toBe(false);
+    expect(topicHandlers.has('/user/queue/game/account')).toBe(true);
+  });
+
+  it('patches wallet points immediately and refreshes authoritative account state once', async () => {
+    vi.useFakeTimers();
+    const { useGameRealtimeInvalidation } = await import('./realtime');
+    const queryClient = new QueryClient();
+    const wallet = {
+      balancePoints: 12000,
+      realizedPnlPoints: 2000,
+      reservedPoints: 0,
       seasonId: 12,
     };
 
-    act(() => {
-      emitTopic('/topic/game/KR', event);
-      emitTopic('/topic/game/KR', event);
-    });
-
-    expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('invalidates game queries when current-sync market demand changes', async () => {
-    const { useGameRealtimeInvalidation } = await import('./realtime');
-    const queryClient = new QueryClient();
-
     function HookHarness() {
       useGameRealtimeInvalidation('token-1', 'KR');
       return null;
     }
 
-    render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
-    });
+    render(<HookHarness />, { wrapper: createWrapper(queryClient) });
 
     act(() => {
-      emitTopic('/topic/game/KR', {
-        capturedAt: '2026-04-11T11:00:00Z',
-        eventType: 'market-updated',
-        occurredAt: '2026-04-11T11:05:00Z',
-        regionCode: 'KR',
-        seasonId: null,
-      });
-    });
-
-    expect(invalidateGameQueriesMock).toHaveBeenCalledWith(queryClient, {
-      accessToken: 'token-1',
-      includeLeaderboardPositions: true,
-      regionCode: 'KR',
-    });
-  });
-
-  it('coalesces every row notification from the same completed market sync', async () => {
-    const { useGameRealtimeInvalidation } = await import('./realtime');
-
-    function HookHarness() {
-      useGameRealtimeInvalidation('token-1', 'KR');
-      return null;
-    }
-
-    render(<HookHarness />, {
-      wrapper: createWrapper(new QueryClient()),
-    });
-
-    act(() => {
-      emitTopic('/topic/game/KR', {
-        capturedAt: '2026-04-11T11:00:00Z',
-        eventType: 'market-updated',
-        occurredAt: '2026-04-11T11:00:01Z',
-        regionCode: 'KR',
-        seasonId: null,
-      });
-      emitTopic('/topic/game/KR', {
-        capturedAt: '2026-04-11T11:00:00Z',
-        eventType: 'market-updated',
-        occurredAt: '2026-04-11T11:00:02Z',
-        regionCode: 'KR',
-        seasonId: null,
-      });
-    });
-
-    expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('invalidates the global portfolio when another country market changes', async () => {
-    const { useGameRealtimeInvalidation } = await import('./realtime');
-    const queryClient = new QueryClient();
-
-    function HookHarness() {
-      useGameRealtimeInvalidation('token-1', 'KR');
-      return null;
-    }
-
-    render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
-    });
-
-    act(() => {
-      emitTopic('/topic/game/US', {
-        capturedAt: '2026-04-11T11:00:00Z',
-        eventType: 'market-updated',
-        occurredAt: '2026-04-11T11:05:00Z',
-        regionCode: 'US',
-        seasonId: null,
-      });
-    });
-
-    expect(invalidateGameQueriesMock).toHaveBeenCalledWith(queryClient, {
-      accessToken: 'token-1',
-      includeLeaderboardPositions: true,
-      regionCode: 'US',
-    });
-  });
-
-  it('does not coalesce distinct wallet updates', async () => {
-    const { useGameRealtimeInvalidation } = await import('./realtime');
-
-    function HookHarness() {
-      useGameRealtimeInvalidation('token-1', 'KR');
-      return null;
-    }
-
-    render(<HookHarness />, {
-      wrapper: createWrapper(new QueryClient()),
-    });
-
-    act(() => {
-      emitTopic('/topic/game/KR', {
-        capturedAt: '2026-04-11T10:00:00Z',
-        eventType: 'wallet-updated',
+      emitTopic('/user/queue/game/account', {
+        eventType: 'account-updated',
         occurredAt: '2026-04-11T10:00:01Z',
-        regionCode: 'KR',
+        regionCode: 'GLOBAL',
+        resource: 'wallet',
         seasonId: 12,
-      });
-      emitTopic('/topic/game/KR', {
-        capturedAt: '2026-04-11T10:00:00Z',
-        eventType: 'wallet-updated',
-        occurredAt: '2026-04-11T10:05:01Z',
-        regionCode: 'KR',
-        seasonId: 12,
+        wallet,
       });
     });
 
-    expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(2);
+    expect(applyGameWalletRealtimeUpdateMock).toHaveBeenCalledWith(
+      queryClient,
+      'token-1',
+      wallet,
+    );
+    expect(refreshGameAccountStateMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(180);
+    });
+
+    expect(refreshGameAccountStateMock).toHaveBeenCalledTimes(1);
+    expect(refreshGameAccountStateMock).toHaveBeenCalledWith(queryClient, 'token-1');
   });
 
-  it('invalidates game queries when a personal notification arrives', async () => {
+  it('coalesces wallet, position, and scheduled-order events from one transaction', async () => {
+    vi.useFakeTimers();
+    const { useGameRealtimeInvalidation } = await import('./realtime');
+
+    function HookHarness() {
+      useGameRealtimeInvalidation('token-1', 'KR');
+      return null;
+    }
+
+    render(<HookHarness />, { wrapper: createWrapper(new QueryClient()) });
+
+    act(() => {
+      emitTopic('/user/queue/game/account', {
+        eventType: 'account-updated',
+        regionCode: 'GLOBAL',
+        resource: 'wallet',
+        wallet: { balancePoints: 12000 },
+      });
+      emitTopic('/user/queue/game/account', {
+        eventType: 'account-updated',
+        regionCode: 'KR',
+        resource: 'positions',
+      });
+      emitTopic('/user/queue/game/account', {
+        eventType: 'account-updated',
+        regionCode: 'KR',
+        resource: 'scheduled-orders',
+      });
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(179);
+    });
+    expect(refreshGameAccountStateMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(refreshGameAccountStateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes only market data and account valuation after a completed market sync', async () => {
+    vi.useFakeTimers();
+    const { useGameRealtimeInvalidation } = await import('./realtime');
+    const queryClient = new QueryClient();
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    function HookHarness() {
+      useGameRealtimeInvalidation('token-1', 'KR');
+      return null;
+    }
+
+    render(<HookHarness />, { wrapper: createWrapper(queryClient) });
+
+    const event = {
+      capturedAt: '2026-04-11T11:00:00Z',
+      eventType: 'market-updated',
+      occurredAt: '2026-04-11T11:05:00Z',
+      regionCode: 'KR',
+      seasonId: null,
+    };
+    act(() => {
+      emitTopic('/topic/game/KR', event);
+      emitTopic('/topic/game/KR', event);
+    });
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledTimes(2);
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ['game', 'market', 'token-1', 'KR'],
+      refetchType: 'active',
+    });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ['game', 'buyableMarketChart', 'token-1', 'KR'],
+      refetchType: 'active',
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(180);
+    });
+    expect(refreshGameAccountStateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes only notification-related caches for a personal notification', async () => {
     const { useGameNotificationRealtime } = await import('./realtime');
     const queryClient = new QueryClient();
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const onNotification = vi.fn();
 
     function HookHarness() {
@@ -242,40 +208,22 @@ describe('game realtime', () => {
       return null;
     }
 
-    render(<HookHarness />, {
-      wrapper: createWrapper(queryClient),
-    });
+    render(<HookHarness />, { wrapper: createWrapper(queryClient) });
 
     const notification = {
-      channelTitle: 'Channel',
-      createdAt: '2026-04-11T10:00:01Z',
-      highlightScore: 40000,
       id: 'notification-1',
       message: '예약 매도가 실행되었습니다.',
-      notificationEventType: 'PROJECTED_HIGHLIGHT',
-      notificationType: 'SMALL_CASHOUT',
-      positionId: 300,
-      readAt: null,
-      strategyTags: [],
-      thumbnailUrl: null,
       title: '예약 매도 체결',
-      videoId: 'video-1',
-      videoTitle: 'Video',
     };
-
     act(() => {
       emitTopic('/user/queue/game/notifications', notification);
     });
 
     expect(onNotification).toHaveBeenCalledWith(notification);
-    expect(invalidateGameQueriesMock).toHaveBeenCalledWith(queryClient, {
-      accessToken: 'token-1',
-      includeLeaderboardPositions: true,
-      regionCode: 'KR',
-    });
+    expect(invalidateQueriesSpy).toHaveBeenCalledTimes(3);
   });
 
-  it('subscribes comments and game hooks to separate Supabase channels', async () => {
+  it('keeps comments and game subscriptions on separate channels', async () => {
     const { useComments } = await import('../comments/queries');
     const { useGameRealtimeInvalidation } = await import('./realtime');
 
@@ -285,12 +233,11 @@ describe('game realtime', () => {
       return null;
     }
 
-    render(<HookHarness />, {
-      wrapper: createWrapper(new QueryClient()),
-    });
+    render(<HookHarness />, { wrapper: createWrapper(new QueryClient()) });
 
     expect(topicHandlers.has('/topic/comments')).toBe(true);
     expect(topicHandlers.has('/topic/comments/presence')).toBe(true);
     expect(topicHandlers.has('/topic/game/KR')).toBe(true);
+    expect(topicHandlers.has('/user/queue/game/account')).toBe(true);
   });
 });

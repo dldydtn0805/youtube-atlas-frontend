@@ -38,9 +38,9 @@ interface UseHomeTradeFlowOptions {
   maxSellQuantity: number;
   mutateBuyGamePosition: UseHomeGameTradeActionsOptions['mutateBuyGamePosition'];
   mutateSellGamePositions: UseHomeGameTradeActionsOptions['mutateSellGamePositions'];
-  onBuySuccess: () => Promise<void> | void;
-  onSellSuccess: () => Promise<void> | void;
-  onScheduledSellSuccess: () => Promise<void> | void;
+  onBuySuccess?: () => Promise<void> | void;
+  onSellSuccess?: () => Promise<void> | void;
+  onScheduledSellSuccess?: () => Promise<void> | void;
   selectedOpenPositionId?: number | null;
   scheduledSellDefaultProfitRatePercent?: number | null;
   selectedSellPositionId: number | null;
