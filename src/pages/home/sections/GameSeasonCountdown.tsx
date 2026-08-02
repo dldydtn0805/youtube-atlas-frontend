@@ -6,12 +6,11 @@ const SECOND_MS = 1_000;
 
 interface GameSeasonCountdownProps {
   endAt: string;
-  startAt?: string | null;
 }
 
-export default function GameSeasonCountdown({ endAt, startAt }: GameSeasonCountdownProps) {
+export default function GameSeasonCountdown({ endAt }: GameSeasonCountdownProps) {
   const [nowMs, setNowMs] = useState(Date.now);
-  const label = useMemo(() => formatSeasonTimeLeft(endAt, nowMs, startAt), [endAt, nowMs, startAt]);
+  const label = useMemo(() => formatSeasonTimeLeft(endAt, nowMs), [endAt, nowMs]);
 
   useEffect(() => {
     const timerId = window.setInterval(() => setNowMs(Date.now()), SECOND_MS);

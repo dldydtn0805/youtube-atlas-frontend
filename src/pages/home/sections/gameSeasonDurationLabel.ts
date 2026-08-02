@@ -8,25 +8,32 @@ function parseDate(value: string | null | undefined) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function formatCalendarSeason(date: Date) {
+export type CalendarSeasonTone = 'spring' | 'summer' | 'autumn' | 'winter';
+
+export interface CalendarSeasonPresentation {
+  label: '봄' | '여름' | '가을' | '겨울';
+  tone: CalendarSeasonTone;
+}
+
+function formatCalendarSeason(date: Date): CalendarSeasonPresentation {
   const month = date.getUTCMonth();
 
   if (month >= 2 && month < 5) {
-    return '봄';
+    return { label: '봄', tone: 'spring' };
   }
 
   if (month >= 5 && month < 8) {
-    return '여름';
+    return { label: '여름', tone: 'summer' };
   }
 
   if (month >= 8 && month < 11) {
-    return '가을';
+    return { label: '가을', tone: 'autumn' };
   }
 
-  return '겨울';
+  return { label: '겨울', tone: 'winter' };
 }
 
-export function formatSeasonDurationLabel(startAt?: string | null, endAt?: string | null) {
+export function getCalendarSeasonPresentation(startAt?: string | null, endAt?: string | null) {
   const startDate = parseDate(startAt);
   const endDate = parseDate(endAt);
   const seasonDate = startDate ?? (endDate ? new Date(endDate.getTime() - 1) : null);

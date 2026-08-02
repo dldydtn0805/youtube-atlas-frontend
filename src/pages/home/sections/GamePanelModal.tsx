@@ -4,7 +4,7 @@ import useBodyScrollLock from '../hooks/useBodyScrollLock';
 import useHeaderSwipeToClose from '../hooks/useHeaderSwipeToClose';
 import { getFullscreenElement } from '../utils';
 import GameSeasonCountdown from './GameSeasonCountdown';
-import { formatSeasonDurationLabel } from './gameSeasonDurationLabel';
+import { getCalendarSeasonPresentation } from './gameSeasonDurationLabel';
 import './GamePanelModal.css';
 
 interface GamePanelModalProps {
@@ -34,7 +34,7 @@ export default function GamePanelModal({
 
   const portalTarget = getFullscreenElement();
   const container = portalTarget instanceof HTMLElement ? portalTarget : document.body;
-  const calendarSeasonLabel = formatSeasonDurationLabel(seasonStartAt, seasonEndAt);
+  const calendarSeason = getCalendarSeasonPresentation(seasonStartAt, seasonEndAt);
 
   return createPortal(
     <div
@@ -58,10 +58,12 @@ export default function GamePanelModal({
               <h2 className="app-shell__section-title" id="game-panel-modal-title">
                 내 게임
               </h2>
-              {calendarSeasonLabel ? (
-                <span className="app-shell__game-season-duration">{calendarSeasonLabel} 시즌</span>
+              {calendarSeason ? (
+                <span className="app-shell__game-season-duration" data-season={calendarSeason.tone}>
+                  {calendarSeason.label} 시즌
+                </span>
               ) : null}
-              {seasonEndAt ? <GameSeasonCountdown endAt={seasonEndAt} startAt={seasonStartAt} /> : null}
+              {seasonEndAt ? <GameSeasonCountdown endAt={seasonEndAt} /> : null}
             </div>
           </div>
           <button aria-label="게임 모달 닫기" className="app-shell__modal-close" onClick={onClose} type="button">

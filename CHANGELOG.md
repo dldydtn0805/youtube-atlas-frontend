@@ -1,5 +1,9 @@
 # Change Log
 
+## 2026-08-03
+
+- Split the inventory modal's season presentation into a dedicated calendar-season badge and a separate `days / hours / minutes / seconds remaining` countdown, removing the repeated season name. Added season-specific badge colors: pink for spring, green for summer, amber for autumn, and blue for winter.
+
 ## 2026-08-02
 
 - Removed the initial-login waterfall that held the entire game UI behind `/api/auth/me`: valid cached or restored Supabase sessions now expose their token immediately, duplicate profile restoration requests are coalesced, and a priority account-state request hydrates the current season, wallet, tier, open holdings, and recent history before the full game bootstrap begins. The Edge query now reads only open positions plus the latest 30 records and runs independent wallet, order, settings, price, and tier reads in parallel. Deployed Supabase API v33 and Vercel production deployment `dpl_DjVL2NTAo8oy57D6GfKJRk8REuqc`; verified 488 tests, the production build, ESLint with no errors, remote database lint, API health, the protected account-state HTTP 401 contract, the final production bundle paths, and 50 live production rows without horizontal overflow or a visible loading error. The available browser was anonymous, so real-account first-login timing was not claimed; early token exposure, stale-session rejection, duplicate profile coalescing, and priority cache hydration are covered by focused regression tests.

@@ -16,8 +16,24 @@ describe('GamePanelModal', () => {
     );
 
     expect(screen.getByRole('heading', { name: '내 게임' })).toBeInTheDocument();
-    expect(screen.getByText('여름 시즌')).toBeInTheDocument();
-    expect(screen.getByText(/남음$/)).toBeInTheDocument();
+    expect(screen.getByText('여름 시즌')).toHaveAttribute('data-season', 'summer');
+    expect(screen.getByText(/^\d+ 일 \d+ 시간 \d+ 분 \d+ 초 남음$/)).toBeInTheDocument();
+    expect(screen.queryByText(/여름 시즌 종료까지/)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['봄 시즌', 'spring', '2099-03-01T00:00:00.000Z', '2099-06-01T00:00:00.000Z'],
+    ['여름 시즌', 'summer', '2099-06-01T00:00:00.000Z', '2099-09-01T00:00:00.000Z'],
+    ['가을 시즌', 'autumn', '2099-09-01T00:00:00.000Z', '2099-12-01T00:00:00.000Z'],
+    ['겨울 시즌', 'winter', '2099-12-01T00:00:00.000Z', '2100-03-01T00:00:00.000Z'],
+  ])('marks %s with its seasonal color tone', (label, tone, seasonStartAt, seasonEndAt) => {
+    render(
+      <GamePanelModal isOpen onClose={() => undefined} seasonEndAt={seasonEndAt} seasonStartAt={seasonStartAt}>
+        <div>인벤토리 목록</div>
+      </GamePanelModal>,
+    );
+
+    expect(screen.getByText(label)).toHaveAttribute('data-season', tone);
   });
 
   it('closes when an inner scroll area is pulled down from the top on touch', () => {
