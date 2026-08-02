@@ -528,6 +528,21 @@ serve(async (request) => {
       }
     }
 
+    const completedAt = new Date().toISOString();
+    const { error: completionError } = await supabase
+      .from('video_trend_runs')
+      .update({ completed_at: completedAt })
+      .eq('id', run.id);
+
+    if (completionError) {
+      throw completionError;
+    }
+
+    console.log('sync-trending:completed-run', {
+      completedAt,
+      runId: run.id,
+    });
+
     return new Response(
       JSON.stringify({
         capturedAt: run.captured_at,

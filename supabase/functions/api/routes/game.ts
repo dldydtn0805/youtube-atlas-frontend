@@ -1,4 +1,9 @@
-import { getOptionalAuth, requireAuth, type RequestContext } from '../../_shared/context.ts';
+import {
+  getOptionalAuth,
+  memoizeRequest,
+  requireAuth,
+  type RequestContext,
+} from '../../_shared/context.ts';
 import {
   calculateChartOutPricePoints,
   calculatePositionPoints,
@@ -109,38 +114,46 @@ async function listSerializedPositions(
 }
 
 async function currentGameContext(context: RequestContext, marketRegionCode: string, userId: number) {
-  const season = await ensureActiveSeason(context.service);
-  const wallet = await ensureWallet(context.service, season, userId);
-  const positions = await getPositionRows(context.service, {
-    seasonId: season.id,
-    userId,
-  });
-  const [signals, positionSignals, priceAnchors, tiers] = await Promise.all([
-    getSignalsForRegion(context.service, marketRegionCode),
-    getSignalsForPositions(context.service, positions),
-    loadPriceAnchors(context.service),
-    loadSeasonTiers(context.service, season.id),
-  ]);
-  const signalsByVideoId = signalMap(signals);
-  const signalsByPosition = gamePositionSignalMap(positionSignals);
-  const walletSummary = walletResponse(
-    wallet,
-    positions,
-    (position) => getGamePositionSignal(signalsByPosition, position),
-    priceAnchors,
-  );
+  const normalizedRegionCode = marketRegionCode.toUpperCase();
 
-  return {
-    positions,
-    priceAnchors,
-    season,
-    signals,
-    signalsByVideoId,
-    tiers,
-    totalAssetPoints: walletSummary.totalAssetPoints,
-    wallet,
-    walletSummary,
-  };
+  return memoizeRequest(
+    context,
+    `game:context:${userId}:${normalizedRegionCode}`,
+    async () => {
+      const season = await ensureActiveSeason(context.service);
+      const wallet = await ensureWallet(context.service, season, userId);
+      const positions = await getPositionRows(context.service, {
+        seasonId: season.id,
+        userId,
+      });
+      const [signals, positionSignals, priceAnchors, tiers] = await Promise.all([
+        getSignalsForRegion(context.service, normalizedRegionCode),
+        getSignalsForPositions(context.service, positions),
+        loadPriceAnchors(context.service),
+        loadSeasonTiers(context.service, season.id),
+      ]);
+      const signalsByVideoId = signalMap(signals);
+      const signalsByPosition = gamePositionSignalMap(positionSignals);
+      const walletSummary = walletResponse(
+        wallet,
+        positions,
+        (position) => getGamePositionSignal(signalsByPosition, position),
+        priceAnchors,
+      );
+
+      return {
+        positions,
+        priceAnchors,
+        season,
+        signals,
+        signalsByVideoId,
+        tiers,
+        totalAssetPoints: walletSummary.totalAssetPoints,
+        wallet,
+        walletSummary,
+      };
+    },
+  );
 }
 
 function scheduledOrderResponse(
@@ -552,7 +565,102 @@ async function achievementTitleCollection(context: RequestContext, userId: numbe
   };
 }
 
+async function readGameRouteData(
+  context: RequestContext,
+  route: string,
+): Promise<unknown> {
+  const url = new URL(route, 'https://atlas.internal');
+  const response = await handleGameRoute(
+    {
+      ...context,
+      url,
+    },
+    'GET',
+    url.pathname,
+  );
+
+  if (!response) {
+    throw new ApiError(500, 'bootstrap_route_missing', `Bootstrap route missing: ${url.pathname}`);
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as {
+      code?: string;
+      message?: string;
+    } | null;
+    throw new ApiError(
+      response.status,
+      body?.code ?? 'bootstrap_route_failed',
+      body?.message ?? `Bootstrap route failed: ${url.pathname}`,
+    );
+  }
+
+  return response.status === 204 ? null : response.json();
+}
+
 export async function handleGameRoute(context: RequestContext, method: string, path: string) {
+  if (path === '/api/game/bootstrap' && method === 'GET') {
+    const startedAt = performance.now();
+    const { profile } = await requireAuth(context);
+    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
+
+    await currentGameContext(context, regionCode, profile.id);
+
+    const params = new URLSearchParams({ regionCode });
+    const query = params.toString();
+    const [
+      achievementTitles,
+      buyableMarketChart,
+      currentSeason,
+      highlights,
+      leaderboard,
+      market,
+      notifications,
+      openPositions,
+      positionHistory,
+      scheduledSellOrders,
+      seasonResults,
+      tierProgress,
+    ] = await Promise.all([
+      readGameRouteData(context, '/api/game/achievement-titles/me'),
+      readGameRouteData(context, `/api/game/market/buyable-chart?${query}`),
+      readGameRouteData(context, `/api/game/seasons/current?${query}`),
+      readGameRouteData(context, `/api/game/highlights?${query}`),
+      readGameRouteData(context, `/api/game/leaderboard?${query}`),
+      readGameRouteData(context, `/api/game/market?${query}`),
+      readGameRouteData(context, `/api/game/notifications?${query}`),
+      readGameRouteData(context, `/api/game/positions/me?${query}&status=OPEN`),
+      readGameRouteData(context, `/api/game/positions/me?${query}&limit=30`),
+      readGameRouteData(context, `/api/game/scheduled-sell-orders?${query}`),
+      readGameRouteData(context, `/api/game/season-results/me?${query}`),
+      readGameRouteData(context, `/api/game/tiers/current?${query}`),
+    ]);
+    const durationMs = performance.now() - startedAt;
+
+    return json(
+      {
+        achievementTitles,
+        buyableMarketChart,
+        currentSeason,
+        highlights,
+        leaderboard,
+        market,
+        notifications,
+        openPositions,
+        positionHistory,
+        regionCode,
+        scheduledSellOrders,
+        seasonResults,
+        tierProgress,
+      },
+      200,
+      {
+        'Cache-Control': 'private, no-store',
+        'Server-Timing': `bootstrap;dur=${durationMs.toFixed(1)}`,
+      },
+    );
+  }
+
   if (path === '/api/game/market' && method === 'GET') {
     const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
     const auth = await getOptionalAuth(context);

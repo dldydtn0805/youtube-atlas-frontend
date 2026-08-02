@@ -2,6 +2,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { getChatParticipantId } from '../comments/participant';
 import { readStoredAuthSession } from '../auth/storage';
+import { createGameMarketSyncEvent } from './gameMarketSyncEvent';
 
 type TopicHandler = (messageBody: string) => void;
 type ConnectionHandler = () => void;
@@ -141,21 +142,19 @@ function createTopicChannel(topic: string) {
     channel.on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'UPDATE',
         filter: `region_code=eq.${regionCode}`,
         schema: 'public',
-        table: 'video_trend_signals',
+        table: 'video_trend_runs',
       },
       (payload) => {
-        const signal = payload.new as Record<string, unknown>;
+        const event = createGameMarketSyncEvent(
+          payload.new as Record<string, unknown>,
+        );
 
-        dispatchMessage(topic, {
-          capturedAt: typeof signal.captured_at === 'string' ? signal.captured_at : null,
-          eventType: 'market-updated',
-          occurredAt: new Date().toISOString(),
-          regionCode,
-          seasonId: null,
-        });
+        if (event) {
+          dispatchMessage(topic, event);
+        }
       },
     );
   } else {

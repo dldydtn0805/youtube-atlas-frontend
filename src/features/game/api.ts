@@ -69,6 +69,38 @@ type ApiGameScheduledSellOrder = Omit<GameScheduledSellOrder, 'failureReason' | 
   triggerType?: GameScheduledSellOrder['triggerType'] | null;
 };
 
+interface ApiGameBootstrap {
+  achievementTitles: AchievementTitleCollection;
+  buyableMarketChart: YouTubeCategorySection;
+  currentSeason: ApiGameCurrentSeason;
+  highlights: GameHighlight[];
+  leaderboard: ApiGameLeaderboardEntry[];
+  market: GameMarketVideo[];
+  notifications: GameNotification[];
+  openPositions: GamePosition[];
+  positionHistory: GamePosition[];
+  regionCode: string;
+  scheduledSellOrders: ApiGameScheduledSellOrder[];
+  seasonResults: GameSeasonResult[];
+  tierProgress: ApiGameTierProgress;
+}
+
+export interface GameBootstrap {
+  achievementTitles: AchievementTitleCollection;
+  buyableMarketChart: YouTubeCategorySection;
+  currentSeason: GameCurrentSeason;
+  highlights: GameHighlight[];
+  leaderboard: GameLeaderboardEntry[];
+  market: GameMarketVideo[];
+  notifications: GameNotification[];
+  openPositions: GamePosition[];
+  positionHistory: GamePosition[];
+  regionCode: string;
+  scheduledSellOrders: GameScheduledSellOrder[];
+  seasonResults: GameSeasonResult[];
+  tierProgress: GameTierProgress;
+}
+
 function createAuthorizationHeader(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
 }
@@ -161,6 +193,32 @@ function normalizeGameScheduledSellOrder(order: ApiGameScheduledSellOrder): Game
     targetProfitRatePercent: order.targetProfitRatePercent ?? null,
     targetRank: order.targetRank ?? null,
     triggerType: order.triggerType ?? 'RANK',
+  };
+}
+
+export async function fetchGameBootstrap(
+  accessToken: string,
+  regionCode: string,
+): Promise<GameBootstrap> {
+  const params = new URLSearchParams({ regionCode });
+  const bootstrap = await fetchApi<ApiGameBootstrap>(
+    `/api/game/bootstrap?${params.toString()}`,
+    {
+      headers: createAuthorizationHeader(accessToken),
+    },
+  );
+
+  return {
+    ...bootstrap,
+    achievementTitles: normalizeAchievementTitleCollection(
+      bootstrap.achievementTitles,
+    ),
+    currentSeason: normalizeGameCurrentSeason(bootstrap.currentSeason),
+    leaderboard: bootstrap.leaderboard.map(normalizeGameLeaderboardEntry),
+    scheduledSellOrders: bootstrap.scheduledSellOrders.map(
+      normalizeGameScheduledSellOrder,
+    ),
+    tierProgress: normalizeGameTierProgress(bootstrap.tierProgress),
   };
 }
 

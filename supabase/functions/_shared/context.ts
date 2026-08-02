@@ -18,6 +18,7 @@ export interface Profile {
 
 export interface RequestContext {
   adminEmails: Set<string>;
+  cache: Map<string, Promise<unknown>>;
   request: Request;
   service: SupabaseClient;
   supabaseAnonKey: string;
@@ -56,6 +57,7 @@ export function createRequestContext(request: Request): RequestContext {
 
   return {
     adminEmails: parseAdminEmails(Deno.env.get('ADMIN_ALLOWED_EMAILS')),
+    cache: new Map(),
     request,
     service: createClient(supabaseUrl, serviceRoleKey, {
       auth: {
@@ -69,6 +71,28 @@ export function createRequestContext(request: Request): RequestContext {
   };
 }
 
+export function memoizeRequest<T>(
+  context: RequestContext,
+  key: string,
+  factory: () => Promise<T>,
+): Promise<T> {
+  const cached = context.cache.get(key) as Promise<T> | undefined;
+
+  if (cached) {
+    return cached;
+  }
+
+  const pending = factory();
+  context.cache.set(key, pending);
+  void pending.catch(() => {
+    if (context.cache.get(key) === pending) {
+      context.cache.delete(key);
+    }
+  });
+
+  return pending;
+}
+
 function getAccessToken(request: Request) {
   const authorization = request.headers.get('Authorization')?.trim();
 
@@ -79,7 +103,7 @@ function getAccessToken(request: Request) {
   return authorization.slice(7).trim() || null;
 }
 
-export async function getOptionalAuth(
+async function resolveOptionalAuth(
   context: RequestContext,
 ): Promise<AuthenticatedContext | null> {
   const token = getAccessToken(context.request);
@@ -174,6 +198,14 @@ export async function getOptionalAuth(
     profile: updatedProfile,
     user,
   };
+}
+
+export function getOptionalAuth(
+  context: RequestContext,
+): Promise<AuthenticatedContext | null> {
+  return memoizeRequest(context, 'auth:optional', () =>
+    resolveOptionalAuth(context),
+  );
 }
 
 export async function requireAuth(context: RequestContext) {

@@ -9,7 +9,12 @@ interface PriceAnchorRow {
   rank: number;
 }
 
-export async function loadPriceAnchors(service: SupabaseClient): Promise<PriceAnchor[]> {
+const priceAnchorPromises = new WeakMap<
+  SupabaseClient,
+  Promise<PriceAnchor[]>
+>();
+
+async function fetchPriceAnchors(service: SupabaseClient): Promise<PriceAnchor[]> {
   const { data, error } = await service
     .from('game_price_anchors')
     .select('rank, price_points')
@@ -25,4 +30,22 @@ export async function loadPriceAnchors(service: SupabaseClient): Promise<PriceAn
     rank,
     Number(pricePoints),
   ]);
+}
+
+export function loadPriceAnchors(service: SupabaseClient): Promise<PriceAnchor[]> {
+  const cached = priceAnchorPromises.get(service);
+
+  if (cached) {
+    return cached;
+  }
+
+  const pending = fetchPriceAnchors(service);
+  priceAnchorPromises.set(service, pending);
+  void pending.catch(() => {
+    if (priceAnchorPromises.get(service) === pending) {
+      priceAnchorPromises.delete(service);
+    }
+  });
+
+  return pending;
 }

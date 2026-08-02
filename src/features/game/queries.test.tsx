@@ -8,20 +8,24 @@ import type {
   GameScheduledSellOrder,
   SellGamePositionsInput,
 } from './types';
+import type { GameBootstrap } from './api';
 import {
   gameQueryKeys,
   useCancelScheduledSellOrder,
   useCreateScheduledSellOrder,
+  useGameBootstrap,
   useSellGamePositions,
 } from './queries';
 
 const {
   cancelScheduledSellOrderMock,
   createScheduledSellOrderMock,
+  fetchGameBootstrapMock,
   sellGamePositionsMock,
 } = vi.hoisted(() => ({
   cancelScheduledSellOrderMock: vi.fn(),
   createScheduledSellOrderMock: vi.fn(),
+  fetchGameBootstrapMock: vi.fn(),
   sellGamePositionsMock: vi.fn(),
 }));
 
@@ -39,6 +43,7 @@ vi.mock('./api', async () => {
     fetchBuyableMarketChart: vi.fn(),
     fetchCurrentGameSeason: vi.fn(),
     fetchGameHighlights: vi.fn(),
+    fetchGameBootstrap: fetchGameBootstrapMock,
     fetchGameLeaderboard: vi.fn(),
     fetchGameLeaderboardHighlights: vi.fn(),
     fetchGameLeaderboardPositionRankHistory: vi.fn(),
@@ -186,6 +191,67 @@ describe('game query scope', () => {
     expect(gameQueryKeys.market('token', 'KR')).not.toEqual(
       gameQueryKeys.market('token', 'US'),
     );
+  });
+});
+
+describe('useGameBootstrap', () => {
+  afterEach(() => {
+    fetchGameBootstrapMock.mockReset();
+  });
+
+  it('hydrates authenticated game caches from one request', async () => {
+    const queryClient = createQueryClient();
+    const wrapper = createWrapper(queryClient);
+    const bootstrap = {
+      achievementTitles: { selectedTitle: null, titles: [] },
+      buyableMarketChart: {
+        availableCategories: [],
+        categoryId: '0',
+        description: '구매 가능 영상',
+        items: [],
+        label: '전체',
+        nextPageToken: undefined,
+      },
+      currentSeason: { id: 1 },
+      highlights: [],
+      leaderboard: [],
+      market: [],
+      notifications: [],
+      openPositions: [createOpenPosition()],
+      positionHistory: [createHistoryPosition()],
+      regionCode: 'KR',
+      scheduledSellOrders: [],
+      seasonResults: [],
+      tierProgress: { highlightScore: 0 },
+    } as unknown as GameBootstrap;
+    fetchGameBootstrapMock.mockResolvedValue(bootstrap);
+
+    const { result } = renderHook(
+      () => useGameBootstrap('token-1', 'KR'),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.isHydrated).toBe(true));
+
+    expect(fetchGameBootstrapMock).toHaveBeenCalledTimes(1);
+    expect(fetchGameBootstrapMock).toHaveBeenCalledWith('token-1', 'KR');
+    expect(
+      queryClient.getQueryData([
+        ...gameQueryKeys.positions('token-1', 'KR', 'OPEN'),
+        null,
+      ]),
+    ).toEqual(bootstrap.openPositions);
+    expect(
+      queryClient.getQueryData([
+        ...gameQueryKeys.positions('token-1', 'KR', ''),
+        30,
+      ]),
+    ).toEqual(bootstrap.positionHistory);
+    expect(
+      queryClient.getQueryData(
+        gameQueryKeys.currentSeason('token-1', 'KR'),
+      ),
+    ).toEqual(bootstrap.currentSeason);
   });
 });
 

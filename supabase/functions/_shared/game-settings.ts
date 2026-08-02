@@ -17,6 +17,11 @@ export interface GameSettings {
   updatedBy: string | null;
 }
 
+const gameSettingsPromises = new WeakMap<
+  SupabaseClient,
+  Promise<GameSettings>
+>();
+
 function normalizeScheduledSellProfitRatePresets(value: unknown) {
   if (!Array.isArray(value) || value.length !== 3) {
     return [...FALLBACK_SCHEDULED_SELL_PROFIT_RATE_PRESETS];
@@ -38,7 +43,7 @@ function normalizeScheduledSellProfitRatePresets(value: unknown) {
   return presets;
 }
 
-export async function loadGameSettings(
+async function fetchGameSettings(
   service: SupabaseClient,
 ): Promise<GameSettings> {
   const { data, error } = await service
@@ -62,4 +67,22 @@ export async function loadGameSettings(
     updatedAt: data?.updated_at ?? null,
     updatedBy: data?.updated_by ?? null,
   };
+}
+
+export function loadGameSettings(service: SupabaseClient): Promise<GameSettings> {
+  const cached = gameSettingsPromises.get(service);
+
+  if (cached) {
+    return cached;
+  }
+
+  const pending = fetchGameSettings(service);
+  gameSettingsPromises.set(service, pending);
+  void pending.catch(() => {
+    if (gameSettingsPromises.get(service) === pending) {
+      gameSettingsPromises.delete(service);
+    }
+  });
+
+  return pending;
 }

@@ -2,15 +2,20 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { VideoCategory } from '../../constants/videoCategories';
 import { fetchMusicTopVideos, fetchPopularVideosByCategory, fetchVideoById, fetchVideoCategories } from './api';
 
-export function useVideoCategories(regionCode: string) {
+export function useVideoCategories(regionCode: string, enabled = true) {
   return useQuery({
+    enabled: enabled && Boolean(regionCode),
     queryKey: ['videoCategories', regionCode],
     queryFn: () => fetchVideoCategories(regionCode),
     staleTime: 1000 * 60 * 5,
   });
 }
 
-export function usePopularVideosByCategory(regionCode: string, category?: VideoCategory) {
+export function usePopularVideosByCategory(
+  regionCode: string,
+  category?: VideoCategory,
+  enabled = true,
+) {
   return useInfiniteQuery({
     queryKey: ['popularVideosByCategory', regionCode, category?.id],
     queryFn: ({ pageParam }) => {
@@ -20,7 +25,7 @@ export function usePopularVideosByCategory(regionCode: string, category?: VideoC
 
       return fetchPopularVideosByCategory(regionCode, category, pageParam);
     },
-    enabled: Boolean(category),
+    enabled: enabled && Boolean(category),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextPageToken,
     staleTime: 1000 * 30,

@@ -1,9 +1,11 @@
 import type { RequestContext } from '../../_shared/context.ts';
 import {
+  toMarketVideo,
   toTrendSignal,
   toTrendVideo,
   type TrendSignalRow,
 } from '../../_shared/game.ts';
+import { loadPriceAnchors } from '../../_shared/price-anchors.ts';
 import {
   ApiError,
   json,
@@ -16,7 +18,7 @@ import {
   toVideoResponse,
 } from '../../_shared/youtube.ts';
 
-const ALL_CATEGORY_IDS = ['all', '0'];
+const ALL_CATEGORY_IDS = ['0', 'all'];
 const MUSIC_VIDEO_CATEGORY_ID = '10';
 const TOP_VIDEO_PAGE_SIZE = 50;
 
@@ -45,7 +47,9 @@ async function findSignals(
 ) {
   let query = context.service
     .from('video_trend_signals')
-    .select('*')
+    .select(
+      'captured_at, category_id, category_label, channel_id, channel_title, current_rank, current_view_count, duration, is_new, previous_rank, previous_view_count, rank_change, region_code, sync_buy_count, sync_buy_quantity, sync_sell_count, sync_sell_quantity, thumbnail_url, title, video_category_id, video_category_label, video_id, view_count_delta',
+    )
     .eq('region_code', regionCode.toUpperCase())
     .in('category_id', categoryIds);
 
@@ -246,6 +250,71 @@ export async function handlePublicRoute(
   method: string,
   path: string,
 ) {
+  if (path === '/api/home/bootstrap' && method === 'GET') {
+    const startedAt = performance.now();
+    const regionCode = requiredSearchParam(context.url, 'regionCode').toUpperCase();
+    const [categories, source, priceAnchors] = await Promise.all([
+      fetchCategories(regionCode),
+      findFirstAvailableSignals(context, regionCode, ALL_CATEGORY_IDS),
+      loadPriceAnchors(context.service),
+    ]);
+    const topVideosResponse = await listTopVideos(context, regionCode, {
+      source,
+    });
+    const musicTopVideosResponse = await listTopVideos(context, regionCode, {
+      categoryId: MUSIC_VIDEO_CATEGORY_ID,
+      label: '음악',
+      source,
+      videoCategoryId: MUSIC_VIDEO_CATEGORY_ID,
+    });
+    const topVideos = await topVideosResponse.json();
+    const musicTopVideos = await musicTopVideosResponse.json();
+    const realtimeThreshold = 5;
+    const realtimeSignals = source.signals
+      .filter((signal) => (signal.rank_change ?? 0) >= realtimeThreshold)
+      .sort((left, right) => (right.rank_change ?? 0) - (left.rank_change ?? 0));
+    const topRankRisersLimit = 10;
+    const topRankRiserSignals = source.signals
+      .filter((signal) => (signal.rank_change ?? 0) > 0)
+      .sort((left, right) => (right.rank_change ?? 0) - (left.rank_change ?? 0))
+      .slice(0, topRankRisersLimit);
+    const durationMs = performance.now() - startedAt;
+
+    return json(
+      {
+        categories,
+        gameMarket: source.signals.map((signal) =>
+          toMarketVideo(signal, true, null, priceAnchors),
+        ),
+        musicTopVideos,
+        newEntries: toFeed(
+          regionCode,
+          source.categoryId,
+          source.signals.filter((signal) => signal.is_new),
+        ),
+        realtimeSurging: toFeed(
+          regionCode,
+          source.categoryId,
+          realtimeSignals,
+          { rankChangeThreshold: realtimeThreshold },
+        ),
+        regionCode,
+        topRankRisers: toFeed(
+          regionCode,
+          source.categoryId,
+          topRankRiserSignals,
+          { limit: topRankRisersLimit },
+        ),
+        topVideos,
+      },
+      200,
+      {
+        'Cache-Control': 'public, max-age=30, stale-while-revalidate=30',
+        'Server-Timing': `bootstrap;dur=${durationMs.toFixed(1)}`,
+      },
+    );
+  }
+
   const categoriesMatch = path.match(/^\/api\/catalog\/regions\/([^/]+)\/categories$/);
   if (categoriesMatch && method === 'GET') {
     return json(await fetchCategories(decodeURIComponent(categoriesMatch[1])));

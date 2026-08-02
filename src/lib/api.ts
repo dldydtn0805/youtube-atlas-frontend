@@ -1,3 +1,5 @@
+import { addDatabaseFunctionRegion } from './functionRegion';
+
 interface ApiErrorResponse {
   code?: string;
   message?: string;
@@ -44,8 +46,9 @@ function getApiBaseUrl() {
 
 function toApiUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${getApiBaseUrl()}${normalizedPath}`;
 
-  return `${getApiBaseUrl()}${normalizedPath}`;
+  return usesSupabaseFunctions ? addDatabaseFunctionRegion(url) : url;
 }
 
 async function parseResponseBody(response: Response) {

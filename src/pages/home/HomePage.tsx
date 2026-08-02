@@ -99,6 +99,7 @@ import {
   supportsVideoTrendSignals,
 } from "../../constants/videoCategories";
 import { useAuth } from "../../features/auth/useAuth";
+import { usePublicHomeBootstrap } from "../../features/homeBootstrap/queries";
 import {
   gameQueryKeys,
   useAchievementTitles,
@@ -109,6 +110,7 @@ import {
   useCurrentGameSeason,
   useGameTierProgress,
   useGameHighlights,
+  useGameBootstrap,
   useGameLeaderboard,
   useGameLeaderboardHighlights,
   useGameMarket,
@@ -484,11 +486,23 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   }, [isMobileLayout]);
 
   const {
+    isError: isPublicHomeBootstrapError,
+    isHydrated: isPublicHomeBootstrapHydrated,
+    isLoading: isPublicHomeBootstrapLoading,
+  } = usePublicHomeBootstrap(selectedRegionCode, isApiConfigured);
+  const shouldLoadPublicHomeQueries =
+    !isApiConfigured ||
+    isPublicHomeBootstrapHydrated ||
+    isPublicHomeBootstrapError;
+  const {
     data: videoCategories = [],
-    isLoading: isVideoCategoriesLoading,
+    isLoading: isVideoCategoriesQueryLoading,
     isError: isVideoCategoriesError,
     error: videoCategoriesError,
-  } = useVideoCategories(selectedRegionCode);
+  } = useVideoCategories(selectedRegionCode, shouldLoadPublicHomeQueries);
+  const isVideoCategoriesLoading =
+    isVideoCategoriesQueryLoading ||
+    (isPublicHomeBootstrapLoading && !isPublicHomeBootstrapHydrated);
   const [selectedCategoryId, setSelectedCategoryId] =
     useState(DEFAULT_CATEGORY_ID);
   const sortedVideoCategories = sortVideoCategories(videoCategories);
@@ -505,10 +519,17 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     fetchNextPage,
     hasNextPage = false,
     isFetchingNextPage,
-    isLoading,
+    isLoading: isChartQueryLoading,
     isError,
     error,
-  } = usePopularVideosByCategory(selectedRegionCode, selectedCategory);
+  } = usePopularVideosByCategory(
+    selectedRegionCode,
+    selectedCategory,
+    shouldLoadPublicHomeQueries,
+  );
+  const isLoading =
+    isChartQueryLoading ||
+    (isPublicHomeBootstrapLoading && !isPublicHomeBootstrapHydrated);
   const {
     data: musicChartData,
     fetchNextPage: fetchNextMusicChartPage,
@@ -519,69 +540,126 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   } = useMusicTopVideos(
     selectedRegionCode,
     selectedCategory?.id === ALL_VIDEO_CATEGORY_ID &&
-      supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode),
+      supportsVideoTrendSignals(ALL_VIDEO_CATEGORY_ID, selectedRegionCode) &&
+      shouldLoadPublicHomeQueries,
   );
   const shouldLoadGame = isApiConfigured && authStatus === "authenticated";
-  const shouldLoadGameMarket = isApiConfigured;
+  const {
+    isError: isGameBootstrapError,
+    isHydrated: isGameBootstrapHydrated,
+    isLoading: isGameBootstrapLoading,
+  } = useGameBootstrap(accessToken, selectedRegionCode, shouldLoadGame);
+  const shouldLoadGameQueries =
+    shouldLoadGame && (isGameBootstrapHydrated || isGameBootstrapError);
+  const shouldLoadGameMarket =
+    isApiConfigured &&
+    (shouldLoadGame ? shouldLoadGameQueries : shouldLoadPublicHomeQueries);
   useGameRealtimeInvalidation(accessToken, selectedRegionCode, shouldLoadGame);
 
   const {
     data: currentGameSeason,
     error: currentGameSeasonError,
-    isLoading: isCurrentGameSeasonLoading,
+    isLoading: isCurrentGameSeasonQueryLoading,
     dataUpdatedAt: currentGameSeasonUpdatedAt,
-  } = useCurrentGameSeason(accessToken, selectedRegionCode, shouldLoadGame);
+  } = useCurrentGameSeason(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameQueries,
+  );
+  const isCurrentGameSeasonLoading =
+    isCurrentGameSeasonQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
   const {
     data: gameMarket = [],
     error: gameMarketError,
-    isLoading: isGameMarketLoading,
+    isLoading: isGameMarketQueryLoading,
   } = useGameMarket(accessToken, selectedRegionCode, shouldLoadGameMarket);
+  const isGameMarketLoading =
+    isGameMarketQueryLoading ||
+    (shouldLoadGame
+      ? isGameBootstrapLoading
+      : isPublicHomeBootstrapLoading);
   const {
     data: buyableMarketChartData,
     error: buyableMarketChartError,
     fetchNextPage: fetchNextBuyableMarketChartPage,
     hasNextPage: hasNextBuyableMarketChartPage = false,
     isFetchingNextPage: isFetchingNextBuyableMarketChartPage,
-    isLoading: isBuyableMarketChartLoading,
+    isLoading: isBuyableMarketChartQueryLoading,
     isError: isBuyableMarketChartError,
-  } = useBuyableMarketChart(accessToken, selectedRegionCode, shouldLoadGame);
+  } = useBuyableMarketChart(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameQueries,
+  );
+  const isBuyableMarketChartLoading =
+    isBuyableMarketChartQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
   const {
     data: gameTierProgress,
     error: gameTierProgressError,
-    isLoading: isGameTierProgressLoading,
-  } = useGameTierProgress(accessToken, selectedRegionCode, shouldLoadGame);
+    isLoading: isGameTierProgressQueryLoading,
+  } = useGameTierProgress(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameQueries,
+  );
+  const isGameTierProgressLoading =
+    isGameTierProgressQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
 
   const {
     data: gameLeaderboard = [],
     error: gameLeaderboardError,
     isError: isGameLeaderboardError,
-    isLoading: isGameLeaderboardLoading,
-  } = useGameLeaderboard(accessToken, selectedRegionCode, shouldLoadGame);
+    isLoading: isGameLeaderboardQueryLoading,
+  } = useGameLeaderboard(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameQueries,
+  );
+  const isGameLeaderboardLoading =
+    isGameLeaderboardQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
   const { data: achievementTitleCollection } = useAchievementTitles(
     accessToken,
-    shouldLoadGame,
+    shouldLoadGameQueries,
   );
   const updateSelectedAchievementTitleMutation =
     useUpdateSelectedAchievementTitle(accessToken, selectedRegionCode);
   const {
     data: openGamePositions = [],
     error: openGamePositionsError,
-    isLoading: isOpenGamePositionsLoading,
+    isLoading: isOpenGamePositionsQueryLoading,
     refetch: refetchOpenGamePositions,
   } = useMyGamePositions(
     accessToken,
     selectedRegionCode,
     "OPEN",
-    shouldLoadGame,
+    shouldLoadGameQueries,
   );
+  const isOpenGamePositionsLoading =
+    isOpenGamePositionsQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
   const { data: gameSeasonResults = [], error: gameSeasonResultsError } =
-    useMyGameSeasonResults(accessToken, selectedRegionCode, shouldLoadGame);
+    useMyGameSeasonResults(
+      accessToken,
+      selectedRegionCode,
+      shouldLoadGameQueries,
+    );
   const {
     data: scheduledSellOrders = [],
     error: scheduledSellOrdersError,
-    isLoading: isScheduledSellOrdersLoading,
+    isLoading: isScheduledSellOrdersQueryLoading,
     refetch: refetchScheduledSellOrders,
-  } = useScheduledSellOrders(accessToken, selectedRegionCode, shouldLoadGame);
+  } = useScheduledSellOrders(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameQueries,
+  );
+  const isScheduledSellOrdersLoading =
+    isScheduledSellOrdersQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
   const {
     data: selectedLeaderboardHighlights = [],
     error: selectedLeaderboardHighlightsError,
@@ -591,20 +669,22 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     accessToken,
     selectedLeaderboardUserId,
     selectedRegionCode,
-    shouldLoadGame && selectedLeaderboardUserId !== null,
+    shouldLoadGameQueries && selectedLeaderboardUserId !== null,
   );
   const {
     data: allGameHistoryPositions = [],
     error: gameHistoryPositionsError,
-    isLoading: isGameHistoryLoading,
+    isLoading: isGameHistoryQueryLoading,
     refetch: refetchGameHistoryPositions,
   } = useMyGamePositions(
     accessToken,
     selectedRegionCode,
     "",
-    shouldLoadGame,
+    shouldLoadGameQueries,
     30,
   );
+  const isGameHistoryLoading =
+    isGameHistoryQueryLoading || (shouldLoadGame && isGameBootstrapLoading);
   const gameHistoryPositions = useMemo(
     () =>
       allGameHistoryPositions
@@ -627,8 +707,15 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
   const {
     data: gameHighlights = [],
     error: gameHighlightsError,
-    isLoading: isGameHighlightsLoading,
-  } = useGameHighlights(accessToken, selectedRegionCode, shouldLoadGame);
+    isLoading: isGameHighlightsQueryLoading,
+  } = useGameHighlights(
+    accessToken,
+    selectedRegionCode,
+    shouldLoadGameQueries,
+  );
+  const isGameHighlightsLoading =
+    isGameHighlightsQueryLoading ||
+    (shouldLoadGame && isGameBootstrapLoading);
   const {
     clearGameNotifications,
     deleteGameNotification,
@@ -647,7 +734,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     resetKey: user?.id ?? null,
     seasonNotifications: currentGameSeason?.notifications,
     selectedRegionCode,
-    shouldLoadGame,
+    shouldLoadGame: shouldLoadGameQueries,
   });
 
   const {
@@ -749,7 +836,7 @@ function HomePage({ selectedChartView, selectedRegionCode }: HomePageProps) {
     hasNextMusicChartPage,
     hasNextPage,
     historyPlaybackVideo,
-    isApiConfigured,
+    isApiConfigured: isApiConfigured && shouldLoadPublicHomeQueries,
     isBuyableMarketChartLoading,
     isBuyableOnlyFilterActive,
     isChartError,

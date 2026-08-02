@@ -14,6 +14,12 @@ const WALLET_UPDATED_EVENT = 'wallet-updated';
 const MARKET_UPDATED_EVENT = 'market-updated';
 
 function toRealtimeEventKey(event: GameRealtimeEvent) {
+  if (event.eventType === MARKET_UPDATED_EVENT) {
+    return [event.eventType, event.regionCode, event.capturedAt ?? 'captured'].join(
+      ':',
+    );
+  }
+
   return [
     event.eventType,
     event.regionCode,
@@ -23,17 +29,30 @@ function toRealtimeEventKey(event: GameRealtimeEvent) {
   ].join(':');
 }
 
+function rememberEventKey(keys: Set<string>, eventKey: string) {
+  keys.add(eventKey);
+
+  if (keys.size <= 50) {
+    return;
+  }
+
+  const oldestKey = keys.values().next().value;
+  if (oldestKey) {
+    keys.delete(oldestKey);
+  }
+}
+
 export function useGameRealtimeInvalidation(
   accessToken: string | null,
   regionCode: string | null,
   enabled = true,
 ) {
   const queryClient = useQueryClient();
-  const handledEventKeyRef = useRef<string | null>(null);
+  const handledEventKeysRef = useRef(new Set<string>());
 
   useEffect(() => {
     if (!enabled || !accessToken || !regionCode) {
-      handledEventKeyRef.current = null;
+      handledEventKeysRef.current.clear();
       return;
     }
 
@@ -52,11 +71,11 @@ export function useGameRealtimeInvalidation(
 
           const nextEventKey = toRealtimeEventKey(event);
 
-          if (handledEventKeyRef.current === nextEventKey) {
+          if (handledEventKeysRef.current.has(nextEventKey)) {
             return;
           }
 
-          handledEventKeyRef.current = nextEventKey;
+          rememberEventKey(handledEventKeysRef.current, nextEventKey);
 
           void invalidateGameQueries(queryClient, {
             accessToken,

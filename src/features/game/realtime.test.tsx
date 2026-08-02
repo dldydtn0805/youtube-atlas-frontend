@@ -138,6 +138,38 @@ describe('game realtime', () => {
     });
   });
 
+  it('coalesces every row notification from the same completed market sync', async () => {
+    const { useGameRealtimeInvalidation } = await import('./realtime');
+
+    function HookHarness() {
+      useGameRealtimeInvalidation('token-1', 'KR');
+      return null;
+    }
+
+    render(<HookHarness />, {
+      wrapper: createWrapper(new QueryClient()),
+    });
+
+    act(() => {
+      emitTopic('/topic/game/KR', {
+        capturedAt: '2026-04-11T11:00:00Z',
+        eventType: 'market-updated',
+        occurredAt: '2026-04-11T11:00:01Z',
+        regionCode: 'KR',
+        seasonId: null,
+      });
+      emitTopic('/topic/game/KR', {
+        capturedAt: '2026-04-11T11:00:00Z',
+        eventType: 'market-updated',
+        occurredAt: '2026-04-11T11:00:02Z',
+        regionCode: 'KR',
+        seasonId: null,
+      });
+    });
+
+    expect(invalidateGameQueriesMock).toHaveBeenCalledTimes(1);
+  });
+
   it('invalidates the global portfolio when another country market changes', async () => {
     const { useGameRealtimeInvalidation } = await import('./realtime');
     const queryClient = new QueryClient();

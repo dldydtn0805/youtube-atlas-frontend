@@ -1,6 +1,15 @@
-import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import {
+  QueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+} from '@tanstack/react-query';
 import { authQueryKeys } from '../auth/queries';
 import type { AuthUser } from '../auth/types';
+import type { YouTubeCategorySection } from '../youtube/types';
 import {
   cancelScheduledSellOrder,
   fetchAchievementTitles,
@@ -12,6 +21,7 @@ import {
   fetchSellGamePreview,
   fetchCurrentGameSeason,
   fetchGameHighlights,
+  fetchGameBootstrap,
   fetchGameLeaderboard,
   fetchGameLeaderboardHighlights,
   fetchGameLeaderboardPositionRankHistory,
@@ -455,13 +465,97 @@ export async function invalidateGameQueries(
   await Promise.all(invalidations);
 }
 
+export function useGameBootstrap(
+  accessToken: string | null,
+  regionCode: string,
+  enabled = true,
+) {
+  const queryClient = useQueryClient();
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
+  const bootstrapKey = accessToken ? `${accessToken}:${regionCode}` : null;
+  const query = useQuery({
+    enabled: enabled && Boolean(accessToken) && Boolean(regionCode),
+    queryKey: ['game', 'bootstrap', accessToken, regionCode],
+    queryFn: () => fetchGameBootstrap(accessToken as string, regionCode),
+    staleTime: 1000 * 15,
+  });
+
+  useEffect(() => {
+    setHydratedKey(null);
+  }, [bootstrapKey]);
+
+  useEffect(() => {
+    if (!query.data || !accessToken || query.data.regionCode !== regionCode) {
+      return;
+    }
+
+    queryClient.setQueryData(
+      gameQueryKeys.currentSeason(accessToken, regionCode),
+      query.data.currentSeason,
+    );
+    queryClient.setQueryData<InfiniteData<YouTubeCategorySection>>(
+      gameQueryKeys.buyableMarketChart(accessToken, regionCode),
+      {
+        pageParams: [undefined],
+        pages: [query.data.buyableMarketChart],
+      },
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.market(accessToken, regionCode),
+      query.data.market,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.tierProgress(accessToken, regionCode),
+      query.data.tierProgress,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.leaderboard(accessToken, regionCode),
+      query.data.leaderboard,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.achievementTitles(accessToken),
+      query.data.achievementTitles,
+    );
+    queryClient.setQueryData(
+      [...gameQueryKeys.positions(accessToken, regionCode, 'OPEN'), null],
+      query.data.openPositions,
+    );
+    queryClient.setQueryData(
+      [...gameQueryKeys.positions(accessToken, regionCode, ''), 30],
+      query.data.positionHistory,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.scheduledSellOrders(accessToken, regionCode),
+      query.data.scheduledSellOrders,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.highlights(accessToken, regionCode),
+      query.data.highlights,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.notifications(accessToken, regionCode),
+      query.data.notifications,
+    );
+    queryClient.setQueryData(
+      gameQueryKeys.seasonResults(accessToken, regionCode),
+      query.data.seasonResults,
+    );
+    setHydratedKey(bootstrapKey);
+  }, [accessToken, bootstrapKey, query.data, queryClient, regionCode]);
+
+  return {
+    ...query,
+    isHydrated: bootstrapKey !== null && hydratedKey === bootstrapKey,
+  };
+}
+
 export function useCurrentGameSeason(accessToken: string | null, regionCode: string, enabled = true) {
   return useQuery({
     enabled: enabled && Boolean(accessToken) && Boolean(regionCode),
     queryKey: gameQueryKeys.currentSeason(accessToken, regionCode),
     queryFn: () => fetchCurrentGameSeason(accessToken as string, regionCode),
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 1000 * 15,
+    refetchOnMount: false,
     refetchOnWindowFocus: true,
   });
 }

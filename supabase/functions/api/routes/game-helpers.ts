@@ -84,7 +84,12 @@ export interface ScheduledOrderRow {
   user_id: number;
 }
 
-export async function ensureActiveSeason(service: SupabaseClient) {
+const activeSeasonPromises = new WeakMap<
+  SupabaseClient,
+  Promise<GameSeasonRow>
+>();
+
+async function resolveActiveSeason(service: SupabaseClient) {
   const { data: existingSeason, error: existingError } = await service
     .from('game_seasons')
     .select('*')
@@ -94,9 +99,6 @@ export async function ensureActiveSeason(service: SupabaseClient) {
 
   if (existingError) throw existingError;
   if (existingSeason) {
-    await service.rpc('seed_game_tiers', {
-      target_season_id: existingSeason.id,
-    });
     return existingSeason;
   }
 
@@ -127,6 +129,24 @@ export async function ensureActiveSeason(service: SupabaseClient) {
 
   await service.rpc('seed_game_tiers', { target_season_id: createdSeason.id });
   return createdSeason;
+}
+
+export function ensureActiveSeason(service: SupabaseClient) {
+  const cached = activeSeasonPromises.get(service);
+
+  if (cached) {
+    return cached;
+  }
+
+  const pending = resolveActiveSeason(service);
+  activeSeasonPromises.set(service, pending);
+  void pending.catch(() => {
+    if (activeSeasonPromises.get(service) === pending) {
+      activeSeasonPromises.delete(service);
+    }
+  });
+
+  return pending;
 }
 
 export async function ensureWallet(service: SupabaseClient, season: GameSeasonRow, userId: number) {

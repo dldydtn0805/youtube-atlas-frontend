@@ -28,11 +28,16 @@ export class ApiError extends Error {
   }
 }
 
-export function json(data: unknown, status = 200) {
+export function json(
+  data: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+) {
   return new Response(data === undefined ? null : JSON.stringify(data), {
     headers: {
       ...corsHeaders,
       'Content-Type': 'application/json; charset=utf-8',
+      ...headers,
     },
     status,
   });

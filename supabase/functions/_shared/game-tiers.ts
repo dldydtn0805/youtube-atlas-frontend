@@ -15,7 +15,12 @@ interface GameSeasonTierRow {
   title_code: string;
 }
 
-export async function loadSeasonTiers(
+const seasonTierPromises = new WeakMap<
+  SupabaseClient,
+  Map<number, Promise<GameTierDefinition[]>>
+>();
+
+async function fetchSeasonTiers(
   service: SupabaseClient,
   seasonId: number,
 ): Promise<GameTierDefinition[]> {
@@ -43,4 +48,27 @@ export async function loadSeasonTiers(
     tierCode: tier.tier_code,
     titleCode: tier.title_code,
   }));
+}
+
+export function loadSeasonTiers(
+  service: SupabaseClient,
+  seasonId: number,
+): Promise<GameTierDefinition[]> {
+  const serviceCache = seasonTierPromises.get(service) ?? new Map();
+  seasonTierPromises.set(service, serviceCache);
+  const cached = serviceCache.get(seasonId);
+
+  if (cached) {
+    return cached;
+  }
+
+  const pending = fetchSeasonTiers(service, seasonId);
+  serviceCache.set(seasonId, pending);
+  void pending.catch(() => {
+    if (serviceCache.get(seasonId) === pending) {
+      serviceCache.delete(seasonId);
+    }
+  });
+
+  return pending;
 }
